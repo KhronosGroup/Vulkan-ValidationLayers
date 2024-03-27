@@ -23,6 +23,7 @@
 #include "generated/chassis.h"
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
+#include "cc_buffer_address.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/ray_tracing_state.h"
@@ -118,6 +119,126 @@ bool CoreChecks::ValidateAccelStructsMemoryDoNotOverlap(const Location &function
                          FormatHandle(buffer_b).c_str(), loc_b.Fields().c_str(), FormatHandle(accel_struct_b.Handle()).c_str(),
                          FormatHandle(memory).c_str(), string_range_hex(overlap_range).c_str());
     }
+
+    return skip;
+}
+
+static bool ValidateBufferAndAccelStructsMemoryDoNotOverlap(const CoreChecks &validator, const vvl::Buffer &buffer_a,
+                                                            sparse_container::range<VkDeviceSize> range_a,
+                                                            const vvl::AccelerationStructureKHR &accel_struct_b,
+                                                            const Location &loc_b, std::string *err_msg) {
+    const vvl::Buffer &buffer_b = *accel_struct_b.buffer_state;
+    const sparse_container::range<VkDeviceSize> range_b(accel_struct_b.create_info.offset, accel_struct_b.create_info.size);
+
+    if (const auto [memory, overlap_range] = buffer_a.GetResourceMemoryOverlap(range_a, &buffer_b, range_b);
+        memory != VK_NULL_HANDLE) {
+        if (err_msg) {
+            std::stringstream err_msg_strm;
+            err_msg_strm << "memory backing buffer (" << validator.FormatHandle(buffer_a) << ") overlaps memory backing buffer ("
+                         << validator.FormatHandle(buffer_b) << ") used as storage for " << loc_b.Fields() << " ("
+                         << validator.FormatHandle(accel_struct_b.Handle()) << "). Overlapped memory is ("
+                         << validator.FormatHandle(memory) << ") on range " << string_range_hex(overlap_range);
+            *err_msg = err_msg_strm.str();
+        }
+        return false;
+    }
+
+    return true;
+}
+
+bool CoreChecks::ValidateScratchMemoryNoOverlap(const Location &function_loc, LogObjectList objlist,
+                                                const vvl::span<vvl::Buffer *const> &scratches_a, VkDeviceAddress scratch_a_address,
+                                                VkDeviceSize scratch_a_size, const Location &loc_scratches_a,
+                                                const vvl::AccelerationStructureKHR *src_accel_struct,
+                                                const Location &loc_src_accel_struct,
+                                                const vvl::AccelerationStructureKHR &dst_accel_struct,
+                                                const Location &loc_dst_accel_struct,
+                                                const vvl::span<vvl::Buffer *const> &scratches_b, VkDeviceAddress scratch_b_address,
+                                                VkDeviceSize scratch_b_size, const Location *loc_scratches_b) const {
+    bool skip = false;
+
+    const char *scratch_dst_accel_struct_overlap = "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703";
+    const char *scratch_src_accel_struct_overlap = "VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705";
+    const char *scratch_scratch_overlap = "VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704";
+    const std::string scratch_b_address_str = [&]() {
+        std::stringstream ss;
+        ss << std::hex << "0x" << scratch_b_address;
+        return ss.str();
+    }();
+
+    BufferAddressValidation<3> buffer_address_validator = {{{
+        {scratch_dst_accel_struct_overlap,
+         [this, scratch_a_address, scratch_a_size, &dst_accel_struct, &loc_dst_accel_struct](vvl::Buffer *const scratch_a,
+                                                                                             std::string *out_error_msg) {
+             const VkDeviceSize scratch_a_offset = scratch_a_address - scratch_a->deviceAddress;
+             const sparse_container::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
+
+             const bool no_overlap_found = ValidateBufferAndAccelStructsMemoryDoNotOverlap(
+                 *this, *scratch_a, scratch_a_range, dst_accel_struct, loc_dst_accel_struct, out_error_msg);
+
+             return no_overlap_found;
+         },
+         [scratch_a_size, &loc_dst_accel_struct]() {
+             return std::string("The following scratch buffers associated to this device address (assumed scratch byte size: ") +
+                    std::to_string(scratch_a_size) + ") overlap with memory backing " + loc_dst_accel_struct.Fields();
+         }},
+
+    }}};
+
+    if (src_accel_struct) {
+        buffer_address_validator.AddVuidValidation(
+            {scratch_src_accel_struct_overlap,
+             [this, scratch_a_address, scratch_a_size, src_accel_struct, &loc_src_accel_struct](vvl::Buffer *const scratch_a,
+                                                                                                std::string *out_error_msg) {
+                 const VkDeviceSize scratch_a_offset = scratch_a_address - scratch_a->deviceAddress;
+                 const sparse_container::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
+
+                 const bool no_overlap_found = ValidateBufferAndAccelStructsMemoryDoNotOverlap(
+                     *this, *scratch_a, scratch_a_range, *src_accel_struct, loc_src_accel_struct, out_error_msg);
+
+                 return no_overlap_found;
+             },
+             [scratch_a_size, &loc_src_accel_struct]() {
+                 return std::string(
+                            "The following scratch buffers associated to this device address (assumed scratch byte size: ") +
+                        std::to_string(scratch_a_size) + ") overlap with memory backing " + loc_src_accel_struct.Fields();
+             }});
+    }
+
+    if (!scratches_b.empty()) {
+        assert(loc_scratches_b);
+        buffer_address_validator.AddVuidValidation(
+            {scratch_scratch_overlap,
+             [this, scratch_a_address, scratch_a_size, scratches_b, scratch_b_address, scratch_b_size](vvl::Buffer *const scratch_a,
+                                                                                                       std::string *out_error_msg) {
+                 const VkDeviceSize scratch_a_offset = scratch_a_address - scratch_a->deviceAddress;
+                 const sparse_container::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
+
+                 for (auto scratch_b : scratches_b) {
+                     const VkDeviceSize scratch_b_offset = scratch_b_address - scratch_b->deviceAddress;
+                     const sparse_container::range<VkDeviceSize> scratch_b_range(scratch_b_offset,
+                                                                                 scratch_b_offset + scratch_b_size);
+
+                     if (auto [mem, mem_range] = scratch_b->GetResourceMemoryOverlap(scratch_b_range, scratch_a, scratch_a_range);
+                         mem != VK_NULL_HANDLE) {
+                         if (out_error_msg) {
+                             *out_error_msg +=
+                                 "Memory (" + FormatHandle(mem) + ") overlap on memory range " + string_range_hex(mem_range);
+                         }
+                         return false;
+                     }
+                 }
+                 return true;
+             },
+             [loc_scratches_b, scratch_a_size, scratch_b_size, &scratch_b_address_str]() {
+                 return std::string("The following scratch buffers associated to this device address (assumed scratch byte size: " +
+                                    std::to_string(scratch_a_size) + ") overlap with at least one scratch buffer associated to ") +
+                        loc_scratches_b->Fields() + " (" + scratch_b_address_str +
+                        ") (assumed scratch byte size: " + std::to_string(scratch_b_size) + "):";
+             }});
+    }
+
+    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, scratches_a, loc_scratches_a, objlist, scratch_a_address);
 
     return skip;
 }

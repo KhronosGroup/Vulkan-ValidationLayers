@@ -163,8 +163,9 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(const LogObjectLi
     const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
     const auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
 
-    if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
-        info.srcAccelerationStructure != info.dstAccelerationStructure && src_as_state && dst_as_state) {
+    const bool info_in_mode_update = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+
+    if (info_in_mode_update && info.srcAccelerationStructure != info.dstAccelerationStructure && src_as_state && dst_as_state) {
         const char *vuid = error_obj.location.function == Func::vkCmdBuildAccelerationStructuresKHR
                                ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03668"
                            : error_obj.location.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR
@@ -175,34 +176,35 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(const LogObjectLi
                                                        info_i_loc.dot(Field::dstAccelerationStructure), vuid);
     }
 
-    for (auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i, infoCount - info_i)) {
+    // Loop on other acceleration structure builds info.
+    // Given that comparisons are commutative, only need to consider elements after info_i
+    assert(infoCount > info_i);
+    for (auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i + 1, infoCount - (info_i + 1))) {
         // Validate that scratch buffer's memory does not overlap destination acceleration structure's memory, or source
         // acceleration structure's memory if build mode is update, or other scratch buffers' memory.
         // Here validation is pessimistic: if one buffer associated to pInfos[other_info_j].scratchData.deviceAddress has an
         // overlap, an error will be logged.
 
-        other_info_j += info_i;
         const Location other_info_j_loc = error_obj.location.dot(Field::pInfos, other_info_j);
-        // skip comparing to self info
-        if (other_info_j != info_i) {
-            const auto other_dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfos[other_info_j].dstAccelerationStructure);
-            const auto other_src_as_state = Get<vvl::AccelerationStructureKHR>(pInfos[other_info_j].srcAccelerationStructure);
 
-            // Validate destination acceleration structure's memory is not overlapped by another source acceleration structure's
-            // memory that is going to be updated by this cmd
-            if (dst_as_state && other_src_as_state) {
-                if (pInfos[other_info_j].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-                    const char *vuid = error_obj.location.function == Func::vkCmdBuildAccelerationStructuresKHR
-                                           ? "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701"
-                                       : error_obj.location.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR
-                                           ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03701"
-                                           : "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03701";
+        const auto other_dst_as_state = Get<vvl::AccelerationStructureKHR>(other_info->dstAccelerationStructure);
+        const auto other_src_as_state = Get<vvl::AccelerationStructureKHR>(other_info->srcAccelerationStructure);
 
-                    skip |= ValidateAccelStructsMemoryDoNotOverlap(
-                        error_obj.location, objlist, *dst_as_state, info_i_loc.dot(Field::dstAccelerationStructure),
-                        *other_src_as_state, other_info_j_loc.dot(Field::srcAccelerationStructure), vuid);
-                }
+        // Validate destination acceleration structure's memory is not overlapped by another source acceleration structure's
+        // memory that is going to be updated by this cmd
+        if (dst_as_state && other_src_as_state) {
+            if (other_info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
+                const char *vuid = error_obj.location.function == Func::vkCmdBuildAccelerationStructuresKHR
+                                       ? "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701"
+                                   : error_obj.location.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR
+                                       ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03701"
+                                       : "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03701";
+
+                skip |= ValidateAccelStructsMemoryDoNotOverlap(error_obj.location, objlist, *dst_as_state,
+                                                               info_i_loc.dot(Field::dstAccelerationStructure), *other_src_as_state,
+                                                               other_info_j_loc.dot(Field::srcAccelerationStructure), vuid);
             }
+        }
 
             // Validate that there is no destination acceleration structures' memory overlaps
             if (dst_as_state && other_dst_as_state) {
@@ -216,6 +218,68 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(const LogObjectLi
                                                                info_i_loc.dot(Field::dstAccelerationStructure), *other_dst_as_state,
                                                                other_info_j_loc.dot(Field::dstAccelerationStructure), vuid);
             }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAlisasing(
+    const LogObjectList &objlist, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos, uint32_t info_i,
+    const VkAccelerationStructureBuildRangeInfoKHR *range_infos, const ErrorObject &error_obj) const {
+    using sparse_container::range;
+
+    bool skip = false;
+    const VkAccelerationStructureBuildGeometryInfoKHR &info = pInfos[info_i];
+    const Location info_i_loc = error_obj.location.dot(Field::pInfos, info_i);
+    const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
+    const auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
+    const rt::BuildType rt_build_type =
+        error_obj.location.function == Func::vkBuildAccelerationStructuresKHR ? rt::BuildType::Host : rt::BuildType::Device;
+
+    const bool info_in_mode_update = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+
+    // Cannot compute scratch buffer size from the CPU with indirect calls,
+    // so cannot perform validation
+    vvl::span<vvl::Buffer *const> info_scratches = GetBuffersByAddress(info.scratchData.deviceAddress);
+    const VkDeviceSize assumed_scratch_size = rt::ComputeScratchSize(rt_build_type, device, info, range_infos);
+
+    vvl::span<vvl::Buffer *const> dummy(nullptr, 0);
+    skip |= ValidateScratchMemoryNoOverlap(error_obj.location, objlist, info_scratches, info.scratchData.deviceAddress,
+                                           assumed_scratch_size, info_i_loc.dot(Field::scratchData).dot(Field::deviceAddress),
+                                           info_in_mode_update ? src_as_state.get() : nullptr,
+                                           info_i_loc.dot(Field::srcAccelerationStructure), *dst_as_state,
+                                           info_i_loc.dot(Field::dstAccelerationStructure), dummy, 0, 0, nullptr);
+
+    // Loop on other acceleration structure builds info.
+    // Given that comparisons are commutative, only need to consider elements after info_i
+    assert(infoCount > info_i);
+    for (auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i + 1, infoCount - (info_i + 1))) {
+        // Validate that scratch buffer's memory does not overlap destination acceleration structure's memory, or source
+        // acceleration structure's memory if build mode is update, or other scratch buffers' memory.
+        // Here validation is pessimistic: if one buffer associated to pInfos[other_info_j].scratchData.deviceAddress has an
+        // overlap, an error will be logged.
+
+        const Location other_info_j_loc = error_obj.location.dot(Field::pInfos, other_info_j + info_i + 1);
+
+        const auto other_dst_as_state = Get<vvl::AccelerationStructureKHR>(other_info->dstAccelerationStructure);
+        const auto other_src_as_state = Get<vvl::AccelerationStructureKHR>(other_info->srcAccelerationStructure);
+
+        const bool other_info_in_update_mode = other_info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+
+        if (other_dst_as_state) {
+            auto other_info_scratches = GetBuffersByAddress(other_info->scratchData.deviceAddress);
+            const VkDeviceSize assumed_other_scratch_size = rt::ComputeScratchSize(rt_build_type, device, *other_info, range_infos);
+
+            const Location other_scratch_loc = other_info_j_loc.dot(Field::scratchData);
+            const Location other_scratch_address_loc = other_scratch_loc.dot(Field::deviceAddress);
+
+            skip |= ValidateScratchMemoryNoOverlap(
+                error_obj.location, objlist, info_scratches, info.scratchData.deviceAddress, assumed_scratch_size,
+                info_i_loc.dot(Field::scratchData).dot(Field::deviceAddress),
+                other_info_in_update_mode ? other_src_as_state.get() : nullptr,
+                other_info_j_loc.dot(Field::srcAccelerationStructure), *other_dst_as_state,
+                other_info_j_loc.dot(Field::dstAccelerationStructure), other_info_scratches, other_info->scratchData.deviceAddress,
+                assumed_other_scratch_size, &other_scratch_address_loc);
         }
     }
 
@@ -852,6 +916,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
         skip |= ValidateAccelerationBuffers(commandBuffer, info_i, *info, ppBuildRangeInfos[info_i], info_loc);
 
         skip |= ValidateAccelerationStructuresMemoryAlisasing(commandBuffer, infoCount, pInfos, info_i, error_obj);
+
+        skip |= ValidateAccelerationStructuresDeviceScratchBufferMemoryAlisasing(commandBuffer, infoCount, pInfos, info_i,
+                                                                                 ppBuildRangeInfos[info_i], error_obj);
     }
 
     return skip;

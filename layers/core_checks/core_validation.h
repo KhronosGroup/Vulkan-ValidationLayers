@@ -318,6 +318,15 @@ class CoreChecks : public ValidationStateTracker {
                                                 const vvl::AccelerationStructureKHR& accel_struct_a, const Location& loc_a,
                                                 const vvl::AccelerationStructureKHR& accel_struct_b, const Location& loc_b,
                                                 const char* vuid) const;
+    // Look for a buffer in scratches_a that does not overlap with src_accel_struct, dst_accel_struct, and at least one buffer from
+    // scratches_b
+    bool ValidateScratchMemoryNoOverlap(const Location& function_loc, LogObjectList objlist,
+                                        const vvl::span<vvl::Buffer* const>& scratches_a, VkDeviceAddress scratch_a_address,
+                                        VkDeviceSize scratch_a_size, const Location& loc_scratches_a,
+                                        const vvl::AccelerationStructureKHR* src_accel_struct, const Location& loc_src_accel_struct,
+                                        const vvl::AccelerationStructureKHR& dst_accel_struct, const Location& loc_dst_accel_struct,
+                                        const vvl::span<vvl::Buffer* const>& scratches_b, VkDeviceAddress scratch_b_address,
+                                        VkDeviceSize scratch_b_size, const Location* loc_scratches_b) const;
     bool ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR& accel_struct, const Location& buffer_loc,
                                                       const char* vuid) const;
     bool ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR& accel_struct,
@@ -1440,6 +1449,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAccelerationStructuresMemoryAlisasing(const LogObjectList& objlist, uint32_t infoCount,
                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, uint32_t info_i,
                                                        const ErrorObject& error_obj) const;
+    bool ValidateAccelerationStructuresDeviceScratchBufferMemoryAlisasing(
+        const LogObjectList& objlist, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+        uint32_t info_i, const VkAccelerationStructureBuildRangeInfoKHR* range_infos, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                           const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                           const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
