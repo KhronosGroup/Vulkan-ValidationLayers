@@ -853,11 +853,6 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
-
-        region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy_to_image.dstImage = image;
-        region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy_from_image.srcImage = image;
     }
 
     if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
@@ -867,7 +862,7 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
         // VK_IMAGE_ASPECT_PLANE_2_BIT
         vkt::Image image_multi_planar3(*m_device, 128, 128, 1, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
                                        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-        image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+        image_multi_planar3.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_to_image.dstImage = image_multi_planar3;
         m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981");
@@ -1566,7 +1561,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemorySubsampled) {
 
     image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
     vkt::Image image_subsampled(*m_device, image_ci, vkt::set_layout);
-    image_subsampled.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    image_subsampled.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     copy_to_image.dstImage = image_subsampled;
     m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07969");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
