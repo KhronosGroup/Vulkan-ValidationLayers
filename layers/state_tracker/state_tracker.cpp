@@ -3749,8 +3749,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<vvl::Semaphore>(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state) {
-            if (auto submission_locator = semaphore_state->GetLastBinarySignalSubmission()) {
-                present_sync.submissions.emplace_back(submission_locator.value());
+            if (auto submission = semaphore_state->GetPendingBinarySignalSubmission()) {
+                present_sync.submissions.emplace_back(submission.value());
             }
             submissions[0].AddWaitSemaphore(std::move(semaphore_state), 0);
         }

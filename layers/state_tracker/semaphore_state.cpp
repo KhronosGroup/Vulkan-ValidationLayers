@@ -118,7 +118,7 @@ std::optional<vvl::Semaphore::SemOp> vvl::Semaphore::LastOp(const std::function<
     return result;
 }
 
-std::optional<vvl::SubmissionReference> vvl::Semaphore::GetLastBinarySignalSubmission() const {
+std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinarySignalSubmission() const {
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto guard = ReadLock();
     if (timeline_.empty()) {
