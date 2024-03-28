@@ -715,15 +715,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
         virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj, safe_VkDeviceCreateInfo *modified_create_info) {
             PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj);
         };
-
-        template <typename T>
-        ValidValue IsValidEnumValue(T value) const;
 };
 // clang-format on
 ''')
 
         out.append('extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;')
-        out.append('\n#include "valid_enum_values.h"')
         self.write("".join(out))
 
     def generateSource(self):
