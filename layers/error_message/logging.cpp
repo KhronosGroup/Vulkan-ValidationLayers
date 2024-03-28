@@ -23,7 +23,7 @@
 #endif
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 #include "generated/vk_validation_error_messages.h"
 #include "error_location.h"
 #include "utils/hash_util.h"

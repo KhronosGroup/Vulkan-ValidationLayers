@@ -270,11 +270,11 @@ class VideoConfig {
     bool is_decode_{false};
     bool is_encode_{false};
     bool use_profile_independent_resources_{false};
-    safe_VkVideoProfileInfoKHR profile_{};
-    safe_VkVideoCapabilitiesKHR caps_{};
-    safe_VkVideoEncodeQualityLevelPropertiesKHR encode_quality_level_props_{};
-    safe_VkVideoSessionCreateInfoKHR session_create_info_{};
-    safe_VkVideoSessionParametersCreateInfoKHR session_params_create_info_{};
+    vku::safe_VkVideoProfileInfoKHR profile_{};
+    vku::safe_VkVideoCapabilitiesKHR caps_{};
+    vku::safe_VkVideoEncodeQualityLevelPropertiesKHR encode_quality_level_props_{};
+    vku::safe_VkVideoSessionCreateInfoKHR session_create_info_{};
+    vku::safe_VkVideoSessionParametersCreateInfoKHR session_params_create_info_{};
     std::vector<VkVideoFormatPropertiesKHR> picture_format_props_{};
     std::vector<VkVideoFormatPropertiesKHR> dpb_format_props_{};
 };
@@ -2759,12 +2759,12 @@ class VkVideoLayerTest : public VkLayerTest {
 
             config.Profile()->videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR;
 
-            auto codec_profile = new safe_VkVideoDecodeH264ProfileInfoKHR();
+            auto codec_profile = new vku::safe_VkVideoDecodeH264ProfileInfoKHR();
             codec_profile->pictureLayout = picture_layouts[i];
             config.SetCodecProfile(codec_profile);
 
-            auto decode_caps_h264 = new safe_VkVideoDecodeH264CapabilitiesKHR();
-            auto decode_caps = new safe_VkVideoDecodeCapabilitiesKHR();
+            auto decode_caps_h264 = new vku::safe_VkVideoDecodeH264CapabilitiesKHR();
+            auto decode_caps = new vku::safe_VkVideoDecodeCapabilitiesKHR();
             decode_caps->pNext = decode_caps_h264;
             config.SetCodecCapsChain(decode_caps);
 
@@ -2786,13 +2786,13 @@ class VkVideoLayerTest : public VkLayerTest {
                 auto pps = new StdVideoH264PictureParameterSet[1]();
                 *pps = added_config.CreateH264PPS(0, 0);
 
-                auto add_info = new safe_VkVideoDecodeH264SessionParametersAddInfoKHR();
+                auto add_info = new vku::safe_VkVideoDecodeH264SessionParametersAddInfoKHR();
                 add_info->stdSPSCount = 1;
                 add_info->pStdSPSs = sps;
                 add_info->stdPPSCount = 1;
                 add_info->pStdPPSs = pps;
 
-                auto params_info = new safe_VkVideoDecodeH264SessionParametersCreateInfoKHR();
+                auto params_info = new vku::safe_VkVideoDecodeH264SessionParametersCreateInfoKHR();
                 params_info->maxStdSPSCount = 1;
                 params_info->maxStdPPSCount = 1;
                 params_info->pParametersAddInfo = add_info;
@@ -2813,12 +2813,12 @@ class VkVideoLayerTest : public VkLayerTest {
 
         config.Profile()->videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR;
 
-        auto codec_profile = new safe_VkVideoDecodeH265ProfileInfoKHR();
+        auto codec_profile = new vku::safe_VkVideoDecodeH265ProfileInfoKHR();
         codec_profile->stdProfileIdc = STD_VIDEO_H265_PROFILE_IDC_MAIN;
         config.SetCodecProfile(codec_profile);
 
-        auto decode_caps_h265 = new safe_VkVideoDecodeH265CapabilitiesKHR();
-        auto decode_caps = new safe_VkVideoDecodeCapabilitiesKHR();
+        auto decode_caps_h265 = new vku::safe_VkVideoDecodeH265CapabilitiesKHR();
+        auto decode_caps = new vku::safe_VkVideoDecodeCapabilitiesKHR();
         decode_caps->pNext = decode_caps_h265;
         config.SetCodecCapsChain(decode_caps);
 
@@ -2843,7 +2843,7 @@ class VkVideoLayerTest : public VkLayerTest {
             auto pps = new StdVideoH265PictureParameterSet[1]();
             *pps = added_config.CreateH265PPS(0, 0, 0);
 
-            auto add_info = new safe_VkVideoDecodeH265SessionParametersAddInfoKHR();
+            auto add_info = new vku::safe_VkVideoDecodeH265SessionParametersAddInfoKHR();
             add_info->stdVPSCount = 1;
             add_info->pStdVPSs = vps;
             add_info->stdSPSCount = 1;
@@ -2851,7 +2851,7 @@ class VkVideoLayerTest : public VkLayerTest {
             add_info->stdPPSCount = 1;
             add_info->pStdPPSs = pps;
 
-            auto params_info = new safe_VkVideoDecodeH265SessionParametersCreateInfoKHR();
+            auto params_info = new vku::safe_VkVideoDecodeH265SessionParametersCreateInfoKHR();
             params_info->maxStdVPSCount = 1;
             params_info->maxStdSPSCount = 1;
             params_info->maxStdPPSCount = 1;
@@ -2874,12 +2874,12 @@ class VkVideoLayerTest : public VkLayerTest {
 
             config.Profile()->videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR;
 
-            auto codec_profile = new safe_VkVideoDecodeAV1ProfileInfoKHR();
+            auto codec_profile = new vku::safe_VkVideoDecodeAV1ProfileInfoKHR();
             codec_profile->filmGrainSupport = (i == 0) ? VK_FALSE : VK_TRUE;
             config.SetCodecProfile(codec_profile);
 
-            auto decode_caps_av1 = new safe_VkVideoDecodeAV1CapabilitiesKHR();
-            auto decode_caps = new safe_VkVideoDecodeCapabilitiesKHR();
+            auto decode_caps_av1 = new vku::safe_VkVideoDecodeAV1CapabilitiesKHR();
+            auto decode_caps = new vku::safe_VkVideoDecodeCapabilitiesKHR();
             decode_caps->pNext = decode_caps_av1;
             config.SetCodecCapsChain(decode_caps);
 
@@ -2897,7 +2897,7 @@ class VkVideoLayerTest : public VkLayerTest {
             for (auto& added_config : configs) {
                 auto seq_header = new StdVideoAV1SequenceHeader();
 
-                auto params_info = new safe_VkVideoDecodeAV1SessionParametersCreateInfoKHR();
+                auto params_info = new vku::safe_VkVideoDecodeAV1SessionParametersCreateInfoKHR();
                 params_info->pStdSequenceHeader = seq_header;
 
                 added_config.SetCodecSessionParamsInfo(params_info);
@@ -2916,15 +2916,15 @@ class VkVideoLayerTest : public VkLayerTest {
 
         config.Profile()->videoCodecOperation = VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR;
 
-        auto codec_profile = new safe_VkVideoEncodeH264ProfileInfoKHR();
+        auto codec_profile = new vku::safe_VkVideoEncodeH264ProfileInfoKHR();
         codec_profile->stdProfileIdc = STD_VIDEO_H264_PROFILE_IDC_BASELINE;
         config.SetCodecProfile(codec_profile);
 
-        auto encode_caps_h264 = new safe_VkVideoEncodeH264CapabilitiesKHR();
-        auto encode_caps = new safe_VkVideoEncodeCapabilitiesKHR();
+        auto encode_caps_h264 = new vku::safe_VkVideoEncodeH264CapabilitiesKHR();
+        auto encode_caps = new vku::safe_VkVideoEncodeCapabilitiesKHR();
         encode_caps->pNext = encode_caps_h264;
         config.SetCodecCapsChain(encode_caps);
-        config.SetCodecEncodeQualityLevelPropsChain(new safe_VkVideoEncodeH264QualityLevelPropertiesKHR());
+        config.SetCodecEncodeQualityLevelPropsChain(new vku::safe_VkVideoEncodeH264QualityLevelPropertiesKHR());
 
         StdVideoH264ProfileIdc profile_idc_list[] = {
             STD_VIDEO_H264_PROFILE_IDC_BASELINE,
@@ -2944,13 +2944,13 @@ class VkVideoLayerTest : public VkLayerTest {
             auto pps = new StdVideoH264PictureParameterSet[1]();
             *pps = added_config.CreateH264PPS(0, 0);
 
-            auto add_info = new safe_VkVideoEncodeH264SessionParametersAddInfoKHR();
+            auto add_info = new vku::safe_VkVideoEncodeH264SessionParametersAddInfoKHR();
             add_info->stdSPSCount = 1;
             add_info->pStdSPSs = sps;
             add_info->stdPPSCount = 1;
             add_info->pStdPPSs = pps;
 
-            auto params_info = new safe_VkVideoEncodeH264SessionParametersCreateInfoKHR();
+            auto params_info = new vku::safe_VkVideoEncodeH264SessionParametersCreateInfoKHR();
             params_info->maxStdSPSCount = 1;
             params_info->maxStdPPSCount = 1;
             params_info->pParametersAddInfo = add_info;
@@ -2970,15 +2970,15 @@ class VkVideoLayerTest : public VkLayerTest {
 
         config.Profile()->videoCodecOperation = VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR;
 
-        auto codec_profile = new safe_VkVideoEncodeH265ProfileInfoKHR();
+        auto codec_profile = new vku::safe_VkVideoEncodeH265ProfileInfoKHR();
         codec_profile->stdProfileIdc = STD_VIDEO_H265_PROFILE_IDC_MAIN;
         config.SetCodecProfile(codec_profile);
 
-        auto encode_caps_h265 = new safe_VkVideoEncodeH265CapabilitiesKHR();
-        auto encode_caps = new safe_VkVideoEncodeCapabilitiesKHR();
+        auto encode_caps_h265 = new vku::safe_VkVideoEncodeH265CapabilitiesKHR();
+        auto encode_caps = new vku::safe_VkVideoEncodeCapabilitiesKHR();
         encode_caps->pNext = encode_caps_h265;
         config.SetCodecCapsChain(encode_caps);
-        config.SetCodecEncodeQualityLevelPropsChain(new safe_VkVideoEncodeH265QualityLevelPropertiesKHR());
+        config.SetCodecEncodeQualityLevelPropsChain(new vku::safe_VkVideoEncodeH265QualityLevelPropertiesKHR());
 
         StdVideoH265ProfileIdc profile_idc_list[] = {
             STD_VIDEO_H265_PROFILE_IDC_MAIN,
@@ -3001,7 +3001,7 @@ class VkVideoLayerTest : public VkLayerTest {
             auto pps = new StdVideoH265PictureParameterSet[1]();
             *pps = added_config.CreateH265PPS(0, 0, 0);
 
-            auto add_info = new safe_VkVideoEncodeH265SessionParametersAddInfoKHR();
+            auto add_info = new vku::safe_VkVideoEncodeH265SessionParametersAddInfoKHR();
             add_info->stdVPSCount = 1;
             add_info->pStdVPSs = vps;
             add_info->stdSPSCount = 1;
@@ -3009,7 +3009,7 @@ class VkVideoLayerTest : public VkLayerTest {
             add_info->stdPPSCount = 1;
             add_info->pStdPPSs = pps;
 
-            auto params_info = new safe_VkVideoEncodeH265SessionParametersCreateInfoKHR();
+            auto params_info = new vku::safe_VkVideoEncodeH265SessionParametersCreateInfoKHR();
             params_info->maxStdVPSCount = 1;
             params_info->maxStdSPSCount = 1;
             params_info->maxStdPPSCount = 1;
@@ -3024,7 +3024,7 @@ class VkVideoLayerTest : public VkLayerTest {
 
     void InitInvalidConfigs() {
         if (IsExtensionsEnabled(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME)) {
-            auto codec_profile = new safe_VkVideoDecodeH264ProfileInfoKHR();
+            auto codec_profile = new vku::safe_VkVideoDecodeH264ProfileInfoKHR();
             codec_profile->stdProfileIdc = STD_VIDEO_H264_PROFILE_IDC_INVALID;
 
             config_decode_invalid_.SetDecode();
@@ -3039,7 +3039,7 @@ class VkVideoLayerTest : public VkLayerTest {
         }
 
         if (IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME)) {
-            auto codec_profile = new safe_VkVideoEncodeH264ProfileInfoKHR();
+            auto codec_profile = new vku::safe_VkVideoEncodeH264ProfileInfoKHR();
             codec_profile->stdProfileIdc = STD_VIDEO_H264_PROFILE_IDC_INVALID;
 
             config_encode_invalid_.SetEncode();
@@ -3049,7 +3049,7 @@ class VkVideoLayerTest : public VkLayerTest {
             config_encode_invalid_.Profile()->lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
             config_encode_invalid_.Profile()->chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
             config_encode_invalid_.SetCodecProfile(codec_profile);
-            config_encode_invalid_.SetCodecEncodeQualityLevelPropsChain(new safe_VkVideoEncodeH264QualityLevelPropertiesKHR());
+            config_encode_invalid_.SetCodecEncodeQualityLevelPropsChain(new vku::safe_VkVideoEncodeH264QualityLevelPropertiesKHR());
 
             config_invalid_ = config_encode_invalid_;
         }

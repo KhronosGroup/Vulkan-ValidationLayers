@@ -217,10 +217,10 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
     if (!rp || rp->UsesDynamicRendering()) {
         return result;
     }
-    auto& create_info = pipe_state.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
+    const auto& create_info = pipe_state.GraphicsCreateInfo();
     const auto& subpass = rp->create_info.pSubpasses[create_info.subpass];
 
-    // NOTE: see PIPELINE_LAYOUT and safe_VkGraphicsPipelineCreateInfo constructors. pColorBlendState and pDepthStencilState
+    // NOTE: see PIPELINE_LAYOUT and vku::safe_VkGraphicsPipelineCreateInfo constructors. pColorBlendState and pDepthStencilState
     // are only non-null if they are enabled.
     if (create_info.pColorBlendState && !(pipe_state.ignore_color_attachments)) {
         // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
@@ -460,7 +460,7 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
         tgm.state = new_tgm_state;
 
         // Track depthTestEnable and depthCompareOp
-        auto& pipeline_create_info = pipeline_info->GetCreateInfo<VkGraphicsPipelineCreateInfo>();
+        auto& pipeline_create_info = pipeline_info->GraphicsCreateInfo();
         auto depth_stencil_state = pipeline_create_info.pDepthStencilState;
         auto dynamic_state = pipeline_create_info.pDynamicState;
         if (depth_stencil_state && dynamic_state) {

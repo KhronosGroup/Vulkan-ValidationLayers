@@ -407,7 +407,7 @@ TEST_F(NegativeSubpass, SubpassIndices) {
     m_errorMonitor->VerifyFound();
 
     if (rp2_supported) {
-        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
+        auto create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo2-srcSubpass-02526");
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo2-dstSubpass-02527");

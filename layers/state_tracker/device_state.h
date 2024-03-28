@@ -19,7 +19,7 @@
 #pragma once
 #include "state_tracker/state_object.h"
 #include "generated/layer_chassis_dispatch.h"
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
 
 class QueueFamilyPerfCounters {
@@ -29,9 +29,9 @@ class QueueFamilyPerfCounters {
 
 class SurfacelessQueryState {
   public:
-    std::vector<safe_VkSurfaceFormat2KHR> formats;
+    std::vector<vku::safe_VkSurfaceFormat2KHR> formats;
     std::vector<VkPresentModeKHR> present_modes;
-    safe_VkSurfaceCapabilities2KHR capabilities;
+    vku::safe_VkSurfaceCapabilities2KHR capabilities;
 };
 
 namespace vvl {

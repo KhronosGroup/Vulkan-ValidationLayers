@@ -111,7 +111,7 @@ class PreDrawResources : public CommandResources {
         VkShaderModule shader_module = VK_NULL_HANDLE;
         VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
         VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-        vl_concurrent_unordered_map<VkRenderPass, VkPipeline> renderpass_to_pipeline;
+        vvl::concurrent_unordered_map<VkRenderPass, VkPipeline> renderpass_to_pipeline;
         VkShaderEXT shader_object = VK_NULL_HANDLE;
 
         void Destroy(Validator &validator);

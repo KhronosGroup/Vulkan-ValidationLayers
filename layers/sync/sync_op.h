@@ -17,7 +17,7 @@
 #pragma once
 
 #include "sync/sync_access_context.h"
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 class CommandBufferAccessContext;
 class CommandExecutionContext;
@@ -302,7 +302,7 @@ class SyncOpSetEvent : public SyncOpBase {
     std::shared_ptr<const AccessContext> recorded_context_;
     SyncExecScope src_exec_scope_;
     // Note that the dep info is *not* dehandled, but retained for comparison with a future WaitEvents2
-    std::shared_ptr<safe_VkDependencyInfo> dep_info_;
+    std::shared_ptr<vku::safe_VkDependencyInfo> dep_info_;
 };
 
 class SyncOpBeginRenderPass : public SyncOpBase {
@@ -318,8 +318,8 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     const RenderPassAccessContext *GetRenderPassAccessContext() const { return rp_context_; }
 
   protected:
-    safe_VkRenderPassBeginInfo renderpass_begin_info_;
-    safe_VkSubpassBeginInfo subpass_begin_info_;
+    vku::safe_VkRenderPassBeginInfo renderpass_begin_info_;
+    vku::safe_VkSubpassBeginInfo subpass_begin_info_;
     std::vector<std::shared_ptr<const vvl::ImageView>> shared_attachments_;
     std::vector<const syncval_state::ImageViewState *> attachments_;
     std::shared_ptr<const vvl::RenderPass> rp_state_;
@@ -338,8 +338,8 @@ class SyncOpNextSubpass : public SyncOpBase {
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   protected:
-    safe_VkSubpassBeginInfo subpass_begin_info_;
-    safe_VkSubpassEndInfo subpass_end_info_;
+    vku::safe_VkSubpassBeginInfo subpass_begin_info_;
+    vku::safe_VkSubpassEndInfo subpass_end_info_;
 };
 
 class SyncOpEndRenderPass : public SyncOpBase {
@@ -353,7 +353,7 @@ class SyncOpEndRenderPass : public SyncOpBase {
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   protected:
-    safe_VkSubpassEndInfo subpass_end_info_;
+    vku::safe_VkSubpassEndInfo subpass_end_info_;
 };
 // The barrier operation for pipeline and subpass dependencies`
 struct PipelineBarrierOp {

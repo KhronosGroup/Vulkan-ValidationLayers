@@ -439,7 +439,7 @@ class RateControlStateMismatchRecorder {
 };
 
 bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTracker &dev_data, const VideoSession *vs_state,
-                                                       const safe_VkVideoBeginCodingInfoKHR &begin_info,
+                                                       const vku::safe_VkVideoBeginCodingInfoKHR &begin_info,
                                                        const Location &loc) const {
     bool skip = false;
 

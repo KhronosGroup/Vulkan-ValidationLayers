@@ -41,7 +41,7 @@ small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 std::atomic<uint64_t> global_unique_id(1ULL);
 // Map uniqueID to actual object handle. Accesses to the map itself are
 // internally synchronized.
-vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
+vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
 bool wrap_handles = true;
 
@@ -372,7 +372,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
                                                  VK_API_VERSION_MINOR(specified_version), 0);
 
     auto debug_report = new DebugReport{};
-    debug_report->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
+    debug_report->instance_pnext_chain = vku::SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(debug_report);
 
     // Set up enable and disable features flags
@@ -410,7 +410,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     // Define logic to cleanup everything in case of an error
     auto cleanup_allocations = [debug_report, &local_object_dispatch]() {
         DeactivateInstanceDebugCallbacks(debug_report);
-        FreePnextChain(debug_report->instance_pnext_chain);
+        vku::FreePnextChain(debug_report->instance_pnext_chain);
         LayerDebugUtilsDestroyInstance(debug_report);
         for (ValidationObject* object : local_object_dispatch) {
             delete object;
@@ -508,7 +508,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     }
 
     DeactivateInstanceDebugCallbacks(layer_data->debug_report);
-    FreePnextChain(layer_data->debug_report->instance_pnext_chain);
+    vku::FreePnextChain(layer_data->debug_report->instance_pnext_chain);
 
     LayerDebugUtilsDestroyInstance(layer_data->debug_report);
 
@@ -545,7 +545,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         item->device_extensions = device_extensions;
     }
 
-    safe_VkDeviceCreateInfo modified_create_info(pCreateInfo);
+    vku::safe_VkDeviceCreateInfo modified_create_info(pCreateInfo);
 
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDevice, VulkanTypedHandle(gpu, kVulkanObjectTypePhysicalDevice));

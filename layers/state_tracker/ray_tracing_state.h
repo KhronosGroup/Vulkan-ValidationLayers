@@ -47,10 +47,10 @@ class AccelerationStructureNV : public Bindable {
         build_info.initialize(pInfo);
     };
 
-    const safe_VkAccelerationStructureCreateInfoNV safe_create_info;
+    const vku::safe_VkAccelerationStructureCreateInfoNV safe_create_info;
     const VkAccelerationStructureCreateInfoNV &create_info;
 
-    safe_VkAccelerationStructureInfoNV build_info;
+    vku::safe_VkAccelerationStructureInfoNV build_info;
     const VkMemoryRequirements memory_requirements;
     const VkMemoryRequirements build_scratch_memory_requirements;
     const VkMemoryRequirements update_scratch_memory_requirements;
@@ -117,10 +117,10 @@ class AccelerationStructureKHR : public StateObject {
         }
     }
 
-    const safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
+    const vku::safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
     const VkAccelerationStructureCreateInfoKHR &create_info;
 
-    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr{};
+    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr{};
     bool built = false;
     uint64_t opaque_handle = 0;
     std::shared_ptr<vvl::Buffer> buffer_state{};

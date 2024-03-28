@@ -27,6 +27,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <spirv-tools/libspirv.h>
 #include <spirv-tools/optimizer.hpp>
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 struct DeviceFeatures;
 struct DeviceExtensions;
@@ -95,9 +96,13 @@ typedef std::unordered_multimap<uint32_t, DescriptorRequirement> BindingVariable
 // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
 using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;
 
-struct safe_VkPipelineShaderStageCreateInfo;
-struct safe_VkShaderCreateInfoEXT;
-struct safe_VkSpecializationInfo;
+namespace vku {
+namespace safe {
+struct PipelineShaderStageCreateInfo;
+struct ShaderCreateInfoEXT;
+struct SpecializationInfo;
+}  // namespace safe
+}  // namespace vku
 
 namespace vvl {
 struct ShaderModule;
@@ -113,18 +118,18 @@ struct PipelineStageState {
     // We use this over a spirv::Module because there are times we need to create empty objects
     std::shared_ptr<const vvl::ShaderModule> module_state;
     std::shared_ptr<const spirv::Module> spirv_state;
-    const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
-    const safe_VkShaderCreateInfoEXT *shader_object_create_info;
+    const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
+    const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info;
     // If null, means it is an empty object, no SPIR-V backing it
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
 
-    PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
-                       const safe_VkShaderCreateInfoEXT *shader_object_create_info,
+    PipelineStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
+                       const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
                        std::shared_ptr<const vvl::ShaderModule> module_state, std::shared_ptr<const spirv::Module> spirv_state);
 
     const char *GetPName() const;
     VkShaderStageFlagBits GetStage() const;
-    safe_VkSpecializationInfo *GetSpecializationInfo() const;
+    vku::safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void *GetPNext() const;
     bool GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const;
 };

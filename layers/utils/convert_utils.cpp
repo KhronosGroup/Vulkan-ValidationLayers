@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,8 +24,8 @@
 
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-static safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_struct) {
-    safe_VkAttachmentDescription2 v2;
+static vku::safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_struct) {
+    vku::safe_VkAttachmentDescription2 v2;
     v2.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
     v2.pNext = nullptr;
     v2.flags = in_struct.flags;
@@ -41,8 +41,8 @@ static safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_s
     return v2;
 }
 
-static safe_VkAttachmentReference2 ToV2KHR(const VkAttachmentReference& in_struct, const VkImageAspectFlags aspectMask = 0) {
-    safe_VkAttachmentReference2 v2;
+static vku::safe_VkAttachmentReference2 ToV2KHR(const VkAttachmentReference& in_struct, const VkImageAspectFlags aspectMask = 0) {
+    vku::safe_VkAttachmentReference2 v2;
     v2.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
     v2.pNext = nullptr;
     v2.attachment = in_struct.attachment;
@@ -52,11 +52,11 @@ static safe_VkAttachmentReference2 ToV2KHR(const VkAttachmentReference& in_struc
     return v2;
 }
 
-static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct, const uint32_t viewMask,
-                                          const VkImageAspectFlags* color_attachment_aspect_masks,
-                                          const VkImageAspectFlags ds_attachment_aspect_mask,
-                                          const VkImageAspectFlags* input_attachment_aspect_masks) {
-    safe_VkSubpassDescription2 v2;
+static vku::safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct, const uint32_t viewMask,
+                                              const VkImageAspectFlags* color_attachment_aspect_masks,
+                                              const VkImageAspectFlags ds_attachment_aspect_mask,
+                                              const VkImageAspectFlags* input_attachment_aspect_masks) {
+    vku::safe_VkSubpassDescription2 v2;
     v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
     v2.pNext = nullptr;
     v2.flags = in_struct.flags;
@@ -72,25 +72,25 @@ static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct,
     v2.pPreserveAttachments = nullptr;  // to be filled
 
     if (v2.inputAttachmentCount && in_struct.pInputAttachments) {
-        v2.pInputAttachments = new safe_VkAttachmentReference2[v2.inputAttachmentCount];
+        v2.pInputAttachments = new vku::safe_VkAttachmentReference2[v2.inputAttachmentCount];
         for (uint32_t i = 0; i < v2.inputAttachmentCount; ++i) {
             v2.pInputAttachments[i] = ToV2KHR(in_struct.pInputAttachments[i], input_attachment_aspect_masks[i]);
         }
     }
     if (v2.colorAttachmentCount && in_struct.pColorAttachments) {
-        v2.pColorAttachments = new safe_VkAttachmentReference2[v2.colorAttachmentCount];
+        v2.pColorAttachments = new vku::safe_VkAttachmentReference2[v2.colorAttachmentCount];
         for (uint32_t i = 0; i < v2.colorAttachmentCount; ++i) {
             v2.pColorAttachments[i] = ToV2KHR(in_struct.pColorAttachments[i], color_attachment_aspect_masks[i]);
         }
     }
     if (v2.colorAttachmentCount && in_struct.pResolveAttachments) {
-        v2.pResolveAttachments = new safe_VkAttachmentReference2[v2.colorAttachmentCount];
+        v2.pResolveAttachments = new vku::safe_VkAttachmentReference2[v2.colorAttachmentCount];
         for (uint32_t i = 0; i < v2.colorAttachmentCount; ++i) {
             v2.pResolveAttachments[i] = ToV2KHR(in_struct.pResolveAttachments[i]);
         }
     }
     if (in_struct.pDepthStencilAttachment) {
-        v2.pDepthStencilAttachment = new safe_VkAttachmentReference2();
+        v2.pDepthStencilAttachment = new vku::safe_VkAttachmentReference2();
         *v2.pDepthStencilAttachment = ToV2KHR(*in_struct.pDepthStencilAttachment, ds_attachment_aspect_mask);
     }
     if (v2.preserveAttachmentCount && in_struct.pPreserveAttachments) {
@@ -104,8 +104,8 @@ static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct,
     return v2;
 }
 
-static safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_struct, int32_t viewOffset = 0) {
-    safe_VkSubpassDependency2 v2;
+static vku::safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_struct, int32_t viewOffset = 0) {
+    vku::safe_VkSubpassDependency2 v2;
     v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
     v2.pNext = nullptr;
     v2.srcSubpass = in_struct.srcSubpass;
@@ -120,8 +120,8 @@ static safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_struct, i
     return v2;
 }
 
-safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info) {
-    safe_VkRenderPassCreateInfo2 out_struct;
+vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info) {
+    vku::safe_VkRenderPassCreateInfo2 out_struct;
     const auto multiview_info = vku::FindStructInPNextChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
     const auto* input_attachment_aspect_info = vku::FindStructInPNextChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
     const auto fragment_density_map_info = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
@@ -130,7 +130,7 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
 
     // Fixup RPCI2 pNext chain.  Only FDM2 is valid on both chains.
     if (fragment_density_map_info) {
-        out_struct.pNext = SafePnextCopy(fragment_density_map_info);
+        out_struct.pNext = vku::SafePnextCopy(fragment_density_map_info);
         auto base_struct = reinterpret_cast<const VkBaseOutStructure*>(out_struct.pNext);
         const_cast<VkBaseOutStructure*>(base_struct)->pNext = nullptr;
     } else {
@@ -151,7 +151,7 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
     // see https://github.com/KhronosGroup/Vulkan-Docs/issues/1027
 
     if (out_struct.attachmentCount && create_info.pAttachments) {
-        out_struct.pAttachments = new safe_VkAttachmentDescription2[out_struct.attachmentCount];
+        out_struct.pAttachments = new vku::safe_VkAttachmentDescription2[out_struct.attachmentCount];
         for (uint32_t i = 0; i < out_struct.attachmentCount; ++i) {
             out_struct.pAttachments[i] = ToV2KHR(create_info.pAttachments[i]);
         }
@@ -226,7 +226,7 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
 
     const bool has_view_mask = multiview_info && multiview_info->subpassCount && multiview_info->pViewMasks;
     if (out_struct.subpassCount && create_info.pSubpasses) {
-        out_struct.pSubpasses = new safe_VkSubpassDescription2[out_struct.subpassCount];
+        out_struct.pSubpasses = new vku::safe_VkSubpassDescription2[out_struct.subpassCount];
         for (uint32_t i = 0; i < out_struct.subpassCount; ++i) {
             const uint32_t view_mask = has_view_mask ? multiview_info->pViewMasks[i] : 0;
             out_struct.pSubpasses[i] = ToV2KHR(create_info.pSubpasses[i], view_mask, color_attachment_aspect_masks[i].data(),
@@ -236,7 +236,7 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
 
     const bool has_view_offset = multiview_info && multiview_info->dependencyCount && multiview_info->pViewOffsets;
     if (out_struct.dependencyCount && create_info.pDependencies) {
-        out_struct.pDependencies = new safe_VkSubpassDependency2[out_struct.dependencyCount];
+        out_struct.pDependencies = new vku::safe_VkSubpassDependency2[out_struct.dependencyCount];
         for (uint32_t i = 0; i < out_struct.dependencyCount; ++i) {
             const int32_t view_offset = has_view_offset ? multiview_info->pViewOffsets[i] : 0;
             out_struct.pDependencies[i] = ToV2KHR(create_info.pDependencies[i], view_offset);
@@ -253,13 +253,14 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
     return out_struct;
 }
 
-safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags2 srcStageMask,
-                                                           VkPipelineStageFlags2 dstStageMask) {
+vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier,
+                                                               VkPipelineStageFlags2 srcStageMask,
+                                                               VkPipelineStageFlags2 dstStageMask) {
     VkImageMemoryBarrier2 barrier2 = vku::InitStructHelper();
 
     // As of Vulkan 1.3.153, the VkImageMemoryBarrier2 supports the same pNext structs as VkImageMemoryBarrier
     // (VkExternalMemoryAcquireUnmodifiedEXT and VkSampleLocationsInfoEXT). It means we can copy entire pNext
-    // chain (as part of safe_VkImageMemoryBarrier2 constructor) without analyzing which pNext structures are supported in V2.
+    // chain (as part of vku::safe_VkImageMemoryBarrier2 constructor) without analyzing which pNext structures are supported in V2.
     barrier2.pNext = barrier.pNext;
 
     barrier2.srcStageMask = srcStageMask;
@@ -272,5 +273,5 @@ safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBa
     barrier2.dstQueueFamilyIndex = barrier.dstQueueFamilyIndex;
     barrier2.image = barrier.image;
     barrier2.subresourceRange = barrier.subresourceRange;
-    return safe_VkImageMemoryBarrier2(&barrier2);
+    return vku::safe_VkImageMemoryBarrier2(&barrier2);
 }

@@ -23,7 +23,7 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
 
-static inline bool RenderPassUsesAttachmentAsResolve(const safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
+static inline bool RenderPassUsesAttachmentAsResolve(const vku::safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
     for (uint32_t subpass = 0; subpass < create_info.subpassCount; subpass++) {
         const auto& subpass_info = create_info.pSubpasses[subpass];
         if (subpass_info.pResolveAttachments) {
@@ -36,7 +36,7 @@ static inline bool RenderPassUsesAttachmentAsResolve(const safe_VkRenderPassCrea
     return false;
 }
 
-static inline bool RenderPassUsesAttachmentOnTile(const safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
+static inline bool RenderPassUsesAttachmentOnTile(const vku::safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
     for (uint32_t subpass = 0; subpass < create_info.subpassCount; subpass++) {
         const auto& subpass_info = create_info.pSubpasses[subpass];
 
@@ -60,7 +60,7 @@ static inline bool RenderPassUsesAttachmentOnTile(const safe_VkRenderPassCreateI
     return false;
 }
 
-static inline bool RenderPassUsesAttachmentAsImageOnly(const safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
+static inline bool RenderPassUsesAttachmentAsImageOnly(const vku::safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
     if (RenderPassUsesAttachmentOnTile(create_info, attachment)) {
         return false;
     }

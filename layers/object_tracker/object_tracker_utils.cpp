@@ -736,7 +736,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice
     auto device_data = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
     auto object_tracking = device_data->GetValidationObject<ObjectLifetimes>();
 
-    object_tracking->device_createinfo_pnext = SafePnextCopy(pCreateInfo->pNext);
+    object_tracking->device_createinfo_pnext = vku::SafePnextCopy(pCreateInfo->pNext);
     const auto *robustness2_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(object_tracking->device_createinfo_pnext);
     object_tracking->null_descriptor_enabled = robustness2_features && robustness2_features->nullDescriptor;

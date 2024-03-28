@@ -80,7 +80,7 @@ class QueryPool : public StateObject {
         return QUERYSTATE_UNKNOWN;
     }
 
-    const safe_VkQueryPoolCreateInfo safe_create_info;
+    const vku::safe_VkQueryPoolCreateInfo safe_create_info;
     const VkQueryPoolCreateInfo &create_info;
 
     const bool has_perf_scope_command_buffer;

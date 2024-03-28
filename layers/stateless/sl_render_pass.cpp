@@ -408,14 +408,14 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                                  const ErrorObject &error_obj) const {
-    safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
+    vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
                                                                   VkRenderPass *pRenderPass, const ErrorObject &error_obj) const {
-    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
+    vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, error_obj);
 }
 
@@ -443,7 +443,7 @@ void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const 
                                                          const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                          const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-    safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
+    vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 
@@ -452,7 +452,7 @@ void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, co
                                                              const RecordObject &record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     if (record_obj.result != VK_SUCCESS) return;
-    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
+    vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 

@@ -3584,7 +3584,7 @@ void CoreChecks::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuff
     }
 
     if (vs_state->IsEncode()) {
-        safe_VkVideoBeginCodingInfoKHR begin_info(pBeginInfo);
+        vku::safe_VkVideoBeginCodingInfoKHR begin_info(pBeginInfo);
 
         // Enqueue submission time validation of rate control state
         cb_state->video_session_updates[vs_state->VkHandle()].emplace_back(

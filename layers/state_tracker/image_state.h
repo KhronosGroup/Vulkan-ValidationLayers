@@ -87,7 +87,7 @@ namespace vvl {
 //
 class Image : public Bindable {
   public:
-    const safe_VkImageCreateInfo safe_create_info;
+    const vku::safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &create_info;
     bool shared_presentable;                   // True for a front-buffered swapchain image
     bool layout_locked;                        // A front-buffered image that has been presented can never have layout transitioned
@@ -263,7 +263,7 @@ class Image : public Bindable {
 //    ImageView [N] -> [1] vv::Image
 class ImageView : public StateObject {
   public:
-    const safe_VkImageViewCreateInfo safe_create_info;
+    const vku::safe_VkImageViewCreateInfo safe_create_info;
     const VkImageViewCreateInfo &create_info;
 
     const VkImageSubresourceRange normalized_subresource_range;
@@ -321,7 +321,7 @@ struct SwapchainImage {
 //    However, only 1 swapchain for each surface can be !retired.
 class Swapchain : public StateObject {
   public:
-    const safe_VkSwapchainCreateInfoKHR safe_create_info;
+    const vku::safe_VkSwapchainCreateInfoKHR safe_create_info;
     const VkSwapchainCreateInfoKHR &create_info;
 
     std::vector<VkPresentModeKHR> present_modes;
@@ -331,7 +331,7 @@ class Swapchain : public StateObject {
     const bool shared_presentable;
     uint32_t get_swapchain_image_count = 0;
     uint64_t max_present_id = 0;
-    const safe_VkImageCreateInfo image_create_info;
+    const vku::safe_VkImageCreateInfo image_create_info;
 
     std::shared_ptr<vvl::Surface> surface;
     ValidationStateTracker &dev_data;
@@ -424,15 +424,15 @@ class Surface : public StateObject {
     std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,
                                                   const ValidationObject *validation_obj) const;
 
-    void SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts);
-    vvl::span<const safe_VkSurfaceFormat2KHR> GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                         const void *surface_info2_pnext, const Location &loc,
-                                                         const ValidationObject *validation_obj) const;
+    void SetFormats(VkPhysicalDevice phys_dev, std::vector<vku::safe_VkSurfaceFormat2KHR> &&fmts);
+    vvl::span<const vku::safe_VkSurfaceFormat2KHR> GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                             const void *surface_info2_pnext, const Location &loc,
+                                                             const ValidationObject *validation_obj) const;
 
-    void SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps);
-    safe_VkSurfaceCapabilities2KHR GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                   const void *surface_info2_pnext, const Location &loc,
-                                                   const ValidationObject *validation_obj) const;
+    void SetCapabilities(VkPhysicalDevice phys_dev, const vku::safe_VkSurfaceCapabilities2KHR &caps);
+    vku::safe_VkSurfaceCapabilities2KHR GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                       const void *surface_info2_pnext, const Location &loc,
+                                                       const ValidationObject *validation_obj) const;
 
     void SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
                             vvl::span<const VkPresentModeKHR> compatible_modes);
@@ -450,8 +450,8 @@ class Surface : public StateObject {
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
     mutable std::mutex lock_;
     mutable vvl::unordered_map<GpuQueue, bool> gpu_queue_support_;
-    mutable vvl::unordered_map<VkPhysicalDevice, std::vector<safe_VkSurfaceFormat2KHR>> formats_;
-    mutable vvl::unordered_map<VkPhysicalDevice, safe_VkSurfaceCapabilities2KHR> capabilities_;
+    mutable vvl::unordered_map<VkPhysicalDevice, std::vector<vku::safe_VkSurfaceFormat2KHR>> formats_;
+    mutable vvl::unordered_map<VkPhysicalDevice, vku::safe_VkSurfaceCapabilities2KHR> capabilities_;
     mutable vvl::unordered_map<VkPhysicalDevice,
                                       vvl::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>>
         present_modes_data_;

@@ -2647,7 +2647,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     }
 
     if (!skip) {
-        safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
+        vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
         skip |= ValidateCreateRenderPass(create_info_2.ptr(), error_obj);
     }
 
@@ -2847,7 +2847,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRende
     skip |= ValidateDepthStencilResolve(pCreateInfo, error_obj);
     skip |= ValidateFragmentShadingRateAttachments(pCreateInfo, error_obj);
 
-    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
+    vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     skip |= ValidateCreateRenderPass(create_info_2.ptr(), error_obj);
 
     return skip;

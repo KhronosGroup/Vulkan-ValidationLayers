@@ -32,7 +32,7 @@ class StatelessValidation : public ValidationObject {
 
   public:
     VkPhysicalDeviceLimits device_limits = {};
-    safe_VkPhysicalDeviceFeatures2 physical_device_features2;
+    vku::safe_VkPhysicalDeviceFeatures2 physical_device_features2;
     void *device_createinfo_pnext;
     const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
@@ -81,7 +81,7 @@ class StatelessValidation : public ValidationObject {
     StatelessValidation() : device_createinfo_pnext(nullptr) { container_type = LayerObjectTypeParameterValidation; }
     ~StatelessValidation() {
         if (device_createinfo_pnext) {
-            FreePnextChain(device_createinfo_pnext);
+            vku::FreePnextChain(device_createinfo_pnext);
         }
     }
 

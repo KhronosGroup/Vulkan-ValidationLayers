@@ -18,14 +18,14 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace vvl {
 class ImageView;
 }  // namespace vvl
 
-static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const safe_VkPipelineDepthStencilStateCreateInfo *pipe_ds_ci,
-                                                             const safe_VkAttachmentReference2 *depth_stencil_ref) {
+static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkPipelineDepthStencilStateCreateInfo *pipe_ds_ci,
+                                                             const vku::safe_VkAttachmentReference2 *depth_stencil_ref) {
     uint32_t depth_stencil_attachment = VK_ATTACHMENT_UNUSED;
     if (pipe_ds_ci && depth_stencil_ref) {
         depth_stencil_attachment = depth_stencil_ref->attachment;
@@ -84,10 +84,10 @@ class RenderPass : public StateObject {
     const bool use_dynamic_rendering_inherited;
     const bool has_multiview_enabled;
     const bool rasterization_enabled{true};
-    const safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
-    const safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
-    const safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
-    const safe_VkRenderPassCreateInfo2 create_info;
+    const vku::safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
+    const vku::safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
+    const vku::safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
+    const vku::safe_VkRenderPassCreateInfo2 create_info;
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
     const std::vector<SubpassVec> self_dependencies;
@@ -126,7 +126,7 @@ class RenderPass : public StateObject {
 
 class Framebuffer : public StateObject {
   public:
-    const safe_VkFramebufferCreateInfo safe_create_info;
+    const vku::safe_VkFramebufferCreateInfo safe_create_info;
     const VkFramebufferCreateInfo &create_info;
     std::shared_ptr<const RenderPass> rp_state;
     std::vector<std::shared_ptr<vvl::ImageView>> attachments_view_state;

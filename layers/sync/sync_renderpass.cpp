@@ -1000,7 +1000,7 @@ ClearAttachmentInfo syncval_state::DynamicRenderingInfo::GetClearAttachmentInfo(
 }
 
 syncval_state::DynamicRenderingInfo::Attachment::Attachment(const SyncValidator &state,
-                                                            const safe_VkRenderingAttachmentInfo &attachment_info,
+                                                            const vku::safe_VkRenderingAttachmentInfo &attachment_info,
                                                             AttachmentType type_, const VkOffset3D &offset,
                                                             const VkExtent3D &extent)
     : info(attachment_info), view(state.Get<ImageViewState>(attachment_info.imageView)), view_gen(), type(type_) {

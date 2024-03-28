@@ -64,7 +64,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.dynamic_state_generator import DynamicStateOutputGenerator
     from generators.sync_validation_generator import SyncValidationOutputGenerator
     from generators.object_types_generator import ObjectTypesOutputGenerator
-    from generators.safe_struct_generator import SafeStructOutputGenerator
     from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
     from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
     from generators.valid_flag_values_generator import ValidFlagValuesOutputGenerator
@@ -168,31 +167,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'vk_layer_dispatch_table.h' : {
             'generator' : LayerDispatchTableOutputGenerator,
-            'genCombined': True,
-        },
-        'vk_safe_struct.h' : {
-            'generator' : SafeStructOutputGenerator,
-            'genCombined': True,
-        },
-        'vk_safe_struct_utils.cpp' : {
-            'generator' : SafeStructOutputGenerator,
-            'genCombined': True,
-        },
-        'vk_safe_struct_core.cpp' : {
-            'generator' : SafeStructOutputGenerator,
-            'genCombined': True,
-            'regenerate' : True
-        },
-        'vk_safe_struct_khr.cpp' : {
-            'generator' : SafeStructOutputGenerator,
-            'genCombined': True,
-        },
-        'vk_safe_struct_ext.cpp' : {
-            'generator' : SafeStructOutputGenerator,
-            'genCombined': True,
-        },
-        'vk_safe_struct_vendor.cpp' : {
-            'generator' : SafeStructOutputGenerator,
             'genCombined': True,
         },
         'vk_object_types.h' : {

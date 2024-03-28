@@ -35,9 +35,9 @@ struct ObjTrackState {
     std::unique_ptr<vvl::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
 };
 
-typedef vl_concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
+typedef vvl::concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
 // Used for GPL and we know there are at most only 4 libraries that should be used
-typedef vl_concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjTrackState>, 4>, 6> object_list_map_type;
+typedef vvl::concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjTrackState>, 4>, 6> object_list_map_type;
 
 class ObjectLifetimes : public ValidationObject {
     using Func = vvl::Func;
@@ -72,7 +72,7 @@ class ObjectLifetimes : public ValidationObject {
     }
     ~ObjectLifetimes() {
         if (device_createinfo_pnext) {
-            FreePnextChain(device_createinfo_pnext);
+            vku::FreePnextChain(device_createinfo_pnext);
         }
     }
 

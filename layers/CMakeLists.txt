@@ -42,12 +42,6 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/vk_layer_dispatch_table.h
     ${API_TYPE}/generated/vk_dispatch_table_helper.h
     ${API_TYPE}/generated/vk_dispatch_table_helper.cpp
-    ${API_TYPE}/generated/vk_safe_struct.h
-    ${API_TYPE}/generated/vk_safe_struct_utils.cpp
-    ${API_TYPE}/generated/vk_safe_struct_core.cpp
-    ${API_TYPE}/generated/vk_safe_struct_khr.cpp
-    ${API_TYPE}/generated/vk_safe_struct_ext.cpp
-    ${API_TYPE}/generated/vk_safe_struct_vendor.cpp
     ${API_TYPE}/generated/vk_object_types.h
     ${API_TYPE}/generated/vk_object_types.cpp
     ${API_TYPE}/generated/vk_api_version.h
@@ -67,7 +61,6 @@ target_sources(VkLayer_utils PRIVATE
     utils/ray_tracing_utils.h
     utils/vk_layer_utils.cpp
     utils/vk_layer_utils.h
-    utils/vk_safe_struct_manual.cpp
     vk_layer_config.h
     vk_layer_config.cpp
 )
@@ -75,6 +68,7 @@ target_sources(VkLayer_utils PRIVATE
 target_link_libraries(VkLayer_utils PUBLIC
     Vulkan::Headers
     Vulkan::LayerSettings
+    Vulkan::SafeStruct
     Vulkan::UtilityHeaders
     ${CMAKE_DL_LIBS}
 )

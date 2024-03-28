@@ -186,7 +186,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             #include "utils/cast_utils.h"
             #include "chassis.h"
             #include "layer_chassis_dispatch.h"
-            #include "vk_safe_struct.h"
+            #include <vulkan/utility/vk_safe_struct.hpp>
             #include "state_tracker/pipeline_state.h"
 
             #define DISPATCH_MAX_STACK_ALLOCATIONS 32
@@ -205,9 +205,10 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             # Only process extension structs containing handles
             if not api_pre:
                 continue
+            safe_name = 'vku::safe_' + struct.name
             out.extend(guard_helper.add_guard(struct.protect))
             out.append(f'case {struct.sType}: {{\n')
-            out.append(f'    safe_{struct.name} *safe_struct = reinterpret_cast<safe_{struct.name} *>(cur_pnext);\n')
+            out.append(f'    auto *safe_struct = reinterpret_cast<{safe_name} *>(cur_pnext);\n')
             out.append(api_pre)
             out.append('} break;\n')
         out.extend(guard_helper.add_guard(None))
@@ -433,7 +434,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                 process_pnext = struct.extendedBy and any(x in self.ndo_extension_structs for x in struct.extendedBy)
                 # Structs at first level will have an NDO, OR, we need a safe_struct for the pnext chain
                 if self.containsNonDispatchableObject(member.type) or process_pnext:
-                    safe_type = 'safe_' + member.type if any(x.pointer for x in struct.members) else member.type
+                    safe_type = 'vku::safe_' + member.type if any(x.pointer for x in struct.members) else member.type
                     # Struct Array
                     if member.length is not None:
                         # Check if this function can be deferred.
@@ -441,7 +442,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                         # Update struct prefix
                         if topLevel:
                             new_prefix = f'local_{member.name}'
-                            # Declare safe_VarType for struct
+                            # Declare vku::safe_VkVarType for struct
                             decls += f'{safe_type} *{new_prefix} = nullptr;\n'
                         else:
                             new_prefix = f'{prefix}{member.name}'
@@ -450,7 +451,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                             pre_code += f'{new_prefix} = new {safe_type}[{member.length}];\n'
                         pre_code += f'for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
                         if topLevel:
-                            if 'safe_' in safe_type:
+                            if safe_type.startswith('vku::safe'):
                                 # Handle special initialize function for VkAccelerationStructureBuildGeometryInfoKHR
                                 if member.type == "VkAccelerationStructureBuildGeometryInfoKHR":
                                     pre_code += f'{new_prefix}[{index}].initialize(&{member.name}[{index}], false, nullptr);\n'
@@ -489,7 +490,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                                 pre_code += f'local_{prefix}{member.name} = &var_local_{prefix}{member.name};\n'
                             else:
                                 pre_code += f'local_{member.name} = new {safe_type};\n'
-                            if 'safe_' in safe_type:
+                            if safe_type.startswith('vku::safe'):
                                 # Handle special initialize function for VkAccelerationStructureBuildGeometryInfoKHR
                                 if member.type == "VkAccelerationStructureBuildGeometryInfoKHR":
                                     pre_code += f'local_{prefix}{member.name}->initialize({member.name}, false, nullptr);\n'

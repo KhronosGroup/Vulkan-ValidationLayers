@@ -17,7 +17,7 @@
 
 #include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -452,7 +452,7 @@ class VideoSessionDeviceState {
     }
 
     bool ValidateRateControlState(const ValidationStateTracker &dev_data, const VideoSession *vs_state,
-                                  const safe_VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) const;
+                                  const vku::safe_VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) const;
 
   private:
     bool initialized_;
@@ -474,7 +474,7 @@ class VideoSession : public StateObject {
     };
     using MemoryBindingMap = unordered_map<uint32_t, MemoryBindingInfo>;
 
-    const safe_VkVideoSessionCreateInfoKHR safe_create_info;
+    const vku::safe_VkVideoSessionCreateInfoKHR safe_create_info;
     const VkVideoSessionCreateInfoKHR &create_info;
     std::shared_ptr<const VideoProfileDesc> profile;
     bool memory_binding_count_queried;
@@ -671,7 +671,7 @@ class VideoSessionParameters : public StateObject {
         const Data *data_;
     };
 
-    const safe_VkVideoSessionParametersCreateInfoKHR safe_create_info;
+    const vku::safe_VkVideoSessionParametersCreateInfoKHR safe_create_info;
     const VkVideoSessionParametersCreateInfoKHR &create_info;
     std::shared_ptr<const VideoSession> vs_state;
 

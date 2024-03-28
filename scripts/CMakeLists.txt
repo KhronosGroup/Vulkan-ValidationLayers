@@ -1,5 +1,5 @@
 # ~~~
-# Copyright (c) 2023 LunarG, Inc.
+# Copyright (c) 2023-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -90,6 +90,10 @@ if (UPDATE_DEPS)
             list(APPEND update_dep_command "${var}=${${var}}")
         endif()
     endforeach()
+    if (VVL_MOCK_ANDROID)
+        list(APPEND cmake_var "--cmake_var" "VUL_MOCK_ANDROID=ON")
+    endif()
+
 
     if (cmake_var)
         list(APPEND update_dep_command "${cmake_var}")

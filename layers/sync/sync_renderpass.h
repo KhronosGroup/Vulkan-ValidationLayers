@@ -33,14 +33,14 @@ enum class AttachmentType { kColor, kDepth, kStencil };
 
 struct DynamicRenderingInfo {
     struct Attachment {
-        const safe_VkRenderingAttachmentInfo &info;
+        const vku::safe_VkRenderingAttachmentInfo &info;
         std::shared_ptr<const ImageViewState> view;
         std::shared_ptr<const ImageViewState> resolve_view;
         ImageRangeGen view_gen;
         std::optional<ImageRangeGen> resolve_gen;
         AttachmentType type;
 
-        Attachment(const SyncValidator &state, const safe_VkRenderingAttachmentInfo &info, const AttachmentType type_,
+        Attachment(const SyncValidator &state, const vku::safe_VkRenderingAttachmentInfo &info, const AttachmentType type_,
                    const VkOffset3D &offset, const VkExtent3D &extent);
 
         SyncStageAccessIndex GetLoadUsage() const;
@@ -59,7 +59,7 @@ struct DynamicRenderingInfo {
 
     DynamicRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
     ClearAttachmentInfo GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
-    safe_VkRenderingInfo info;
+    vku::safe_VkRenderingInfo info;
     std::vector<Attachment> attachments;  // All attachments (with internal typing)
 };
 

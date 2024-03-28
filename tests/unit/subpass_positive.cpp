@@ -72,8 +72,8 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     barrier.subresourceRange.levelCount = 1;
 
     // VkDependencyInfo with VkImageMemoryBarrier2
-    const safe_VkImageMemoryBarrier2 safe_barrier2 = ConvertVkImageMemoryBarrierToV2(
-        barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    const auto safe_barrier2 = ConvertVkImageMemoryBarrierToV2(barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     dependency_info.imageMemoryBarrierCount = 1;
@@ -150,8 +150,8 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     barrier.subresourceRange.levelCount = 1;
 
     // VkDependencyInfo with VkImageMemoryBarrier2
-    const safe_VkImageMemoryBarrier2 safe_barrier2 = ConvertVkImageMemoryBarrierToV2(
-        barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    const auto safe_barrier2 = ConvertVkImageMemoryBarrierToV2(barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.dependencyFlags = 0;
     dependency_info.imageMemoryBarrierCount = 1;

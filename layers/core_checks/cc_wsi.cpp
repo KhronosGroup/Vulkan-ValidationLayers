@@ -496,7 +496,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         bool found_color_space = false;
         bool found_match = false;
 
-        vvl::span<const safe_VkSurfaceFormat2KHR> formats{};
+        vvl::span<const vku::safe_VkSurfaceFormat2KHR> formats{};
         if (surface_state) {
             formats = surface_state->GetFormats(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
                                                 physical_device_state->VkHandle(), surface_caps_query_pnext, create_info_loc, this);
@@ -537,7 +537,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
         if (!IsExtentInsideBounds(create_info.imageExtent, surface_caps2.surfaceCapabilities.minImageExtent,
                                   surface_caps2.surfaceCapabilities.maxImageExtent)) {
-            safe_VkSurfaceCapabilities2KHR cached_capabilities{};
+            vku::safe_VkSurfaceCapabilities2KHR cached_capabilities{};
             if (surface_state) {
                 cached_capabilities = surface_state->GetCapabilities(
                     IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2), physical_device_state->VkHandle(),
@@ -1125,7 +1125,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         const uint32_t acquired_images = swapchain_data->acquired_images;
         const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
 
-        safe_VkSurfaceCapabilities2KHR surface_caps2{};
+        vku::safe_VkSurfaceCapabilities2KHR surface_caps2{};
         if (swapchain_data->surface) {
             surface_caps2 = swapchain_data->surface->GetCapabilities(
                 IsExtEnabled(device_extensions.vk_khr_get_surface_capabilities2), physical_device, nullptr, loc, this);

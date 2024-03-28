@@ -354,7 +354,7 @@ class CommandBuffer : public RefcountedStateObject {
     bool has_render_pass_striped;
     uint32_t striped_count;
     // only when not using dynamic rendering
-    safe_VkRenderPassBeginInfo active_render_pass_begin_info;
+    vku::safe_VkRenderPassBeginInfo active_render_pass_begin_info;
     std::shared_ptr<std::vector<SubpassInfo>> active_subpasses;
     std::shared_ptr<std::vector<vvl::ImageView *>> active_attachments;
     std::set<std::shared_ptr<vvl::ImageView>> attachments_view_states;
@@ -533,7 +533,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     void BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
     void NextSubpass(Func command, VkSubpassContents contents);
-    void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses);
+    void UpdateSubpassAttachments(const vku::safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses);
     void EndRenderPass(Func command);
 
     void BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo);

@@ -23,6 +23,7 @@
 #include "utils/vk_layer_utils.h"
 #include "utils/shader_utils.h"
 #include "generated/vk_object_types.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 #include <map>
 #include <set>
 #include <vector>
@@ -76,7 +77,7 @@ class DescriptorPool : public StateObject {
         return available_sets_;
     }
 
-    const safe_VkDescriptorPoolCreateInfo safe_create_info;
+    const vku::safe_VkDescriptorPoolCreateInfo safe_create_info;
     const VkDescriptorPoolCreateInfo &create_info;
 
     const uint32_t maxSets;  // Max descriptor sets allowed in this pool
@@ -95,7 +96,7 @@ class DescriptorPool : public StateObject {
 
 class DescriptorUpdateTemplate : public StateObject {
   public:
-    const safe_VkDescriptorUpdateTemplateCreateInfo safe_create_info;
+    const vku::safe_VkDescriptorUpdateTemplateCreateInfo safe_create_info;
     const VkDescriptorUpdateTemplateCreateInfo &create_info;
 
     DescriptorUpdateTemplate(VkDescriptorUpdateTemplate handle, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
@@ -173,7 +174,7 @@ class DescriptorSetLayoutDef {
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
         return GetDescriptorSetLayoutBindingPtrFromIndex(GetIndexFromBinding(binding));
     }
-    const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return bindings_; }
+    const std::vector<vku::safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return bindings_; }
     const VkDescriptorSetLayoutBinding *GetBindingInfoFromIndex(const uint32_t index) const { return bindings_[index].ptr(); }
     const VkDescriptorSetLayoutBinding *GetBindingInfoFromBinding(const uint32_t binding) const {
         return GetBindingInfoFromIndex(GetIndexFromBinding(binding));
@@ -213,7 +214,7 @@ class DescriptorSetLayoutDef {
     // Only the first three data members are used for hash and equality checks, the other members are derived from them, and are
     // used to speed up the various lookups/queries/validations
     VkDescriptorSetLayoutCreateFlags flags_;
-    std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
+    std::vector<vku::safe_VkDescriptorSetLayoutBinding> bindings_;
     std::vector<VkDescriptorBindingFlags> binding_flags_;
     // List of mutable types for each binding: [binding][mutable type]
     std::vector<std::vector<VkDescriptorType>> mutable_types_;
@@ -230,15 +231,44 @@ class DescriptorSetLayoutDef {
     BindingTypeStats binding_type_stats_;
 };
 
-static inline bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
-    bool result = (lhs.GetCreateFlags() == rhs.GetCreateFlags()) && (lhs.GetBindings() == rhs.GetBindings()) &&
-                  (lhs.GetBindingFlags() == rhs.GetBindingFlags() && lhs.GetMutableTypes() == rhs.GetMutableTypes());
-    return result;
-}
-
 // Canonical dictionary of DSL definitions -- independent of device or handle
 using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, hash_util::HasHashMember<DescriptorSetLayoutDef>>;
 using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
+
+static inline bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
+    // trivial types
+    if ((lhs.GetCreateFlags() != rhs.GetCreateFlags()) || (lhs.GetBindingFlags() != rhs.GetBindingFlags())) {
+        return false;
+    }
+    // vectors of enums
+    if (lhs.GetMutableTypes() != rhs.GetMutableTypes()) {
+        return false;
+    }
+    // vectors of vku::safe_VkDescriptorSetLayoutBinding structures
+    const auto &lhs_bindings = lhs.GetBindings();
+    const auto &rhs_bindings = rhs.GetBindings();
+    if (lhs_bindings.size() != rhs_bindings.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < lhs_bindings.size(); i++) {
+        const auto &l = lhs_bindings[i];
+        const auto &r = rhs_bindings[i];
+        if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
+            return false;
+        }
+        if (l.pImmutableSamplers != r.pImmutableSamplers) {
+            return false;
+        }
+        if (l.pImmutableSamplers) {
+            for (uint32_t s = 0; s < l.descriptorCount; s++) {
+                if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
 
 class DescriptorSetLayout : public StateObject {
   public:
@@ -269,7 +299,7 @@ class DescriptorSetLayout : public StateObject {
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
         return layout_id_->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
     }
-    const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return layout_id_->GetBindings(); }
+    const std::vector<vku::safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return layout_id_->GetBindings(); }
     uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return layout_id_->GetDescriptorCountFromIndex(index); }
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
         return layout_id_->GetDescriptorCountFromBinding(binding);
@@ -850,7 +880,7 @@ class DescriptorSet : public StateObject {
     }
     uint64_t GetChangeCount() const { return change_count_; }
 
-    const std::vector<safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }
+    const std::vector<vku::safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }
 
     void Destroy() override;
 
@@ -982,7 +1012,7 @@ class DescriptorSet : public StateObject {
 
     // If this descriptor set is a push descriptor set, the descriptor
     // set writes that were last pushed.
-    std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
+    std::vector<vku::safe_VkWriteDescriptorSet> push_descriptor_set_writes;
 };
 
 }  // namespace vvl

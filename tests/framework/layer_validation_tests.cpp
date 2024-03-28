@@ -145,7 +145,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device
     }
 
     if (rp2_supported && rp2_vuid) {
-        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
+        auto create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
         vkt::RenderPass rp2(device, *create_info2.ptr());
         error_monitor->VerifyFound();
