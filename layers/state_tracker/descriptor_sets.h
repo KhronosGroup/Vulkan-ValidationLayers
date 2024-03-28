@@ -30,7 +30,6 @@
 class CoreChecks;
 class ValidationObject;
 class ValidationStateTracker;
-class UPDATE_TEMPLATE_STATE;
 struct DeviceExtensions;
 
 namespace vvl {
