@@ -1394,11 +1394,11 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
         return skip;
     }
 
-    const auto completed = semaphore_state->Completed();
-    if (completed.payload >= pSignalInfo->value) {
+    const auto current_payload = semaphore_state->CurrentPayload();
+    if (current_payload >= pSignalInfo->value) {
         skip |= LogError("VUID-VkSemaphoreSignalInfo-value-03258", pSignalInfo->semaphore, signal_loc.dot(Field::value),
                          "(%" PRIu64 ") must be greater than current semaphore %s value (%" PRIu64 ").", pSignalInfo->value,
-                         FormatHandle(pSignalInfo->semaphore).c_str(), completed.payload);
+                         FormatHandle(pSignalInfo->semaphore).c_str(), current_payload);
         return skip;
     }
     auto exceeds_pending = [pSignalInfo](const vvl::Semaphore::OpType op_type, uint64_t payload, bool is_pending) {
@@ -1418,7 +1418,7 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
     last_op = semaphore_state->LastOp(exceeds_max_diff);
     if (last_op) {
         bad_value = last_op->payload;
-        if (last_op->payload == semaphore_state->Completed().payload) {
+        if (last_op->payload == semaphore_state->CurrentPayload()) {
             where = "current";
         } else {
             where = "pending";

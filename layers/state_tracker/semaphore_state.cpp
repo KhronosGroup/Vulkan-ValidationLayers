@@ -154,9 +154,9 @@ std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinaryWaitSubm
     return timepoint.wait_submits[0];
 }
 
-vvl::Semaphore::SemOp vvl::Semaphore::Completed() const {
+uint64_t vvl::Semaphore::CurrentPayload() const {
     auto guard = ReadLock();
-    return completed_;
+    return completed_.payload;
 }
 
 bool vvl::Semaphore::CanBinaryBeSignaled() const {
@@ -443,7 +443,7 @@ bool SemaphoreSubmitState::CheckSemaphoreValue(
     }
     auto pending = semaphore_state.LastOp(compare_func);
     if (pending) {
-        if (pending->payload == semaphore_state.Completed().payload) {
+        if (pending->payload == semaphore_state.CurrentPayload()) {
             where = "current";
         } else {
             where = pending->op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
