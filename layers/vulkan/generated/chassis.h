@@ -4588,8 +4588,6 @@ class ValidationObject {
 
         template <typename T>
         ValidValue IsValidEnumValue(T value) const;
-        template <typename T>
-        vvl::Extensions GetEnumExtensions(T value) const;
 };
 // clang-format on
 

@@ -486,6 +486,9 @@ class StatelessValidation : public ValidationObject {
                             uint32_t count, const VkFlags *array, bool count_required, const char *count_required_vuid,
                             const char *array_required_vuid) const;
 
+    template <typename T>
+    vvl::Extensions GetEnumExtensions(T value) const;
+
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
                                vvl::Extension extension, const Location &extension_loc) const;
