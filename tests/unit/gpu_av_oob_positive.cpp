@@ -297,3 +297,143 @@ TEST_F(PositiveGpuAVOOB, GPL) {
     m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
+
+TEST_F(PositiveGpuAVOOB, VertexFragmentMultiEntrypoint) {
+    TEST_DESCRIPTION("Same as negative test, but buffer are large enough");
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer uniform_buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
+    vkt::Buffer storage_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorBufferInfo(1, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    // layout(set = 0, binding = 0) uniform ufoo { uint index[]; };
+    // layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; };
+    // layout(location = 0) out vec4 c_out;
+    // void vert_main() {
+    //     data[0] = index[4];
+    //     gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+    // }
+    // void frag_main() {
+    //     data[4] = index[0];
+    // }
+    const char *shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %frag_main "frag_main" %c_out
+               OpEntryPoint Vertex %vert_main "vert_main" %2 %gl_VertexIndex
+               OpExecutionMode %frag_main OriginUpperLeft
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpMemberDecorate %_struct_7 0 Offset 0
+               OpDecorate %_struct_7 BufferBlock
+               OpDecorate %8 DescriptorSet 0
+               OpDecorate %8 Binding 1
+               OpDecorate %_arr_uint_uint_5 ArrayStride 16
+               OpMemberDecorate %_struct_10 0 Offset 0
+               OpDecorate %_struct_10 Block
+               OpDecorate %11 DescriptorSet 0
+               OpDecorate %11 Binding 0
+               OpDecorate %c_out Location 0
+               OpMemberDecorate %_struct_12 0 BuiltIn Position
+               OpMemberDecorate %_struct_12 1 BuiltIn PointSize
+               OpMemberDecorate %_struct_12 2 BuiltIn ClipDistance
+               OpMemberDecorate %_struct_12 3 BuiltIn CullDistance
+               OpDecorate %_struct_12 Block
+               OpDecorate %gl_VertexIndex BuiltIn VertexIndex
+       %void = OpTypeVoid
+         %14 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+  %_struct_7 = OpTypeStruct %_runtimearr_uint
+%_ptr_Uniform__struct_7 = OpTypePointer Uniform %_struct_7
+          %8 = OpVariable %_ptr_Uniform__struct_7 Uniform
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+     %uint_5 = OpConstant %uint 5
+%_arr_uint_uint_5 = OpTypeArray %uint %uint_5
+ %_struct_10 = OpTypeStruct %_arr_uint_uint_5
+%_ptr_Uniform__struct_10 = OpTypePointer Uniform %_struct_10
+         %11 = OpVariable %_ptr_Uniform__struct_10 Uniform
+      %int_4 = OpConstant %int 4
+%_ptr_Uniform_uint = OpTypePointer Uniform %uint
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+ %_struct_12 = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output__struct_12 = OpTypePointer Output %_struct_12
+          %2 = OpVariable %_ptr_Output__struct_12 Output
+    %v2float = OpTypeVector %float 2
+     %uint_3 = OpConstant %uint 3
+%_arr_v2float_uint_3 = OpTypeArray %v2float %uint_3
+   %float_n1 = OpConstant %float -1
+         %32 = OpConstantComposite %v2float %float_n1 %float_n1
+    %float_1 = OpConstant %float 1
+         %34 = OpConstantComposite %v2float %float_1 %float_n1
+    %float_0 = OpConstant %float 0
+         %36 = OpConstantComposite %v2float %float_0 %float_1
+         %37 = OpConstantComposite %_arr_v2float_uint_3 %32 %34 %36
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_VertexIndex = OpVariable %_ptr_Input_int Input
+      %int_3 = OpConstant %int 3
+%_ptr_Function__arr_v2float_uint_3 = OpTypePointer Function %_arr_v2float_uint_3
+%_ptr_Function_v2float = OpTypePointer Function %v2float
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+          %c_out = OpVariable %_ptr_Output_v4float Output
+          %vert_main = OpFunction %void None %14
+         %43 = OpLabel
+         %44 = OpVariable %_ptr_Function__arr_v2float_uint_3 Function
+         %45 = OpAccessChain %_ptr_Uniform_uint %11 %int_0 %int_4
+         %46 = OpLoad %uint %45
+         %47 = OpAccessChain %_ptr_Uniform_uint %8 %int_0 %int_0
+               OpStore %47 %46
+         %48 = OpLoad %int %gl_VertexIndex
+         %49 = OpSMod %int %48 %int_3
+               OpStore %44 %37
+         %50 = OpAccessChain %_ptr_Function_v2float %44 %49
+         %51 = OpLoad %v2float %50
+         %52 = OpCompositeExtract %float %51 0
+         %53 = OpCompositeExtract %float %51 1
+         %54 = OpCompositeConstruct %v4float %52 %53 %float_0 %float_1
+         %55 = OpAccessChain %_ptr_Output_v4float %2 %int_0
+               OpStore %55 %54
+               OpReturn
+               OpFunctionEnd
+          %frag_main = OpFunction %void None %14
+         %56 = OpLabel
+         %57 = OpAccessChain %_ptr_Uniform_uint %11 %int_0 %int_0
+         %58 = OpLoad %uint %57
+         %59 = OpAccessChain %_ptr_Uniform_uint %8 %int_0 %int_4
+               OpStore %59 %58
+               OpReturn
+               OpFunctionEnd
+        )";
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "vert_main");
+    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "frag_main");
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
+}

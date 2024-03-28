@@ -35,12 +35,8 @@ uint32_t RayQueryPass::GetLinkFunctionId() {
 }
 
 uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block) {
-    // Get first entrypoint stage
-    // TODO - support multi-entrypoint shaders
-    const uint32_t stage = module_.entry_points_.begin()->get()->Operand(0);
-
     // Add any debug information to pass into the function call
-    const uint32_t stage_info_id = GetStageInfo(block.function_, spv::ExecutionModel(stage));
+    const uint32_t stage_info_id = GetStageInfo(block.function_);
     const uint32_t inst_position = target_instruction_->position_index_;
     auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
 

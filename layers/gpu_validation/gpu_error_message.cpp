@@ -31,6 +31,9 @@ static void GenerateStageMessage(const uint32_t *error_record, std::string &msg)
     using namespace gpuav::glsl;
     std::ostringstream strm;
     switch (error_record[kHeaderStageIdOffset]) {
+        case kHeaderStageIdMultiEntryPoint: {
+            strm << "Stage has multiple OpEntryPoint and could not detect stage. ";
+        } break;
         case spv::ExecutionModelVertex: {
             strm << "Stage = Vertex. Vertex Index = " << error_record[kHeaderVertexIndexOffset]
                  << " Instance Index = " << error_record[kHeaderVertInstanceIndexOffset] << ". ";

@@ -35,6 +35,9 @@ const int kErrorGroupGpuPreDispatch = 5;
 const int kErrorGroupGpuPreTraceRays = 6;
 const int kErrorGroupGpuCopyBufferToImage = 7;
 
+// Used for MultiEntry and there is no single stage set
+const int kHeaderStageIdMultiEntryPoint = 0x7fffffff;  // same as spv::ExecutionModelMax
+
 // Bindless Descriptor
 //
 const int kErrorSubCodeBindlessDescriptorBounds = 1;
