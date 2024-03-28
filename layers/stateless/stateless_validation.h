@@ -489,6 +489,11 @@ class StatelessValidation : public ValidationObject {
     template <typename T>
     vvl::Extensions GetEnumExtensions(T value) const;
 
+    // VkFlags values don't have a way overload, so need to use vvl::FlagBitmask
+    vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions &device_extensions) const;
+    vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value,
+                                       const DeviceExtensions &device_extensions) const;
+
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
                                vvl::Extension extension, const Location &extension_loc) const;
