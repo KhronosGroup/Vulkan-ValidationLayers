@@ -2290,6 +2290,7 @@ class ValidationObject {
     CHECK_ENABLED enabled = {};
     bool fine_grained_locking{true};
     GpuAVSettings gpuav_settings = {};
+    DebugPrintfSettings printf_settings = {};
 
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;

@@ -30,3 +30,9 @@ struct GpuAVSettings {
     bool gpuav_debug_validate_instrumented_shaders = false;
     bool gpuav_debug_dump_instrumented_shaders = false;
 };
+
+struct DebugPrintfSettings {
+    bool to_stdout = false;
+    bool verbose = false;
+    uint32_t buffer_size = 1024;
+};
