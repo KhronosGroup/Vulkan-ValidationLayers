@@ -2429,3 +2429,45 @@ TEST_F(PositiveSyncObject, TwoQueuesReuseBinarySemaphore) {
     vk::QueueSubmit(q1, 2, submits, VK_NULL_HANDLE);
     vk::QueueWaitIdle(q1);
 }
+
+TEST_F(PositiveSyncObject, SingleSubmitSignalBinarySemaphoreTwoTimes) {
+    TEST_DESCRIPTION("Setup submission in such a way to be able to signal the same binary semaphore twice");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore2(*m_device);
+
+    VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.semaphore = semaphore;
+    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSemaphoreSubmitInfo semaphore_info2 = vku::InitStructHelper();
+    semaphore_info2.semaphore = semaphore2;
+    semaphore_info2.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSubmitInfo2 submits[3];
+    submits[0] = vku::InitStructHelper();
+    submits[0].signalSemaphoreInfoCount = 1;
+    submits[0].pSignalSemaphoreInfos = &semaphore_info;
+
+    submits[1] = vku::InitStructHelper();
+    submits[1].waitSemaphoreInfoCount = 1;
+    submits[1].pWaitSemaphoreInfos = &semaphore_info;
+    submits[1].signalSemaphoreInfoCount = 1;
+    submits[1].pSignalSemaphoreInfos = &semaphore_info2;
+
+    submits[2] = vku::InitStructHelper();
+    submits[2].waitSemaphoreInfoCount = 1;
+    submits[2].pWaitSemaphoreInfos = &semaphore_info2;
+    // Here we can signal the first semaphore again. This should work because of the wait on the semaphore2.
+    // Regarding internal implementation, this demonstrates that the binary semaphore's timeline map
+    // can have more than one entry. The entry with payload 1 is for the first signal/wait,
+    // and the entry with payload 2 will contain the following signal.
+    submits[2].signalSemaphoreInfoCount = 1;
+    submits[2].pSignalSemaphoreInfos = &semaphore_info;
+
+    vk::QueueSubmit2(*m_default_queue, 3, submits, VK_NULL_HANDLE);
+    m_default_queue->wait();
+}

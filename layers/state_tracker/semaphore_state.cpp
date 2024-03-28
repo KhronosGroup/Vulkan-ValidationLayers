@@ -165,6 +165,10 @@ bool vvl::Semaphore::CanBinaryBeSignaled() const {
     if (timeline_.empty()) {
         return CanSignalBinarySemaphoreAfterOperation(completed_.op_type);
     }
+    // Every timeline slot of binary semaphore should contain at least a signal.
+    // Wait before signal is not allowed.
+    assert(timeline_.rbegin()->second.HasSignaler());
+
     return timeline_.rbegin()->second.HasWaiters();
 }
 
@@ -174,6 +178,10 @@ bool vvl::Semaphore::CanBinaryBeWaited() const {
     if (timeline_.empty()) {
         return CanWaitBinarySemaphoreAfterOperation(completed_.op_type);
     }
+    // Every timeline slot of binary semaphore should contain at least a signal.
+    // Wait before signal is not allowed.
+    assert(timeline_.rbegin()->second.HasSignaler());
+
     return !timeline_.rbegin()->second.HasWaiters();
 }
 
