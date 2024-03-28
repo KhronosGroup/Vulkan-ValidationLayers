@@ -1848,8 +1848,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 }
 
 TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
-    TEST_DESCRIPTION(
-        "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
+    TEST_DESCRIPTION("Validate acceleration structure building when source/destination acceleration structures overlap.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -1861,7 +1860,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
 
     constexpr size_t build_info_count = 3;
 
-    // All buffers used to back source/destination acceleration struct and scratch will be bound to this memory chunk
+    // All buffers used to back source/destination acceleration structures will be bound to this memory chunk
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
@@ -1953,10 +1952,8 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     }
 }
 
-//  https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6040
-TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
-    TEST_DESCRIPTION(
-        "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
+TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory2) {
+    TEST_DESCRIPTION("Validate acceleration structure building when scratch buffers overlap.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -1968,18 +1965,18 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
 
     constexpr size_t build_info_count = 3;
 
-    // All buffers used to back source/destination acceleration struct and scratch will be bound to this memory chunk
+    // All scratch buffers will be bound to this memory chunk
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 8192;
+    alloc_info.allocationSize = 1u << 17;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test overlapping scratch buffers
     {
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 4096;
+        scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
@@ -2004,6 +2001,35 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
+    TEST_DESCRIPTION(
+        "Validate acceleration structure building when destination acceleration structures and scratch buffers overlap.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Buffer device addresses computed by the mock ICD are not aligned to the strictest alignment possible,
+    // but this test has been written with this assumption in mind to make sure scratch buffers do overlap with each other and with
+    // src acceleration structures
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    constexpr size_t build_info_count = 3;
+
+    // All buffers used to back destination acceleration struct and scratch will be bound to this memory chunk
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 1u << 17;
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test overlapping destination acceleration structure and scratch buffer
     {
@@ -2015,7 +2041,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 4096;
+        scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
@@ -2051,6 +2077,35 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
+    TEST_DESCRIPTION(
+        "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Buffer device addresses computed by the mock ICD are not aligned to the strictest alignment possible,
+    // but this test has been written with this assumption in mind to make sure scratch buffers do overlap with each other and with
+    // src acceleration structures
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    constexpr size_t build_info_count = 3;
+
+    // All buffers used to back source/destination acceleration struct and scratch will be bound to this memory chunk
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 1u << 17;
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test overlapping source acceleration structure and scratch buffer
     {
@@ -2061,20 +2116,21 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 4096;
+        scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         std::vector<vkt::Buffer> src_blas_buffers(build_info_count);
         std::vector<std::shared_ptr<vkt::Buffer>> scratch_buffers(build_info_count);
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
+
         for (size_t i = 0; i < build_info_count; ++i) {
             src_blas_buffers[i].init_no_mem(*m_device, blas_buffer_ci);
-            vk::BindBufferMemory(device(), src_blas_buffers[i].handle(), buffer_memory.handle(), 0);
+            src_blas_buffers[i].bind_memory(buffer_memory, 0);
 
             scratch_buffers[i] = std::make_shared<vkt::Buffer>();
             scratch_buffers[i]->init_no_mem(*m_device, scratch_buffer_ci);
-            vk::BindBufferMemory(device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
+            scratch_buffers[i]->bind_memory(buffer_memory, 0);
 
             // 1st step: build destination acceleration struct
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -2082,8 +2138,9 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
             blas.GetDstAS()->SetSize(4096);  // Do this to ensure dst accel struct buffer and scratch do overlap
             blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
             m_commandBuffer->begin();
-            blas.BuildCmdBuffer( m_commandBuffer->handle());
+            blas.BuildCmdBuffer(m_commandBuffer->handle());
             m_commandBuffer->end();
+            m_default_queue->wait();
 
             // Possible 2nd step: insert memory barrier on acceleration structure buffer
             // => no need here since 2nd build call will not be executed by the driver
@@ -2098,7 +2155,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
             blas_vec.emplace_back(std::move(blas));
         }
 
-        // Since all the source and destination acceleration structures are bound to the same memory, 03701 and 03702 will be
+        // Since all the source and destination acceleration structures are bound to the same memory, 03704 and 03705 will be
         // triggered for each pair of elements in `build_infos`. 03705 will also be triggered for individual elements.
         for (size_t i = 0; i < binom<size_t>(build_info_count, 2); ++i) {
             m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704");
@@ -2109,7 +2166,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
         }
 
         m_commandBuffer->begin();
-        vkt::as::BuildAccelerationStructuresKHR( m_commandBuffer->handle(), blas_vec);
+        vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
         m_commandBuffer->end();
         m_errorMonitor->VerifyFound();
     }
