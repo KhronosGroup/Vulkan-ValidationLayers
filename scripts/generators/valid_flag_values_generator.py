@@ -66,7 +66,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
         guard_helper = PlatformGuardHelper()
         out = []
         out.append('''
-            #include "chassis.h"
+            #include "stateless/stateless_validation.h"
 
             // For flags, we can't use the VkFlag as it can't be templated (since it all resolves to a int).
             // It is simpler for the caller to already check for both
@@ -76,7 +76,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions& device_extensions) {
+            vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions& device_extensions) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and x.bitWidth == 32]:
@@ -124,7 +124,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, const DeviceExtensions& device_extensions) {
+            vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, const DeviceExtensions& device_extensions) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and x.bitWidth == 64]:
