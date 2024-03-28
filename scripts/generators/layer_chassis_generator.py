@@ -299,9 +299,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include <vulkan/vulkan.h>
             #include <vulkan/vk_layer.h>
             #include <vulkan/vk_enum_string_helper.h>
-            #include <vulkan/utility/vk_struct_helper.hpp>
             #include "utils/cast_utils.h"
             #include "vk_layer_config.h"
+            #include "layer_options.h"
             #include "containers/custom_containers.h"
             #include "error_message/logging.h"
             #include "error_message/error_location.h"
@@ -378,74 +378,14 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 LayerObjectTypeMaxEnum,              // Max enum count
             };
 
-            struct TEMPLATE_STATE {
+            struct TemplateState {
                 VkDescriptorUpdateTemplate desc_update_template;
                 safe_VkDescriptorUpdateTemplateCreateInfo create_info;
                 bool destroyed;
 
-                TEMPLATE_STATE(VkDescriptorUpdateTemplate update_template, safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo)
+                TemplateState(VkDescriptorUpdateTemplate update_template, safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo)
                     : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
             };
-
-            class LAYER_PHYS_DEV_PROPERTIES {
-            public:
-                VkPhysicalDeviceProperties properties;
-                std::vector<VkQueueFamilyProperties> queue_family_properties;
-            };
-
-            typedef enum ValidationCheckDisables {
-                VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
-                VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
-                VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
-                VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
-                VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
-            } ValidationCheckDisables;
-
-            typedef enum ValidationCheckEnables {
-                VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
-                VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
-                VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG,
-                VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA,
-                VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
-            } ValidationCheckEnables;
-
-            typedef enum VkValidationFeatureEnable {
-                VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION,
-            } VkValidationFeatureEnable;
-
-            // CHECK_DISABLED and CHECK_ENABLED vectors are containers for bools that can opt in or out of specific classes of validation
-            // checks. Enum values can be specified via the vk_layer_settings.txt config file or at CreateInstance time via the
-            // VK_EXT_validation_features extension that can selectively disable or enable checks.
-            typedef enum DisableFlags {
-                command_buffer_state,
-                object_in_use,
-                query_validation,
-                image_layout_validation,
-                object_tracking,
-                core_checks,
-                thread_safety,
-                stateless_checks,
-                handle_wrapping,
-                shader_validation,
-                shader_validation_caching,
-                sync_validation_queue_submit,
-                // Insert new disables above this line
-                kMaxDisableFlags,
-            } DisableFlags;
-
-            typedef enum EnableFlags {
-                gpu_validation,
-                gpu_validation_reserve_binding_slot,
-                best_practices,
-                vendor_specific_arm,
-                vendor_specific_amd,
-                vendor_specific_img,
-                vendor_specific_nvidia,
-                debug_printf_validation,
-                sync_validation,
-                // Insert new enables above this line
-                kMaxEnableFlags,
-            } EnableFlags;
 
             // When testing for a valid value, allow a way to right away return how it might not be valid
             enum class ValidValue {
@@ -453,9 +393,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 NotFound, // example, trying to use a random int for an enum
                 NoExtension, // trying to use a proper value, but the extension is required
             };
-
-            typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
-            typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 
             #if defined(__clang__)
             #define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(printf, _fmt_argnum, _first_param_num)))
@@ -490,7 +427,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 VkPhysicalDevice physical_device = VK_NULL_HANDLE;
                 VkDevice device = VK_NULL_HANDLE;
                 bool is_device_lost = false;
-                LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
 
                 std::vector<ValidationObject*> object_dispatch;
                 LayerObjectTypeId container_type;
@@ -629,7 +565,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 // Reverse map display handles
                 vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
                 // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-                vvl::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
+                vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
                 struct SubpassesUsageStates {
                     vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
                     vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
@@ -1313,7 +1249,6 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 device_interceptor->container_type = LayerObjectTypeDevice;
 
                 // Save local info in device object
-                device_interceptor->phys_dev_properties.properties = device_properties;
                 device_interceptor->api_version = device_interceptor->device_extensions.InitFromDeviceCreateInfo(
                     &instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
                 device_interceptor->device_extensions = device_extensions;

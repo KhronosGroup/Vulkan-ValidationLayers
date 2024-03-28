@@ -567,7 +567,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->container_type = LayerObjectTypeDevice;
 
     // Save local info in device object
-    device_interceptor->phys_dev_properties.properties = device_properties;
     device_interceptor->api_version = device_interceptor->device_extensions.InitFromDeviceCreateInfo(
         &instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
     device_interceptor->device_extensions = device_extensions;

@@ -17,12 +17,75 @@
  */
 
 #pragma once
-#include "generated/chassis.h"
+#include <array>
+#include <vector>
+#include <string>
+#include <cstdint>
+#include <vulkan/vulkan.h>
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include "gpu_validation/gpu_settings.h"
+#include "containers/custom_containers.h"
 
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
+
+typedef enum ValidationCheckDisables {
+    VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
+    VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
+    VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
+    VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
+    VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
+} ValidationCheckDisables;
+
+typedef enum ValidationCheckEnables {
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
+} ValidationCheckEnables;
+
+typedef enum VkValidationFeatureEnable {
+    VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION,
+} VkValidationFeatureEnable;
+
+// CHECK_DISABLED and CHECK_ENABLED vectors are containers for bools that can opt in or out of specific classes of validation
+// checks. Enum values can be specified via the vk_layer_settings.txt config file or at CreateInstance time via the
+// VK_EXT_validation_features extension that can selectively disable or enable checks.
+typedef enum DisableFlags {
+    command_buffer_state,
+    object_in_use,
+    query_validation,
+    image_layout_validation,
+    object_tracking,
+    core_checks,
+    thread_safety,
+    stateless_checks,
+    handle_wrapping,
+    shader_validation,
+    shader_validation_caching,
+    sync_validation_queue_submit,
+    // Insert new disables above this line
+    kMaxDisableFlags,
+} DisableFlags;
+
+typedef enum EnableFlags {
+    gpu_validation,
+    gpu_validation_reserve_binding_slot,
+    best_practices,
+    vendor_specific_arm,
+    vendor_specific_amd,
+    vendor_specific_img,
+    vendor_specific_nvidia,
+    debug_printf_validation,
+    sync_validation,
+    // Insert new enables above this line
+    kMaxEnableFlags,
+} EnableFlags;
+
+typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
+typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 
 // Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
 
