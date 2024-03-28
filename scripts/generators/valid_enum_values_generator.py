@@ -75,7 +75,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-            #include "chassis.h"
+            #include "stateless/stateless_validation.h"
 
             //  Checking for values is a 2 part process
             //    1. Check if is valid at all
@@ -131,11 +131,11 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
             # Need empty functions to resolve all template variations
             if len(enum.fieldExtensions) <= len(enum.extensions):
-                out.append(f'template<> vvl::Extensions ValidationObject::GetEnumExtensions({enum.name} value) const {{ return {{}}; }}\n')
+                out.append(f'template<> vvl::Extensions StatelessValidation::GetEnumExtensions({enum.name} value) const {{ return {{}}; }}\n')
                 out.extend(guard_helper.add_guard(None, extra_newline=True))
                 continue
 
-            out.append(f'template<> vvl::Extensions ValidationObject::GetEnumExtensions({enum.name} value) const {{\n')
+            out.append(f'template<> vvl::Extensions StatelessValidation::GetEnumExtensions({enum.name} value) const {{\n')
             out.append('    switch (value) {\n')
 
             expressionMap = defaultdict(list)
