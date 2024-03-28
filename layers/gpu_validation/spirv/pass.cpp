@@ -16,6 +16,7 @@
 #include "pass.h"
 #include "module.h"
 #include "type_manager.h"
+#include "gpu_shaders/gpu_error_codes.h"
 #include <spirv/unified1/spirv.hpp>
 
 namespace gpuav {
@@ -57,13 +58,15 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
 
 // To reduce having to load this information everytime we do a OpFunctionCall, instead just create it once per Function block and
 // reference it each time
-uint32_t Pass::GetStageInfo(Function& function, spv::ExecutionModel execution_model) {
+uint32_t Pass::GetStageInfo(Function& function) {
+    // Cached so only need to compute this once
     if (function.stage_info_id_ != 0) {
         return function.stage_info_id_;
     }
 
     // Get the first block of function to add stage info
     BasicBlock& block = *function.blocks_[0];
+
     // All OpVariable instructions in a function must be the first instructions in the first block
     InstructionIt inst_it;
     for (inst_it = block.instructions_.begin(); inst_it != block.instructions_.end(); ++inst_it) {
@@ -78,95 +81,102 @@ uint32_t Pass::GetStageInfo(Function& function, spv::ExecutionModel execution_mo
     const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
     uint32_t stage_info[4] = {uint32_0_id, uint32_0_id, uint32_0_id, uint32_0_id};
 
-    stage_info[0] = module_.type_manager_.GetConstantUInt32(execution_model).Id();
+    if (module_.entry_points_.size() > 1) {
+        // For Multi Entry Points it currently a lot of work to scan every function to see where it will be called from
+        // For now we will just report it is "unknown" and skip printing that part of the error message
+        stage_info[0] = module_.type_manager_.GetConstantUInt32(gpuav::glsl::kHeaderStageIdMultiEntryPoint).Id();
+    } else {
+        spv::ExecutionModel execution_model = spv::ExecutionModel(module_.entry_points_.begin()->get()->Operand(0));
+        stage_info[0] = module_.type_manager_.GetConstantUInt32(execution_model).Id();
 
-    // Gets BuiltIn variable and creates a valid OpLoad of it
-    auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {
-        const Variable& variable = GetBuiltinVariable(built_in);
-        const Type* pointer_type = variable.PointerType(module_.type_manager_);
-        const uint32_t load_id = module_.TakeNextId();
-        block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
-        return load_id;
-    };
+        // Gets BuiltIn variable and creates a valid OpLoad of it
+        auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {
+            const Variable& variable = GetBuiltinVariable(built_in);
+            const Type* pointer_type = variable.PointerType(module_.type_manager_);
+            const uint32_t load_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
+            return load_id;
+        };
 
-    switch (execution_model) {
-        case spv::ExecutionModelVertex: {
-            uint32_t load_id = create_load(spv::BuiltInVertexIndex);
-            stage_info[1] = CastToUint32(load_id, block, &inst_it);
-            load_id = create_load(spv::BuiltInInstanceIndex);
-            stage_info[2] = CastToUint32(load_id, block, &inst_it);
-        } break;
-        case spv::ExecutionModelFragment: {
-            const uint32_t load_id = create_load(spv::BuiltInFragCoord);
-            // convert vec4 to uvec4
-            const uint32_t bitcast_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpBitcast, {uvec4_type.Id(), bitcast_id, load_id}, &inst_it);
+        switch (execution_model) {
+            case spv::ExecutionModelVertex: {
+                uint32_t load_id = create_load(spv::BuiltInVertexIndex);
+                stage_info[1] = CastToUint32(load_id, block, &inst_it);
+                load_id = create_load(spv::BuiltInInstanceIndex);
+                stage_info[2] = CastToUint32(load_id, block, &inst_it);
+            } break;
+            case spv::ExecutionModelFragment: {
+                const uint32_t load_id = create_load(spv::BuiltInFragCoord);
+                // convert vec4 to uvec4
+                const uint32_t bitcast_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {uvec4_type.Id(), bitcast_id, load_id}, &inst_it);
 
-            for (uint32_t i = 0; i < 2; i++) {
-                const uint32_t extract_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
-                stage_info[i + 1] = extract_id;
-            }
-        } break;
-        case spv::ExecutionModelRayGenerationKHR:
-        case spv::ExecutionModelIntersectionKHR:
-        case spv::ExecutionModelAnyHitKHR:
-        case spv::ExecutionModelClosestHitKHR:
-        case spv::ExecutionModelMissKHR:
-        case spv::ExecutionModelCallableKHR: {
-            const uint32_t load_id = create_load(spv::BuiltInLaunchIdKHR);
+                for (uint32_t i = 0; i < 2; i++) {
+                    const uint32_t extract_id = module_.TakeNextId();
+                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
+                    stage_info[i + 1] = extract_id;
+                }
+            } break;
+            case spv::ExecutionModelRayGenerationKHR:
+            case spv::ExecutionModelIntersectionKHR:
+            case spv::ExecutionModelAnyHitKHR:
+            case spv::ExecutionModelClosestHitKHR:
+            case spv::ExecutionModelMissKHR:
+            case spv::ExecutionModelCallableKHR: {
+                const uint32_t load_id = create_load(spv::BuiltInLaunchIdKHR);
 
-            for (uint32_t i = 0; i < 3; i++) {
-                const uint32_t extract_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
-                stage_info[i + 1] = extract_id;
-            }
-        } break;
-        case spv::ExecutionModelGLCompute:
-        case spv::ExecutionModelTaskNV:
-        case spv::ExecutionModelMeshNV:
-        case spv::ExecutionModelTaskEXT:
-        case spv::ExecutionModelMeshEXT: {
-            const uint32_t load_id = create_load(spv::BuiltInGlobalInvocationId);
+                for (uint32_t i = 0; i < 3; i++) {
+                    const uint32_t extract_id = module_.TakeNextId();
+                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
+                    stage_info[i + 1] = extract_id;
+                }
+            } break;
+            case spv::ExecutionModelGLCompute:
+            case spv::ExecutionModelTaskNV:
+            case spv::ExecutionModelMeshNV:
+            case spv::ExecutionModelTaskEXT:
+            case spv::ExecutionModelMeshEXT: {
+                const uint32_t load_id = create_load(spv::BuiltInGlobalInvocationId);
 
-            for (uint32_t i = 0; i < 3; i++) {
-                const uint32_t extract_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
-                stage_info[i + 1] = extract_id;
-            }
-        } break;
-        case spv::ExecutionModelGeometry: {
-            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
-            stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
-            const uint32_t load_id = create_load(spv::BuiltInInvocationId);
-            stage_info[2] = CastToUint32(load_id, block, &inst_it);
-        } break;
-        case spv::ExecutionModelTessellationControl: {
-            const uint32_t load_id = create_load(spv::BuiltInInvocationId);
-            stage_info[1] = CastToUint32(load_id, block, &inst_it);
-            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
-            stage_info[2] = CastToUint32(primitive_id, block, &inst_it);
-        } break;
-        case spv::ExecutionModelTessellationEvaluation: {
-            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
-            stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
+                for (uint32_t i = 0; i < 3; i++) {
+                    const uint32_t extract_id = module_.TakeNextId();
+                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
+                    stage_info[i + 1] = extract_id;
+                }
+            } break;
+            case spv::ExecutionModelGeometry: {
+                const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+                stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
+                const uint32_t load_id = create_load(spv::BuiltInInvocationId);
+                stage_info[2] = CastToUint32(load_id, block, &inst_it);
+            } break;
+            case spv::ExecutionModelTessellationControl: {
+                const uint32_t load_id = create_load(spv::BuiltInInvocationId);
+                stage_info[1] = CastToUint32(load_id, block, &inst_it);
+                const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+                stage_info[2] = CastToUint32(primitive_id, block, &inst_it);
+            } break;
+            case spv::ExecutionModelTessellationEvaluation: {
+                const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+                stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
 
-            // convert vec3 to uvec3
-            const Type& vec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
-            const uint32_t load_id = create_load(spv::BuiltInTessCoord);
-            const uint32_t bitcast_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), bitcast_id, load_id}, &inst_it);
+                // convert vec3 to uvec3
+                const Type& vec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
+                const uint32_t load_id = create_load(spv::BuiltInTessCoord);
+                const uint32_t bitcast_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), bitcast_id, load_id}, &inst_it);
 
-            // TessCoord.uv values from it
-            for (uint32_t i = 0; i < 2; i++) {
-                const uint32_t extract_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
-                stage_info[i + 2] = extract_id;
-            }
-        } break;
-        default: {
-            assert(false && "unsupported stage");
-        } break;
+                // TessCoord.uv values from it
+                for (uint32_t i = 0; i < 2; i++) {
+                    const uint32_t extract_id = module_.TakeNextId();
+                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
+                    stage_info[i + 2] = extract_id;
+                }
+            } break;
+            default: {
+                assert(false && "unsupported stage");
+            } break;
+        }
     }
 
     function.stage_info_id_ = module_.TakeNextId();
