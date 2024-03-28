@@ -1289,3 +1289,168 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    static const char vert_shader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+
+        const vec2 vertices[3] = vec2[]( vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(0.0, 1.0) );
+        void main() {
+            debugPrintfEXT("Vertex value is %i", 4);
+            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
+    static const char frag_shader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+
+        layout(location = 0) out vec4 c_out;
+        void main() {
+            debugPrintfEXT("Fragment value is %i", 8);
+            c_out = vec4(0.0);
+        }
+    )glsl";
+    VkShaderObj vs(this, vert_shader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, frag_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkViewport viewport = {0, 0, 1, 1, 0, 1};
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.vp_state_ci_.pViewports = &viewport;
+    pipe.vp_state_ci_.pScissors = &scissor;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    for (auto i = 0; i < 3; i++) {
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex value is 4");
+    }
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment value is 8");
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+}
+
+// TODO - Add multi-entry support for Debug PrintF
+TEST_F(NegativeDebugPrintf, DISABLED_VertexFragmentMultiEntrypoint) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // void vert_main() {
+    //     debugPrintfEXT("Vertex value is %i", 4);
+    //     gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+    // }
+    // layout(location = 0) out vec4 c_out;
+    // void frag_main() {
+    //     debugPrintfEXT("Fragment value is %i", 8);
+    //     c_out = vec4(0.0);
+    // }
+    const char *shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %9 = OpExtInstImport "NonSemantic.DebugPrintf"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %frag_main "frag_main" %c_out
+               OpEntryPoint Vertex %vert_main "vert_main" %_ %gl_VertexIndex
+               OpExecutionMode %frag_main OriginUpperLeft
+          %6 = OpString "Vertex value is %i"
+               OpDecorate %c_out Location 0
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpDecorate %gl_VertexIndex BuiltIn VertexIndex
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_4 = OpConstant %int 4
+      %int_8 = OpConstant %int 8
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+      %int_0 = OpConstant %int 0
+    %v2float = OpTypeVector %float 2
+     %uint_3 = OpConstant %uint 3
+%_arr_v2float_uint_3 = OpTypeArray %v2float %uint_3
+   %float_n1 = OpConstant %float -1
+         %24 = OpConstantComposite %v2float %float_n1 %float_n1
+    %float_1 = OpConstant %float 1
+         %26 = OpConstantComposite %v2float %float_1 %float_n1
+    %float_0 = OpConstant %float 0
+         %28 = OpConstantComposite %v2float %float_0 %float_1
+         %29 = OpConstantComposite %_arr_v2float_uint_3 %24 %26 %28
+%_ptr_Input_int = OpTypePointer Input %int
+%gl_VertexIndex = OpVariable %_ptr_Input_int Input
+      %int_3 = OpConstant %int 3
+%_ptr_Function__arr_v2float_uint_3 = OpTypePointer Function %_arr_v2float_uint_3
+%_ptr_Function_v2float = OpTypePointer Function %v2float
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %c_out = OpVariable %_ptr_Output_v4float Output
+         %16 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+       %vert_main = OpFunction %void None %3
+          %5 = OpLabel
+  %indexable = OpVariable %_ptr_Function__arr_v2float_uint_3 Function
+         %10 = OpExtInst %void %9 1 %6 %int_4
+         %32 = OpLoad %int %gl_VertexIndex
+         %34 = OpSMod %int %32 %int_3
+               OpStore %indexable %29
+         %38 = OpAccessChain %_ptr_Function_v2float %indexable %34
+         %39 = OpLoad %v2float %38
+         %40 = OpCompositeExtract %float %39 0
+         %41 = OpCompositeExtract %float %39 1
+         %42 = OpCompositeConstruct %v4float %40 %41 %float_0 %float_1
+         %44 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %44 %42
+               OpReturn
+               OpFunctionEnd
+       %frag_main = OpFunction %void None %3
+          %f5 = OpLabel
+         %f10 = OpExtInst %void %9 1 %6 %int_8
+               OpStore %c_out %16
+               OpReturn
+               OpFunctionEnd
+        )";
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "vert_main");
+    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "frag_main");
+
+    VkViewport viewport = {0, 0, 1, 1, 0, 1};
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.vp_state_ci_.pViewports = &viewport;
+    pipe.vp_state_ci_.pScissors = &scissor;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    for (auto i = 0; i < 3; i++) {
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex value is 4");
+    }
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment value is 8");
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+}
