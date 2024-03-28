@@ -1,5 +1,5 @@
 # ~~~
-# Copyright (c) 2023 LunarG, Inc.
+# Copyright (c) 2023-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -122,9 +122,9 @@ if (UPDATE_DEPS)
         include("${UPDATE_DEPS_DIR}/helper.cmake")
     endif()
 endif()
-if (ROBIN_HOOD_HASHING_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${ROBIN_HOOD_HASHING_INSTALL_DIR})
-    set(CMAKE_REQUIRE_FIND_PACKAGE_robin_hood TRUE PARENT_SCOPE)
+if (UNORDERED_DENSE_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${UNORDERED_DENSE_INSTALL_DIR})
+    set(CMAKE_REQUIRE_FIND_PACKAGE_unordered_dense TRUE PARENT_SCOPE)
 endif()
 if (GLSLANG_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${GLSLANG_INSTALL_DIR})

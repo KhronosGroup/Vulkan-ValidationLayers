@@ -657,7 +657,7 @@ std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice phys_dev
     assert(phys_dev);
     std::vector<VkPresentModeKHR> result;
     if (auto search = present_modes_data_.find(phys_dev); search != present_modes_data_.end()) {
-        for (auto mode = search->second.begin(); mode != search->second.end(); mode++) {
+        for (auto mode = search->second.begin(); mode != search->second.end(); ++mode) {
             result.push_back(mode->first);
         }
         return result;

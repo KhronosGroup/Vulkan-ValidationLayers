@@ -32,8 +32,8 @@
 #include <optional>
 #include <utility>
 
-#ifdef USE_ROBIN_HOOD_HASHING
-#include "robin_hood.h"
+#ifdef USE_CUSTOM_HASH_MAP
+#include "ankerl/unordered_dense.h"
 #else
 #include <unordered_set>
 #endif
@@ -41,56 +41,23 @@
 // namespace aliases to allow map and set implementations to easily be swapped out
 namespace vvl {
 
-#ifdef USE_ROBIN_HOOD_HASHING
+#ifdef USE_CUSTOM_HASH_MAP
 template <typename T>
-using hash = robin_hood::hash<T>;
-
-template <typename Key, typename Hash = robin_hood::hash<Key>, typename KeyEqual = std::equal_to<Key>>
-using unordered_set = robin_hood::unordered_set<Key, Hash, KeyEqual>;
-
-template <typename Key, typename T, typename Hash = robin_hood::hash<Key>, typename KeyEqual = std::equal_to<Key>>
-using unordered_map = robin_hood::unordered_map<Key, T, Hash, KeyEqual>;
-
-template <typename Key, typename T>
-using map_entry = robin_hood::pair<Key, T>;
-
-// robin_hood-compatible insert_iterator (std:: uses the wrong insert method)
-// NOTE: std::iterator was deprecated in C++17, and newer versions of libstdc++ appear to mark this as such.
-template <typename T>
-struct insert_iterator {
-    using iterator_category = std::output_iterator_tag;
-    using value_type = typename T::value_type;
-    using iterator = typename T::iterator;
-    using difference_type = void;
-    using pointer = void;
-    using reference = T &;
-
-    insert_iterator(reference t, iterator i) : container(&t), iter(i) {}
-
-    insert_iterator &operator=(const value_type &value) {
-        auto result = container->insert(value);
-        iter = result.first;
-        ++iter;
-        return *this;
-    }
-
-    insert_iterator &operator=(value_type &&value) {
-        auto result = container->insert(std::move(value));
-        iter = result.first;
-        ++iter;
-        return *this;
-    }
-
-    insert_iterator &operator*() { return *this; }
-
-    insert_iterator &operator++() { return *this; }
-
-    insert_iterator &operator++(int) { return *this; }
+struct hash {
+    std::size_t operator()(const T &s) const noexcept { return static_cast<std::size_t>(internal_hash{}(s)); }
 
   private:
-    T *container;
-    iterator iter;
+    using internal_hash = ankerl::unordered_dense::hash<T>;
 };
+
+template <typename Key, typename Hash = ankerl::unordered_dense::hash<Key>, typename KeyEqual = std::equal_to<Key>>
+using unordered_set = ankerl::unordered_dense::set<Key, Hash, KeyEqual>;
+
+template <typename Key, typename T, typename Hash = ankerl::unordered_dense::hash<Key>, typename KeyEqual = std::equal_to<Key>>
+using unordered_map = ankerl::unordered_dense::segmented_map<Key, T, Hash, KeyEqual>;
+
+template <typename Key, typename T>
+using map_entry = std::pair<Key, T>;
 #else
 template <typename T>
 using hash = std::hash<T>;
@@ -103,9 +70,6 @@ using unordered_map = std::unordered_map<Key, T, Hash, KeyEqual>;
 
 template <typename Key, typename T>
 using map_entry = std::pair<Key, T>;
-
-template <typename T>
-using insert_iterator = std::insert_iterator<T>;
 #endif
 
 }  // namespace vvl

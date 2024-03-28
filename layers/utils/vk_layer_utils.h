@@ -606,7 +606,7 @@ class vl_concurrent_unordered_map {
   private:
     static const int BUCKETS = (1 << BUCKETSLOG2);
 
-    vvl::unordered_map<Key, T, Hash> maps[BUCKETS];
+    std::array<vvl::unordered_map<Key, T, Hash>, BUCKETS> maps;
     struct alignas(get_hardware_destructive_interference_size()) AlignedSharedMutex {
         std::shared_mutex lock;
     };
