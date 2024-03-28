@@ -98,6 +98,7 @@ typedef struct {
     uint32_t *duplicate_message_limit;
     bool *fine_grained_locking;
     GpuAVSettings *gpuav_settings;
+    DebugPrintfSettings *printf_settings;
 } ConfigAndEnvSettings;
 
 static const vvl::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {

@@ -55,6 +55,10 @@ const char *SETTING_CUSTOM_STYPE_LIST = "custom_stype_list";
 const char *SETTING_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 const char *SETTING_FINE_GRAINED_LOCKING = "fine_grained_locking";
 
+const char *SETTING_PRINTF_TO_STDOUT = "printf_to_stdout";
+const char *SETTING_PRINTF_VERBOSE = "printf_verbose";
+const char *SETTING_PRINTF_BUFFER_SIZE = "printf_buffer_size";
+
 const char *SETTING_GPUAV_VALIDATE_DESCRIPTORS = "gpuav_descriptor_checks";
 const char *SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER = "gpuav_validate_indirect_buffer";
 const char *SETTING_GPUAV_VALIDATE_COPIES = "gpuav_validate_copies";
@@ -395,6 +399,19 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_CUSTOM_STYPE_LIST)) {
         vkuGetLayerSettingValues(layer_setting_set, SETTING_CUSTOM_STYPE_LIST, custom_stype_info);
+    }
+
+    DebugPrintfSettings &printf_settings = *settings_data->printf_settings;
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_PRINTF_TO_STDOUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_PRINTF_TO_STDOUT, printf_settings.to_stdout);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_PRINTF_VERBOSE)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_PRINTF_VERBOSE, printf_settings.verbose);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_PRINTF_BUFFER_SIZE)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_PRINTF_BUFFER_SIZE, printf_settings.buffer_size);
     }
 
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;

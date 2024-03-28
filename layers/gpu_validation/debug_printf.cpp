@@ -31,17 +31,17 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
         aborted = true;
         return;
     }
-    const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
-    output_buffer_byte_size = *size_string ? atoi(size_string) : 1024;
 
-    std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
-    vvl::ToLower(verbose_string);
-    verbose = !verbose_string.compare("true");
+    output_buffer_byte_size = printf_settings.buffer_size;
+    verbose = printf_settings.verbose;
+    use_stdout = printf_settings.to_stdout;
 
-    std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
-    vvl::ToLower(stdout_string);
-    use_stdout = !stdout_string.compare("true");
-    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) use_stdout = true;
+    // This option was published when Debug PrintF came out, leave to not break people's flow
+    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
+        LogWarning("WARNING-DEBUG-PRINTF", device, loc,
+                   "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
+        use_stdout = true;
+    }
 
     // GpuAssistedBase::CreateDevice will set up bindings
     VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
