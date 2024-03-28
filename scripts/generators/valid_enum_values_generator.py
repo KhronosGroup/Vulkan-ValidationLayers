@@ -67,7 +67,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
         guard_helper = PlatformGuardHelper()
         for enum in [x for x in self.vk.enums.values() if x.name not in self.ignoreList and not x.returnedOnly]:
             out.extend(guard_helper.add_guard(enum.protect))
-            out.append(f'template<> ValidValue ValidationObject::IsValidEnumValue({enum.name} value) const;\n')
+            out.append(f'template<> ValidValue StatelessValidation::IsValidEnumValue({enum.name} value) const;\n')
         out.extend(guard_helper.add_guard(None))
 
         self.write("".join(out))
@@ -93,7 +93,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
         for enum in [x for x in self.vk.enums.values() if x.name not in self.ignoreList and not x.returnedOnly]:
             out.extend(guard_helper.add_guard(enum.protect, extra_newline=True))
-            out.append(f'template<> ValidValue ValidationObject::IsValidEnumValue({enum.name} value) const {{\n')
+            out.append(f'template<> ValidValue StatelessValidation::IsValidEnumValue({enum.name} value) const {{\n')
             out.append('    switch (value) {\n')
             # If the field has same/subset extensions as enum, we count it as "core" for the struct
             coreEnums = [x for x in enum.fields if not x.extensions or (x.extensions and all(e in enum.extensions for e in x.extensions))]
