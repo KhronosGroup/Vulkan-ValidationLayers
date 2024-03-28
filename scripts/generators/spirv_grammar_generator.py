@@ -104,11 +104,13 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         if enum['value'] not in values:
                             self.imageOperandsParamCount[count].append(enum['enumerant'])
                             values.append(enum['value'])
-                self.addToStringList(operandKind, 'StorageClass', self.storageClassList)
-                self.addToStringList(operandKind, 'ExecutionModel', self.executionModelList)
-                self.addToStringList(operandKind, 'ExecutionMode', self.executionModeList)
-                self.addToStringList(operandKind, 'Decoration', self.decorationList)
-                self.addToStringList(operandKind, 'BuiltIn', self.builtInList)
+                # Use EXT/KHR Alias names where possible
+                # Core issue is SPIR-V grammar sometimes puts alias both before/after the promotoed name
+                self.addToStringList(operandKind, 'StorageClass', self.storageClassList, ['CallableDataNV', 'IncomingCallableDataNV', 'RayPayloadNV', 'HitAttributeNV', 'IncomingRayPayloadNV', 'ShaderRecordBufferNV'])
+                self.addToStringList(operandKind, 'ExecutionModel', self.executionModelList, ['RayGenerationNV', 'IntersectionNV', 'AnyHitNV', 'ClosestHitNV', 'MissNV', 'CallableNV'])
+                self.addToStringList(operandKind, 'ExecutionMode', self.executionModeList, ['OutputLinesNV', 'OutputPrimitivesNV', 'OutputTrianglesNV'])
+                self.addToStringList(operandKind, 'Decoration', self.decorationList, ['PerPrimitiveNV'])
+                self.addToStringList(operandKind, 'BuiltIn', self.builtInList, ['BaryCoordNV', 'BaryCoordNoPerspNV', 'LaunchIdNV', 'LaunchSizeNV', 'WorldRayOriginNV', 'WorldRayDirectionNV', 'ObjectRayOriginNV', 'ObjectRayDirectionNV', 'RayTminNV', 'RayTmaxNV', 'InstanceCustomIndexNV', 'ObjectToWorldNV', 'WorldToObjectNV', 'HitKindNV', 'IncomingRayFlagsNV'])
                 self.addToStringList(operandKind, 'Dim', self.dimList)
                 self.addToStringList(operandKind, 'CooperativeMatrixOperands', self.cooperativeMatrixList, ['NoneKHR'])
 

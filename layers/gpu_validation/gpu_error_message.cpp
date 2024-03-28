@@ -57,45 +57,55 @@ static void GenerateStageMessage(const uint32_t *error_record, std::string &msg)
             strm << "Stage = Compute.  Global invocation ID (x, y, z) = (" << error_record[kHeaderInvocationIdXOffset] << ", "
                  << error_record[kHeaderInvocationIdYOffset] << ", " << error_record[kHeaderInvocationIdZOffset] << " )";
         } break;
-        case spv::ExecutionModelRayGenerationNV: {
+        case spv::ExecutionModelRayGenerationKHR: {
             strm << "Stage = Ray Generation.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset]
                  << ", " << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
                  << "). ";
         } break;
-        case spv::ExecutionModelIntersectionNV: {
+        case spv::ExecutionModelIntersectionKHR: {
             strm << "Stage = Intersection.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
                  << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
                  << "). ";
         } break;
-        case spv::ExecutionModelAnyHitNV: {
+        case spv::ExecutionModelAnyHitKHR: {
             strm << "Stage = Any Hit.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
                  << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
                  << "). ";
         } break;
-        case spv::ExecutionModelClosestHitNV: {
+        case spv::ExecutionModelClosestHitKHR: {
             strm << "Stage = Closest Hit.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
                  << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
                  << "). ";
         } break;
-        case spv::ExecutionModelMissNV: {
+        case spv::ExecutionModelMissKHR: {
             strm << "Stage = Miss.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
                  << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
                  << "). ";
         } break;
-        case spv::ExecutionModelCallableNV: {
+        case spv::ExecutionModelCallableKHR: {
             strm << "Stage = Callable.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
                  << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
                  << "). ";
         } break;
+        case spv::ExecutionModelTaskEXT: {
+            strm << "Stage = TaskEXT. Global invocation ID (x, y, z) = (" << error_record[kHeaderTaskGlobalInvocationIdXOffset]
+                 << ", " << error_record[kHeaderTaskGlobalInvocationIdYOffset] << ", "
+                 << error_record[kHeaderTaskGlobalInvocationIdZOffset] << " )";
+        } break;
+        case spv::ExecutionModelMeshEXT: {
+            strm << "Stage = MeshEXT. Global invocation ID (x, y, z) = (" << error_record[kHeaderMeshGlobalInvocationIdXOffset]
+                 << ", " << error_record[kHeaderMeshGlobalInvocationIdYOffset] << ", "
+                 << error_record[kHeaderMeshGlobalInvocationIdZOffset] << " )";
+        } break;
         case spv::ExecutionModelTaskNV: {
-            strm << "Stage = Task. Global invocation ID (x, y, z) = (" << error_record[kHeaderTaskGlobalInvocationIdXOffset] << ", "
-                 << error_record[kHeaderTaskGlobalInvocationIdYOffset] << ", " << error_record[kHeaderTaskGlobalInvocationIdZOffset]
-                 << " )";
+            strm << "Stage = TaskNV. Global invocation ID (x, y, z) = (" << error_record[kHeaderTaskGlobalInvocationIdXOffset]
+                 << ", " << error_record[kHeaderTaskGlobalInvocationIdYOffset] << ", "
+                 << error_record[kHeaderTaskGlobalInvocationIdZOffset] << " )";
         } break;
         case spv::ExecutionModelMeshNV: {
-            strm << "Stage = Mesh.Global invocation ID (x, y, z) = (" << error_record[kHeaderMeshGlobalInvocationIdXOffset] << ", "
-                 << error_record[kHeaderMeshGlobalInvocationIdYOffset] << ", " << error_record[kHeaderMeshGlobalInvocationIdZOffset]
-                 << " )";
+            strm << "Stage = MeshNV. Global invocation ID (x, y, z) = (" << error_record[kHeaderMeshGlobalInvocationIdXOffset]
+                 << ", " << error_record[kHeaderMeshGlobalInvocationIdYOffset] << ", "
+                 << error_record[kHeaderMeshGlobalInvocationIdZOffset] << " )";
         } break;
         default: {
             strm << "Internal Error (unexpected stage = " << error_record[kHeaderStageIdOffset] << "). ";

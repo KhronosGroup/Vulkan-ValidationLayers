@@ -145,7 +145,7 @@ void ExecutionModeSet::Add(const Instruction& insn) {
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             break;
         case spv::ExecutionModeOutputLineStrip:
-        case spv::ExecutionModeOutputLinesNV:
+        case spv::ExecutionModeOutputLinesEXT:  // alias ExecutionModeOutputLinesNV
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             break;
         case spv::ExecutionModeTriangles:
@@ -163,7 +163,7 @@ void ExecutionModeSet::Add(const Instruction& insn) {
             tessellation_subdivision = spv::ExecutionModeQuads;
             break;
         case spv::ExecutionModeOutputTriangleStrip:
-        case spv::ExecutionModeOutputTrianglesNV:
+        case spv::ExecutionModeOutputTrianglesEXT:  // alias ExecutionModeOutputTrianglesNV
             primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
             break;
         case spv::ExecutionModeInputPoints:

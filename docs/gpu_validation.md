@@ -626,44 +626,44 @@ or the instruction that consumes the OpSampledImage that consumes the descriptor
 
 The Stage is the integer value used in SPIR-V for each of the Execution Models:
 
-| Stage         | Value |
-|---------------|:-----:|
-|Vertex         |0      |
-|TessCtrl       |1      |
-|TessEval       |2      |
-|Geometry       |3      |
-|Fragment       |4      |
-|Compute        |5      |
-|Task           |5267   |
-|Mesh           |5268   |
-|RayGenerationNV|5313   |
-|IntersectionNV |5314   |
-|AnyHitNV       |5315   |
-|ClosestHitNV   |5316   |
-|MissNV         |5317   |
-|CallableNV     |5318   |
+| Stage          | Value |
+|----------------|:-----:|
+|Vertex          |0      |
+|TessCtrl        |1      |
+|TessEval        |2      |
+|Geometry        |3      |
+|Fragment        |4      |
+|Compute         |5      |
+|Task            |5267   |
+|Mesh            |5268   |
+|RayGenerationKHR|5313   |
+|IntersectionKHR |5314   |
+|AnyHitKHR       |5315   |
+|ClosestHitKHR   |5316   |
+|MissKHR         |5317   |
+|CallableKHR     |5318   |
 
 ### Stage Specific Words
 
 These are words that identify which "instance" of the shader the validation error occurred in.
 Here are words for each stage:
 
-| Stage         | Word 0           | Word 1        | Word 2       |
-|---------------|------------------|---------------|---------------|
-|Vertex         |VertexID          |InstanceID     | unused        |
-|TessCntrl      |InvocationID      |PrimitiveID    | unused        |
-|TessEval       |PrimitiveID       |TessCoord.u    | TessCoord.v   |
-|Geometry       |PrimitiveID       |InvocationID   | unused        |
-|Fragment       |FragCoord.x       |FragCoord.y    | unused        |
-|Compute        |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
-|Task           |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
-|Mesh           |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
-|RayGenerationNV|LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
-|IntersectionNV |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
-|AnyHitNV       |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
-|ClosestHitNV   |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
-|MissNV         |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
-|CallableNV     |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
+| Stage          | Word 0           | Word 1        | Word 2       |
+|----------------|------------------|---------------|---------------|
+|Vertex          |VertexID          |InstanceID     | unused        |
+|TessCntrl       |InvocationID      |PrimitiveID    | unused        |
+|TessEval        |PrimitiveID       |TessCoord.u    | TessCoord.v   |
+|Geometry        |PrimitiveID       |InvocationID   | unused        |
+|Fragment        |FragCoord.x       |FragCoord.y    | unused        |
+|Compute         |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
+|Task            |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
+|Mesh            |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
+|RayGenerationKHR|LaunchIdKHR.x     |LaunchIdKHR.y  |LaunchIdKHR.z  |
+|IntersectionKHR |LaunchIdKHR.x     |LaunchIdKHR.y  |LaunchIdKHR.z  |
+|AnyHitKHR       |LaunchIdKHR.x     |LaunchIdKHR.y  |LaunchIdKHR.z  |
+|ClosestHitKHR   |LaunchIdKHR.x     |LaunchIdKHR.y  |LaunchIdKHR.z  |
+|MissKHR         |LaunchIdKHR.x     |LaunchIdKHR.y  |LaunchIdKHR.z  |
+|CallableKHR     |LaunchIdKHR.x     |LaunchIdKHR.y  |LaunchIdKHR.z  |
 
 "unused" means not relevant, but still present.
 
