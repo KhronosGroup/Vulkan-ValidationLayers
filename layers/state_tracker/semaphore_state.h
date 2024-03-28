@@ -100,9 +100,9 @@ class Semaphore : public RefcountedStateObject {
     // Returns pending queue submission that waits on this binary semaphore.
     std::optional<SubmissionReference> GetPendingBinaryWaitSubmission() const;
 
-    // This is the most recently completed operation. It is returned by value so that the caller
-    // has a correct copy even if something else is completing on this queue in a different thread.
-    SemOp Completed() const;
+    // Current payload value.
+    // If a queue submission command is pending execution, then the returned value may immediately be out of date.
+    uint64_t CurrentPayload() const;
 
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
