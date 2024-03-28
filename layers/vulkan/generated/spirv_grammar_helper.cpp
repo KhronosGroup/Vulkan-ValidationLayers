@@ -971,18 +971,18 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "NodePayloadAMDX";
         case spv::StorageClassNodeOutputPayloadAMDX:
             return "NodeOutputPayloadAMDX";
-        case spv::StorageClassCallableDataNV:
-            return "CallableDataNV";
-        case spv::StorageClassIncomingCallableDataNV:
-            return "IncomingCallableDataNV";
-        case spv::StorageClassRayPayloadNV:
-            return "RayPayloadNV";
-        case spv::StorageClassHitAttributeNV:
-            return "HitAttributeNV";
-        case spv::StorageClassIncomingRayPayloadNV:
-            return "IncomingRayPayloadNV";
-        case spv::StorageClassShaderRecordBufferNV:
-            return "ShaderRecordBufferNV";
+        case spv::StorageClassCallableDataKHR:
+            return "CallableDataKHR";
+        case spv::StorageClassIncomingCallableDataKHR:
+            return "IncomingCallableDataKHR";
+        case spv::StorageClassRayPayloadKHR:
+            return "RayPayloadKHR";
+        case spv::StorageClassHitAttributeKHR:
+            return "HitAttributeKHR";
+        case spv::StorageClassIncomingRayPayloadKHR:
+            return "IncomingRayPayloadKHR";
+        case spv::StorageClassShaderRecordBufferKHR:
+            return "ShaderRecordBufferKHR";
         case spv::StorageClassPhysicalStorageBuffer:
             return "PhysicalStorageBuffer";
         case spv::StorageClassHitObjectAttributeNV:
@@ -1021,18 +1021,18 @@ const char* string_SpvExecutionModel(uint32_t execution_model) {
             return "TaskNV";
         case spv::ExecutionModelMeshNV:
             return "MeshNV";
-        case spv::ExecutionModelRayGenerationNV:
-            return "RayGenerationNV";
-        case spv::ExecutionModelIntersectionNV:
-            return "IntersectionNV";
-        case spv::ExecutionModelAnyHitNV:
-            return "AnyHitNV";
-        case spv::ExecutionModelClosestHitNV:
-            return "ClosestHitNV";
-        case spv::ExecutionModelMissNV:
-            return "MissNV";
-        case spv::ExecutionModelCallableNV:
-            return "CallableNV";
+        case spv::ExecutionModelRayGenerationKHR:
+            return "RayGenerationKHR";
+        case spv::ExecutionModelIntersectionKHR:
+            return "IntersectionKHR";
+        case spv::ExecutionModelAnyHitKHR:
+            return "AnyHitKHR";
+        case spv::ExecutionModelClosestHitKHR:
+            return "ClosestHitKHR";
+        case spv::ExecutionModelMissKHR:
+            return "MissKHR";
+        case spv::ExecutionModelCallableKHR:
+            return "CallableKHR";
         case spv::ExecutionModelTaskEXT:
             return "TaskEXT";
         case spv::ExecutionModelMeshEXT:
@@ -1171,16 +1171,16 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
             return "QuadDerivativesKHR";
         case spv::ExecutionModeRequireFullQuadsKHR:
             return "RequireFullQuadsKHR";
-        case spv::ExecutionModeOutputLinesNV:
-            return "OutputLinesNV";
-        case spv::ExecutionModeOutputPrimitivesNV:
-            return "OutputPrimitivesNV";
+        case spv::ExecutionModeOutputLinesEXT:
+            return "OutputLinesEXT";
+        case spv::ExecutionModeOutputPrimitivesEXT:
+            return "OutputPrimitivesEXT";
         case spv::ExecutionModeDerivativeGroupQuadsNV:
             return "DerivativeGroupQuadsNV";
         case spv::ExecutionModeDerivativeGroupLinearNV:
             return "DerivativeGroupLinearNV";
-        case spv::ExecutionModeOutputTrianglesNV:
-            return "OutputTrianglesNV";
+        case spv::ExecutionModeOutputTrianglesEXT:
+            return "OutputTrianglesEXT";
         case spv::ExecutionModePixelInterlockOrderedEXT:
             return "PixelInterlockOrderedEXT";
         case spv::ExecutionModePixelInterlockUnorderedEXT:
@@ -1359,8 +1359,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "ViewportRelativeNV";
         case spv::DecorationSecondaryViewportRelativeNV:
             return "SecondaryViewportRelativeNV";
-        case spv::DecorationPerPrimitiveNV:
-            return "PerPrimitiveNV";
+        case spv::DecorationPerPrimitiveEXT:
+            return "PerPrimitiveEXT";
         case spv::DecorationPerViewNV:
             return "PerViewNV";
         case spv::DecorationPerTaskNV:
@@ -1701,32 +1701,32 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "PrimitiveTriangleIndicesEXT";
         case spv::BuiltInCullPrimitiveEXT:
             return "CullPrimitiveEXT";
-        case spv::BuiltInLaunchIdNV:
-            return "LaunchIdNV";
-        case spv::BuiltInLaunchSizeNV:
-            return "LaunchSizeNV";
-        case spv::BuiltInWorldRayOriginNV:
-            return "WorldRayOriginNV";
-        case spv::BuiltInWorldRayDirectionNV:
-            return "WorldRayDirectionNV";
-        case spv::BuiltInObjectRayOriginNV:
-            return "ObjectRayOriginNV";
-        case spv::BuiltInObjectRayDirectionNV:
-            return "ObjectRayDirectionNV";
-        case spv::BuiltInRayTminNV:
-            return "RayTminNV";
-        case spv::BuiltInRayTmaxNV:
-            return "RayTmaxNV";
-        case spv::BuiltInInstanceCustomIndexNV:
-            return "InstanceCustomIndexNV";
-        case spv::BuiltInObjectToWorldNV:
-            return "ObjectToWorldNV";
-        case spv::BuiltInWorldToObjectNV:
-            return "WorldToObjectNV";
+        case spv::BuiltInLaunchIdKHR:
+            return "LaunchIdKHR";
+        case spv::BuiltInLaunchSizeKHR:
+            return "LaunchSizeKHR";
+        case spv::BuiltInWorldRayOriginKHR:
+            return "WorldRayOriginKHR";
+        case spv::BuiltInWorldRayDirectionKHR:
+            return "WorldRayDirectionKHR";
+        case spv::BuiltInObjectRayOriginKHR:
+            return "ObjectRayOriginKHR";
+        case spv::BuiltInObjectRayDirectionKHR:
+            return "ObjectRayDirectionKHR";
+        case spv::BuiltInRayTminKHR:
+            return "RayTminKHR";
+        case spv::BuiltInRayTmaxKHR:
+            return "RayTmaxKHR";
+        case spv::BuiltInInstanceCustomIndexKHR:
+            return "InstanceCustomIndexKHR";
+        case spv::BuiltInObjectToWorldKHR:
+            return "ObjectToWorldKHR";
+        case spv::BuiltInWorldToObjectKHR:
+            return "WorldToObjectKHR";
         case spv::BuiltInHitTNV:
             return "HitTNV";
-        case spv::BuiltInHitKindNV:
-            return "HitKindNV";
+        case spv::BuiltInHitKindKHR:
+            return "HitKindKHR";
         case spv::BuiltInCurrentRayTimeNV:
             return "CurrentRayTimeNV";
         case spv::BuiltInHitTriangleVertexPositionsKHR:
@@ -1735,8 +1735,8 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "HitMicroTriangleVertexPositionsNV";
         case spv::BuiltInHitMicroTriangleVertexBarycentricsNV:
             return "HitMicroTriangleVertexBarycentricsNV";
-        case spv::BuiltInIncomingRayFlagsNV:
-            return "IncomingRayFlagsNV";
+        case spv::BuiltInIncomingRayFlagsKHR:
+            return "IncomingRayFlagsKHR";
         case spv::BuiltInRayGeometryIndexKHR:
             return "RayGeometryIndexKHR";
         case spv::BuiltInWarpsPerSMNV:
