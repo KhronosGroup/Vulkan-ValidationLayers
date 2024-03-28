@@ -715,22 +715,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
         virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj, safe_VkDeviceCreateInfo *modified_create_info) {
             PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj);
         };
-
-        template <typename T>
-        ValidValue IsValidEnumValue(T value) const;
-        template <typename T>
-        vvl::Extensions GetEnumExtensions(T value) const;
 };
 // clang-format on
-
-// VkFlags values don't have a way overload, so need to use vvl::FlagBitmask
-vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions& device_extensions);
-vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, const DeviceExtensions& device_extensions);
-
 ''')
 
         out.append('extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;')
-        out.append('\n#include "valid_enum_values.h"')
         self.write("".join(out))
 
     def generateSource(self):

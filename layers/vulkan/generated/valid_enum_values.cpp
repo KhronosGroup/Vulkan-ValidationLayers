@@ -22,7 +22,7 @@
 
 // NOLINTBEGIN
 
-#include "chassis.h"
+#include "stateless/stateless_validation.h"
 
 //  Checking for values is a 2 part process
 //    1. Check if is valid at all
@@ -36,7 +36,7 @@
 //  "forgot to enable an extension" is VERY important
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const {
     switch (value) {
         case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
             return ValidValue::Valid;
@@ -46,7 +46,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPipelineCacheHeaderVersion value
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkImageLayout value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkImageLayout value) const {
     switch (value) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
         case VK_IMAGE_LAYOUT_GENERAL:
@@ -101,7 +101,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkImageLayout value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkObjectType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkObjectType value) const {
     switch (value) {
         case VK_OBJECT_TYPE_UNKNOWN:
         case VK_OBJECT_TYPE_INSTANCE:
@@ -182,7 +182,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkObjectType value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkFormat value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkFormat value) const {
     switch (value) {
         case VK_FORMAT_UNDEFINED:
         case VK_FORMAT_R4G4_UNORM_PACK8:
@@ -449,7 +449,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkFormat value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkImageTiling value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkImageTiling value) const {
     switch (value) {
         case VK_IMAGE_TILING_OPTIMAL:
         case VK_IMAGE_TILING_LINEAR:
@@ -462,7 +462,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkImageTiling value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkImageType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkImageType value) const {
     switch (value) {
         case VK_IMAGE_TYPE_1D:
         case VK_IMAGE_TYPE_2D:
@@ -474,7 +474,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkImageType value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkQueryType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkQueryType value) const {
     switch (value) {
         case VK_QUERY_TYPE_OCCLUSION:
         case VK_QUERY_TYPE_PIPELINE_STATISTICS:
@@ -511,7 +511,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkQueryType value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSharingMode value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSharingMode value) const {
     switch (value) {
         case VK_SHARING_MODE_EXCLUSIVE:
         case VK_SHARING_MODE_CONCURRENT:
@@ -522,7 +522,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSharingMode value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkComponentSwizzle value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkComponentSwizzle value) const {
     switch (value) {
         case VK_COMPONENT_SWIZZLE_IDENTITY:
         case VK_COMPONENT_SWIZZLE_ZERO:
@@ -538,7 +538,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkComponentSwizzle value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkImageViewType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkImageViewType value) const {
     switch (value) {
         case VK_IMAGE_VIEW_TYPE_1D:
         case VK_IMAGE_VIEW_TYPE_2D:
@@ -554,7 +554,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkImageViewType value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkBlendFactor value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkBlendFactor value) const {
     switch (value) {
         case VK_BLEND_FACTOR_ZERO:
         case VK_BLEND_FACTOR_ONE:
@@ -582,7 +582,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkBlendFactor value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkBlendOp value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkBlendOp value) const {
     switch (value) {
         case VK_BLEND_OP_ADD:
         case VK_BLEND_OP_SUBTRACT:
@@ -643,7 +643,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkBlendOp value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCompareOp value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCompareOp value) const {
     switch (value) {
         case VK_COMPARE_OP_NEVER:
         case VK_COMPARE_OP_LESS:
@@ -660,7 +660,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCompareOp value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDynamicState value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDynamicState value) const {
     switch (value) {
         case VK_DYNAMIC_STATE_VIEWPORT:
         case VK_DYNAMIC_STATE_SCISSOR:
@@ -759,7 +759,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDynamicState value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkFrontFace value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkFrontFace value) const {
     switch (value) {
         case VK_FRONT_FACE_COUNTER_CLOCKWISE:
         case VK_FRONT_FACE_CLOCKWISE:
@@ -770,7 +770,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkFrontFace value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkVertexInputRate value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkVertexInputRate value) const {
     switch (value) {
         case VK_VERTEX_INPUT_RATE_VERTEX:
         case VK_VERTEX_INPUT_RATE_INSTANCE:
@@ -781,7 +781,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkVertexInputRate value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPrimitiveTopology value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPrimitiveTopology value) const {
     switch (value) {
         case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
         case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
@@ -801,7 +801,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPrimitiveTopology value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPolygonMode value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPolygonMode value) const {
     switch (value) {
         case VK_POLYGON_MODE_FILL:
         case VK_POLYGON_MODE_LINE:
@@ -815,7 +815,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPolygonMode value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkStencilOp value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkStencilOp value) const {
     switch (value) {
         case VK_STENCIL_OP_KEEP:
         case VK_STENCIL_OP_ZERO:
@@ -832,7 +832,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkStencilOp value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkLogicOp value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkLogicOp value) const {
     switch (value) {
         case VK_LOGIC_OP_CLEAR:
         case VK_LOGIC_OP_AND:
@@ -857,7 +857,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkLogicOp value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkBorderColor value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkBorderColor value) const {
     switch (value) {
         case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
         case VK_BORDER_COLOR_INT_TRANSPARENT_BLACK:
@@ -875,7 +875,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkBorderColor value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkFilter value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkFilter value) const {
     switch (value) {
         case VK_FILTER_NEAREST:
         case VK_FILTER_LINEAR:
@@ -890,7 +890,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkFilter value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSamplerAddressMode value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSamplerAddressMode value) const {
     switch (value) {
         case VK_SAMPLER_ADDRESS_MODE_REPEAT:
         case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
@@ -906,7 +906,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSamplerAddressMode value) const 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSamplerMipmapMode value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSamplerMipmapMode value) const {
     switch (value) {
         case VK_SAMPLER_MIPMAP_MODE_NEAREST:
         case VK_SAMPLER_MIPMAP_MODE_LINEAR:
@@ -917,7 +917,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSamplerMipmapMode value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDescriptorType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDescriptorType value) const {
     switch (value) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
@@ -951,7 +951,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDescriptorType value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkAttachmentLoadOp value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkAttachmentLoadOp value) const {
     switch (value) {
         case VK_ATTACHMENT_LOAD_OP_LOAD:
         case VK_ATTACHMENT_LOAD_OP_CLEAR:
@@ -968,7 +968,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkAttachmentLoadOp value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkAttachmentStoreOp value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkAttachmentStoreOp value) const {
     switch (value) {
         case VK_ATTACHMENT_STORE_OP_STORE:
         case VK_ATTACHMENT_STORE_OP_DONT_CARE:
@@ -986,7 +986,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkAttachmentStoreOp value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPipelineBindPoint value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPipelineBindPoint value) const {
     switch (value) {
         case VK_PIPELINE_BIND_POINT_GRAPHICS:
         case VK_PIPELINE_BIND_POINT_COMPUTE:
@@ -1005,7 +1005,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPipelineBindPoint value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCommandBufferLevel value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCommandBufferLevel value) const {
     switch (value) {
         case VK_COMMAND_BUFFER_LEVEL_PRIMARY:
         case VK_COMMAND_BUFFER_LEVEL_SECONDARY:
@@ -1016,7 +1016,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCommandBufferLevel value) const 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkIndexType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkIndexType value) const {
     switch (value) {
         case VK_INDEX_TYPE_UINT16:
         case VK_INDEX_TYPE_UINT32:
@@ -1037,7 +1037,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkIndexType value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSubpassContents value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSubpassContents value) const {
     switch (value) {
         case VK_SUBPASS_CONTENTS_INLINE:
         case VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS:
@@ -1050,7 +1050,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSubpassContents value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkTessellationDomainOrigin value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkTessellationDomainOrigin value) const {
     switch (value) {
         case VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT:
         case VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT:
@@ -1061,7 +1061,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkTessellationDomainOrigin value) 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSamplerYcbcrModelConversion value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSamplerYcbcrModelConversion value) const {
     switch (value) {
         case VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY:
         case VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY:
@@ -1075,7 +1075,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSamplerYcbcrModelConversion valu
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSamplerYcbcrRange value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSamplerYcbcrRange value) const {
     switch (value) {
         case VK_SAMPLER_YCBCR_RANGE_ITU_FULL:
         case VK_SAMPLER_YCBCR_RANGE_ITU_NARROW:
@@ -1086,7 +1086,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSamplerYcbcrRange value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkChromaLocation value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkChromaLocation value) const {
     switch (value) {
         case VK_CHROMA_LOCATION_COSITED_EVEN:
         case VK_CHROMA_LOCATION_MIDPOINT:
@@ -1097,7 +1097,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkChromaLocation value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const {
     switch (value) {
         case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET:
             return ValidValue::Valid;
@@ -1109,7 +1109,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDescriptorUpdateTemplateType val
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSamplerReductionMode value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSamplerReductionMode value) const {
     switch (value) {
         case VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE:
         case VK_SAMPLER_REDUCTION_MODE_MIN:
@@ -1123,7 +1123,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSamplerReductionMode value) cons
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkSemaphoreType value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkSemaphoreType value) const {
     switch (value) {
         case VK_SEMAPHORE_TYPE_BINARY:
         case VK_SEMAPHORE_TYPE_TIMELINE:
@@ -1134,7 +1134,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkSemaphoreType value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPresentModeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPresentModeKHR value) const {
     switch (value) {
         case VK_PRESENT_MODE_IMMEDIATE_KHR:
         case VK_PRESENT_MODE_MAILBOX_KHR:
@@ -1150,7 +1150,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPresentModeKHR value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkColorSpaceKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkColorSpaceKHR value) const {
     switch (value) {
         case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
             return ValidValue::Valid;
@@ -1177,7 +1177,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkColorSpaceKHR value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkQueueGlobalPriorityKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkQueueGlobalPriorityKHR value) const {
     switch (value) {
         case VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR:
         case VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR:
@@ -1190,7 +1190,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkQueueGlobalPriorityKHR value) co
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkFragmentShadingRateCombinerOpKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateCombinerOpKHR value) const {
     switch (value) {
         case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR:
         case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR:
@@ -1204,7 +1204,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkFragmentShadingRateCombinerOpKHR
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) const {
     switch (value) {
         case VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR:
         case VK_VIDEO_ENCODE_TUNING_MODE_HIGH_QUALITY_KHR:
@@ -1218,7 +1218,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkLineRasterizationModeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkLineRasterizationModeKHR value) const {
     switch (value) {
         case VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR:
         case VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR:
@@ -1231,7 +1231,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkLineRasterizationModeKHR value) 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkTimeDomainKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkTimeDomainKHR value) const {
     switch (value) {
         case VK_TIME_DOMAIN_DEVICE_KHR:
         case VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR:
@@ -1244,7 +1244,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkTimeDomainKHR value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDebugReportObjectTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDebugReportObjectTypeEXT value) const {
     switch (value) {
         case VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT:
         case VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT:
@@ -1301,7 +1301,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDebugReportObjectTypeEXT value) 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkRasterizationOrderAMD value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkRasterizationOrderAMD value) const {
     switch (value) {
         case VK_RASTERIZATION_ORDER_STRICT_AMD:
         case VK_RASTERIZATION_ORDER_RELAXED_AMD:
@@ -1312,7 +1312,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkRasterizationOrderAMD value) con
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkShaderInfoTypeAMD value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkShaderInfoTypeAMD value) const {
     switch (value) {
         case VK_SHADER_INFO_TYPE_STATISTICS_AMD:
         case VK_SHADER_INFO_TYPE_BINARY_AMD:
@@ -1324,7 +1324,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkShaderInfoTypeAMD value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkValidationCheckEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkValidationCheckEXT value) const {
     switch (value) {
         case VK_VALIDATION_CHECK_ALL_EXT:
         case VK_VALIDATION_CHECK_SHADERS_EXT:
@@ -1335,7 +1335,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkValidationCheckEXT value) const 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPipelineRobustnessBufferBehaviorEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessBufferBehaviorEXT value) const {
     switch (value) {
         case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT:
         case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT:
@@ -1348,7 +1348,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPipelineRobustnessBufferBehavior
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPipelineRobustnessImageBehaviorEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessImageBehaviorEXT value) const {
     switch (value) {
         case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT:
         case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT:
@@ -1361,7 +1361,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPipelineRobustnessImageBehaviorE
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDisplayPowerStateEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDisplayPowerStateEXT value) const {
     switch (value) {
         case VK_DISPLAY_POWER_STATE_OFF_EXT:
         case VK_DISPLAY_POWER_STATE_SUSPEND_EXT:
@@ -1373,7 +1373,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDisplayPowerStateEXT value) cons
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDeviceEventTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDeviceEventTypeEXT value) const {
     switch (value) {
         case VK_DEVICE_EVENT_TYPE_DISPLAY_HOTPLUG_EXT:
             return ValidValue::Valid;
@@ -1383,7 +1383,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDeviceEventTypeEXT value) const 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDisplayEventTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDisplayEventTypeEXT value) const {
     switch (value) {
         case VK_DISPLAY_EVENT_TYPE_FIRST_PIXEL_OUT_EXT:
             return ValidValue::Valid;
@@ -1393,7 +1393,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDisplayEventTypeEXT value) const
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkViewportCoordinateSwizzleNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkViewportCoordinateSwizzleNV value) const {
     switch (value) {
         case VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV:
         case VK_VIEWPORT_COORDINATE_SWIZZLE_NEGATIVE_X_NV:
@@ -1410,7 +1410,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkViewportCoordinateSwizzleNV valu
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDiscardRectangleModeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDiscardRectangleModeEXT value) const {
     switch (value) {
         case VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT:
         case VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT:
@@ -1421,7 +1421,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDiscardRectangleModeEXT value) c
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkConservativeRasterizationModeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkConservativeRasterizationModeEXT value) const {
     switch (value) {
         case VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT:
         case VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT:
@@ -1433,7 +1433,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkConservativeRasterizationModeEXT
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkBlendOverlapEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkBlendOverlapEXT value) const {
     switch (value) {
         case VK_BLEND_OVERLAP_UNCORRELATED_EXT:
         case VK_BLEND_OVERLAP_DISJOINT_EXT:
@@ -1445,7 +1445,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkBlendOverlapEXT value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCoverageModulationModeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCoverageModulationModeNV value) const {
     switch (value) {
         case VK_COVERAGE_MODULATION_MODE_NONE_NV:
         case VK_COVERAGE_MODULATION_MODE_RGB_NV:
@@ -1458,7 +1458,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCoverageModulationModeNV value) 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkShadingRatePaletteEntryNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkShadingRatePaletteEntryNV value) const {
     switch (value) {
         case VK_SHADING_RATE_PALETTE_ENTRY_NO_INVOCATIONS_NV:
         case VK_SHADING_RATE_PALETTE_ENTRY_16_INVOCATIONS_PER_PIXEL_NV:
@@ -1479,7 +1479,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkShadingRatePaletteEntryNV value)
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCoarseSampleOrderTypeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCoarseSampleOrderTypeNV value) const {
     switch (value) {
         case VK_COARSE_SAMPLE_ORDER_TYPE_DEFAULT_NV:
         case VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV:
@@ -1492,7 +1492,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCoarseSampleOrderTypeNV value) c
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkRayTracingShaderGroupTypeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkRayTracingShaderGroupTypeKHR value) const {
     switch (value) {
         case VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR:
         case VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR:
@@ -1504,7 +1504,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkRayTracingShaderGroupTypeKHR val
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkGeometryTypeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkGeometryTypeKHR value) const {
     switch (value) {
         case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
         case VK_GEOMETRY_TYPE_AABBS_KHR:
@@ -1516,7 +1516,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkGeometryTypeKHR value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const {
     switch (value) {
         case VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR:
         case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR:
@@ -1528,7 +1528,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureTypeKHR val
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCopyAccelerationStructureModeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCopyAccelerationStructureModeKHR value) const {
     switch (value) {
         case VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR:
         case VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR:
@@ -1541,7 +1541,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCopyAccelerationStructureModeKHR
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureMemoryRequirementsTypeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureMemoryRequirementsTypeNV value) const {
     switch (value) {
         case VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV:
         case VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV:
@@ -1553,7 +1553,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureMemoryRequi
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkMemoryOverallocationBehaviorAMD value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkMemoryOverallocationBehaviorAMD value) const {
     switch (value) {
         case VK_MEMORY_OVERALLOCATION_BEHAVIOR_DEFAULT_AMD:
         case VK_MEMORY_OVERALLOCATION_BEHAVIOR_ALLOWED_AMD:
@@ -1565,7 +1565,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkMemoryOverallocationBehaviorAMD 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPerformanceConfigurationTypeINTEL value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPerformanceConfigurationTypeINTEL value) const {
     switch (value) {
         case VK_PERFORMANCE_CONFIGURATION_TYPE_COMMAND_QUEUE_METRICS_DISCOVERY_ACTIVATED_INTEL:
             return ValidValue::Valid;
@@ -1575,7 +1575,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPerformanceConfigurationTypeINTE
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkQueryPoolSamplingModeINTEL value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkQueryPoolSamplingModeINTEL value) const {
     switch (value) {
         case VK_QUERY_POOL_SAMPLING_MODE_MANUAL_INTEL:
             return ValidValue::Valid;
@@ -1585,7 +1585,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkQueryPoolSamplingModeINTEL value
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPerformanceOverrideTypeINTEL value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPerformanceOverrideTypeINTEL value) const {
     switch (value) {
         case VK_PERFORMANCE_OVERRIDE_TYPE_NULL_HARDWARE_INTEL:
         case VK_PERFORMANCE_OVERRIDE_TYPE_FLUSH_GPU_CACHES_INTEL:
@@ -1596,7 +1596,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPerformanceOverrideTypeINTEL val
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPerformanceParameterTypeINTEL value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkPerformanceParameterTypeINTEL value) const {
     switch (value) {
         case VK_PERFORMANCE_PARAMETER_TYPE_HW_COUNTERS_SUPPORTED_INTEL:
         case VK_PERFORMANCE_PARAMETER_TYPE_STREAM_MARKER_VALID_BITS_INTEL:
@@ -1607,7 +1607,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkPerformanceParameterTypeINTEL va
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkValidationFeatureEnableEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkValidationFeatureEnableEXT value) const {
     switch (value) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
@@ -1621,7 +1621,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkValidationFeatureEnableEXT value
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkValidationFeatureDisableEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkValidationFeatureDisableEXT value) const {
     switch (value) {
         case VK_VALIDATION_FEATURE_DISABLE_ALL_EXT:
         case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
@@ -1638,7 +1638,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkValidationFeatureDisableEXT valu
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCoverageReductionModeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCoverageReductionModeNV value) const {
     switch (value) {
         case VK_COVERAGE_REDUCTION_MODE_MERGE_NV:
         case VK_COVERAGE_REDUCTION_MODE_TRUNCATE_NV:
@@ -1649,7 +1649,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCoverageReductionModeNV value) c
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkProvokingVertexModeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkProvokingVertexModeEXT value) const {
     switch (value) {
         case VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT:
         case VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT:
@@ -1661,7 +1661,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkProvokingVertexModeEXT value) co
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkFullScreenExclusiveEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkFullScreenExclusiveEXT value) const {
     switch (value) {
         case VK_FULL_SCREEN_EXCLUSIVE_DEFAULT_EXT:
         case VK_FULL_SCREEN_EXCLUSIVE_ALLOWED_EXT:
@@ -1675,7 +1675,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkFullScreenExclusiveEXT value) co
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkIndirectCommandsTokenTypeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkIndirectCommandsTokenTypeNV value) const {
     switch (value) {
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV:
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV:
@@ -1698,7 +1698,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkIndirectCommandsTokenTypeNV valu
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDepthBiasRepresentationEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDepthBiasRepresentationEXT value) const {
     switch (value) {
         case VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT:
         case VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT:
@@ -1710,7 +1710,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDepthBiasRepresentationEXT value
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkFragmentShadingRateTypeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateTypeNV value) const {
     switch (value) {
         case VK_FRAGMENT_SHADING_RATE_TYPE_FRAGMENT_SIZE_NV:
         case VK_FRAGMENT_SHADING_RATE_TYPE_ENUMS_NV:
@@ -1721,7 +1721,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkFragmentShadingRateTypeNV value)
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkFragmentShadingRateNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateNV value) const {
     switch (value) {
         case VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV:
         case VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_1X2_PIXELS_NV:
@@ -1742,7 +1742,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkFragmentShadingRateNV value) con
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureMotionInstanceTypeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureMotionInstanceTypeNV value) const {
     switch (value) {
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_STATIC_NV:
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_MATRIX_MOTION_NV:
@@ -1754,7 +1754,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureMotionInsta
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDeviceFaultAddressTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDeviceFaultAddressTypeEXT value) const {
     switch (value) {
         case VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_EXT:
         case VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_EXT:
@@ -1770,7 +1770,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDeviceFaultAddressTypeEXT value)
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const {
     switch (value) {
         case VK_DEVICE_FAULT_VENDOR_BINARY_HEADER_VERSION_ONE_EXT:
             return ValidValue::Valid;
@@ -1780,7 +1780,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVer
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDeviceAddressBindingTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDeviceAddressBindingTypeEXT value) const {
     switch (value) {
         case VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT:
         case VK_DEVICE_ADDRESS_BINDING_TYPE_UNBIND_EXT:
@@ -1791,7 +1791,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDeviceAddressBindingTypeEXT valu
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkMicromapTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkMicromapTypeEXT value) const {
     switch (value) {
         case VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT:
             return ValidValue::Valid;
@@ -1803,7 +1803,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkMicromapTypeEXT value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkBuildMicromapModeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkBuildMicromapModeEXT value) const {
     switch (value) {
         case VK_BUILD_MICROMAP_MODE_BUILD_EXT:
             return ValidValue::Valid;
@@ -1813,7 +1813,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkBuildMicromapModeEXT value) cons
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCopyMicromapModeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCopyMicromapModeEXT value) const {
     switch (value) {
         case VK_COPY_MICROMAP_MODE_CLONE_EXT:
         case VK_COPY_MICROMAP_MODE_SERIALIZE_EXT:
@@ -1826,7 +1826,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCopyMicromapModeEXT value) const
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureCompatibilityKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureCompatibilityKHR value) const {
     switch (value) {
         case VK_ACCELERATION_STRUCTURE_COMPATIBILITY_COMPATIBLE_KHR:
         case VK_ACCELERATION_STRUCTURE_COMPATIBILITY_INCOMPATIBLE_KHR:
@@ -1837,7 +1837,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureCompatibili
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureBuildTypeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureBuildTypeKHR value) const {
     switch (value) {
         case VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR:
         case VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR:
@@ -1849,7 +1849,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkAccelerationStructureBuildTypeKH
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG value) const {
     switch (value) {
         case VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG:
         case VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG:
@@ -1860,7 +1860,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG va
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV value) const {
     switch (value) {
         case VK_OPTICAL_FLOW_PERFORMANCE_LEVEL_UNKNOWN_NV:
         case VK_OPTICAL_FLOW_PERFORMANCE_LEVEL_SLOW_NV:
@@ -1873,7 +1873,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV va
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkOpticalFlowSessionBindingPointNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkOpticalFlowSessionBindingPointNV value) const {
     switch (value) {
         case VK_OPTICAL_FLOW_SESSION_BINDING_POINT_UNKNOWN_NV:
         case VK_OPTICAL_FLOW_SESSION_BINDING_POINT_INPUT_NV:
@@ -1891,7 +1891,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkOpticalFlowSessionBindingPointNV
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkShaderCodeTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkShaderCodeTypeEXT value) const {
     switch (value) {
         case VK_SHADER_CODE_TYPE_BINARY_EXT:
         case VK_SHADER_CODE_TYPE_SPIRV_EXT:
@@ -1902,7 +1902,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkShaderCodeTypeEXT value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkLayerSettingTypeEXT value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkLayerSettingTypeEXT value) const {
     switch (value) {
         case VK_LAYER_SETTING_TYPE_BOOL32_EXT:
         case VK_LAYER_SETTING_TYPE_INT32_EXT:
@@ -1919,7 +1919,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkLayerSettingTypeEXT value) const
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkLatencyMarkerNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkLatencyMarkerNV value) const {
     switch (value) {
         case VK_LATENCY_MARKER_SIMULATION_START_NV:
         case VK_LATENCY_MARKER_SIMULATION_END_NV:
@@ -1940,7 +1940,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkLatencyMarkerNV value) const {
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkOutOfBandQueueTypeNV value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkOutOfBandQueueTypeNV value) const {
     switch (value) {
         case VK_OUT_OF_BAND_QUEUE_TYPE_RENDER_NV:
         case VK_OUT_OF_BAND_QUEUE_TYPE_PRESENT_NV:
@@ -1951,7 +1951,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkOutOfBandQueueTypeNV value) cons
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM value) const {
     switch (value) {
         case VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MIN_QCOM:
         case VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MAX_QCOM:
@@ -1962,7 +1962,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM 
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkCubicFilterWeightsQCOM value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkCubicFilterWeightsQCOM value) const {
     switch (value) {
         case VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM:
         case VK_CUBIC_FILTER_WEIGHTS_ZERO_TANGENT_CARDINAL_QCOM:
@@ -1975,7 +1975,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkCubicFilterWeightsQCOM value) co
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const {
     switch (value) {
         case VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR:
         case VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR:
@@ -1986,7 +1986,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkBuildAccelerationStructureModeKH
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkShaderGroupShaderKHR value) const {
+ValidValue StatelessValidation::IsValidEnumValue(VkShaderGroupShaderKHR value) const {
     switch (value) {
         case VK_SHADER_GROUP_SHADER_GENERAL_KHR:
         case VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR:
@@ -1999,12 +1999,12 @@ ValidValue ValidationObject::IsValidEnumValue(VkShaderGroupShaderKHR value) cons
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPipelineCacheHeaderVersion value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineCacheHeaderVersion value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkImageLayout value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkImageLayout value) const {
     switch (value) {
         case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
         case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
@@ -2043,7 +2043,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkImageLayout value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkObjectType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkObjectType value) const {
     switch (value) {
         case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
             return {vvl::Extension::_VK_KHR_sampler_ycbcr_conversion};
@@ -2097,7 +2097,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkObjectType value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkFormat value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkFormat value) const {
     switch (value) {
         case VK_FORMAT_G8B8G8R8_422_UNORM:
         case VK_FORMAT_B8G8R8G8_422_UNORM:
@@ -2177,7 +2177,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkFormat value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkImageTiling value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkImageTiling value) const {
     switch (value) {
         case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
             return {vvl::Extension::_VK_EXT_image_drm_format_modifier};
@@ -2187,12 +2187,12 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkImageTiling value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkImageType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkImageType value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkQueryType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkQueryType value) const {
     switch (value) {
         case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR:
             return {vvl::Extension::_VK_KHR_video_queue};
@@ -2225,27 +2225,27 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkQueryType value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSharingMode value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSharingMode value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkComponentSwizzle value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkComponentSwizzle value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkImageViewType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkImageViewType value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkBlendFactor value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkBlendFactor value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkBlendOp value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkBlendOp value) const {
     switch (value) {
         case VK_BLEND_OP_ZERO_EXT:
         case VK_BLEND_OP_SRC_EXT:
@@ -2300,12 +2300,12 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkBlendOp value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCompareOp value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCompareOp value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDynamicState value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDynamicState value) const {
     switch (value) {
         case VK_DYNAMIC_STATE_CULL_MODE:
         case VK_DYNAMIC_STATE_FRONT_FACE:
@@ -2390,22 +2390,22 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkDynamicState value) const 
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkFrontFace value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkFrontFace value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkVertexInputRate value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkVertexInputRate value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPrimitiveTopology value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPrimitiveTopology value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPolygonMode value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPolygonMode value) const {
     switch (value) {
         case VK_POLYGON_MODE_FILL_RECTANGLE_NV:
             return {vvl::Extension::_VK_NV_fill_rectangle};
@@ -2415,17 +2415,17 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkPolygonMode value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkStencilOp value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkStencilOp value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkLogicOp value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkLogicOp value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkBorderColor value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkBorderColor value) const {
     switch (value) {
         case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
         case VK_BORDER_COLOR_INT_CUSTOM_EXT:
@@ -2436,7 +2436,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkBorderColor value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkFilter value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkFilter value) const {
     switch (value) {
         case VK_FILTER_CUBIC_EXT:
             return {vvl::Extension::_VK_IMG_filter_cubic, vvl::Extension::_VK_EXT_filter_cubic};
@@ -2446,7 +2446,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkFilter value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSamplerAddressMode value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSamplerAddressMode value) const {
     switch (value) {
         case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
             return {vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge};
@@ -2456,12 +2456,12 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkSamplerAddressMode value) 
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSamplerMipmapMode value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSamplerMipmapMode value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDescriptorType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDescriptorType value) const {
     switch (value) {
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
             return {vvl::Extension::_VK_EXT_inline_uniform_block};
@@ -2480,7 +2480,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkDescriptorType value) cons
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkAttachmentLoadOp value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAttachmentLoadOp value) const {
     switch (value) {
         case VK_ATTACHMENT_LOAD_OP_NONE_KHR:
             return {vvl::Extension::_VK_KHR_load_store_op_none, vvl::Extension::_VK_EXT_load_store_op_none};
@@ -2490,7 +2490,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkAttachmentLoadOp value) co
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkAttachmentStoreOp value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAttachmentStoreOp value) const {
     switch (value) {
         case VK_ATTACHMENT_STORE_OP_NONE:
             return {vvl::Extension::_VK_KHR_dynamic_rendering, vvl::Extension::_VK_KHR_load_store_op_none,
@@ -2501,7 +2501,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkAttachmentStoreOp value) c
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPipelineBindPoint value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineBindPoint value) const {
     switch (value) {
         case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX:
             return {vvl::Extension::_VK_AMDX_shader_enqueue};
@@ -2515,12 +2515,12 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkPipelineBindPoint value) c
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCommandBufferLevel value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCommandBufferLevel value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkIndexType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkIndexType value) const {
     switch (value) {
         case VK_INDEX_TYPE_NONE_KHR:
             return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_acceleration_structure};
@@ -2532,7 +2532,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkIndexType value) const {
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSubpassContents value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSubpassContents value) const {
     switch (value) {
         case VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT:
             return {vvl::Extension::_VK_EXT_nested_command_buffer};
@@ -2542,27 +2542,27 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkSubpassContents value) con
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkTessellationDomainOrigin value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkTessellationDomainOrigin value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSamplerYcbcrModelConversion value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSamplerYcbcrModelConversion value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSamplerYcbcrRange value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSamplerYcbcrRange value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkChromaLocation value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkChromaLocation value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDescriptorUpdateTemplateType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDescriptorUpdateTemplateType value) const {
     switch (value) {
         case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR:
             return {vvl::Extension::_VK_KHR_push_descriptor};
@@ -2572,7 +2572,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkDescriptorUpdateTemplateTy
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSamplerReductionMode value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSamplerReductionMode value) const {
     switch (value) {
         case VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM:
             return {vvl::Extension::_VK_QCOM_filter_cubic_clamp};
@@ -2582,12 +2582,12 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkSamplerReductionMode value
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkSemaphoreType value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkSemaphoreType value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPresentModeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPresentModeKHR value) const {
     switch (value) {
         case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
         case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
@@ -2598,7 +2598,7 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkPresentModeKHR value) cons
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkColorSpaceKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkColorSpaceKHR value) const {
     switch (value) {
         case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
         case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
@@ -2623,32 +2623,32 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkColorSpaceKHR value) const
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkQueueGlobalPriorityKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkQueueGlobalPriorityKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkFragmentShadingRateCombinerOpKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkFragmentShadingRateCombinerOpKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkVideoEncodeTuningModeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkVideoEncodeTuningModeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkLineRasterizationModeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkLineRasterizationModeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkTimeDomainKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkTimeDomainKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDebugReportObjectTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDebugReportObjectTypeEXT value) const {
     switch (value) {
         case VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT:
             return {vvl::Extension::_VK_KHR_sampler_ycbcr_conversion};
@@ -2672,159 +2672,159 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkDebugReportObjectTypeEXT v
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkRasterizationOrderAMD value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkRasterizationOrderAMD value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkShaderInfoTypeAMD value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkShaderInfoTypeAMD value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkValidationCheckEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkValidationCheckEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPipelineRobustnessBufferBehaviorEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineRobustnessBufferBehaviorEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPipelineRobustnessImageBehaviorEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineRobustnessImageBehaviorEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDisplayPowerStateEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDisplayPowerStateEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDeviceEventTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDeviceEventTypeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDisplayEventTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDisplayEventTypeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkViewportCoordinateSwizzleNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkViewportCoordinateSwizzleNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDiscardRectangleModeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDiscardRectangleModeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkConservativeRasterizationModeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkConservativeRasterizationModeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkBlendOverlapEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkBlendOverlapEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCoverageModulationModeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCoverageModulationModeNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkShadingRatePaletteEntryNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkShadingRatePaletteEntryNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCoarseSampleOrderTypeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCoarseSampleOrderTypeNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkRayTracingShaderGroupTypeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkRayTracingShaderGroupTypeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkGeometryTypeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkGeometryTypeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkAccelerationStructureTypeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAccelerationStructureTypeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCopyAccelerationStructureModeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCopyAccelerationStructureModeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkAccelerationStructureMemoryRequirementsTypeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAccelerationStructureMemoryRequirementsTypeNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkMemoryOverallocationBehaviorAMD value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkMemoryOverallocationBehaviorAMD value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPerformanceConfigurationTypeINTEL value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPerformanceConfigurationTypeINTEL value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkQueryPoolSamplingModeINTEL value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkQueryPoolSamplingModeINTEL value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPerformanceOverrideTypeINTEL value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPerformanceOverrideTypeINTEL value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPerformanceParameterTypeINTEL value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPerformanceParameterTypeINTEL value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkValidationFeatureEnableEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkValidationFeatureEnableEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkValidationFeatureDisableEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkValidationFeatureDisableEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCoverageReductionModeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCoverageReductionModeNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkProvokingVertexModeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkProvokingVertexModeEXT value) const {
     return {};
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkFullScreenExclusiveEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkFullScreenExclusiveEXT value) const {
     return {};
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkIndirectCommandsTokenTypeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkIndirectCommandsTokenTypeNV value) const {
     switch (value) {
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV:
             return {vvl::Extension::_VK_EXT_mesh_shader};
@@ -2837,42 +2837,42 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkIndirectCommandsTokenTypeN
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDepthBiasRepresentationEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDepthBiasRepresentationEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkFragmentShadingRateTypeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkFragmentShadingRateTypeNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkFragmentShadingRateNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkFragmentShadingRateNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkAccelerationStructureMotionInstanceTypeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAccelerationStructureMotionInstanceTypeNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDeviceFaultAddressTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDeviceFaultAddressTypeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDeviceAddressBindingTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDeviceAddressBindingTypeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkMicromapTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkMicromapTypeEXT value) const {
     switch (value) {
         case VK_MICROMAP_TYPE_DISPLACEMENT_MICROMAP_NV:
             return {vvl::Extension::_VK_NV_displacement_micromap};
@@ -2882,77 +2882,77 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkMicromapTypeEXT value) con
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkBuildMicromapModeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkBuildMicromapModeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCopyMicromapModeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCopyMicromapModeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkAccelerationStructureCompatibilityKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAccelerationStructureCompatibilityKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkAccelerationStructureBuildTypeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAccelerationStructureBuildTypeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkDirectDriverLoadingModeLUNARG value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDirectDriverLoadingModeLUNARG value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkOpticalFlowPerformanceLevelNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkOpticalFlowPerformanceLevelNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkOpticalFlowSessionBindingPointNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkOpticalFlowSessionBindingPointNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkShaderCodeTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkShaderCodeTypeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkLayerSettingTypeEXT value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkLayerSettingTypeEXT value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkLatencyMarkerNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkLatencyMarkerNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkOutOfBandQueueTypeNV value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkOutOfBandQueueTypeNV value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkBlockMatchWindowCompareModeQCOM value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkBlockMatchWindowCompareModeQCOM value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkCubicFilterWeightsQCOM value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkCubicFilterWeightsQCOM value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkBuildAccelerationStructureModeKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkBuildAccelerationStructureModeKHR value) const {
     return {};
 }
 
 template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkShaderGroupShaderKHR value) const {
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkShaderGroupShaderKHR value) const {
     return {};
 }
 

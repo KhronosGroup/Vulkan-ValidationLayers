@@ -22,7 +22,7 @@
 
 // NOLINTBEGIN
 
-#include "chassis.h"
+#include "stateless/stateless_validation.h"
 
 // For flags, we can't use the VkFlag as it can't be templated (since it all resolves to a int).
 // It is simpler for the caller to already check for both
@@ -30,7 +30,8 @@
 //    - if the value is even found in the API
 // so the this file is only focused on checking for extensions being supported
 
-vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions& device_extensions) {
+vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value,
+                                                      const DeviceExtensions& device_extensions) const {
     switch (flag_bitmask) {
         case vvl::FlagBitmask::VkAccessFlagBits:
             if (value & (VK_ACCESS_NONE)) {
@@ -892,7 +893,8 @@ vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, c
     }
 }
 
-vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, const DeviceExtensions& device_extensions) {
+vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value,
+                                                        const DeviceExtensions& device_extensions) const {
     switch (flag_bitmask) {
         case vvl::FlagBitmask::VkPipelineStageFlagBits2:
             if (value & (VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR)) {

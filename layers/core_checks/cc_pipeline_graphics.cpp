@@ -2904,14 +2904,27 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pip
                          string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]));
     }
 
+    auto is_valid_enum_value = [](VkFragmentShadingRateCombinerOpKHR value) {
+        switch (value) {
+            case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR:
+            case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR:
+            case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN_KHR:
+            case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_KHR:
+            case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR:
+                return true;
+            default:
+                return false;
+        };
+    };
+
     const auto combiner_ops = fragment_shading_rate_state->combinerOps;
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) || pipeline.OwnsSubState(pipeline.fragment_shader_state)) {
-        if (IsValidEnumValue(combiner_ops[0]) != ValidValue::Valid) {
+        if (!is_valid_enum_value(combiner_ops[0])) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567", device,
                              create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
                              "(0x%" PRIx32 ") is invalid.", combiner_ops[0]);
         }
-        if (IsValidEnumValue(combiner_ops[1]) != ValidValue::Valid) {
+        if (!is_valid_enum_value(combiner_ops[1])) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568", device,
                              create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
                              "(0x%" PRIx32 ") is invalid.", combiner_ops[1]);

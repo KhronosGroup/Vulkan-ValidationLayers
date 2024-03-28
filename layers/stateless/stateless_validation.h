@@ -486,6 +486,16 @@ class StatelessValidation : public ValidationObject {
                             uint32_t count, const VkFlags *array, bool count_required, const char *count_required_vuid,
                             const char *array_required_vuid) const;
 
+    template <typename T>
+    ValidValue IsValidEnumValue(T value) const;
+    template <typename T>
+    vvl::Extensions GetEnumExtensions(T value) const;
+
+    // VkFlags values don't have a way overload, so need to use vvl::FlagBitmask
+    vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions &device_extensions) const;
+    vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value,
+                                       const DeviceExtensions &device_extensions) const;
+
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
                                vvl::Extension extension, const Location &extension_loc) const;
@@ -1103,3 +1113,7 @@ class StatelessValidation : public ValidationObject {
                                         const Location &allocate_info_loc) const;
 #include "generated/stateless_validation_helper.h"
 };  // Class StatelessValidation
+
+// This is put outside the class because we were getting errors for:
+//   explicit specialization in non-namespace scope ‘class StatelessValidation’
+#include "generated/valid_enum_values.h"
