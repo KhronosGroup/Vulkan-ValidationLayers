@@ -361,7 +361,6 @@ TEST_F(VkPositiveLayerTest, ExtensionXmlDependsLogic) {
     RETURN_IF_SKIP(InitState());
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5112
 TEST_F(VkPositiveLayerTest, FormatProperties3FromProfiles) {
     // https://github.com/KhronosGroup/Vulkan-Profiles/pull/392
     TEST_DESCRIPTION("Make sure VkFormatProperties3KHR is overwritten correctly in Profiles layer");
