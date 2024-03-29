@@ -1490,6 +1490,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
 
         if (gpu_regions_count == 0) {
             // Nothing to validate
+            vmaUnmapMemory(vmaAllocator, copy_buffer_to_img_resources->copy_src_regions_allocation);
             copy_buffer_to_img_resources->Destroy(*this);
             return nullptr;
         }
