@@ -731,7 +731,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include "chassis.h"
             #include "layer_options.h"
             #include "layer_chassis_dispatch.h"
-            #include "state_tracker/chassis_modification_state.h"
+            #include "chassis/chassis_modification_state.h"
 
             thread_local WriteLockGuard* ValidationObject::record_guard{};
 

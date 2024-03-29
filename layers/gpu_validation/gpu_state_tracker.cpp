@@ -19,7 +19,7 @@
 #include "sync/sync_utils.h"
 #include "vma/vma.h"
 #include "utils/hash_util.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 
 // Implementation for Descriptor Set Manager class
 gpu_tracker::DescriptorSetManager::DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)

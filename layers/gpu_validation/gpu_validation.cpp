@@ -32,7 +32,7 @@
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
 #include "spirv/module.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 #include "state_tracker/render_pass_state.h"
 // Generated shaders
 #include "gpu_shaders/gpu_error_header.h"
