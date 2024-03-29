@@ -138,7 +138,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "Device does not support multiview.";
     }
-
+    features2.features.robustBufferAccess = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkAttachmentDescription attachmentDescription = {};
