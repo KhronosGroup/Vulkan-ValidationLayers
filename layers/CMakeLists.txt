@@ -138,6 +138,8 @@ target_sources(vvl PRIVATE
     best_practices/bp_video.cpp
     best_practices/bp_wsi.cpp
     best_practices/best_practices_validation.h
+    chassis/chassis_modification_state.h
+    chassis/layer_chassis_dispatch_manual.cpp
     containers/qfo_transfer.h
     containers/range_vector.h
     containers/subresource_adapter.cpp
@@ -188,7 +190,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/dynamic_state_helper.h
     ${API_TYPE}/generated/enum_flag_bits.h
     ${API_TYPE}/generated/layer_chassis_dispatch.cpp
-    layer_chassis_dispatch_manual.cpp
     ${API_TYPE}/generated/object_tracker.cpp
     ${API_TYPE}/generated/object_tracker.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
@@ -240,7 +241,6 @@ target_sources(vvl PRIVATE
     object_tracker/object_tracker_utils.cpp
     state_tracker/buffer_state.cpp
     state_tracker/buffer_state.h
-    state_tracker/chassis_modification_state.h
     state_tracker/cmd_buffer_state.cpp
     state_tracker/cmd_buffer_state.h
     state_tracker/descriptor_sets.cpp

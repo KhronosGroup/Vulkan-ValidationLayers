@@ -21,7 +21,7 @@
 #include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 
 static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
     switch (format) {

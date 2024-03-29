@@ -20,7 +20,7 @@
 #include <iostream>
 #include "generated/layer_chassis_dispatch.h"
 #include "utils/shader_utils.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 
 // Perform initializations that can be done at Create Device time.
 void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {

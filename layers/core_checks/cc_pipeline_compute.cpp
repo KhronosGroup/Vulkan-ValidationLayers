@@ -21,7 +21,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 #include "core_validation.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 
 bool CoreChecks::ValidateComputePipelineShaderState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     StageCreateInfo stage_create_info(&pipeline);

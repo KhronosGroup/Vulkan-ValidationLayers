@@ -23,7 +23,7 @@
 #include "state_tracker/state_object.h"
 #include "generated/enum_flag_bits.h"
 #include "state_tracker/shader_object_state.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 
 std::vector<VkPushConstantRange> const *StageCreateInfo::GetPushConstantRanges() const {
     if (pipeline) {

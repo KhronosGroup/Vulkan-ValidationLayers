@@ -28,7 +28,7 @@
 #include "generated/spirv_grammar_helper.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
 

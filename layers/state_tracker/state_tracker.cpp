@@ -40,7 +40,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_object_state.h"
-#include "state_tracker/chassis_modification_state.h"
+#include "chassis/chassis_modification_state.h"
 
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
