@@ -686,7 +686,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     if (!extended_dynamic_state_features.extendedDynamicState) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
     }
-
+    features2.features.robustBufferAccess = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 

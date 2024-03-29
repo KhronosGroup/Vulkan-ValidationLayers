@@ -138,6 +138,7 @@ class Pipeline : public StateObject {
     const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     const bool descriptor_buffer_mode = false;
     const bool uses_pipeline_robustness;
+    const bool uses_pipeline_vertex_robustness;
     bool ignore_color_attachments;
 
     // Executable or legacy pipeline

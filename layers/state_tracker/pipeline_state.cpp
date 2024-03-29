@@ -416,6 +416,27 @@ static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state
     return result;
 }
 
+static bool UsesPipelineVertexRobustness(const void *pNext, const Pipeline &pipe_state) {
+    bool result = false;
+    const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
+    if (!robustness_info) {
+        return false;
+    }
+    result |= (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
+              (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
+    if (!result) {
+        for (const auto &stage_ci : pipe_state.shader_stages_ci) {
+            const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_ci.pNext);
+            if (stage_robustness_info) {
+                result |=
+                    (stage_robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
+                    (stage_robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
+            }
+        }
+    }
+    return result;
+}
+
 static bool IgnoreColorAttachments(const ValidationStateTracker &state_data, Pipeline &pipe_state) {
     // If the libraries used to create this pipeline are ignoring color attachments, this pipeline should as well
     if (pipe_state.library_create_info) {
@@ -687,6 +708,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPip
       topology_at_rasterizer(GetTopologyAtRasterizer(*this)),
       descriptor_buffer_mode((GraphicsCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(GraphicsCreateInfo().pNext, *this)),
+      uses_pipeline_vertex_robustness(UsesPipelineVertexRobustness(GraphicsCreateInfo().pNext, *this)),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)) {
     if (library_create_info) {
         const auto &exe_layout_state = state_data.Get<vvl::PipelineLayout>(GraphicsCreateInfo().layout);
@@ -730,6 +752,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkComputePipe
       dynamic_state(0),  // compute has no dynamic state
       descriptor_buffer_mode((ComputeCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(ComputeCreateInfo().pNext, *this)),
+      uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(layout) {
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
@@ -753,6 +776,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       dynamic_state(GetRayTracingDynamicState(*this)),
       descriptor_buffer_mode((RayTracingCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
+      uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
@@ -776,6 +800,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       dynamic_state(GetRayTracingDynamicState(*this)),
       descriptor_buffer_mode((RayTracingCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
+      uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
