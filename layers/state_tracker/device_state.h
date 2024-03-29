@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
 

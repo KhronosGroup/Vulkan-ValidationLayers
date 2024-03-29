@@ -18,7 +18,7 @@
 #include "gpu_validation/debug_printf.h"
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 #include "utils/shader_utils.h"
 #include "state_tracker/chassis_modification_state.h"
 

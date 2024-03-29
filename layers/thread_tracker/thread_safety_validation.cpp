@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include "generated/chassis.h"
-#include "generated/layer_chassis_dispatch.h"  // wrap_handles declaration
+#include "generated/chassis_dispatch.h"  // wrap_handles declaration
 #include "thread_tracker/thread_safety_validation.h"
 
 ReadLockGuard ThreadSafety::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }

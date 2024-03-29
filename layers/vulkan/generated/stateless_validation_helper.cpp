@@ -26,7 +26,7 @@
 
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 
 bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc, const VkBaseOutStructure* header,
                                                              const char* pnext_vuid, VkPhysicalDevice caller_physical_device,

@@ -19,7 +19,7 @@
 #include "generated/chassis.h"
 
 #include "object_lifetime_validation.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 
 uint64_t object_track_index = 0;
 

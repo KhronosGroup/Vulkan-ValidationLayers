@@ -18,7 +18,7 @@
 ****************************************************************************/
 
 #include "generated/chassis.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "state_tracker/pipeline_state.h"
 

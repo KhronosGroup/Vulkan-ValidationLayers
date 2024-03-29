@@ -17,7 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 
 // Traits objects to allow string_join to operate on collections of const char *
 template <typename String>

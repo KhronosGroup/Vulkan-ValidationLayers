@@ -22,7 +22,7 @@
 #include "generated/chassis.h"
 #include "utils/hash_vk_types.h"
 #include "state_tracker/video_session_state.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 #include "generated/state_tracker_helper.h"
 #include "error_message/logging.h"
 #include "containers/custom_containers.h"

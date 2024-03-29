@@ -23,7 +23,7 @@ from generators.vulkan_object import Member
 from generators.base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
-class LayerChassisDispatchOutputGenerator(BaseGenerator):
+class ChassisDispatchOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
@@ -142,9 +142,9 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'layer_chassis_dispatch.h':
+        if self.filename == 'chassis_dispatch.h':
             self.generateHeader()
-        elif self.filename == 'layer_chassis_dispatch.cpp':
+        elif self.filename == 'chassis_dispatch.cpp':
             self.generateSource()
         else:
             self.write(f'\nFile name {self.filename} has no code to generate\n')
@@ -185,7 +185,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
         out.append('''
             #include "utils/cast_utils.h"
             #include "chassis.h"
-            #include "layer_chassis_dispatch.h"
+            #include "chassis_dispatch.h"
             #include <vulkan/utility/vk_safe_struct.hpp>
             #include "state_tracker/pipeline_state.h"
 

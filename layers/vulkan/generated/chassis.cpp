@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See layer_chassis_generator.py for modifications
+// See chassis_generator.py for modifications
 
 /***************************************************************************
  *
@@ -30,7 +30,7 @@
 
 #include "chassis.h"
 #include "layer_options.h"
-#include "layer_chassis_dispatch.h"
+#include "chassis_dispatch.h"
 #include "state_tracker/chassis_modification_state.h"
 
 thread_local WriteLockGuard* ValidationObject::record_guard{};
@@ -164,7 +164,7 @@ template StatelessValidation* ValidationObject::GetValidationObject<StatelessVal
 template ObjectLifetimes* ValidationObject::GetValidationObject<ObjectLifetimes>() const;
 template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
 
-namespace vulkan_layer_chassis {
+namespace vulkan_chassis {
 
 static const VkLayerProperties global_layer = {
     OBJECT_LAYER_NAME,
@@ -17938,11 +17938,11 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdDrawMeshTasksIndirectEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectEXT}},
     {"vkCmdDrawMeshTasksIndirectCountEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectCountEXT}},
 };
-} // namespace vulkan_layer_chassis
+} // namespace vulkan_chassis
 // clang-format on
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName) {
-    return vulkan_layer_chassis::GetPhysicalDeviceProcAddr(instance, funcName);
+    return vulkan_chassis::GetPhysicalDeviceProcAddr(instance, funcName);
 }
 
 #if defined(__GNUC__) && __GNUC__ >= 4
@@ -17956,20 +17956,20 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkIns
 extern "C" {
 
 VVL_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char* funcName) {
-    return vulkan_layer_chassis::GetInstanceProcAddr(instance, funcName);
+    return vulkan_chassis::GetInstanceProcAddr(instance, funcName);
 }
 
 VVL_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice dev, const char* funcName) {
-    return vulkan_layer_chassis::GetDeviceProcAddr(dev, funcName);
+    return vulkan_chassis::GetDeviceProcAddr(dev, funcName);
 }
 
 VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t* pCount, VkLayerProperties* pProperties) {
-    return vulkan_layer_chassis::EnumerateInstanceLayerProperties(pCount, pProperties);
+    return vulkan_chassis::EnumerateInstanceLayerProperties(pCount, pProperties);
 }
 
 VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pCount,
                                                                                  VkExtensionProperties* pProperties) {
-    return vulkan_layer_chassis::EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
+    return vulkan_chassis::EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
 }
 
 VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVersionStruct) {
@@ -17978,9 +17978,9 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVersion
 
     // Fill in the function pointers if our version is at least capable of having the structure contain them.
     if (pVersionStruct->loaderLayerInterfaceVersion >= 2) {
-        pVersionStruct->pfnGetInstanceProcAddr = vulkan_layer_chassis::GetInstanceProcAddr;
-        pVersionStruct->pfnGetDeviceProcAddr = vulkan_layer_chassis::GetDeviceProcAddr;
-        pVersionStruct->pfnGetPhysicalDeviceProcAddr = vulkan_layer_chassis::GetPhysicalDeviceProcAddr;
+        pVersionStruct->pfnGetInstanceProcAddr = vulkan_chassis::GetInstanceProcAddr;
+        pVersionStruct->pfnGetDeviceProcAddr = vulkan_chassis::GetDeviceProcAddr;
+        pVersionStruct->pfnGetPhysicalDeviceProcAddr = vulkan_chassis::GetPhysicalDeviceProcAddr;
     }
 
     return VK_SUCCESS;
@@ -17991,7 +17991,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(VkPhy
                                                                            VkLayerProperties* pProperties) {
     // the layer command handles VK_NULL_HANDLE just fine internally
     assert(physicalDevice == VK_NULL_HANDLE);
-    return vulkan_layer_chassis::EnumerateDeviceLayerProperties(VK_NULL_HANDLE, pCount, pProperties);
+    return vulkan_chassis::EnumerateDeviceLayerProperties(VK_NULL_HANDLE, pCount, pProperties);
 }
 
 VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
@@ -17999,7 +17999,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
                                                                                VkExtensionProperties* pProperties) {
     // the layer command handles VK_NULL_HANDLE just fine internally
     assert(physicalDevice == VK_NULL_HANDLE);
-    return vulkan_layer_chassis::EnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
+    return vulkan_chassis::EnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
 }
 #endif
 

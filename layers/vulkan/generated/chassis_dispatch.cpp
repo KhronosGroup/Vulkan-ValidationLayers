@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See layer_chassis_dispatch_generator.py for modifications
+// See chassis_dispatch_generator.py for modifications
 
 /***************************************************************************
  *
@@ -24,7 +24,7 @@
 
 #include "utils/cast_utils.h"
 #include "chassis.h"
-#include "layer_chassis_dispatch.h"
+#include "chassis_dispatch.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "state_tracker/pipeline_state.h"
 

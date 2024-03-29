@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 #include "state_tracker/buffer_state.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 #include "state_tracker/state_tracker.h"
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCreateInfo *create_info) {

@@ -28,7 +28,7 @@
 #include "gpu_validation/gpu_validation.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
 #include "spirv/module.h"

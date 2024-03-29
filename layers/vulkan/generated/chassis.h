@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See layer_chassis_generator.py for modifications
+// See chassis_generator.py for modifications
 
 /***************************************************************************
  *
@@ -2205,7 +2205,7 @@ enum class ValidValue {
 #else
 #define DECORATE_PRINTF(_fmt_num, _first_param_num)
 #endif
-// Layer chassis validation object base class definition
+// chassis validation object base class definition
 class ValidationObject {
   public:
     APIVersion api_version;

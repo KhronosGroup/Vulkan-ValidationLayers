@@ -27,7 +27,7 @@
 #include "gpu_validation/gpu_subclasses.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/chassis_dispatch.h"
 #include "state_tracker/chassis_modification_state.h"
 
 // Generated shaders

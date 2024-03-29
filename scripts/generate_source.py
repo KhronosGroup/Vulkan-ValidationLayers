@@ -54,8 +54,8 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.extension_helper_generator import ExtensionHelperOutputGenerator
     from generators.api_version_generator import ApiVersionOutputGenerator
     from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
-    from generators.layer_chassis_generator import LayerChassisOutputGenerator
-    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
+    from generators.chassis_generator import ChassisOutputGenerator
+    from generators.chassis_dispatch_generator import ChassisDispatchOutputGenerator
     from generators.function_pointers_generator import FunctionPointersOutputGenerator
     from generators.best_practices_generator import BestPracticesOutputGenerator
     from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
@@ -190,23 +190,23 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'genCombined': True,
         },
         'chassis.h' : {
-            'generator' : LayerChassisOutputGenerator,
+            'generator' : ChassisOutputGenerator,
             'genCombined': True,
         },
         'chassis.cpp' : {
-            'generator' : LayerChassisOutputGenerator,
+            'generator' : ChassisOutputGenerator,
             'genCombined': False,
         },
         'chassis_dispatch_helper.h' : {
-            'generator' : LayerChassisOutputGenerator,
+            'generator' : ChassisOutputGenerator,
             'genCombined': True,
         },
-        'layer_chassis_dispatch.h' : {
-            'generator' : LayerChassisDispatchOutputGenerator,
+        'chassis_dispatch.h' : {
+            'generator' : ChassisDispatchOutputGenerator,
             'genCombined': True,
         },
-        'layer_chassis_dispatch.cpp' : {
-            'generator' : LayerChassisDispatchOutputGenerator,
+        'chassis_dispatch.cpp' : {
+            'generator' : ChassisDispatchOutputGenerator,
             'genCombined': True,
         },
         'best_practices.h' : {

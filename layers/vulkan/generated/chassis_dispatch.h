@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See layer_chassis_dispatch_generator.py for modifications
+// See chassis_dispatch_generator.py for modifications
 
 /***************************************************************************
  *
