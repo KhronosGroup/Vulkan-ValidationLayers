@@ -135,3 +135,77 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
+    TEST_DESCRIPTION("Use an imageless framebuffer in a secondary command buffer");
+
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    uint32_t attachment_width = 512;
+    uint32_t attachment_height = 512;
+    VkFormat format = FindSupportedDepthOnlyFormat(gpu());
+
+    // Create a renderPass with a single attachment
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddDepthStencilAttachment(0);
+    rp.CreateRenderPass();
+
+    VkFramebufferAttachmentImageInfoKHR fb_attachment_image_info = vku::InitStructHelper();
+    fb_attachment_image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    fb_attachment_image_info.width = attachment_width;
+    fb_attachment_image_info.height = attachment_height;
+    fb_attachment_image_info.layerCount = 1;
+    fb_attachment_image_info.viewFormatCount = 1;
+    fb_attachment_image_info.pViewFormats = &format;
+
+    VkFramebufferAttachmentsCreateInfoKHR fb_attachment_ci = vku::InitStructHelper();
+    fb_attachment_ci.attachmentImageInfoCount = 1;
+    fb_attachment_ci.pAttachmentImageInfos = &fb_attachment_image_info;
+
+    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_attachment_ci);
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_ci.width = attachment_width;
+    fb_ci.height = attachment_height;
+    fb_ci.layers = 1;
+    fb_ci.renderPass = rp.Handle();
+    fb_ci.attachmentCount = 1;
+
+    fb_ci.pAttachments = nullptr;
+    vkt::Framebuffer framebuffer_null(*m_device, fb_ci);
+
+    vkt::ImageView rt_view = m_renderTargets[0]->CreateView();
+    VkImageView image_views[2] = {rt_view, CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)};
+    fb_ci.pAttachments = image_views;
+    vkt::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
+
+    VkCommandBufferInheritanceInfo inheritanceInfo = vku::InitStructHelper();
+    inheritanceInfo.renderPass = rp.Handle();
+    inheritanceInfo.framebuffer = framebuffer_null.handle();
+
+    VkCommandBufferBeginInfo beginInfo = vku::InitStructHelper();
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    beginInfo.pInheritanceInfo = &inheritanceInfo;
+
+    VkClearRect clearRect;
+    clearRect.rect = {{0, 0}, {32u, 32u}};
+    clearRect.baseArrayLayer = 0u;
+    clearRect.layerCount = 1u;
+
+    VkClearAttachment clearAttachment;
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clearAttachment.clearValue.color.float32[0] = 0.0f;
+    clearAttachment.clearValue.color.float32[1] = 0.0f;
+    clearAttachment.clearValue.color.float32[2] = 0.0f;
+    clearAttachment.clearValue.color.float32[3] = 1.0f;
+    clearAttachment.colorAttachment = 0;
+
+    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.begin(&beginInfo);
+    vk::CmdClearAttachments(secondary.handle(), 1u, &clearAttachment, 1u, &clearRect);
+    secondary.end();
+}
