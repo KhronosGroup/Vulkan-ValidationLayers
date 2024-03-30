@@ -1144,24 +1144,28 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
                     depth_view_state =
                         cb_state.GetActiveAttachmentImageViewState(subpass_desc->pDepthStencilAttachment->attachment);
-                    stencil_view_state = depth_view_state;
 
-                    const VkFormat image_view_format = depth_view_state->create_info.format;
-                    if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) && !vkuFormatHasDepth(image_view_format)) {
-                        const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle(), depth_view_state->Handle());
-                        skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07884", objlist, attachment_loc,
-                                         "in pSubpasses[%" PRIu32
-                                         "] has VK_IMAGE_ASPECT_DEPTH_BIT and is backed by an image view with format (%s).",
-                                         cb_state.GetActiveSubpass(), string_VkFormat(image_view_format));
-                    }
+                    if (depth_view_state) {
+                        stencil_view_state = depth_view_state;
 
-                    if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) && !vkuFormatHasStencil(image_view_format)) {
-                        const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle(),
-                                                    stencil_view_state->Handle());
-                        skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07885", objlist, attachment_loc,
-                                         "in pSubpasses[%" PRIu32
-                                         "] has VK_IMAGE_ASPECT_STENCIL_BIT and is backed by an image view with format (%s).",
-                                         cb_state.GetActiveSubpass(), string_VkFormat(image_view_format));
+                        const VkFormat image_view_format = depth_view_state->create_info.format;
+                        if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) && !vkuFormatHasDepth(image_view_format)) {
+                            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle(),
+                                                        depth_view_state->Handle());
+                            skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07884", objlist, attachment_loc,
+                                             "in pSubpasses[%" PRIu32
+                                             "] has VK_IMAGE_ASPECT_DEPTH_BIT and is backed by an image view with format (%s).",
+                                             cb_state.GetActiveSubpass(), string_VkFormat(image_view_format));
+                        }
+
+                        if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) && !vkuFormatHasStencil(image_view_format)) {
+                            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle(),
+                                                        stencil_view_state->Handle());
+                            skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07885", objlist, attachment_loc,
+                                             "in pSubpasses[%" PRIu32
+                                             "] has VK_IMAGE_ASPECT_STENCIL_BIT and is backed by an image view with format (%s).",
+                                             cb_state.GetActiveSubpass(), string_VkFormat(image_view_format));
+                        }
                     }
                 }
 
