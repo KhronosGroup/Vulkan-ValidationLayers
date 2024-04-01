@@ -5280,7 +5280,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandB
         skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-09510", objlist,
                          error_obj.location.dot(Field::pLocationInfo).dot(Field::colorAttachmentCount),
                          "= %" PRIu32 " is not equal to count specified in VkRenderingInfo (%" PRIu32 ").",
-                         pLocationInfo->colorAttachmentCount, rp_state.create_info.attachmentCount);
+                         pLocationInfo->colorAttachmentCount, rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount);
     }
 
     skip |= ValidateRenderingAttachmentLocationsKHR(*pLocationInfo, commandBuffer, loc_info.dot(Field::pLocationInfo));
