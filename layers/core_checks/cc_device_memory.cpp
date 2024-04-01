@@ -330,25 +330,16 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindabl
     return skip;
 }
 
-bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo &allocate_info) const {
+bool CoreChecks::IgnoreAllocationSize(const VkMemoryAllocateInfo &allocate_info) const {
+#ifdef VK_USE_PLATFORM_WIN32_KHR
     const VkExternalMemoryHandleTypeFlags ignored_allocation = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT |
                                                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT |
                                                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
-#ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto import_memory_win32 = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(allocate_info.pNext);
     if (import_memory_win32 && (import_memory_win32->handleType & ignored_allocation) != 0) {
         return true;
     }
 #endif
-    const auto import_memory_fd = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(allocate_info.pNext);
-    if (import_memory_fd && (import_memory_fd->handleType & ignored_allocation) != 0) {
-        return true;
-    }
-    const auto import_memory_host_pointer = vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(allocate_info.pNext);
-    if (import_memory_host_pointer && (import_memory_host_pointer->handleType & ignored_allocation) != 0) {
-        return true;
-    }
-
     // Handles 01874 cases
     const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
     if (export_info && (export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
@@ -357,13 +348,6 @@ bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo &allocat
             return true;
         }
     }
-
-#ifdef VK_USE_PLATFORM_FUCHSIA
-    const auto import_memory_zircon = vku::FindStructInPNextChain<VkImportMemoryZirconHandleInfoFUCHSIA>(allocate_info.pNext);
-    if (import_memory_zircon && (import_memory_zircon->handleType & ignored_allocation) != 0) {
-        return true;
-    }
-#endif
     return false;
 }
 
@@ -434,7 +418,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateAllocateMemoryANDROID(*pAllocateInfo, allocate_info_loc);
     } else {
-        if (!IsZeroAllocationSizeAllowed(*pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
+        if (!IgnoreAllocationSize(*pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-07899", device, allocate_info_loc.dot(Field::allocationSize),
                              "is 0.");
         }
@@ -458,7 +442,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                          pAllocateInfo->memoryTypeIndex, phys_dev_mem_props.memoryTypeCount);
     } else {
         const VkMemoryType memory_type = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex];
-        if (pAllocateInfo->allocationSize > phys_dev_mem_props.memoryHeaps[memory_type.heapIndex].size) {
+        if (!IgnoreAllocationSize(*pAllocateInfo) &&
+            pAllocateInfo->allocationSize > phys_dev_mem_props.memoryHeaps[memory_type.heapIndex].size) {
             skip |= LogError("VUID-vkAllocateMemory-pAllocateInfo-01713", device, allocate_info_loc.dot(Field::allocationSize),
                              "is %" PRIu64 " bytes from heap %" PRIu32
                              ","
@@ -526,9 +511,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01797", objlist, image_loc,
                                  "(%s) was created with VK_IMAGE_CREATE_DISJOINT_BIT.", FormatHandle(dedicated_image).c_str());
             } else {
-                if (!IsZeroAllocationSizeAllowed(*pAllocateInfo) &&
-                    (pAllocateInfo->allocationSize != image_state->requirements[0].size) && !imported_ahb_buffer &&
-                    !imported_qnx_buffer) {
+                if (!IgnoreAllocationSize(*pAllocateInfo) && (pAllocateInfo->allocationSize != image_state->requirements[0].size) &&
+                    !imported_ahb_buffer && !imported_qnx_buffer) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-02964", objlist,
                                      allocate_info_loc.dot(Field::allocationSize),
                                      "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
@@ -546,9 +530,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             const LogObjectList objlist(device, dedicated_buffer);
             const Location buffer_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer);
             auto buffer_state = Get<vvl::Buffer>(dedicated_buffer);
-            if (!IsZeroAllocationSizeAllowed(*pAllocateInfo) &&
-                (pAllocateInfo->allocationSize != buffer_state->requirements.size) && !imported_ahb_buffer &&
-                !imported_qnx_buffer) {
+            if (!IgnoreAllocationSize(*pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
+                !imported_ahb_buffer && !imported_qnx_buffer) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
                                  allocate_info_loc.dot(Field::allocationSize),
                                  "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
@@ -757,7 +740,7 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
                                            VkDeviceSize memoryOffset, const Location &loc) const {
     bool skip = false;
 
-    if (memoryOffset >= mem_info.allocate_info.allocationSize) {
+    if (!IgnoreAllocationSize(mem_info.allocate_info) && memoryOffset >= mem_info.allocate_info.allocationSize) {
         const bool bind_2 = (loc.function != Func::vkBindBufferMemory) && (loc.function != Func::vkBindImageMemory);
         const char *vuid = nullptr;
         if (typed_handle.type == kVulkanObjectTypeBuffer) {
@@ -1532,7 +1515,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     if (mem_info) {
                         const VkMemoryAllocateInfo &allocate_info = mem_info->allocate_info;
                         // Validate memory requirements size
-                        if (mem_req.size > allocate_info.allocationSize - bind_info.memoryOffset) {
+                        if (!IgnoreAllocationSize(allocate_info) &&
+                            mem_req.size > allocate_info.allocationSize - bind_info.memoryOffset) {
                             const char *vuid =
                                 bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-vkBindImageMemory-size-01049";
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
