@@ -506,3 +506,63 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
     VkResult err = vk::BindImageMemory(device(), image, mem, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(PositiveMemory, BindMemoryDX11Handle) {
+    TEST_DESCRIPTION("Bind memory imported from DX11 resource. Allocation size should be ignored.");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    // Mock ICD allows to use fake DX11 handles instead of using DX11 API directly.
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "This test only runs on the mock ICD";
+    }
+
+    VkExternalMemoryImageCreateInfo external_info = vku::InitStructHelper();
+    external_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.pNext = &external_info;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs{};
+    vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
+
+    VkImportMemoryWin32HandleInfoKHR memory_import = vku::InitStructHelper();
+    memory_import.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+    memory_import.handle = (HANDLE)0x12345678;  // Use arbitrary non-zero value as DX11 resource handle
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&memory_import);  // Set zero allocation size
+    m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+    // This should not trigger VUs that take into accout allocation size (e.g. 01049/01046)
+    vk::BindImageMemory(device(), image, memory, 0);
+}
+
+TEST_F(PositiveMemory, BindMemoryDX12Handle) {
+    TEST_DESCRIPTION("Bind memory imported from DX12 resource. Allocation size should be ignored.");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    // Mock ICD allows to use fake DX12 handles instead of using DX12 API directly.
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "This test only runs on the mock ICD";
+    }
+
+    VkExternalMemoryImageCreateInfo external_info = vku::InitStructHelper();
+    external_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.pNext = &external_info;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs{};
+    vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
+
+    VkImportMemoryWin32HandleInfoKHR memory_import = vku::InitStructHelper();
+    memory_import.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
+    memory_import.handle = (HANDLE)0x12345678;  // Use arbitrary non-zero value as DX12 resource handle
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&memory_import);  // Set zero allocation size
+    m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+    // This should not trigger VUs that take into accout allocation size (e.g. 01049/01046)
+    vk::BindImageMemory(device(), image, memory, 0);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
