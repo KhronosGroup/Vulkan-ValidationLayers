@@ -1095,16 +1095,15 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         if (cb_state.activeRenderPass->UsesDynamicRendering()) {
             uint32_t colorAttachment = clear_desc->colorAttachment;
 
-            for (size_t i = 0; i < cb_state.rendering_attachments.color_locations.size(); i++) {
-                if (cb_state.rendering_attachments.color_locations[i] == VK_ATTACHMENT_UNUSED) {
-                    const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->VkHandle());
-                    skip |=
-                        LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
-                                 "cannot be cleared because VkRenderingAttachmentLocationInfoKHR::pColorAttachmentLocations[%zu] "
-                                 "is VK_ATTACHMENT_UNUSED.",
-                                 i);
-                    break;
-                }
+            if (cb_state.rendering_attachments.set_color_locations &&
+                cb_state.rendering_attachments.color_locations[colorAttachment] == VK_ATTACHMENT_UNUSED) {
+                const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->VkHandle());
+                skip |=
+                    LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
+                             "cannot be cleared because VkRenderingAttachmentLocationInfoKHR::pColorAttachmentLocations[%" PRIu32
+                             "] is VK_ATTACHMENT_UNUSED.",
+                             colorAttachment);
+                break;
             }
 
             color_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicColorAttachmentImageIndex(colorAttachment));
