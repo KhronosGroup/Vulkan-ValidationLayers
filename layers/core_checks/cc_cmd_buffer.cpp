@@ -91,18 +91,18 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             auto p_inherited_rendering_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(info->pNext);
 
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-                auto framebuffer = Get<vvl::Framebuffer>(info->framebuffer);
-                if (framebuffer) {
-                    if (framebuffer->create_info.renderPass != info->renderPass) {
-                        auto render_pass = Get<vvl::RenderPass>(info->renderPass);
-                        // renderPass that framebuffer was created with must be compatible with local renderPass
-                        skip |= ValidateRenderPassCompatibility(framebuffer->Handle(), *framebuffer->rp_state.get(),
-                                                                cb_state->Handle(), *render_pass.get(), inheritance_loc,
-                                                                "VUID-VkCommandBufferBeginInfo-flags-00055");
-                    }
-                }
-
                 if (info->renderPass != VK_NULL_HANDLE) {
+                    auto framebuffer = Get<vvl::Framebuffer>(info->framebuffer);
+                    if (framebuffer) {
+                        if (framebuffer->create_info.renderPass != info->renderPass) {
+                            auto render_pass = Get<vvl::RenderPass>(info->renderPass);
+                            // renderPass that framebuffer was created with must be compatible with local renderPass
+                            skip |= ValidateRenderPassCompatibility(framebuffer->Handle(), *framebuffer->rp_state.get(),
+                                                                    cb_state->Handle(), *render_pass.get(), inheritance_loc,
+                                                                    "VUID-VkCommandBufferBeginInfo-flags-00055");
+                        }
+                    }
+
                     auto render_pass = Get<vvl::RenderPass>(info->renderPass);
                     if (!render_pass) {
                         skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-06000", commandBuffer,
