@@ -1218,7 +1218,9 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t s
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pWaitSemaphoreInfos[i];
-            submission.AddWaitSemaphore(Get<vvl::Semaphore>(sem_info.semaphore), sem_info.value);
+            auto semaphore = Get<vvl::Semaphore>(sem_info.semaphore);
+            const uint64_t value = (semaphore->type == VK_SEMAPHORE_TYPE_BINARY) ? 0 : sem_info.value;
+            submission.AddWaitSemaphore(std::move(semaphore), value);
         }
         for (uint32_t i = 0; i < submit->signalSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pSignalSemaphoreInfos[i];
