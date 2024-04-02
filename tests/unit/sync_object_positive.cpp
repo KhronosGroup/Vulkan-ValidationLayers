@@ -2471,3 +2471,61 @@ TEST_F(PositiveSyncObject, SingleSubmitSignalBinarySemaphoreTwoTimes) {
     vk::QueueSubmit2(*m_default_queue, 3, submits, VK_NULL_HANDLE);
     m_default_queue->wait();
 }
+
+TEST_F(PositiveSyncObject, SubmitImportedBinarySemaphoreWithNonZeroValue) {
+    TEST_DESCRIPTION("QueueSubmit2 can specify arbitrary payload value for binary semaphore and it should be ignored");
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+    AddRequiredExtensions(extension_name);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    // Check semaphore's import/export capability
+    VkPhysicalDeviceExternalSemaphoreInfoKHR semaphore_info = vku::InitStructHelper();
+    semaphore_info.handleType = handle_type;
+    VkExternalSemaphorePropertiesKHR semaphore_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &semaphore_info, &semaphore_properties);
+    if (!(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "Semaphore does not support import and/or export";
+    }
+
+    // Signaling semaphore
+    VkExportSemaphoreCreateInfoKHR export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = semaphore;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    ExternalHandle ext_handle{};
+    semaphore.export_handle(ext_handle, handle_type);
+
+    // Wait semaphore is imported from the signaling one.
+    vkt::Semaphore semaphore2(*m_device);
+    semaphore2.import_handle(ext_handle, handle_type);
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphore = semaphore2;
+    // Specify some payload value, even if it's a binary semaphore. It should be ignored.
+    wait_info.value = 1;
+    wait_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSubmitInfo2 submits[2];
+    submits[0] = vku::InitStructHelper();
+    submits[0].signalSemaphoreInfoCount = 1;
+    submits[0].pSignalSemaphoreInfos = &signal_info;
+
+    submits[1] = vku::InitStructHelper();
+    submits[1].waitSemaphoreInfoCount = 1;
+    submits[1].pWaitSemaphoreInfos = &wait_info;
+
+    vk::QueueSubmit2(*m_default_queue, 2, submits, VK_NULL_HANDLE);
+    m_default_queue->wait();
+}
