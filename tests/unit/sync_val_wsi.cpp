@@ -173,6 +173,43 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     m_device->Wait();
 }
 
+// TODO: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5240
+TEST_F(NegativeSyncValWsi, SubmitDoesNotWaitForAcquire) {
+    TEST_DESCRIPTION("Submit does not wait for the swapchain acquire semaphore");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.srcAccessMask = 0;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.dstAccessMask = 0;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &layout_transition;
+
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.End();
+
+    // TODO: current implementation does not report that the image is still being read by the acquire
+    // and at the same time it is being transitioned (there is no wait on the acquire semaphore).
+    // Fix this and ensure the following submit triggers validation error.
+    m_default_queue->Submit2(m_command_buffer);
+    m_device->Wait();
+}
+
 TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     TEST_DESCRIPTION("Present does not specify semaphore to wait for submit.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
