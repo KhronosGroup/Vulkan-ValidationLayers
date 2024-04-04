@@ -425,13 +425,21 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         MergeReads(other);
     }
 
-    // Merge first access information by making a copy of this first_access and reconstructing with a shuffle
-    // of the copy and other into this using the update first logic.
-    // NOTE: All sorts of additional cleverness could be put into short circuts.  (for example back is write and is before front
-    //       of the other first_accesses... )
+    // Merge first access information by merging this and other first accesses (similar to how merge sort works)
     if (!skip_first && !(first_accesses_ == other.first_accesses_) && !other.first_accesses_.empty()) {
         FirstAccesses firsts(std::move(first_accesses_));
+        const OrderingBarrier this_first_write_layout_ordering = first_write_layout_ordering_;
+
+        // Select layout transition barrier from the write that goes first (the later write will be
+        // ignored since the first access gets closed after the first write).
+        const bool resolve_to_this_layout_ordering =
+            !other.first_access_closed_ || (first_access_closed_ && firsts.back().tag < other.first_accesses_.back().tag);
+
         ClearFirstUse();
+
+        first_write_layout_ordering_ =
+            resolve_to_this_layout_ordering ? this_first_write_layout_ordering : other.first_write_layout_ordering_;
+
         auto a = firsts.begin();
         auto a_end = firsts.end();
         for (auto &b : other.first_accesses_) {
@@ -440,7 +448,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                 UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule, a->flags);
                 ++a;
             }
-            UpdateFirst(b.TagEx(), *b.usage_info, b.ordering_rule, a->flags);
+            UpdateFirst(b.TagEx(), *b.usage_info, b.ordering_rule, b.flags);
         }
         for (; a != a_end; ++a) {
             UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule, a->flags);
@@ -828,14 +836,10 @@ void ResourceAccessState::OffsetTag(ResourceUsageTag offset) {
 
 static const SyncAccessFlags kAllSyncStageAccessBits = ~SyncAccessFlags(0);
 ResourceAccessState::ResourceAccessState()
-    : last_write(),
-      last_read_stages(0),
+    : last_read_stages(0),
       read_execution_barriers(VK_PIPELINE_STAGE_2_NONE),
-      last_reads(),
       input_attachment_read(false),
-      first_accesses_(),
       first_read_stages_(VK_PIPELINE_STAGE_2_NONE),
-      first_write_layout_ordering_(),
       first_access_closed_(false) {}
 
 VkPipelineStageFlags2 ResourceAccessState::GetReadBarriers(SyncAccessIndex access_index) const {
