@@ -2045,7 +2045,7 @@ void CommandBuffer::BeginRenderPass(const VkRenderPassBeginInfo& info, VkSubpass
 }
 
 void CommandBuffer::BeginRenderPass(VkRenderPass rp, VkFramebuffer fb, uint32_t render_area_width, uint32_t render_area_height,
-                                    uint32_t clear_count, const VkClearValue* clear_values) {
+                                    uint32_t clear_count, const VkClearValue* clear_values, VkSubpassContents contents) {
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = rp;
     render_pass_begin_info.framebuffer = fb;
@@ -2053,7 +2053,7 @@ void CommandBuffer::BeginRenderPass(VkRenderPass rp, VkFramebuffer fb, uint32_t 
     render_pass_begin_info.renderArea.extent.height = render_area_height;
     render_pass_begin_info.clearValueCount = clear_count;
     render_pass_begin_info.pClearValues = clear_values;
-    vk::CmdBeginRenderPass(handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass(handle(), &render_pass_begin_info, contents);
 }
 
 void CommandBuffer::NextSubpass(VkSubpassContents contents) { vk::CmdNextSubpass(handle(), contents); }

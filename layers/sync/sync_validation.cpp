@@ -2213,7 +2213,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         proxy_cb_context.ImportRecordedAccessLog(recorded_cb_context);
 
         skip |= ReplayCommands(proxy_cb_context.GetSyncEnvironment(), proxy_cb_context.GetCbAccessContext(), recorded_cb_context,
-                               base_tag, cb_loc, &new_hazards);
+                               base_tag, cb_loc, &new_hazards, &cb_context);
     }
     // A skipped command is not recorded, its tag goes to the next command
     if (!skip) {

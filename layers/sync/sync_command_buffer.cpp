@@ -444,19 +444,34 @@ void CommandBufferContext::EndRenderingInstance() {
     rendering_view_gens_.clear();
 }
 
-DescriptorAccesses CommandBufferContext::CollectDescriptorAccesses(VkPipelineBindPoint pipelineBindPoint) const {
-    DescriptorAccesses result;
-    if (!sync_state_.syncval_settings.shader_accesses_heuristic) return result;
+const VkRect2D* CommandBufferContext::GetCurrentRenderArea() const {
+    if (rendering_instance_) {
+        return &rendering_instance_->render_area;
+    }
+    if (current_renderpass_context_) {
+        return &current_renderpass_context_->GetRenderArea();
+    }
+    return nullptr;
+}
 
+DescriptorAccesses CommandBufferContext::CollectDescriptorAccesses(VkPipelineBindPoint pipelineBindPoint) const {
+    if (!sync_state_.syncval_settings.shader_accesses_heuristic) {
+        return {};
+    }
     const auto& last_bound_state = cb_state_->lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
     const vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
-    const std::vector<LastBound::DescriptorSetSlot>& ds_slots = last_bound_state.ds_slots;
     if (!pipeline) {
-        return result;
+        return {};
     }
+    const std::vector<LastBound::DescriptorSetSlot>& ds_slots = last_bound_state.ds_slots;
+
+    DescriptorAccesses result;
     result.pipeline = pipeline;
     result.render_pass_instance_id = current_render_pass_instance_id_;
     result.subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
+    if (const VkRect2D* render_area = GetCurrentRenderArea()) {
+        result.render_area = *render_area;
+    }
 
     for (const auto& stage_state : pipeline->stage_states) {
         if ((stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && pipeline->RasterizationDisabled()) ||
@@ -520,10 +535,6 @@ DescriptorAccesses CommandBufferContext::CollectDescriptorAccesses(VkPipelineBin
                         access.image_view = image_view;
                         access.image_layout = image_descriptor->GetImageLayout();
                         access.access_index = sync_index;
-                        if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
-                            access.offset = CastTo3D(cb_state_->render_area.offset);
-                            access.extent = CastTo3D(cb_state_->render_area.extent);
-                        }
                         result.image_accesses.emplace_back(std::move(access));
                         break;
                     }
@@ -939,6 +950,9 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
         const uint32_t subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
         command.shader_accesses.render_pass_instance_id = current_render_pass_instance_id_;
         command.shader_accesses.subpass = subpass;
+        if (const VkRect2D* render_area = GetCurrentRenderArea()) {
+            command.shader_accesses.render_area = *render_area;
+        }
         command.attachment_accesses.render_pass_instance_id = current_render_pass_instance_id_;
         if (sync_state_.syncval_settings.record_time_validation) {
             command.Apply(environment_, tag, *current_context_);

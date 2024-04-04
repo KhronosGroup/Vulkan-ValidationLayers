@@ -5375,3 +5375,168 @@ TEST_F(PositiveSyncVal, DynamicRenderingNullAttachmentLoad) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveSyncVal, RenderPassLayoutTransitionAndSecondaryCmdBuffer) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7743
+    TEST_DESCRIPTION("Subpass dependency synchronizes render pass layout transition with secondary command buffer accesses");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageLayout input_attachment_layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+
+    // Replace implicit EXTERNAL<->subpass dependency (which uses dstStageMask = ALL_COMMANDS)
+    // with more narrow dependency. It is enough to synchronize only with the fragment shader accesses.
+    // The LoadOp is NONE, that's why layout transition synchronizes with subpass accesses and not
+    // with load op as usual.
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_NONE;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependency.srcAccessMask = VK_ACCESS_NONE;
+    dependency.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, input_attachment_layout,
+                                VK_ATTACHMENT_LOAD_OP_NONE_KHR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+    rp.AddInputAttachment(0, input_attachment_layout);
+    rp.AddSubpassDependency(dependency);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle());
+
+    // Fragment shader READs input attachment.
+    CreatePipelineHelper pipe(*this);
+    pipe.ResetShaderInfo(kVertexMinimalGlsl, kFragmentSubpassLoadGlsl);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe.gp_ci_.renderPass = rp;
+    pipe.CreateGraphicsPipeline();
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                                   input_attachment_layout);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    // Record subpass into a secondary command buffer.
+    VkCommandBufferInheritanceInfo inherited_state = vku::InitStructHelper();
+    inherited_state.renderPass = rp;
+    inherited_state.subpass = 0;
+    inherited_state.framebuffer = fb;
+    VkCommandBufferBeginInfo subpass_cb_info = vku::InitStructHelper();
+    subpass_cb_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    subpass_cb_info.pInheritanceInfo = &inherited_state;
+
+    vkt::CommandBuffer subpass_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    subpass_cb.Begin(&subpass_cb_info);
+    vk::CmdBindPipeline(subpass_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(subpass_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_->set_,
+                              0, nullptr);
+    vk::CmdDraw(subpass_cb, 1, 0, 0, 0);
+    subpass_cb.End();
+
+    // Render pass transitions input attachment.
+    // Subpass dependency synchronizes this transition with subsequent input attachment read in the fragment shader.
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32, 0, nullptr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_command_buffer.ExecuteCommands(subpass_cb);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, RenderPassLayoutTransitionAndSecondaryCmdBuffer2) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7743
+    TEST_DESCRIPTION("Subpass dependency synchronizes render pass layout transition with secondary command buffer accesses");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageLayout input_attachment_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // Render pass with two subpasses.
+    // Subpass 0: loadOp attachment write
+    // Subpass 1: input attachment read
+    // Attachment layout transition between subpasses: COLOR_ATTACHMENT -> SHADER_READ_ONLY
+    // Subpass dependency is needed so layout transition is synchronized with subpass 0 writes
+    // and subpass 1 reads
+    VkAttachmentDescription attachment = {};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = input_attachment_layout;
+
+    VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference input_ref = {0, input_attachment_layout};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+    subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[1].inputAttachmentCount = 1;
+    subpasses[1].pInputAttachments = &input_ref;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = 1;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;  // subpass 0 loadOp stage
+    dependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;  // subpass 0 loadOp DONT_CARE write access
+    dependency.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.subpassCount = 2;
+    rpci.pSubpasses = subpasses;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attachment;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &dependency;
+    vkt::RenderPass render_pass(*m_device, rpci);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, render_pass, 1, &image_view.handle());
+
+    // Fragment shader READs input attachment.
+    CreatePipelineHelper pipe(*this);
+    pipe.ResetShaderInfo(kVertexMinimalGlsl, kFragmentSubpassLoadGlsl);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe.gp_ci_.renderPass = render_pass;
+    pipe.gp_ci_.subpass = 1;
+    pipe.CreateGraphicsPipeline();
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                                   input_attachment_layout);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    // Record subpass into a secondary command buffer.
+    VkCommandBufferInheritanceInfo inherited_state = vku::InitStructHelper();
+    inherited_state.renderPass = render_pass;
+    inherited_state.subpass = 1;
+    inherited_state.framebuffer = fb;
+    VkCommandBufferBeginInfo subpass_cb_info = vku::InitStructHelper();
+    subpass_cb_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    subpass_cb_info.pInheritanceInfo = &inherited_state;
+
+    vkt::CommandBuffer subpass_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    subpass_cb.Begin(&subpass_cb_info);
+    vk::CmdBindPipeline(subpass_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(subpass_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_->set_,
+                              0, nullptr);
+    vk::CmdDraw(subpass_cb, 1, 0, 0, 0);
+    subpass_cb.End();
+
+    // Between subpass 0 and 1 there is a layout transition of color attachment into input attachment layout.
+    // Subpass dependency synchronizes this transition with subsequent input attachment read in the fragment shader.
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, fb, 32, 32);
+    m_command_buffer.NextSubpass(VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_command_buffer.ExecuteCommands(subpass_cb);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

@@ -269,6 +269,8 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     const RenderingInstance& BeginRenderingInstance(const VkRenderingInfo& rendering_info);
     void EndRenderingInstance();
     const RenderingInstance* GetRenderingInstance() const { return rendering_instance_ ? &*rendering_instance_ : nullptr; }
+    // Null outside rendering or in secondaries that inherit rendering
+    const VkRect2D* GetCurrentRenderArea() const;
 
     DescriptorAccesses CollectDescriptorAccesses(VkPipelineBindPoint pipelineBindPoint) const;
     void RecordShaderAccesses(ResourceUsageTag tag, DescriptorAccesses& descriptor_accesses);
