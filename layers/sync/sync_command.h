@@ -453,9 +453,6 @@ struct ShaderAccessCommand {
         VkImageLayout image_layout;
         SyncAccessIndex access_index;
         uint32_t handle_index = vvl::kNoIndex32;
-        // Input attachments use the render area and render-pass attachment ordering
-        VkOffset3D offset{};
-        VkExtent3D extent{};
     };
 
     const vvl::Pipeline* pipeline = nullptr;
@@ -463,6 +460,8 @@ struct ShaderAccessCommand {
     vvl::span<const ImageViewAccess> image_accesses;
     uint32_t render_pass_instance_id = vvl::kNoIndex32;
     uint32_t subpass = vvl::kNoIndex32;
+    // Shared by all input attachments
+    VkRect2D render_area{};
 
     struct Storage {
         const vvl::Pipeline* pipeline;
@@ -494,13 +493,14 @@ struct DescriptorAccesses {
     std::vector<ShaderAccessCommand::ImageViewAccess> image_accesses;
     uint32_t render_pass_instance_id = vvl::kNoIndex32;
     uint32_t subpass = vvl::kNoIndex32;
+    VkRect2D render_area{};
 
     // Registers a HandleRecord for each descriptor resource and initializes the
     // handle_index fields of access structures. Call before MakeCommand. Record time only.
     void RegisterResources(CommandBufferContext& cb_context, ResourceUsageTag tag);
 
     ShaderAccessCommand MakeCommand() const {
-        return {pipeline, buffer_accesses, image_accesses, render_pass_instance_id, subpass};
+        return {pipeline, buffer_accesses, image_accesses, render_pass_instance_id, subpass, render_area};
     }
 };
 
@@ -1052,6 +1052,7 @@ struct CommandEntry {
 
 // new_hazards collects newly reported errors during vkCmdExecuteCommands validation. Null during queue submission
 bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
-                    ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards = nullptr);
+                    ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards = nullptr,
+                    const CommandBufferContext* primary_context = nullptr);
 
 }  // namespace syncval

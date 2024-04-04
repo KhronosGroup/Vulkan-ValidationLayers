@@ -929,6 +929,7 @@ RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass& rp_state
                                                  const AccessContext& external_context, uint32_t render_pass_instance_id,
                                                  QueueId queue_id)
     : rp_state_(&rp_state),
+      render_area_(render_area),
       attachment_views_(CreateAttachmentViewGen(rp_state, render_area, attachment_views)),
       external_context_(&external_context),
       subpass_contexts_(InitSubpassContexts(queue_flags, rp_state, external_context, queue_id)),

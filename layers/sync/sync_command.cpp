@@ -29,6 +29,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
+#include "utils/vk_api_utils.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -86,11 +87,14 @@ struct CommandReplayContext {
 };
 
 bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_context, const CommandBufferContext& cb_context,
-                    ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards) {
+                    ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards,
+                    const CommandBufferContext* primary_context) {
     bool skip = false;
     const CommandData& command_data = cb_context.GetCommandData();
     CommandReplayContext replay_context(env, destination_access_context, base_tag);
     ErrorReporter reporter{cb_context, loc, new_hazards, base_tag};
+
+    const VkRect2D* inherited_render_area = primary_context ? primary_context->GetCurrentRenderArea() : nullptr;
 
     auto replay_common = [&skip, &command_data, &reporter, &env, base_tag](const auto& storage, AccessContext& access_context) {
         const auto command = storage.MakeCommand(command_data);
@@ -98,9 +102,8 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
         const ResourceUsageTag tag = base_tag + reporter.replay_tag;
         command.Apply(env, tag, access_context);
     };
-
-    auto replay_draw = [&skip, &command_data, &replay_context, &reporter, &env, base_tag](const auto& storage,
-                                                                                          AccessContext& access_context) {
+    auto replay_draw = [&skip, &command_data, &replay_context, &reporter, &env, base_tag, primary_context, inherited_render_area](
+                           const auto& storage, AccessContext& access_context) {
         RenderPassAccessContext* render_pass_context =
             replay_context.render_pass_context ? &*replay_context.render_pass_context : nullptr;
         const RenderingInstance* rendering_instance =
@@ -114,11 +117,19 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
             command.shader_accesses.render_pass_instance_id += replay_context.render_pass_instance_offset;
         }
 
-        // BeginRendering already added the replay offset to instance id (that's why no +=)
-        // Use it for both shader and attachment accesses
-        if (replay_context.rendering_instance) {
+        if (inherited_render_area) {
+            const auto* inherited_render_pass = primary_context->GetCurrentRenderPassContext();
+            command.shader_accesses.render_pass_instance_id = primary_context->GetCurrentRenderPassInstanceId();
+            command.shader_accesses.subpass = inherited_render_pass ? inherited_render_pass->GetCurrentSubpass() : vvl::kNoIndex32;
+            command.shader_accesses.render_area = *inherited_render_area;
+        } else if (rendering_instance) {
+            // BeginRendering already added the replay offset to instance id (that's why no +=)
+            // Use it for both shader and attachment accesses
             command.shader_accesses.render_pass_instance_id = replay_context.rendering_instance_id;
             command.attachment_accesses.render_pass_instance_id = replay_context.rendering_instance_id;
+            command.shader_accesses.render_area = rendering_instance->render_area;
+        } else if (render_pass_context) {
+            command.shader_accesses.render_area = render_pass_context->GetRenderArea();
         }
 
         skip |= command.Validate(env, access_context, reporter);
@@ -1341,7 +1352,8 @@ bool ShaderAccessCommand::ValidateImageShaderAccess(const SyncEnvironment& env, 
     if (image_access.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
         const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kRaster, render_pass_instance_id,
                                                  subpass};
-        ImageRangeGen range_gen = MakeImageRangeGen(*image_access.image_view, image_access.offset, image_access.extent);
+        ImageRangeGen range_gen =
+            MakeImageRangeGen(*image_access.image_view, CastTo3D(render_area.offset), CastTo3D(render_area.extent));
         hazard = access_context.DetectAttachmentHazard(range_gen, image_access.access_index, attachment_access, env.queue_id);
     } else {
         hazard = access_context.DetectHazard(*image_access.image_view, image_access.access_index);
@@ -1388,7 +1400,8 @@ void ShaderAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acce
     for (const ImageViewAccess& access : image_accesses) {
         const ResourceUsageTagEx tag_ex{tag, access.handle_index};
         if (access.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
-            ImageRangeGen range_gen = MakeImageRangeGen(*access.image_view, access.offset, access.extent);
+            ImageRangeGen range_gen =
+                MakeImageRangeGen(*access.image_view, CastTo3D(render_area.offset), CastTo3D(render_area.extent));
             access_context.UpdateAttachmentAccessState(range_gen, access.access_index, attachment_access, tag_ex, env.queue_id);
         } else {
             ImageRangeGen range_gen = MakeImageRangeGen(*access.image_view);

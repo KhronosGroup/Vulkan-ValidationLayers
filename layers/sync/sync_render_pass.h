@@ -94,6 +94,7 @@ class RenderPassAccessContext {
     vvl::span<const AccessContext> GetSubpassContexts() const;
     vvl::span<AccessContext> GetSubpassContexts();
     const vvl::RenderPass* GetRenderPassState() const { return rp_state_; }
+    const VkRect2D& GetRenderArea() const { return render_area_; }
     AccessContext* CreateStoreResolveProxy(QueueId queue_id) const;
 
   private:
@@ -101,6 +102,7 @@ class RenderPassAccessContext {
 
   private:
     const vvl::RenderPass* rp_state_;
+    const VkRect2D render_area_;
     const AttachmentViewGenVector attachment_views_;
     const AccessContext* external_context_;
     const std::unique_ptr<AccessContext[]> subpass_contexts_;
