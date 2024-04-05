@@ -4040,9 +4040,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesK
                                                                                    const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     auto surface_state = Get<vvl::Surface>(surface);
-    VkSurfaceCapabilities2KHR caps2 = vku::InitStructHelper();
-    caps2.surfaceCapabilities = *pSurfaceCapabilities;
-    surface_state->SetCapabilities(physicalDevice, vku::safe_VkSurfaceCapabilities2KHR(&caps2));
+    surface_state->UpdateCapabilitiesCache(physicalDevice, *pSurfaceCapabilities);
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
@@ -4052,24 +4050,20 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
 
     if (pSurfaceInfo->surface) {
         auto surface_state = Get<vvl::Surface>(pSurfaceInfo->surface);
-
-        const VkSurfacePresentModeEXT *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
-        if ((!IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) || (!surface_present_mode)) {
-            surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities);
-        } else {
-            const VkSurfacePresentScalingCapabilitiesEXT *present_scaling_caps =
-                vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesEXT>(pSurfaceCapabilities->pNext);
-            const VkSurfacePresentModeCompatibilityEXT *compatible_modes =
-                vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext);
-
-            if (compatible_modes && compatible_modes->pPresentModes) {
-                surface_state->SetCompatibleModes(
-                    physicalDevice, surface_present_mode->presentMode,
-                    vvl::span<const VkPresentModeKHR>(compatible_modes->pPresentModes, compatible_modes->presentModeCount));
-            }
-            if (present_scaling_caps) {
-                surface_state->SetPresentModeCapabilities(physicalDevice, surface_present_mode->presentMode,
-                                                          pSurfaceCapabilities->surfaceCapabilities, *present_scaling_caps);
+        if (!pSurfaceInfo->pNext) {
+            surface_state->UpdateCapabilitiesCache(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
+        } else if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
+            const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
+            if (surface_present_mode) {
+                // The surface caps caching should take into account pSurfaceInfo->pNext chain structure,
+                // because each pNext element can affect query result. Here we support caching for a common
+                // case when pNext chain is a single VkSurfacePresentModeEXT structure. Surface queries are
+                // not high frequency operations, disabling caching alltogether might be an option too.
+                const bool single_pnext_element = (pSurfaceInfo->pNext == surface_present_mode) && !surface_present_mode->pNext;
+                if (single_pnext_element) {
+                    surface_state->UpdateCapabilitiesCache(physicalDevice, *pSurfaceCapabilities,
+                                                           surface_present_mode->presentMode);
+                }
             }
         }
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query) &&
@@ -4084,7 +4078,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                                                                                     VkSurfaceKHR surface,
                                                                                     VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
                                                                                     const RecordObject &record_obj) {
-    auto surface_state = Get<vvl::Surface>(surface);
     const VkSurfaceCapabilitiesKHR caps{
         pSurfaceCapabilities->minImageCount,           pSurfaceCapabilities->maxImageCount,
         pSurfaceCapabilities->currentExtent,           pSurfaceCapabilities->minImageExtent,
@@ -4092,9 +4085,8 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
         pSurfaceCapabilities->supportedTransforms,     pSurfaceCapabilities->currentTransform,
         pSurfaceCapabilities->supportedCompositeAlpha, pSurfaceCapabilities->supportedUsageFlags,
     };
-    VkSurfaceCapabilities2KHR caps2 = vku::InitStructHelper();
-    caps2.surfaceCapabilities = caps;
-    surface_state->SetCapabilities(physicalDevice, vku::safe_VkSurfaceCapabilities2KHR(&caps2));
+    auto surface_state = Get<vvl::Surface>(surface);
+    surface_state->UpdateCapabilitiesCache(physicalDevice, caps);
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice,
