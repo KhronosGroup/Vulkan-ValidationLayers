@@ -32,7 +32,7 @@ class Semaphore;
 class Surface;
 class Swapchain;
 class VideoProfileDesc;
-} // namespace vvl
+}  // namespace vvl
 
 class ValidationStateTracker;
 
@@ -251,11 +251,9 @@ class Image : public Bindable {
     }
 
   private:
-    std::variant<std::monostate,
-                 BindableNoMemoryTracker,
-                 BindableLinearMemoryTracker,
-                 BindableSparseMemoryTracker,
-                 BindableMultiplanarMemoryTracker> tracker_;
+    std::variant<std::monostate, BindableNoMemoryTracker, BindableLinearMemoryTracker, BindableSparseMemoryTracker,
+                 BindableMultiplanarMemoryTracker>
+        tracker_;
 };
 
 // State for VkImageView objects.
@@ -384,13 +382,6 @@ struct hash<GpuQueue> {
 
 class ValidationObject;
 
-// State for VkSurfaceKHR objects.
-struct PresentModeState {
-    VkSurfaceCapabilitiesKHR surface_capabilities_;
-    VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities_;
-    std::vector<VkPresentModeKHR> compatible_present_modes_;
-};
-
 namespace vvl {
 
 // Parent -> child relationships in the object usage tree:
@@ -406,12 +397,6 @@ class Surface : public StateObject {
     }
 
     VkSurfaceKHR VkHandle() const { return handle_.Cast<VkSurfaceKHR>(); }
-    VkPhysicalDeviceSurfaceInfo2KHR GetSurfaceInfo2(const void *surface_info2_pnext = nullptr) const {
-        VkPhysicalDeviceSurfaceInfo2KHR surface_info2 = vku::InitStructHelper();
-        surface_info2.pNext = surface_info2_pnext;
-        surface_info2.surface = VkHandle();
-        return surface_info2;
-    }
 
     void Destroy() override;
 
@@ -426,35 +411,49 @@ class Surface : public StateObject {
 
     void SetFormats(VkPhysicalDevice phys_dev, std::vector<vku::safe_VkSurfaceFormat2KHR> &&fmts);
     vvl::span<const vku::safe_VkSurfaceFormat2KHR> GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                             const void *surface_info2_pnext, const Location &loc,
-                                                             const ValidationObject *validation_obj) const;
+                                                              const void *surface_info2_pnext, const Location &loc,
+                                                              const ValidationObject *validation_obj) const;
 
-    void SetCapabilities(VkPhysicalDevice phys_dev, const vku::safe_VkSurfaceCapabilities2KHR &caps);
-    vku::safe_VkSurfaceCapabilities2KHR GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                       const void *surface_info2_pnext, const Location &loc,
-                                                       const ValidationObject *validation_obj) const;
+    // Cache capabilities that do not depend on the present mode
+    void UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &surface_caps);
+    // Cache per present mode capabilities
+    void UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilities2KHR &surface_caps,
+                                 VkPresentModeKHR present_mode);
 
-    void SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                            vvl::span<const VkPresentModeKHR> compatible_modes);
-    std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode) const;
-    void SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                                    const VkSurfaceCapabilitiesKHR &caps,
-                                    const VkSurfacePresentScalingCapabilitiesEXT &scaling_caps);
-    VkSurfaceCapabilitiesKHR GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev,
-                                                               const VkPresentModeKHR present_mode) const;
+    VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(VkPhysicalDevice phys_dev, const void *surface_info_pnext) const;
+    VkSurfaceCapabilitiesKHR GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev, VkPresentModeKHR present_mode) const;
     VkSurfacePresentScalingCapabilitiesEXT GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
-                                                                             const VkPresentModeKHR present_mode) const;
+                                                                             VkPresentModeKHR present_mode) const;
+    std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, VkPresentModeKHR present_mode) const;
+
     vvl::Swapchain *swapchain{nullptr};
 
   private:
+    // Contains per present mode capabilities
+    struct PresentModeInfo {
+        VkPresentModeKHR present_mode;
+        VkSurfaceCapabilitiesKHR surface_capabilities;
+        std::optional<VkSurfacePresentScalingCapabilitiesEXT> scaling_capabilities;
+        std::optional<std::vector<VkPresentModeKHR>> compatible_present_modes;
+    };
+    // Cached information per physical device. Optional indicates if element is in the cache.
+    struct PhysDevCache {
+        std::optional<std::vector<VkPresentModeKHR>> present_modes;
+        std::optional<VkSurfaceCapabilitiesKHR> capabilities;
+        std::vector<PresentModeInfo> present_mode_infos;
+
+        const PresentModeInfo *GetPresentModeInfo(VkPresentModeKHR present_mode) const;
+    };
+    const PhysDevCache *GetPhysDevCache(VkPhysicalDevice phys_dev) const;
+
+  private:
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
+    // TODO: make mutex shared, so multiple Validate can read simultaneously. Remove remaining mutations in Validate first
     mutable std::mutex lock_;
     mutable vvl::unordered_map<GpuQueue, bool> gpu_queue_support_;
     mutable vvl::unordered_map<VkPhysicalDevice, std::vector<vku::safe_VkSurfaceFormat2KHR>> formats_;
-    mutable vvl::unordered_map<VkPhysicalDevice, vku::safe_VkSurfaceCapabilities2KHR> capabilities_;
-    mutable vvl::unordered_map<VkPhysicalDevice,
-                                      vvl::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>>
-        present_modes_data_;
+
+    vvl::unordered_map<VkPhysicalDevice, PhysDevCache> cache_;
 };
 
 }  // namespace vvl
