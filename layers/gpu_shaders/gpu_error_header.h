@@ -161,6 +161,8 @@ const int kInstBindlessBuffOOBBuffSizeOffset = kInstBindlessCustomOffset_1;
 // two 32-bit pieces, lower bits first.
 const int kInstBuffAddrUnallocDescPtrLoOffset = kHeaderSize;
 const int kInstBuffAddrUnallocDescPtrHiOffset = kHeaderSize + 1;
+const int kInstBuffAddrAccessByteSizeOffset = kHeaderSize + 2;
+const int kInstBuffAddrAccessInstructionOffset = kHeaderSize + 3;
 
 // Ray query
 // ---

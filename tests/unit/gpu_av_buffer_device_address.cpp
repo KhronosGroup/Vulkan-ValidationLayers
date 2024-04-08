@@ -407,3 +407,152 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
+    TEST_DESCRIPTION("OOB read at u_info.data.a[4]");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    // Make a uniform buffer to be passed to the shader that contains the pointer and write count
+    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
+        layout(set = 0, binding = 0) uniform ufoo {
+            bufStruct data;
+            int nWrites;
+        } u_info;
+        layout(buffer_reference, std140) buffer bufStruct {
+            int a[4];
+        };
+        void main() {
+            for (int i=0; i < u_info.nWrites; ++i) {
+                u_info.data.a[i] = 42;
+            }
+        }
+    )glsl";
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    // Make another buffer to write to
+    const uint32_t storage_buffer_size = 16 * 4;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
+                               &allocate_flag_info);
+
+    // Get device address of buffer to write to
+    auto storage_buffer_addr = storage_buffer.address();
+
+    auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+    data[0] = storage_buffer_addr;
+    data[1] = 5;
+    uniform_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+
+    // Make sure shader wrote 42
+    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    for (int i = 0; i < 4; ++i) {
+        ASSERT_EQ(*storage_buffer_ptr, 42);
+        storage_buffer_ptr += 4;
+    }
+    storage_buffer.memory().unmap();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
+    TEST_DESCRIPTION("OOB read at u_info.data.a[4]");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    // Make a uniform buffer to be passed to the shader that contains the pointer and write count
+    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
+        layout(set = 0, binding = 0) uniform ufoo {
+            bufStruct data;
+            int nWrites;
+        } u_info;
+        layout(buffer_reference, std430) buffer bufStruct {
+            int a[4];
+        };
+        void main() {
+            for (int i=0; i < u_info.nWrites; ++i) {
+                u_info.data.a[i] = 42;
+            }
+        }
+    )glsl";
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    // Make another buffer to write to
+    const uint32_t storage_buffer_size = 4 * 4;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
+                               &allocate_flag_info);
+
+    // Get device address of buffer to write to
+    auto storage_buffer_addr = storage_buffer.address();
+
+    auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+    data[0] = storage_buffer_addr;
+    data[1] = 5;
+    uniform_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+
+    // Make sure shader wrote 42
+    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    for (int i = 0; i < 4; ++i) {
+        ASSERT_EQ(storage_buffer_ptr[i], 42);
+    }
+    storage_buffer.memory().unmap();
+}

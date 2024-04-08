@@ -426,15 +426,19 @@ class ValidationStateTracker : public ValidationObject {
         return found_it->second;
     }
 
+    // Return a count pair, {written addresses count, total address ranges count}
     using BufferAddressRange = sparse_container::range<VkDeviceAddress>;
-    std::vector<BufferAddressRange> GetBufferAddressRanges() const {
+    [[nodiscard]] std::pair<size_t, size_t> GetBufferAddressRanges(BufferAddressRange* ranges, size_t ranges_size) const {
         ReadLockGuard guard(buffer_address_lock_);
-        std::vector<BufferAddressRange> result;
-        result.reserve(buffer_address_map_.size());
-        for (const auto& entry : buffer_address_map_) {
-            result.push_back(entry.first);
+
+        size_t written_count = 0;
+        for (const auto& [address_range, buffers] : buffer_address_map_) {
+            if (written_count == ranges_size) {
+                break;
+            }
+            ranges[written_count++] = address_range;
         }
-        return result;
+        return {written_count, buffer_address_map_.size()};
     }
 
     using SetImageViewInitialLayoutCallback = std::function<void(vvl::CommandBuffer*, const vvl::ImageView&, VkImageLayout)>;

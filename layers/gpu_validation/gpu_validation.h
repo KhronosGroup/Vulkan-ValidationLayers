@@ -483,7 +483,7 @@ class Validator : public gpu_tracker::Validator {
     std::string instrumented_shader_cache_path{};
     AccelerationStructureBuildValidationState acceleration_structure_validation_state{};
     DeviceMemoryBlock app_buffer_device_addresses{};
-    size_t app_bda_buffer_size{};
+    size_t app_bda_buffer_byte_size{};
     uint32_t gpuav_bda_buffer_version = 0;
 
     bool buffer_device_address_enabled = false;

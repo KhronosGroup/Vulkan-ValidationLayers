@@ -30,29 +30,52 @@
 #include "gpu_shaders_constants.h"
 #include "gpu_inst_common_descriptor_sets.h"
 
+// Represent a [begin, end) range, where end is one past the last element held in range
+struct Range {
+    uint64_t begin;
+    uint64_t end;
+};
+
+// See gpuav::Validator::UpdateBDABuffer in gpu_validation.cpp for a description of the table format
+// Ranges are supposed to:
+// 1) be stored for low to high
+// 2) not overlap
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddress, std430) buffer BuffAddrInputBuffer {
-    uint64_t data[];
-} inst_buff_addr_input_buffer;
+    uint64_t bda_ranges_count;
+    Range bda_ranges[];
+};
 
-bool inst_buffer_device_address(const uint inst_num, const uvec4 stage_info, const uint64_t addr, const uint len)
+bool inst_buffer_device_address(
+    const uint inst_num, 
+    const uvec4 stage_info, 
+    const uint64_t addr, 
+    const uint access_byte_size,
+    const uint access_instruction)
 {
-    uint end_idx;
-    uint start_idx= 1u;
-    for (;;)
-    {
-        end_idx = start_idx + 1u;
-        if (inst_buff_addr_input_buffer.data[end_idx] > addr) {
+    // Find out if addr is valid
+    // ---
+    for (uint range_i = 0; range_i < uint(bda_ranges_count); ++range_i) {
+        const Range range = bda_ranges[range_i];
+        if (addr < range.begin) {
+            // Invalid address, proceed to error logging
             break;
-        } else {
-            start_idx = end_idx;
-            continue;
         }
-    }
-    uint index = end_idx - 1u;
-    if (((addr - inst_buff_addr_input_buffer.data[index]) + uint64_t(len)) <= inst_buff_addr_input_buffer.data[(index - 1u) + uint(inst_buff_addr_input_buffer.data[0u])]) {
-      return true;
+        if ((addr < range.end) && (addr + access_byte_size > range.end)) {
+            // Ranges do not overlap,
+            // so if current range holds addr but not (add + access_byte_size), access is invalid
+            break;
+        }
+        if ((addr + access_byte_size) <= range.end) {
+            // addr >= range.begin && addr + access_byte_size <= range.end
+            // ==> valid access
+            return true;
+        }
+        // Address is above current range, proceed to next range.
+        // If at loop end, address is invalid.
     }
 
+    // addr is invalid, try to print error
+    // ---
     const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
     const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
     const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
@@ -79,6 +102,8 @@ bool inst_buffer_device_address(const uint inst_num, const uvec4 stage_info, con
 
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessByteSizeOffset] = access_byte_size;
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessInstructionOffset] = access_instruction;
     }
 
     return false;

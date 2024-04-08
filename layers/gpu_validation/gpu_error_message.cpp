@@ -467,8 +467,10 @@ bool gpuav::Validator::LogMessageInstBufferDeviceAddress(const uint32_t *error_r
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeBufferDeviceAddressUnallocRef: {
             out_oob_access = true;
-            uint64_t *ptr = (uint64_t *)&error_record[kInstBuffAddrUnallocDescPtrLoOffset];
-            strm << "Device address 0x" << std::hex << *ptr << " access out of bounds. ";
+            const char *access_type = error_record[kInstBuffAddrAccessInstructionOffset] == spv::OpStore ? "written" : "read";
+            uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
+            strm << "Out of bounds access: " << error_record[kInstBuffAddrAccessByteSizeOffset] << " bytes " << access_type
+                 << " at buffer device address 0x" << std::hex << address << '.';
             out_vuid_msg = "UNASSIGNED-Device address out of bounds";
         } break;
         default:

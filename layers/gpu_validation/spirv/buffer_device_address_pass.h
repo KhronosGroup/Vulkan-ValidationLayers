@@ -67,6 +67,7 @@ class BufferDeviceAddressPass : public Pass {
 
     const Instruction* target_instruction_ = nullptr;
     uint32_t type_length_ = 0;
+    uint32_t access_opcode_ = 0;
 };
 
 }  // namespace spirv
