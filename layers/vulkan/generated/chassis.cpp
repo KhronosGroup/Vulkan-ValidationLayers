@@ -291,6 +291,10 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     const auto& item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         if (item->second.function_type != kFuncTypeDev) {
+            Location loc(vvl::Func::vkGetDeviceProcAddr);
+            // VUID being worked on https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6583
+            layer_data->LogError("UNASSIGNED-vkGetDeviceProcAddr-device", device, loc.dot(vvl::Field::pName),
+                                 "is trying to grab %s which is an instance level function", funcName);
             return nullptr;
         } else {
             return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);

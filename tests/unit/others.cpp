@@ -2049,3 +2049,14 @@ TEST_F(VkLayerTest, Features11WithoutVulkan12) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+// Android loader returns an error in this case, so never makes it to the VVL
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+TEST_F(VkLayerTest, GetDeviceProcAddrInstance) {
+    TEST_DESCRIPTION("Call GetDeviceProcAddr on an instance function");
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDeviceProcAddr-device");
+    vk::GetDeviceProcAddr(device(), "vkGetPhysicalDeviceProperties");
+    m_errorMonitor->VerifyFound();
+}
+#endif
