@@ -2495,7 +2495,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
             if (region.imageOffset.x != 0 || region.imageOffset.y != 0 || region.imageOffset.z != 0) {
                 const char *vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09114"
                                               : "VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09114";
-                LogError(vuid, device, loc,
+                skip |= LogError(vuid, device, loc,
                          "%s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT which "
                          "means that pRegions[%" PRIu32 "].imageOffset x(%" PRIu32 "), y(%" PRIu32 ") and z(%" PRIu32
                          ") must all be zero",

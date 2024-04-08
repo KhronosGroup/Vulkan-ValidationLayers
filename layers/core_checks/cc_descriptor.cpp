@@ -913,7 +913,7 @@ bool CoreChecks::VerifyUpdateConsistency(const DescriptorSet &set, uint32_t bind
         }
 
         error_str << " so this update is invalid";
-        LogError(vuid, set.Handle(), set_loc, "%s", error_str.str().c_str());
+        skip |= LogError(vuid, set.Handle(), set_loc, "%s", error_str.str().c_str());
     }
     return skip;
 }
