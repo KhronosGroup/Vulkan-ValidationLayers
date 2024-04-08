@@ -47,7 +47,7 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
     VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                             VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_EXT |
                                                 VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT |
-                                                gpu_tracker::kShaderStageAllRayTracing,
+                                                kShaderStageAllRayTracing,
                                             NULL};
     validation_bindings_.push_back(binding);
 

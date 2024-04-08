@@ -754,9 +754,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(std::move(layout)) {
-    assert(0 == (active_shaders &
-                 ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-                   VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
+    assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
 }
 
 Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
@@ -779,9 +777,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(std::move(layout)) {
-    assert(0 == (active_shaders &
-                 ~(VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-                   VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
+    assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
 }
 
 }  // namespace vvl

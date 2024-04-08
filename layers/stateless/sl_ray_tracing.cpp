@@ -453,10 +453,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             ValidatePipelineShaderStageCreateInfo(pCreateInfos[i].pStages[stage_index], stage_loc);
 
             const auto stage = pCreateInfos[i].pStages[stage_index].stage;
-            constexpr std::array allowed_stages = {VK_SHADER_STAGE_RAYGEN_BIT_KHR,       VK_SHADER_STAGE_ANY_HIT_BIT_KHR,
-                                                   VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,  VK_SHADER_STAGE_MISS_BIT_KHR,
-                                                   VK_SHADER_STAGE_INTERSECTION_BIT_KHR, VK_SHADER_STAGE_CALLABLE_BIT_KHR};
-            if (std::find(allowed_stages.begin(), allowed_stages.end(), stage) == allowed_stages.end()) {
+            if ((stage & kShaderStageAllRayTracing) == 0) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-stage-06899", device, stage_loc.dot(Field::stage),
                                  "is %s.", string_VkShaderStageFlagBits(stage));
             }

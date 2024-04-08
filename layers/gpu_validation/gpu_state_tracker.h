@@ -59,10 +59,6 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, 
 
 namespace gpu_tracker {
 
-static const VkShaderStageFlags kShaderStageAllRayTracing =
-    VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-    VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-
 class DescriptorSetManager {
   public:
     DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);

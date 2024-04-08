@@ -136,7 +136,7 @@ void gpuav::CommandBuffer::AllocateResources() {
 
     const VkShaderStageFlags all_stages_flags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
                                                 VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT |
-                                                gpu_tracker::kShaderStageAllRayTracing;
+                                                kShaderStageAllRayTracing;
 
     // Instrumentation descriptor set layout
     {
