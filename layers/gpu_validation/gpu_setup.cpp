@@ -93,7 +93,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
     // Setup bindings
     const VkShaderStageFlags all_stages_flags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
                                                 VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT |
-                                                gpu_tracker::kShaderStageAllRayTracing;
+                                                kShaderStageAllRayTracing;
 
     validation_bindings_ = {
         // Error output buffer
