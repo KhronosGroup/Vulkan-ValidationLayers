@@ -144,12 +144,11 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
-        // We need 2 words per address (address and size), 1 word for the start of sizes index, 2 words for the address section
-        // bounds, and 2 more words for the size section bounds
-        app_bda_buffer_size =
-            (1 + (gpuav_settings.gpuav_max_buffer_device_addresses + 2) + (gpuav_settings.gpuav_max_buffer_device_addresses + 2)) *
-            8;  // 64 bit words
-        buffer_info.size = app_bda_buffer_size;
+        app_bda_buffer_byte_size = (1  // 1 QWORD for the number of address ranges
+                                    + 2 * gpuav_settings.gpuav_max_buffer_device_addresses  // 2 QWORDS to hold an address range
+                                    ) *
+                                   8;  // 64 bit words
+        buffer_info.size = app_bda_buffer_byte_size;
         // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
         // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;

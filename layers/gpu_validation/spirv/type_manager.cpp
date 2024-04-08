@@ -357,7 +357,27 @@ uint32_t TypeManager::TypeLength(const Type& type) {
             const uint32_t count = element_type->inst_.Operand(0);
             return count * TypeLength(*element_type);
         }
-        case spv::OpTypeStruct:
+        case spv::OpTypeStruct: {
+            // Get the offset of the last member and then figure out it's size
+            // Note: the largest offset doesn't have to be the last element index of the struct
+            uint32_t last_offset = 0;
+            uint32_t last_offset_index = 0;
+            const uint32_t struct_id = type.inst_.ResultId();
+            for (const auto& annotation : module_.annotations_) {
+                if (annotation->Opcode() == spv::OpMemberDecorate && annotation->Word(1) == struct_id &&
+                    annotation->Word(3) == spv::DecorationOffset) {
+                    const uint32_t index = annotation->Word(2);
+                    const uint32_t offset = annotation->Word(4);
+                    if (offset > last_offset) {
+                        last_offset = offset;
+                        last_offset_index = index;
+                    }
+                }
+            }
+
+            const uint32_t last_length = type.inst_.Operand(last_offset_index);
+            return last_offset + last_length;
+        }
         case spv::OpTypeRuntimeArray:
             assert(false && "unsupported type");
             break;

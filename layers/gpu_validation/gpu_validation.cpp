@@ -256,52 +256,48 @@ void gpuav::Validator::UpdateBDABuffer(const Location &loc) {
     if (!buffer_device_address_enabled || gpuav_bda_buffer_version == buffer_device_address_ranges_version) {
         return;
     }
-    auto address_ranges = GetBufferAddressRanges();
-    auto address_ranges_num_addresses = address_ranges.size();
-    if (address_ranges_num_addresses == 0) return;
 
-    // Example BDA input buffer assuming 2 buffers using BDA:
-    // Word 0 | Index of start of buffer sizes (in this case 5)
-    // Word 1 | 0x0000000000000000
-    // Word 2 | Device Address of first buffer  (Addresses sorted in ascending order)
-    // Word 3 | Device Address of second buffer
-    // Word 4 | 0xffffffffffffffff
-    // Word 5 | 0 (size of pretend buffer at word 1)
-    // Word 6 | Size in bytes of first buffer
-    // Word 7 | Size in bytes of second buffer
-    // Word 8 | 0 (size of pretend buffer in word 4)
+    // Update buffer device address table
+    // ---
+    VkDeviceAddress *bda_table_ptr = nullptr;
 
-    uint64_t *bda_data;
-    // Make sure to limit writes to size of the buffer
-    [[maybe_unused]] VkResult result;
-    result = vmaMapMemory(vmaAllocator, app_buffer_device_addresses.allocation, reinterpret_cast<void **>(&bda_data));
+    VkResult result = vmaMapMemory(vmaAllocator, app_buffer_device_addresses.allocation, reinterpret_cast<void **>(&bda_table_ptr));
     assert(result == VK_SUCCESS);
-    uint32_t address_index = 1;
-    size_t size_index = 3 + address_ranges.size();
-    memset(bda_data, 0, static_cast<size_t>(app_bda_buffer_size));
-    bda_data[0] = size_index;       // Start of buffer sizes
-    bda_data[address_index++] = 0;  // NULL address
-    bda_data[size_index++] = 0;
-    if (address_ranges_num_addresses > gpuav_settings.gpuav_max_buffer_device_addresses) {
+    if (result != VK_SUCCESS) {
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, loc, "Unable to map device memory in UpdateBDABuffer. Device could become unstable.", true);
+            aborted = true;
+            return;
+        }
+    }
+
+    // Buffer device address table layout
+    // Ranges are sorted from low to high, and do not overlap
+    // QWord 0 | Number of *ranges* (1 range occupies 2 QWords)
+    // QWord 1 | Range 1 begin
+    // QWord 2 | Range 1 end
+    // QWord 3 | Range 2 begin
+    // QWord 4 | Range 2 end
+    // QWord 5 | ...
+
+    const size_t max_recordable_ranges = (app_bda_buffer_byte_size - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress));
+    auto bda_ranges = reinterpret_cast<BufferAddressRange *>(bda_table_ptr + 1);
+    const auto [ranges_to_update_count, total_address_ranges_count] = GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
+    bda_table_ptr[0] = ranges_to_update_count;
+
+    if (total_address_ranges_count > size_t(gpuav_settings.gpuav_max_buffer_device_addresses)) {
         std::ostringstream problem_string;
-        problem_string << "Number of buffer device addresses in use (" << address_ranges_num_addresses
+        problem_string << "Number of buffer device addresses ranges in use (" << total_address_ranges_count
                        << ") is greater than khronos_validation.gpuav_max_buffer_device_addresses ("
                        << gpuav_settings.gpuav_max_buffer_device_addresses
-                       << "). Truncating BDA table which could result in invalid validation";
+                       << "). Truncating buffer device address table could result in invalid validation";
         ReportSetupProblem(device, loc, problem_string.str().c_str());
     }
-    size_t num_addresses =
-        std::min(static_cast<uint32_t>(address_ranges_num_addresses), gpuav_settings.gpuav_max_buffer_device_addresses);
-    for (size_t i = 0; i < num_addresses; i++) {
-        bda_data[address_index++] = address_ranges[i].begin;
-        bda_data[size_index++] = address_ranges[i].end - address_ranges[i].begin;
-    }
-    bda_data[address_index] = std::numeric_limits<uintptr_t>::max();
-    bda_data[size_index] = 0;
-    // Flush the BDA buffer before unmapping so that the new state is visible to the GPU
+
+    // Post update cleanups
+    // ---
+    // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
     result = vmaFlushAllocation(vmaAllocator, app_buffer_device_addresses.allocation, 0, VK_WHOLE_SIZE);
-    // No good way to handle this error, we should still try to unmap.
-    assert(result == VK_SUCCESS);
     vmaUnmapMemory(vmaAllocator, app_buffer_device_addresses.allocation);
     gpuav_bda_buffer_version = buffer_device_address_ranges_version;
 }
@@ -520,7 +516,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
         // Buffer device addresses buffer
         VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
         if (buffer_device_address_enabled) {
-            bda_input_desc_buffer_info.range = app_bda_buffer_size;
+            bda_input_desc_buffer_info.range = app_bda_buffer_byte_size;
             bda_input_desc_buffer_info.buffer = app_buffer_device_addresses.buffer;
             bda_input_desc_buffer_info.offset = 0;
 

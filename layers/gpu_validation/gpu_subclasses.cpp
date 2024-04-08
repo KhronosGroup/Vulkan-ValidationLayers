@@ -441,6 +441,10 @@ gpuav::Queue::Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCr
 
 uint64_t gpuav::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     auto loc = submissions[0].loc.Get();
-    static_cast<gpuav::Validator&>(state_).UpdateBDABuffer(loc);
+    auto &gpuav = static_cast<gpuav::Validator &>(state_);
+    gpuav.UpdateBDABuffer(loc);
+    if (gpuav.aborted) {
+        return 0;
+    }
     return gpu_tracker::Queue::PreSubmit(std::move(submissions));
 }
