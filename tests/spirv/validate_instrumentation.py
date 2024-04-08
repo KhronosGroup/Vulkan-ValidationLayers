@@ -65,6 +65,7 @@ if __name__ == '__main__':
 
             command = f'{exe_path} {spirv_file} -o {temp_file} --all-passes'
             if args.verbose:
+                command += ' --timer'
                 print(command)
             subprocess.call(command.split())
             exit_code = subprocess.call([spirv_val_path, temp_file])
