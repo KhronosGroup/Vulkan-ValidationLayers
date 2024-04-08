@@ -162,6 +162,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/robustness_positive.cpp
     unit/sampler.cpp
     unit/sampler_positive.cpp
+    unit/secondary_command_buffer.cpp
+    unit/secondary_command_buffer_positive.cpp
     unit/shader_compute.cpp
     unit/shader_compute_positive.cpp
     unit/shader_cooperative_matrix.cpp

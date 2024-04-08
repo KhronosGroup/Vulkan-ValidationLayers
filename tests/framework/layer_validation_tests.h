@@ -345,6 +345,10 @@ class CommandTest : public VkLayerTest {};
 class NegativeCommand : public CommandTest {};
 class PositiveCommand : public CommandTest {};
 
+class SecondaryCommandBufferTest : public VkLayerTest {};
+class NegativeSecondaryCommandBuffer : public SecondaryCommandBufferTest {};
+class PositiveSecondaryCommandBuffer : public SecondaryCommandBufferTest {};
+
 class CopyBufferImageTest : public VkLayerTest {};
 class NegativeCopyBufferImage : public CopyBufferImageTest {};
 class PositiveCopyBufferImage : public CopyBufferImageTest {};
