@@ -206,18 +206,18 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(const LogObjectLi
             }
         }
 
-            // Validate that there is no destination acceleration structures' memory overlaps
-            if (dst_as_state && other_dst_as_state) {
-                const char *vuid = error_obj.location.function == Func::vkCmdBuildAccelerationStructuresKHR
-                                       ? "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702"
-                                   : error_obj.location.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR
-                                       ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03702"
-                                       : "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03702";
+        // Validate that there is no destination acceleration structures' memory overlaps
+        if (dst_as_state && other_dst_as_state) {
+            const char *vuid = error_obj.location.function == Func::vkCmdBuildAccelerationStructuresKHR
+                                   ? "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702"
+                               : error_obj.location.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR
+                                   ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03702"
+                                   : "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03702";
 
-                skip |= ValidateAccelStructsMemoryDoNotOverlap(error_obj.location, objlist, *dst_as_state,
-                                                               info_i_loc.dot(Field::dstAccelerationStructure), *other_dst_as_state,
-                                                               other_info_j_loc.dot(Field::dstAccelerationStructure), vuid);
-            }
+            skip |= ValidateAccelStructsMemoryDoNotOverlap(error_obj.location, objlist, *dst_as_state,
+                                                           info_i_loc.dot(Field::dstAccelerationStructure), *other_dst_as_state,
+                                                           other_info_j_loc.dot(Field::dstAccelerationStructure), vuid);
+        }
     }
 
     return skip;
@@ -990,6 +990,33 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
         }
 
         skip |= ValidateAccelerationStructuresMemoryAlisasing(LogObjectList(), infoCount, pInfos, info_i, error_obj);
+        const VkDeviceSize scratch_i_size = rt::ComputeScratchSize(rt::BuildType::Host, device, *info, ppBuildRangeInfos[info_i]);
+        auto scratch_i_host_addr = reinterpret_cast<uint64_t>(info->scratchData.hostAddress);
+        const sparse_container::range<uint64_t> scratch_addr_range(scratch_i_host_addr, scratch_i_host_addr + scratch_i_size);
+
+        assert(infoCount > info_i);
+        for (auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i + 1, infoCount - (info_i + 1))) {
+            const Location other_info_j_loc = error_obj.location.dot(Field::pInfos, other_info_j + info_i + 1);
+            const VkDeviceSize other_scratch_size =
+                rt::ComputeScratchSize(rt::BuildType::Host, device, *other_info, ppBuildRangeInfos[other_info_j]);
+            auto other_scratch_host_addr = reinterpret_cast<uint64_t>(other_info->scratchData.hostAddress);
+            const sparse_container::range<uint64_t> other_scratch_addr_range(other_scratch_host_addr,
+                                                                             other_scratch_host_addr + other_scratch_size);
+
+            if (scratch_addr_range.intersects(other_scratch_addr_range)) {
+                std::string info_i_scratch_str = info_loc.dot(Field::scratchData).Fields();
+                std::string other_info_j_scratch_str = other_info_j_loc.dot(Field::scratchData).Fields();
+                skip |= LogError(
+                    "VUID-vkBuildAccelerationStructuresKHR-scratchData-03704", device, info_loc.dot(Field::scratchData),
+                    "overlaps with %s on host address range %s.\n"
+                    "%s.hostAddress is %p and assumed scratch size is %" PRIu64
+                    ".\n"
+                    "%s.hostAddress is %p and assumed scratch size is %" PRIu64 ".",
+                    other_info_j_scratch_str.c_str(), string_range_hex(scratch_addr_range & other_scratch_addr_range).c_str(),
+                    info_i_scratch_str.c_str(), info->scratchData.hostAddress, scratch_i_size, other_info_j_scratch_str.c_str(),
+                    other_info->scratchData.hostAddress, other_scratch_size);
+            }
+        }
 
         skip |= CommonBuildAccelerationStructureValidation(*info, info_loc, LogObjectList());
 
