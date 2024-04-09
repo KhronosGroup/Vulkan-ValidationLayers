@@ -556,7 +556,7 @@ void gpu_tracker::Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
-        result = DispatchBeginCommandBuffer(barrier_command_buffer_, &command_buffer_begin_info);
+        result = DispatchBeginCommandBuffer(barrier_command_buffer_, &command_buffer_begin_info, false);
         if (result == VK_SUCCESS) {
             VkMemoryBarrier memory_barrier = vku::InitStructHelper();
             memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;

@@ -231,9 +231,6 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateFreeCommandBuffers,
     InterceptIdPreCallRecordFreeCommandBuffers,
     InterceptIdPostCallRecordFreeCommandBuffers,
-    InterceptIdPreCallValidateBeginCommandBuffer,
-    InterceptIdPreCallRecordBeginCommandBuffer,
-    InterceptIdPostCallRecordBeginCommandBuffer,
     InterceptIdPreCallValidateEndCommandBuffer,
     InterceptIdPreCallRecordEndCommandBuffer,
     InterceptIdPostCallRecordEndCommandBuffer,
@@ -1966,9 +1963,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateFreeCommandBuffers);
     BUILD_DISPATCH_VECTOR(PreCallRecordFreeCommandBuffers);
     BUILD_DISPATCH_VECTOR(PostCallRecordFreeCommandBuffers);
-    BUILD_DISPATCH_VECTOR(PreCallValidateBeginCommandBuffer);
-    BUILD_DISPATCH_VECTOR(PreCallRecordBeginCommandBuffer);
-    BUILD_DISPATCH_VECTOR(PostCallRecordBeginCommandBuffer);
     BUILD_DISPATCH_VECTOR(PreCallValidateEndCommandBuffer);
     BUILD_DISPATCH_VECTOR(PreCallRecordEndCommandBuffer);
     BUILD_DISPATCH_VECTOR(PostCallRecordEndCommandBuffer);

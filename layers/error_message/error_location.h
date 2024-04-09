@@ -24,6 +24,7 @@
 #include "generated/error_location_helper.h"
 #include "logging.h"
 #include "containers/custom_containers.h"
+#include "chassis/chassis_handle_data.h"
 
 // Holds the 'Location' of where the code is inside a function/struct/etc
 // see docs/error_object.md for more details
@@ -82,7 +83,12 @@ struct ErrorObject {
     const Location location;   // starting location (Always the function entrypoint)
     const VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
     const LogObjectList objlist;
-    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_) : location(Location(command_)), handle(handle_), objlist(handle) {}
+    const chassis::HandleData* handle_data;
+
+    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_)
+        : location(Location(command_)), handle(handle_), objlist(handle), handle_data(nullptr) {}
+    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_, const chassis::HandleData* handle_data_)
+        : location(Location(command_)), handle(handle_), objlist(handle), handle_data(handle_data_) {}
 };
 
 namespace vvl {

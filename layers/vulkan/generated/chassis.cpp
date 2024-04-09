@@ -43,6 +43,10 @@ std::atomic<uint64_t> global_unique_id(1ULL);
 // internally synchronized.
 vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
+// State we track in order to populate HandleData for things such as ignored pointers
+static vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+static std::shared_mutex secondary_cb_map_mutex;
+
 bool wrap_handles = true;
 
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
@@ -986,6 +990,39 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    chassis::HandleData handle_data;
+    {
+        auto lock = ReadLockGuard(secondary_cb_map_mutex);
+        handle_data.command_buffer.is_secondary = (secondary_cb_map.find(commandBuffer) != secondary_cb_map.end());
+    }
+
+    ErrorObject error_obj(vvl::Func::vkBeginCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer),
+                          &handle_data);
+    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+
+    RecordObject record_obj(vvl::Func::vkBeginCommandBuffer, &handle_data);
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
+    }
+
+    VkResult result = DispatchBeginCommandBuffer(commandBuffer, pBeginInfo, handle_data.command_buffer.is_secondary);
+    record_obj.result = result;
+
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
     }
     return result;
 }
@@ -2804,6 +2841,17 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCommandPool(device, commandPool, pAllocator, record_obj);
     }
+
+    {
+        auto lock = WriteLockGuard(secondary_cb_map_mutex);
+        for (auto item = secondary_cb_map.begin(); item != secondary_cb_map.end();) {
+            if (item->second == commandPool) {
+                item = secondary_cb_map.erase(item);
+            } else {
+                ++item;
+            }
+        }
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
@@ -2850,6 +2898,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, record_obj);
     }
+
+    if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+        auto lock = WriteLockGuard(secondary_cb_map_mutex);
+        for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
+            secondary_cb_map.emplace(pCommandBuffers[cb_index], pAllocateInfo->commandPool);
+        }
+    }
     return result;
 }
 
@@ -2873,29 +2928,13 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers, record_obj);
     }
-}
 
-VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkBeginCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBeginCommandBuffer]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo, error_obj);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    {
+        auto lock = WriteLockGuard(secondary_cb_map_mutex);
+        for (uint32_t cb_index = 0; cb_index < commandBufferCount; cb_index++) {
+            secondary_cb_map.erase(pCommandBuffers[cb_index]);
+        }
     }
-    RecordObject record_obj(vvl::Func::vkBeginCommandBuffer);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBeginCommandBuffer]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
-    }
-    VkResult result = DispatchBeginCommandBuffer(commandBuffer, pBeginInfo);
-    record_obj.result = result;
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBeginCommandBuffer]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
-    }
-    return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {

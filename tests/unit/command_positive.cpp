@@ -716,3 +716,19 @@ TEST_F(PositiveCommand, DeviceLost) {
         GTEST_SKIP() << "No device lost found";
     }
 }
+
+TEST_F(PositiveCommand, CommandBufferInheritanceInfoIgnoredPointer) {
+    TEST_DESCRIPTION("VkCommandBufferInheritanceInfo is ignored if using a primary command buffer.");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
+    const uint64_t fake_address_32 = 0xCDCDCDCD;
+    const void *undereferencable_pointer =
+        sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.pInheritanceInfo = reinterpret_cast<const VkCommandBufferInheritanceInfo *>(undereferencable_pointer);
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->end();
+}

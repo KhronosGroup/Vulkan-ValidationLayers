@@ -194,11 +194,7 @@ void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, co
     new_obj_node->object_type = kVulkanObjectTypeCommandBuffer;
     new_obj_node->handle = HandleToUint64(command_buffer);
     new_obj_node->parent_object = HandleToUint64(command_pool);
-    if (level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
-        new_obj_node->status = OBJSTATUS_COMMAND_BUFFER_SECONDARY;
-    } else {
-        new_obj_node->status = OBJSTATUS_NONE;
-    }
+
     InsertObject(object_map[kVulkanObjectTypeCommandBuffer], command_buffer, kVulkanObjectTypeCommandBuffer, loc, new_obj_node);
     num_objects[kVulkanObjectTypeCommandBuffer]++;
     num_total_objects++;
@@ -628,7 +624,7 @@ bool ObjectLifetimes::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandB
         auto iter = object_map[kVulkanObjectTypeCommandBuffer].find(HandleToUint64(commandBuffer));
         if (iter != object_map[kVulkanObjectTypeCommandBuffer].end()) {
             auto node = iter->second;
-            if ((begin_info->pInheritanceInfo) && (node->status & OBJSTATUS_COMMAND_BUFFER_SECONDARY) &&
+            if ((begin_info->pInheritanceInfo) && error_obj.handle_data->command_buffer.is_secondary &&
                 (begin_info->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                 const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
                 const Location inheritance_info_loc = begin_info_loc.dot(Field::pInheritanceInfo);

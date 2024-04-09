@@ -165,7 +165,7 @@ VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAl
                                         VkCommandBuffer* pCommandBuffers);
 void DispatchFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                 const VkCommandBuffer* pCommandBuffers);
-VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo);
+VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo, bool is_secondary);
 VkResult DispatchEndCommandBuffer(VkCommandBuffer commandBuffer);
 VkResult DispatchResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags);
 void DispatchCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline);
