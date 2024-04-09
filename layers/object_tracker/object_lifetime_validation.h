@@ -21,9 +21,8 @@ extern uint64_t object_track_index;
 // Object Status -- used to track state of individual objects
 typedef VkFlags ObjectStatusFlags;
 enum ObjectStatusFlagBits {
-    OBJSTATUS_NONE = 0x00000000,                      // No status is set
-    OBJSTATUS_COMMAND_BUFFER_SECONDARY = 0x00000001,  // Command Buffer is of type SECONDARY
-    OBJSTATUS_CUSTOM_ALLOCATOR = 0x00000002,          // Allocated with custom allocator
+    OBJSTATUS_NONE = 0x00000000,              // No status is set
+    OBJSTATUS_CUSTOM_ALLOCATOR = 0x00000002,  // Allocated with custom allocator
 };
 
 // Object and state information structure

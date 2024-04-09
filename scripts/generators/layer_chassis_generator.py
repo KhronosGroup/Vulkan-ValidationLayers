@@ -217,6 +217,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkCreateShadersEXT',
         'vkAllocateDescriptorSets',
         'vkCreateBuffer',
+        # Need to inject HandleData logic
+        'vkBeginCommandBuffer',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
@@ -742,6 +744,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
             // Map uniqueID to actual object handle. Accesses to the map itself are
             // internally synchronized.
             vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
+
+            // State we track in order to populate HandleData for things such as ignored pointers
+            static vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+            static std::shared_mutex secondary_cb_map_mutex;
 
             bool wrap_handles = true;
 
@@ -1654,6 +1660,39 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 return result;
             }
 
+            VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
+                auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+                bool skip = false;
+                chassis::HandleData handle_data;
+                {
+                    auto lock = ReadLockGuard(secondary_cb_map_mutex);
+                    handle_data.command_buffer.is_secondary = (secondary_cb_map.find(commandBuffer) != secondary_cb_map.end());
+                }
+
+                ErrorObject error_obj(vvl::Func::vkBeginCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer),
+                                    &handle_data);
+                for (const ValidationObject* intercept : layer_data->object_dispatch) {
+                    auto lock = intercept->ReadLock();
+                    skip |= intercept->PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo, error_obj);
+                    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+                }
+
+                RecordObject record_obj(vvl::Func::vkBeginCommandBuffer, &handle_data);
+                for (ValidationObject* intercept : layer_data->object_dispatch) {
+                    auto lock = intercept->WriteLock();
+                    intercept->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
+                }
+
+                VkResult result = DispatchBeginCommandBuffer(commandBuffer, pBeginInfo, handle_data.command_buffer.is_secondary);
+                record_obj.result = result;
+
+                for (ValidationObject* intercept : layer_data->object_dispatch) {
+                    auto lock = intercept->WriteLock();
+                    intercept->PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
+                }
+                return result;
+            }
+
             // Handle tooling queries manually as this is a request for layer information
             static const VkPhysicalDeviceToolPropertiesEXT khronos_layer_tool_props = {
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT,
@@ -1912,6 +1951,40 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             out.append(f'intercept->PostCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
             out.append('}\n')
+
+            # Special state tracking logic to do as a chassis level PostCallRecord call
+            if command.name == 'vkAllocateCommandBuffers':
+                out.append('''
+                    if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+                        auto lock = WriteLockGuard(secondary_cb_map_mutex);
+                        for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
+                            secondary_cb_map.emplace(pCommandBuffers[cb_index], pAllocateInfo->commandPool);
+                        }
+                    }
+                ''')
+            elif command.name == 'vkFreeCommandBuffers':
+                out.append('''
+                    {
+                        auto lock = WriteLockGuard(secondary_cb_map_mutex);
+                        for (uint32_t cb_index = 0; cb_index < commandBufferCount; cb_index++) {
+                            secondary_cb_map.erase(pCommandBuffers[cb_index]);
+                        }
+                    }
+                ''')
+            elif command.name == 'vkDestroyCommandPool':
+                out.append('''
+                    {
+                        auto lock = WriteLockGuard(secondary_cb_map_mutex);
+                        for (auto item = secondary_cb_map.begin(); item != secondary_cb_map.end();) {
+                            if (item->second == commandPool) {
+                                item = secondary_cb_map.erase(item);
+                            } else {
+                                ++item;
+                            }
+                        }
+                    }
+                ''')
+
             # Return result variable, if any.
             if command.returnType != 'void':
                 out.append('    return result;\n')

@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Valve Corporation
+/* Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include "chassis/chassis_handle_data.h"
 #include "generated/error_location_helper.h"
 
 // Contains all information for each PreCallRecord / PostCallRecord function
@@ -25,9 +26,14 @@ struct RecordObject {
     VkResult result = VK_RESULT_MAX_ENUM;  // Not all items return a VkResult
     VkDeviceAddress device_address = 0;
 
-    RecordObject(vvl::Func command_) : location(Location(command_)) {}
-    RecordObject(vvl::Func command_, VkResult result_) : location(Location(command_)), result(result_) {}
-    RecordObject(vvl::Func command_, VkDeviceAddress device_address_) : location(Location(command_)), device_address(device_address_) {}
+    const chassis::HandleData* handle_data;
+
+    RecordObject(vvl::Func command_, const chassis::HandleData* handle_data_ = nullptr)
+        : location(Location(command_)), handle_data(handle_data_) {}
+    RecordObject(vvl::Func command_, VkResult result_, const chassis::HandleData* handle_data_ = nullptr)
+        : location(Location(command_)), result(result_), handle_data(handle_data_) {}
+    RecordObject(vvl::Func command_, VkDeviceAddress device_address_, const chassis::HandleData* handle_data_ = nullptr)
+        : location(Location(command_)), device_address(device_address_), handle_data(handle_data_) {}
 
     bool HasResult() { return result != VK_RESULT_MAX_ENUM; }
 };

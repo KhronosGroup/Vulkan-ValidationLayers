@@ -103,6 +103,11 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
         # List of all extension structs strings containing handles
         self.ndo_extension_structs = []
 
+        # Dispatch functions that need special state tracking variables passed in
+        self.custom_definition = {
+            'vkBeginCommandBuffer' : ', bool is_secondary'
+        }
+
     def isNonDispatchable(self, name: str) -> bool:
         return name in self.vk.handles and not self.vk.handles[name].dispatchable
 
@@ -167,6 +172,8 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             prototype = command.cPrototype
             prototype = prototype.replace("VKAPI_ATTR ", "")
             prototype = prototype.replace("VKAPI_CALL vk", "Dispatch")
+            if command.name in self.custom_definition:
+                prototype = prototype.replace(');', f'{self.custom_definition[command.name]});')
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'{prototype}\n')
         out.extend(guard_helper.add_guard(None))
