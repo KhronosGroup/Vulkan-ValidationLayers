@@ -40,6 +40,11 @@ class APISpecific:
             case 'vulkan':
                 return None
 
+def isDeviceStruct(struct: Struct):
+    for extension in struct.extensions:
+        if not extension.device:
+            return False
+    return True
 
 class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def __init__(self,
@@ -374,7 +379,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         guard_helper = PlatformGuardHelper()
         for struct in feature_structs:
             out.extend(guard_helper.add_guard(struct.protect))
-            out.extend(self.genStructBody(struct))
+            out.extend(self.genStructBody(struct, False))
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
@@ -396,7 +401,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         guard_helper = PlatformGuardHelper()
         for struct in property_structs:
             out.extend(guard_helper.add_guard(struct.protect))
-            out.extend(self.genStructBody(struct))
+            out.extend(self.genStructBody(struct, False))
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
@@ -419,7 +424,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         guard_helper = PlatformGuardHelper()
         for struct in other_structs:
             out.extend(guard_helper.add_guard(struct.protect))
-            out.extend(self.genStructBody(struct))
+            out.extend(self.genStructBody(struct, True))
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
@@ -973,7 +978,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         return lines
 
     # This logic was broken into its own function because we need to fill multiple functions with these structs
-    def genStructBody(self, struct: Struct):
+    def genStructBody(self, struct: Struct, non_prop_feature: bool):
         pnext_case = '\n'
         pnext_check = ''
 
@@ -1031,12 +1036,24 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             pnext_check += 'if (is_const_param) {\n'
             pnext_check += f'[[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
 
+            # Can have a struct from a device extension be extended by an instance extension struct
+            # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7803
+            # This is true already for all Properties/Features so exclude them here
+            check_for_instance = False
+            if non_prop_feature and isDeviceStruct(struct):
+                for extend in struct.extends:
+                    if not isDeviceStruct(self.vk.structs[extend]):
+                        check_for_instance = True
+
             # We do the extension checking here at the pNext chaining because if the struct is only used in a new extended command,
             # using that command will always trigger a "missing extension" VU
             checkExpression = []
             resultExpression = []
             for extension in [x.name for x in struct.extensions if x.device]:
-                checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
+                if check_for_instance:
+                    checkExpression.append(f'(!is_physdev_api && !IsExtEnabled(device_extensions.{extension.lower()}))')
+                else:
+                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
                 resultExpression.append(extension)
             # TODO - Video session creation checks will fail tests if no extensions are found (need to fix test logic)
             if len(checkExpression) > 0 and 'Video' not in struct.name:

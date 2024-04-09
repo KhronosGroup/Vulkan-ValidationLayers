@@ -593,3 +593,56 @@ TEST_F(VkPositiveLayerTest, NoExtensionFromInstanceFunction) {
     // need VK_KHR_sampler_ycbcr_conversion if it was a device function
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B16G16R16G16_422_UNORM, &format_properties);
 }
+
+TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct0) {
+    TEST_DESCRIPTION(
+        "Use VkImageFormatListCreateInfo with VkPhysicalDeviceImageFormatInfo2 if VK_KHR_image_format_list is available");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_image_format_list is not supported";
+    }
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    // Requires device extension (VK_KHR_image_format_list)
+    VkImageFormatListCreateInfo format_list_info = vku::InitStructHelper();
+    format_list_info.viewFormatCount = 1;
+    format_list_info.pViewFormats = &format;
+
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&format_list_info);
+    image_format_info.type = VK_IMAGE_TYPE_2D;
+    image_format_info.format = format;
+    image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_format_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
+    // Requires instance extension (VK_KHR_get_physical_device_properties2)
+    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+}
+
+TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct1) {
+    TEST_DESCRIPTION(
+        "Use VkBufferUsageFlags2CreateInfoKHR with VkPhysicalDeviceExternalBufferInfo if VK_KHR_maintenance5 is available");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_maintenance5 is not supported";
+    }
+
+#ifdef _WIN32
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+
+    // Requires device extension (VK_KHR_maintenance5)
+    VkBufferUsageFlags2CreateInfoKHR bufferUsageFlags2 = vku::InitStructHelper();
+    bufferUsageFlags2.usage = VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT_KHR;
+
+    VkPhysicalDeviceExternalBufferInfo externalBufferInfo = vku::InitStructHelper(&bufferUsageFlags2);
+    externalBufferInfo.handleType = handle_type;
+    VkExternalBufferProperties externalBufferProperties = vku::InitStructHelper();
+    // Instance extension promoted to VK_VERSION_1_1
+    vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &externalBufferInfo, &externalBufferProperties);
+}
