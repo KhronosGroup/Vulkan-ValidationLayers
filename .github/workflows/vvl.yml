@@ -103,8 +103,33 @@ jobs:
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
 
+  linuxUpload:
+    needs: linux
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    name: "linux Upload"
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-upload-ccache
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: python scripts/tests.py --build --config release
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Validation_Layers_Linux_64
+          path: /home/runner/work/Vulkan-ValidationLayers/Vulkan-ValidationLayers/build-ci/install/lib/libVkLayer_khronos_validation.so
+          retention-days: 7
+
   androidOnLinux:
     runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
@@ -159,6 +184,40 @@ jobs:
       - name: Test Max Profile
         run: python scripts/tests.py --test
 
+  windowsUpload:
+    needs: windows
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+      - name: Cache known_good.json installations
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            build-ci/external/glslang/build/install
+            build-ci/external/googltest/build/install
+            build-ci/external/mimalloc/build/install
+            build-ci/external/robin-hood-hashing/build/install
+            build-ci/external/SPIRV-Headers/build/install
+            build-ci/external/SPIRV-Tools/build/install
+            build-ci/external/Vulkan-Headers/build/install
+            build-ci/external/Vulkan-Utility-Libraries/build/install
+          key: windows-dependencies-release-amd64-${{ hashfiles('scripts/known_good.json') }}
+      - name: Build
+        run: python3 scripts/tests.py --build --config release --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Validation_Layers_Windows_64
+          path: D:\\a\\Vulkan-ValidationLayers\\Vulkan-ValidationLayers\\build-ci/install/bin/VkLayer_khronos_validation.dll
+          retention-days: 7
+
   android:
       runs-on: ubuntu-22.04
       strategy:
@@ -195,6 +254,40 @@ jobs:
         - run: cmake --build build/
         - run: cmake --install build/ --prefix /tmp
         - run: ctest --output-on-failure -C Debug --test-dir build/
+
+  androidUpload:
+      needs: android
+      runs-on: ubuntu-22.04
+      steps:
+        - uses: actions/checkout@v4
+        - uses: lukka/get-cmake@latest
+        - name: Setup ccache
+          uses: hendrikmuhs/ccache-action@v1.2
+          with:
+            key: android-upload
+        - name: Configure
+          run: |
+            cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+            -D ANDROID_PLATFORM=26 \
+            -D CMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+            -D CMAKE_ANDROID_STL_TYPE=c++_shared \
+            -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D BUILD_TESTS=OFF \
+            -D UPDATE_DEPS=ON \
+            -D BUILD_WERROR=ON
+          env:
+            CMAKE_C_COMPILER_LAUNCHER: ccache
+            CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        - run: cmake --build build/
+        - run: cmake --install build/ --prefix /tmp
+        - name: Strip
+          run: $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /tmp/lib/libVkLayer_khronos_validation.so
+        - uses: actions/upload-artifact@v4
+          with:
+            name: Validation_Layers_Android_64
+            path: /tmp/lib/libVkLayer_khronos_validation.so
+            retention-days: 7
 
   iOS:
     runs-on: macos-12
