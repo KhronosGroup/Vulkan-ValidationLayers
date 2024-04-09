@@ -3744,3 +3744,29 @@ TEST_F(NegativeRayTracing, HostAccelerationStructureBuildNullPointers) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeRayTracing, HostBuildOverlappingScratchBuffers) {
+    TEST_DESCRIPTION("Attempt an host acceleration structure build with overlapping scratch buffers");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    RETURN_IF_SKIP(Init());
+
+    constexpr size_t blas_count = 3;
+
+    std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
+    auto scratch_data = std::make_shared<std::vector<uint8_t>>(1 << 15, 0);
+    for (size_t i = 0; i < blas_count; ++i) {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+        blas.SetHostScratchBuffer(scratch_data);
+        blas.SetEnableScratchBuild(false);
+        blas_vec.emplace_back(std::move(blas));
+    }
+
+    for (size_t i = 0; i < binom<size_t>(blas_count, 2); ++i) {
+        m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-scratchData-03704");
+    }
+    vkt::as::BuildHostAccelerationStructuresKHR(*m_device, blas_vec);
+    m_errorMonitor->VerifyFound();
+}

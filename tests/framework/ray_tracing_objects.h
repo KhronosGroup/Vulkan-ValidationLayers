@@ -170,7 +170,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as);
     BuildGeometryInfoKHR& SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as);
     BuildGeometryInfoKHR& SetScratchBuffer(std::shared_ptr<vkt::Buffer> scratch_buffer);
-    BuildGeometryInfoKHR& SetHostScratchBuffer(std::unique_ptr<uint8_t[]>&& host_scratch);
+    BuildGeometryInfoKHR& SetHostScratchBuffer(std::shared_ptr<std::vector<uint8_t>> host_scratch);
     BuildGeometryInfoKHR& SetDeviceScratchOffset(VkDeviceAddress offset);
     BuildGeometryInfoKHR& SetEnableScratchBuild(bool build_scratch);
     BuildGeometryInfoKHR& SetBottomLevelAS(std::shared_ptr<BuildGeometryInfoKHR> bottom_level_as);
@@ -210,6 +210,7 @@ class BuildGeometryInfoKHR {
 
   private:
     friend void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR>& infos);
+    friend void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeometryInfoKHR>& infos);
 
     const vkt::Device* device_;
     uint32_t vk_info_count_ = 1;
@@ -224,7 +225,7 @@ class BuildGeometryInfoKHR {
     bool build_scratch_ = true;
     VkDeviceAddress device_scratch_offset_ = 0;
     std::shared_ptr<vkt::Buffer> device_scratch_;
-    std::unique_ptr<uint8_t[]> host_scratch_;
+    std::shared_ptr<std::vector<uint8_t>> host_scratch_;
     std::shared_ptr<BuildGeometryInfoKHR> blas_;
     std::unique_ptr<vkt::Buffer> indirect_buffer_;
     std::optional<VkDeviceAddress> indirect_buffer_address_{};
@@ -235,6 +236,7 @@ class BuildGeometryInfoKHR {
 
 // Helper functions
 void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR>& infos);
+void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeometryInfoKHR>& infos);
 
 // Helper functions providing simple, valid objects.
 // Calling Build() on them without further modifications results in a usable and valid Vulkan object.
