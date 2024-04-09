@@ -89,9 +89,7 @@ TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
-    AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(Init());
 
     // Build Bottom Level Acceleration Structure
