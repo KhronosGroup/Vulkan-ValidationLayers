@@ -12,10 +12,6 @@
 #include "../framework/pipeline_helper.h"
 #include "generated/vk_extension_helper.h"
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-#include "wayland-client.h"
-#endif
-
 void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
     vkt::CommandBuffer cmd_buf(*m_device, &pool);
@@ -59,6 +55,54 @@ VkImageMemoryBarrier WsiTest::TransitionToPresent(VkImage swapchain_image, VkIma
     return transition;
 }
 
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+void WsiTest::InitWaylandContext(WaylandContext &context) {
+    context.display = wl_display_connect(nullptr);
+    if (!context.display) {
+        GTEST_SKIP() << "couldn't create wayland surface";
+    }
+
+    auto global = [](void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
+        (void)version;
+        const std::string_view interface_str = interface;
+        if (interface_str == "wl_compositor") {
+            auto compositor = reinterpret_cast<wl_compositor **>(data);
+            *compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
+        }
+    };
+
+    auto global_remove = [](void *data, struct wl_registry *registry, uint32_t id) {
+        (void)data;
+        (void)registry;
+        (void)id;
+    };
+
+    context.registry = wl_display_get_registry(context.display);
+    ASSERT_TRUE(context.registry != nullptr);
+
+    const wl_registry_listener registry_listener = {global, global_remove};
+
+    wl_registry_add_listener(context.registry, &registry_listener, &context.compositor);
+
+    wl_display_dispatch(context.display);
+    ASSERT_TRUE(context.compositor);
+
+    context.surface = wl_compositor_create_surface(context.compositor);
+    ASSERT_TRUE(context.surface);
+
+    const uint32_t version = wl_surface_get_version(context.surface);
+    ASSERT_TRUE(version > 0);
+}
+
+void WsiTest::ReleaseWaylandContext(WaylandContext &context) {
+    wl_surface_destroy(context.surface);
+    wl_compositor_destroy(context.compositor);
+    wl_registry_destroy(context.registry);
+    wl_display_disconnect(context.display);
+    context = WaylandContext{};
+}
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
 TEST_F(PositiveWsi, CreateWaylandSurface) {
     TEST_DESCRIPTION("Test creating wayland surface");
 
@@ -69,60 +113,18 @@ TEST_F(PositiveWsi, CreateWaylandSurface) {
     AddRequiredExtensions(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    wl_display *display = nullptr;
-    wl_registry *registry = nullptr;
-    wl_surface *surface = nullptr;
-    wl_compositor *compositor = nullptr;
-    {
-        display = wl_display_connect(nullptr);
-        if (!display) {
-            GTEST_SKIP() << "couldn't create wayland surface";
-        }
-
-        auto global = [](void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
-            (void)version;
-            const std::string_view interface_str = interface;
-            if (interface_str == "wl_compositor") {
-                auto compositor = reinterpret_cast<wl_compositor **>(data);
-                *compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
-            }
-        };
-
-        auto global_remove = [](void *data, struct wl_registry *registry, uint32_t id) {
-            (void)data;
-            (void)registry;
-            (void)id;
-        };
-
-        registry = wl_display_get_registry(display);
-        ASSERT_TRUE(registry != nullptr);
-
-        const wl_registry_listener registry_listener = {global, global_remove};
-
-        wl_registry_add_listener(registry, &registry_listener, &compositor);
-
-        wl_display_dispatch(display);
-        ASSERT_TRUE(compositor);
-
-        surface = wl_compositor_create_surface(compositor);
-        ASSERT_TRUE(surface);
-
-        const uint32_t version = wl_surface_get_version(surface);
-        ASSERT_TRUE(version > 0);
-    }
+    WaylandContext wayland_ctx;
+    RETURN_IF_SKIP(InitWaylandContext(wayland_ctx));
 
     VkWaylandSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
-    surface_create_info.display = display;
-    surface_create_info.surface = surface;
+    surface_create_info.display = wayland_ctx.display;
+    surface_create_info.surface = wayland_ctx.surface;
 
     VkSurfaceKHR vulkan_surface;
     vk::CreateWaylandSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
 
     vk::DestroySurfaceKHR(instance(), vulkan_surface, nullptr);
-    wl_surface_destroy(surface);
-    wl_compositor_destroy(compositor);
-    wl_registry_destroy(registry);
-    wl_display_disconnect(display);
+    ReleaseWaylandContext(wayland_ctx);
 #endif
 }
 
@@ -1477,4 +1479,75 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         m_commandBuffer->reset();
     }
     m_default_queue->wait();
+}
+
+TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
+    TEST_DESCRIPTION("Create swapchain with per present mode minImageCount that is less than surface's general minImageCount");
+#ifndef VK_USE_PLATFORM_WAYLAND_KHR
+    GTEST_SKIP() << "Test requires wayland platform support";
+#else
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    WaylandContext wayland_ctx;
+    RETURN_IF_SKIP(InitWaylandContext(wayland_ctx));
+
+    VkWaylandSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
+    surface_create_info.display = wayland_ctx.display;
+    surface_create_info.surface = wayland_ctx.surface;
+
+    VkSurfaceKHR surface;
+    vk::CreateWaylandSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+
+    const auto present_mode = VK_PRESENT_MODE_FIFO_KHR;  // Implementations must support
+
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.surface = surface;
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    const uint32_t general_min_image_count = surface_caps.surfaceCapabilities.minImageCount;
+
+    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
+    surface_present_mode.presentMode = present_mode;
+    surface_info.pNext = &surface_present_mode;
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    const uint32_t per_present_mode_min_image_count = surface_caps.surfaceCapabilities.minImageCount;
+
+    if (per_present_mode_min_image_count >= general_min_image_count) {
+        vk::DestroySurfaceKHR(instance(), surface, nullptr);
+        ReleaseWaylandContext(wayland_ctx);
+        GTEST_SKIP() << "Can't find present mode that uses less images than a general case";
+    }
+
+    auto info = GetSwapchainInfo(surface);
+
+    VkSwapchainPresentModesCreateInfoEXT swapchain_present_mode_create_info = vku::InitStructHelper();
+    swapchain_present_mode_create_info.presentModeCount = 1;
+    swapchain_present_mode_create_info.pPresentModes = &present_mode;
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&swapchain_present_mode_create_info);
+    swapchain_create_info.surface = surface;
+    swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {surface_caps.surfaceCapabilities.minImageExtent.width,
+                                         surface_caps.surfaceCapabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchain_create_info.presentMode = present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
+    vk::DestroySurfaceKHR(instance(), surface, nullptr);
+    ReleaseWaylandContext(wayland_ctx);
+#endif
 }

@@ -22,6 +22,10 @@
 #include <android_native_app_glue.h>
 #endif
 
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#include "wayland-client.h"
+#endif
+
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -646,6 +650,19 @@ class WsiTest : public VkLayerTest {
     // most tests need images in VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout
     void SetImageLayoutPresentSrc(VkImage image);
     VkImageMemoryBarrier TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout, VkAccessFlags src_access_mask);
+
+  protected:
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+    struct WaylandContext {
+        wl_display *display = nullptr;
+        wl_registry *registry = nullptr;
+        wl_surface *surface = nullptr;
+        wl_compositor *compositor = nullptr;
+    };
+    void InitWaylandContext(WaylandContext& context);
+    void ReleaseWaylandContext(WaylandContext& context);
+#endif
+
 };
 class NegativeWsi : public WsiTest {};
 class PositiveWsi : public WsiTest {};
