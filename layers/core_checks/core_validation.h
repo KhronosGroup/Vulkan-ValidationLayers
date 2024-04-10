@@ -170,7 +170,7 @@ class CoreChecks : public ValidationStateTracker {
                                                   const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
                                                   uint32_t dst_queue_family);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                    const ErrorObject& error_obj) const;
+                                    VkSubpassContents contents, const ErrorObject& error_obj) const;
     bool ValidateDependencies(const vvl::Framebuffer& framebuffer_state, const vvl::RenderPass& render_pass_state,
                               const ErrorObject& error_obj) const;
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
