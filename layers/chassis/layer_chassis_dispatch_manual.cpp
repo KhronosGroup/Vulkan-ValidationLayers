@@ -87,18 +87,16 @@ void CopyExportMetalObjects(const void *src_chain, const void *dst_chain) {
 void DispatchExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, pMetalObjectsInfo);
-    vku::safe_VkExportMetalObjectsInfoEXT var_local_pMetalObjectsInfo;
-    vku::safe_VkExportMetalObjectsInfoEXT *local_pMetalObjectsInfo = nullptr;
+    vku::safe_VkExportMetalObjectsInfoEXT local_pMetalObjectsInfo;
     {
         if (pMetalObjectsInfo) {
-            local_pMetalObjectsInfo = &var_local_pMetalObjectsInfo;
-            local_pMetalObjectsInfo->initialize(pMetalObjectsInfo);
-            WrapPnextChainHandles(layer_data, local_pMetalObjectsInfo->pNext);
+            local_pMetalObjectsInfo.initialize(pMetalObjectsInfo);
+            WrapPnextChainHandles(layer_data, local_pMetalObjectsInfo.pNext);
         }
     }
-    layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, (VkExportMetalObjectsInfoEXT *)local_pMetalObjectsInfo);
+    layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, (VkExportMetalObjectsInfoEXT *)&local_pMetalObjectsInfo);
     if (pMetalObjectsInfo) {
-        CopyExportMetalObjects(local_pMetalObjectsInfo->pNext, pMetalObjectsInfo->pNext);
+        CopyExportMetalObjects(local_pMetalObjectsInfo.pNext, pMetalObjectsInfo->pNext);
     }
 }
 
@@ -1040,17 +1038,15 @@ VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAl
                                         VkCommandBuffer *pCommandBuffers) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
-    vku::safe_VkCommandBufferAllocateInfo var_local_pAllocateInfo;
-    vku::safe_VkCommandBufferAllocateInfo *local_pAllocateInfo = nullptr;
+    vku::safe_VkCommandBufferAllocateInfo local_pAllocateInfo;
     if (pAllocateInfo) {
-        local_pAllocateInfo = &var_local_pAllocateInfo;
-        local_pAllocateInfo->initialize(pAllocateInfo);
+        local_pAllocateInfo.initialize(pAllocateInfo);
         if (pAllocateInfo->commandPool) {
-            local_pAllocateInfo->commandPool = layer_data->Unwrap(pAllocateInfo->commandPool);
+            local_pAllocateInfo.commandPool = layer_data->Unwrap(pAllocateInfo->commandPool);
         }
     }
     VkResult result = layer_data->device_dispatch_table.AllocateCommandBuffers(
-        device, (const VkCommandBufferAllocateInfo *)local_pAllocateInfo, pCommandBuffers);
+        device, (const VkCommandBufferAllocateInfo *)&local_pAllocateInfo, pCommandBuffers);
     return result;
 }
 
@@ -1079,22 +1075,20 @@ void DispatchDestroyCommandPool(VkDevice device, VkCommandPool commandPool, cons
 VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo, bool is_secondary) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     if (!wrap_handles || !is_secondary) return layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
-    vku::safe_VkCommandBufferBeginInfo var_local_pBeginInfo;
-    vku::safe_VkCommandBufferBeginInfo *local_pBeginInfo = nullptr;
+    vku::safe_VkCommandBufferBeginInfo local_pBeginInfo;
     if (pBeginInfo) {
-        local_pBeginInfo = &var_local_pBeginInfo;
-        local_pBeginInfo->initialize(pBeginInfo);
-        if (local_pBeginInfo->pInheritanceInfo) {
+        local_pBeginInfo.initialize(pBeginInfo);
+        if (local_pBeginInfo.pInheritanceInfo) {
             if (pBeginInfo->pInheritanceInfo->renderPass) {
-                local_pBeginInfo->pInheritanceInfo->renderPass = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->renderPass);
+                local_pBeginInfo.pInheritanceInfo->renderPass = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->renderPass);
             }
             if (pBeginInfo->pInheritanceInfo->framebuffer) {
-                local_pBeginInfo->pInheritanceInfo->framebuffer = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->framebuffer);
+                local_pBeginInfo.pInheritanceInfo->framebuffer = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->framebuffer);
             }
         }
     }
     VkResult result =
-        layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, (const VkCommandBufferBeginInfo *)local_pBeginInfo);
+        layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, (const VkCommandBufferBeginInfo *)&local_pBeginInfo);
     return result;
 }
 
@@ -1316,22 +1310,20 @@ void DispatchGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerati
     if (!wrap_handles)
         return layer_data->device_dispatch_table.GetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo,
                                                                                        pMaxPrimitiveCounts, pSizeInfo);
-    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR var_local_pBuildInfo;
-    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pBuildInfo = nullptr;
+    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR local_pBuildInfo;
     {
         if (pBuildInfo) {
-            local_pBuildInfo = &var_local_pBuildInfo;
-            local_pBuildInfo->initialize(pBuildInfo, false, nullptr);
+            local_pBuildInfo.initialize(pBuildInfo, false, nullptr);
             if (pBuildInfo->srcAccelerationStructure) {
-                local_pBuildInfo->srcAccelerationStructure = layer_data->Unwrap(pBuildInfo->srcAccelerationStructure);
+                local_pBuildInfo.srcAccelerationStructure = layer_data->Unwrap(pBuildInfo->srcAccelerationStructure);
             }
             if (pBuildInfo->dstAccelerationStructure) {
-                local_pBuildInfo->dstAccelerationStructure = layer_data->Unwrap(pBuildInfo->dstAccelerationStructure);
+                local_pBuildInfo.dstAccelerationStructure = layer_data->Unwrap(pBuildInfo->dstAccelerationStructure);
             }
-            for (uint32_t geometry_index = 0; geometry_index < local_pBuildInfo->geometryCount; ++geometry_index) {
+            for (uint32_t geometry_index = 0; geometry_index < local_pBuildInfo.geometryCount; ++geometry_index) {
                 vku::safe_VkAccelerationStructureGeometryKHR &geometry_info =
-                    local_pBuildInfo->pGeometries != nullptr ? local_pBuildInfo->pGeometries[geometry_index]
-                                                             : *(local_pBuildInfo->ppGeometries[geometry_index]);
+                    local_pBuildInfo.pGeometries != nullptr ? local_pBuildInfo.pGeometries[geometry_index]
+                                                            : *(local_pBuildInfo.ppGeometries[geometry_index]);
                 if (geometry_info.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
                     WrapPnextChainHandles(layer_data, geometry_info.geometry.triangles.pNext);
                 }
@@ -1339,73 +1331,71 @@ void DispatchGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerati
         }
     }
     layer_data->device_dispatch_table.GetAccelerationStructureBuildSizesKHR(
-        device, buildType, (const VkAccelerationStructureBuildGeometryInfoKHR *)local_pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+        device, buildType, (const VkAccelerationStructureBuildGeometryInfoKHR *)&local_pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
 }
 
 void DispatchGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo, size_t dataSize, void *pDescriptor) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
-    vku::safe_VkDescriptorGetInfoEXT var_local_pDescriptorInfo;
-    vku::safe_VkDescriptorGetInfoEXT *local_pDescriptorInfo = NULL;
+    vku::safe_VkDescriptorGetInfoEXT local_pDescriptorInfo;
     {
         if (pDescriptorInfo) {
-            local_pDescriptorInfo = &var_local_pDescriptorInfo;
-            local_pDescriptorInfo->initialize(pDescriptorInfo);
+            local_pDescriptorInfo.initialize(pDescriptorInfo);
 
             switch (pDescriptorInfo->type) {
                 case VK_DESCRIPTOR_TYPE_SAMPLER: {
-                    if (local_pDescriptorInfo->data.pSampler)
-                        *(VkSampler *)local_pDescriptorInfo->data.pSampler = layer_data->Unwrap(*pDescriptorInfo->data.pSampler);
+                    if (local_pDescriptorInfo.data.pSampler)
+                        *(VkSampler *)local_pDescriptorInfo.data.pSampler = layer_data->Unwrap(*pDescriptorInfo->data.pSampler);
 
                     break;
                 }
                 case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-                    if (local_pDescriptorInfo->data.pCombinedImageSampler) {
+                    if (local_pDescriptorInfo.data.pCombinedImageSampler) {
                         if (pDescriptorInfo->data.pCombinedImageSampler->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo->data.pCombinedImageSampler->sampler =
+                            *(VkSampler *)&local_pDescriptorInfo.data.pCombinedImageSampler->sampler =
                                 layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->sampler);
                         }
                         if (pDescriptorInfo->data.pCombinedImageSampler->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo->data.pCombinedImageSampler->imageView =
+                            *(VkImageView *)&local_pDescriptorInfo.data.pCombinedImageSampler->imageView =
                                 layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->imageView);
                         }
                     }
                     break;
                 }
                 case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
-                    if (local_pDescriptorInfo->data.pSampledImage) {
+                    if (local_pDescriptorInfo.data.pSampledImage) {
                         if (pDescriptorInfo->data.pSampledImage->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo->data.pSampledImage->sampler =
+                            *(VkSampler *)&local_pDescriptorInfo.data.pSampledImage->sampler =
                                 layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->sampler);
                         }
                         if (pDescriptorInfo->data.pSampledImage->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo->data.pSampledImage->imageView =
+                            *(VkImageView *)&local_pDescriptorInfo.data.pSampledImage->imageView =
                                 layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->imageView);
                         }
                     }
                     break;
                 }
                 case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
-                    if (local_pDescriptorInfo->data.pStorageImage) {
+                    if (local_pDescriptorInfo.data.pStorageImage) {
                         if (pDescriptorInfo->data.pStorageImage->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo->data.pStorageImage->sampler =
+                            *(VkSampler *)&local_pDescriptorInfo.data.pStorageImage->sampler =
                                 layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->sampler);
                         }
                         if (pDescriptorInfo->data.pStorageImage->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo->data.pStorageImage->imageView =
+                            *(VkImageView *)&local_pDescriptorInfo.data.pStorageImage->imageView =
                                 layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->imageView);
                         }
                     }
                     break;
                 }
                 case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
-                    if (local_pDescriptorInfo->data.pInputAttachmentImage) {
+                    if (local_pDescriptorInfo.data.pInputAttachmentImage) {
                         if (pDescriptorInfo->data.pInputAttachmentImage->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo->data.pInputAttachmentImage->sampler =
+                            *(VkSampler *)&local_pDescriptorInfo.data.pInputAttachmentImage->sampler =
                                 layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->sampler);
                         }
                         if (pDescriptorInfo->data.pInputAttachmentImage->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo->data.pInputAttachmentImage->imageView =
+                            *(VkImageView *)&local_pDescriptorInfo.data.pInputAttachmentImage->imageView =
                                 layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->imageView);
                         }
                     }
@@ -1417,7 +1407,7 @@ void DispatchGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDe
         }
     }
 
-    layer_data->device_dispatch_table.GetDescriptorEXT(device, (const VkDescriptorGetInfoEXT *)local_pDescriptorInfo, dataSize,
+    layer_data->device_dispatch_table.GetDescriptorEXT(device, (const VkDescriptorGetInfoEXT *)&local_pDescriptorInfo, dataSize,
                                                        pDescriptor);
 }
 
