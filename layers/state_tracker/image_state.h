@@ -437,6 +437,17 @@ class Surface : public StateObject {
         std::optional<std::vector<VkPresentModeKHR>> compatible_present_modes;
     };
     // Cached information per physical device. Optional indicates if element is in the cache.
+    //
+    // NOTE: One of the reasons to cache surface caps is to prevent a false-positive
+    // when the surface change happens (e.g. resize) after the surface caps are queried
+    // and before the swapchain is created. The assumption is that with the current API,
+    // the app can't do better than this (no atomicity between query and swapchain creation).
+    // The caching ensures that validation sees the same surface state as the application.
+    //
+    // The priority is to avoid false-positives for correctly written application.
+    // When the application behaves incorrectly (e.g. forgets to query surface caps after
+    // it processed the resize event), then the caching can hide a problem, since validation
+    // will think that application respects surface caps values.
     struct PhysDevCache {
         std::optional<std::vector<VkPresentModeKHR>> present_modes;
         std::optional<VkSurfaceCapabilitiesKHR> capabilities;

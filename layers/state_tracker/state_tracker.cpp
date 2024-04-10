@@ -4057,8 +4057,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
             if (surface_present_mode) {
                 // The surface caps caching should take into account pSurfaceInfo->pNext chain structure,
                 // because each pNext element can affect query result. Here we support caching for a common
-                // case when pNext chain is a single VkSurfacePresentModeEXT structure. Surface queries are
-                // not high frequency operations, disabling caching alltogether might be an option too.
+                // case when pNext chain is a single VkSurfacePresentModeEXT structure.
                 const bool single_pnext_element = (pSurfaceInfo->pNext == surface_present_mode) && !surface_present_mode->pNext;
                 if (single_pnext_element) {
                     surface_state->UpdateCapabilitiesCache(physicalDevice, *pSurfaceCapabilities,
