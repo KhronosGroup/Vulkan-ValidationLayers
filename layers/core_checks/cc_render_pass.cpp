@@ -482,7 +482,7 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
 }
 
 bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                            const ErrorObject &error_obj) const {
+                                            VkSubpassContents contents, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     const auto &rp_state = *Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
@@ -597,12 +597,20 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
         }
     }
 
+    if (contents == VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT &&
+        !enabled_features.nestedCommandBuffer) {
+        skip |=
+            LogError("VUID-VkSubpassBeginInfo-contents-09382", commandBuffer, error_obj.location.dot(Field::contents),
+                     " is VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT, but nestedCommandBuffer was not enabled.");
+    }
+
+
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    VkSubpassContents contents, const ErrorObject &error_obj) const {
-    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -614,7 +622,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                     const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                     const ErrorObject &error_obj) const {
-    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents, error_obj);
 }
 
 void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
