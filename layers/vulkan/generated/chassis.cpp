@@ -832,7 +832,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     chassis::CreatePipelineLayout chassis_state{};
     chassis_state.modified_create_info = *pCreateInfo;
 
-    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreatePipelineLayout]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -847,7 +847,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     VkResult result = DispatchCreatePipelineLayout(device, &chassis_state.modified_create_info, pAllocator, pPipelineLayout);
     record_obj.result = result;
 
-    for (ValidationObject* intercept : layer_data->object_dispatch) {
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePipelineLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
     }
@@ -946,7 +946,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
     }
 
     RecordObject record_obj(vvl::Func::vkAllocateDescriptorSets);
-    for (ValidationObject* intercept : layer_data->object_dispatch) {
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAllocateDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj);
     }
@@ -972,7 +972,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     chassis::CreateBuffer chassis_state{};
     chassis_state.modified_create_info = *pCreateInfo;
 
-    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -987,7 +987,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     VkResult result = DispatchCreateBuffer(device, &chassis_state.modified_create_info, pAllocator, pBuffer);
     record_obj.result = result;
 
-    for (ValidationObject* intercept : layer_data->object_dispatch) {
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
     }
@@ -1005,14 +1005,14 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
     ErrorObject error_obj(vvl::Func::vkBeginCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer),
                           &handle_data);
-    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBeginCommandBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
     RecordObject record_obj(vvl::Func::vkBeginCommandBuffer, &handle_data);
-    for (ValidationObject* intercept : layer_data->object_dispatch) {
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBeginCommandBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
     }
@@ -1020,7 +1020,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
     VkResult result = DispatchBeginCommandBuffer(commandBuffer, pBeginInfo, handle_data.command_buffer.is_secondary);
     record_obj.result = result;
 
-    for (ValidationObject* intercept : layer_data->object_dispatch) {
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBeginCommandBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
     }

@@ -208,6 +208,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkEnumerateDeviceLayerProperties',
         'vkEnumerateDeviceExtensionProperties',
         # Functions that are handled explicitly due to chassis architecture violations
+        # Note: If added, may need to add to skip_intercept_id_functions list as well
         'vkCreateGraphicsPipelines',
         'vkCreateComputePipelines',
         'vkCreateRayTracingPipelinesNV',
@@ -1499,7 +1500,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 chassis::CreatePipelineLayout chassis_state{};
                 chassis_state.modified_create_info = *pCreateInfo;
 
-                for (const ValidationObject* intercept : layer_data->object_dispatch) {
+                for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreatePipelineLayout]) {
                     auto lock = intercept->ReadLock();
                     skip |= intercept->PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, error_obj);
                     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -1514,7 +1515,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 VkResult result = DispatchCreatePipelineLayout(device, &chassis_state.modified_create_info, pAllocator, pPipelineLayout);
                 record_obj.result = result;
 
-                for (ValidationObject* intercept : layer_data->object_dispatch) {
+                for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePipelineLayout]) {
                     auto lock = intercept->WriteLock();
                     intercept->PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
                 }
@@ -1612,7 +1613,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }
 
                 RecordObject record_obj(vvl::Func::vkAllocateDescriptorSets);
-                for (ValidationObject* intercept : layer_data->object_dispatch) {
+                for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAllocateDescriptorSets]) {
                     auto lock = intercept->WriteLock();
                     intercept->PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj);
                 }
@@ -1638,7 +1639,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 chassis::CreateBuffer chassis_state{};
                 chassis_state.modified_create_info = *pCreateInfo;
 
-                for (const ValidationObject* intercept : layer_data->object_dispatch) {
+                for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateBuffer]) {
                     auto lock = intercept->ReadLock();
                     skip |= intercept->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, error_obj);
                     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -1653,7 +1654,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 VkResult result = DispatchCreateBuffer(device, &chassis_state.modified_create_info, pAllocator, pBuffer);
                 record_obj.result = result;
 
-                for (ValidationObject* intercept : layer_data->object_dispatch) {
+                for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateBuffer]) {
                     auto lock = intercept->WriteLock();
                     intercept->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
                 }
@@ -1671,14 +1672,14 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
                 ErrorObject error_obj(vvl::Func::vkBeginCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer),
                                     &handle_data);
-                for (const ValidationObject* intercept : layer_data->object_dispatch) {
+                for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBeginCommandBuffer]) {
                     auto lock = intercept->ReadLock();
                     skip |= intercept->PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo, error_obj);
                     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
                 }
 
                 RecordObject record_obj(vvl::Func::vkBeginCommandBuffer, &handle_data);
-                for (ValidationObject* intercept : layer_data->object_dispatch) {
+                for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBeginCommandBuffer]) {
                     auto lock = intercept->WriteLock();
                     intercept->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
                 }
@@ -1686,7 +1687,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 VkResult result = DispatchBeginCommandBuffer(commandBuffer, pBeginInfo, handle_data.command_buffer.is_secondary);
                 record_obj.result = result;
 
-                for (ValidationObject* intercept : layer_data->object_dispatch) {
+                for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBeginCommandBuffer]) {
                     auto lock = intercept->WriteLock();
                     intercept->PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
                 }
@@ -2074,6 +2075,36 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
         self.write("".join(out))
 
     def generateHelper(self):
+        # will skip all 3 functions
+        skip_intercept_id_functions = [
+            'vkGetDeviceProcAddr',
+            'vkDestroyDevice',
+            'vkCreateValidationCacheEXT',
+            'vkDestroyValidationCacheEXT',
+            'vkMergeValidationCachesEXT',
+            'vkGetValidationCacheDataEXT',
+            # have all 3 calls have dual signatures being used
+            'vkCreateShaderModule',
+            'vkCreateShadersEXT',
+            'vkCreateGraphicsPipelines',
+            'vkCreateComputePipelines',
+            'vkCreateRayTracingPipelinesNV',
+            'vkCreateRayTracingPipelinesKHR',
+        ]
+
+        # We need to skip any signatures that pass around chassis_modification_state structs
+        # and therefore can't easily create the intercept id
+        skip_intercept_id_pre_validate = [
+            'vkAllocateDescriptorSets'
+        ]
+        skip_intercept_id_pre_record = [
+            'vkCreatePipelineLayout',
+            'vkCreateBuffer',
+        ]
+        skip_intercept_id_post_record = [
+            'vkAllocateDescriptorSets'
+        ]
+
         out = []
         out.append('''
             #pragma once
@@ -2087,21 +2118,27 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
             ''')
 
         out.append('typedef enum InterceptId{\n')
-        for command in [x for x in self.vk.commands.values() if not x.instance and x.name not in self.manual_functions]:
-            out.append(f'    InterceptIdPreCallValidate{command.name[2:]},\n')
-            out.append(f'    InterceptIdPreCallRecord{command.name[2:]},\n')
-            out.append(f'    InterceptIdPostCallRecord{command.name[2:]},\n')
+        for command in [x for x in self.vk.commands.values() if not x.instance and x.name not in skip_intercept_id_functions]:
+            if command.name not in skip_intercept_id_pre_validate:
+                out.append(f'    InterceptIdPreCallValidate{command.name[2:]},\n')
+            if command.name not in skip_intercept_id_pre_record:
+                out.append(f'    InterceptIdPreCallRecord{command.name[2:]},\n')
+            if command.name not in skip_intercept_id_post_record:
+                out.append(f'    InterceptIdPostCallRecord{command.name[2:]},\n')
         out.append('    InterceptIdCount,\n')
         out.append('} InterceptId;\n')
 
         out.append(APISpecific.genInitObjectDispatchVectorSource(self.targetApiName))
 
         guard_helper = PlatformGuardHelper()
-        for command in [x for x in self.vk.commands.values() if not x.instance and x.name not in self.manual_functions]:
+        for command in [x for x in self.vk.commands.values() if not x.instance and x.name not in skip_intercept_id_functions]:
             out.extend(guard_helper.add_guard(command.protect))
-            out.append(f'    BUILD_DISPATCH_VECTOR(PreCallValidate{command.name[2:]});\n')
-            out.append(f'    BUILD_DISPATCH_VECTOR(PreCallRecord{command.name[2:]});\n')
-            out.append(f'    BUILD_DISPATCH_VECTOR(PostCallRecord{command.name[2:]});\n')
+            if command.name not in skip_intercept_id_pre_validate:
+                out.append(f'    BUILD_DISPATCH_VECTOR(PreCallValidate{command.name[2:]});\n')
+            if command.name not in skip_intercept_id_pre_record:
+                out.append(f'    BUILD_DISPATCH_VECTOR(PreCallRecord{command.name[2:]});\n')
+            if command.name not in skip_intercept_id_post_record:
+                out.append(f'    BUILD_DISPATCH_VECTOR(PostCallRecord{command.name[2:]});\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
         self.write("".join(out))
