@@ -129,6 +129,8 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetQueryPoolResults,
     InterceptIdPreCallRecordGetQueryPoolResults,
     InterceptIdPostCallRecordGetQueryPoolResults,
+    InterceptIdPreCallValidateCreateBuffer,
+    InterceptIdPostCallRecordCreateBuffer,
     InterceptIdPreCallValidateDestroyBuffer,
     InterceptIdPreCallRecordDestroyBuffer,
     InterceptIdPostCallRecordDestroyBuffer,
@@ -171,6 +173,8 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateDestroyPipeline,
     InterceptIdPreCallRecordDestroyPipeline,
     InterceptIdPostCallRecordDestroyPipeline,
+    InterceptIdPreCallValidateCreatePipelineLayout,
+    InterceptIdPostCallRecordCreatePipelineLayout,
     InterceptIdPreCallValidateDestroyPipelineLayout,
     InterceptIdPreCallRecordDestroyPipelineLayout,
     InterceptIdPostCallRecordDestroyPipelineLayout,
@@ -195,6 +199,7 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateResetDescriptorPool,
     InterceptIdPreCallRecordResetDescriptorPool,
     InterceptIdPostCallRecordResetDescriptorPool,
+    InterceptIdPreCallRecordAllocateDescriptorSets,
     InterceptIdPreCallValidateFreeDescriptorSets,
     InterceptIdPreCallRecordFreeDescriptorSets,
     InterceptIdPostCallRecordFreeDescriptorSets,
@@ -231,6 +236,9 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateFreeCommandBuffers,
     InterceptIdPreCallRecordFreeCommandBuffers,
     InterceptIdPostCallRecordFreeCommandBuffers,
+    InterceptIdPreCallValidateBeginCommandBuffer,
+    InterceptIdPreCallRecordBeginCommandBuffer,
+    InterceptIdPostCallRecordBeginCommandBuffer,
     InterceptIdPreCallValidateEndCommandBuffer,
     InterceptIdPreCallRecordEndCommandBuffer,
     InterceptIdPostCallRecordEndCommandBuffer,
@@ -1861,6 +1869,8 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetQueryPoolResults);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetQueryPoolResults);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetQueryPoolResults);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateBuffer);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateBuffer);
     BUILD_DISPATCH_VECTOR(PreCallValidateDestroyBuffer);
     BUILD_DISPATCH_VECTOR(PreCallRecordDestroyBuffer);
     BUILD_DISPATCH_VECTOR(PostCallRecordDestroyBuffer);
@@ -1903,6 +1913,8 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPipeline);
     BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPipeline);
     BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPipeline);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreatePipelineLayout);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreatePipelineLayout);
     BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPipelineLayout);
     BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPipelineLayout);
     BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPipelineLayout);
@@ -1927,6 +1939,7 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateResetDescriptorPool);
     BUILD_DISPATCH_VECTOR(PreCallRecordResetDescriptorPool);
     BUILD_DISPATCH_VECTOR(PostCallRecordResetDescriptorPool);
+    BUILD_DISPATCH_VECTOR(PreCallRecordAllocateDescriptorSets);
     BUILD_DISPATCH_VECTOR(PreCallValidateFreeDescriptorSets);
     BUILD_DISPATCH_VECTOR(PreCallRecordFreeDescriptorSets);
     BUILD_DISPATCH_VECTOR(PostCallRecordFreeDescriptorSets);
@@ -1963,6 +1976,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateFreeCommandBuffers);
     BUILD_DISPATCH_VECTOR(PreCallRecordFreeCommandBuffers);
     BUILD_DISPATCH_VECTOR(PostCallRecordFreeCommandBuffers);
+    BUILD_DISPATCH_VECTOR(PreCallValidateBeginCommandBuffer);
+    BUILD_DISPATCH_VECTOR(PreCallRecordBeginCommandBuffer);
+    BUILD_DISPATCH_VECTOR(PostCallRecordBeginCommandBuffer);
     BUILD_DISPATCH_VECTOR(PreCallValidateEndCommandBuffer);
     BUILD_DISPATCH_VECTOR(PreCallRecordEndCommandBuffer);
     BUILD_DISPATCH_VECTOR(PostCallRecordEndCommandBuffer);
