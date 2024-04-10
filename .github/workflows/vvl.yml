@@ -125,7 +125,7 @@ jobs:
         with:
           name: Validation_Layers_Linux_64
           path: /home/runner/work/Vulkan-ValidationLayers/Vulkan-ValidationLayers/build-ci/install/lib/libVkLayer_khronos_validation.so
-          retention-days: 7
+          retention-days: 3
 
   androidOnLinux:
     runs-on: ubuntu-22.04
@@ -215,7 +215,7 @@ jobs:
         with:
           name: Validation_Layers_Windows_64
           path: D:\\a\\Vulkan-ValidationLayers\\Vulkan-ValidationLayers\\build-ci/install/bin/VkLayer_khronos_validation.dll
-          retention-days: 7
+          retention-days: 3
 
   android:
       runs-on: ubuntu-22.04
@@ -287,7 +287,7 @@ jobs:
           with:
             name: Validation_Layers_Android_64
             path: /tmp/lib/libVkLayer_khronos_validation.so
-            retention-days: 7
+            retention-days: 3
 
   iOS:
     runs-on: macos-12
