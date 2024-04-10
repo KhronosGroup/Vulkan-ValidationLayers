@@ -2055,7 +2055,7 @@ TEST_F(VkLayerTest, Features11WithoutVulkan12) {
 TEST_F(VkLayerTest, GetDeviceProcAddrInstance) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an instance function");
     RETURN_IF_SKIP(Init());
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDeviceProcAddr-device");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "WARNING-vkGetDeviceProcAddr-device");
     vk::GetDeviceProcAddr(device(), "vkGetPhysicalDeviceProperties");
     m_errorMonitor->VerifyFound();
 }

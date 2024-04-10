@@ -224,7 +224,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an enabled instance extension expecting nullptr");
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-vkGetDeviceProcAddr-device");
+    m_errorMonitor->SetAllowedFailureMsg("WARNING-vkGetDeviceProcAddr-device");
     auto fpDestroySurface = (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(device(), "vkDestroySurfaceKHR");
     if (fpDestroySurface) {
         m_errorMonitor->SetError("Null was expected!");
