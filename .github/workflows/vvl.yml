@@ -129,7 +129,6 @@ jobs:
 
   androidOnLinux:
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
@@ -257,6 +256,7 @@ jobs:
 
   androidUpload:
       needs: android
+      if: github.ref == 'refs/heads/main'
       runs-on: ubuntu-22.04
       steps:
         - uses: actions/checkout@v4
