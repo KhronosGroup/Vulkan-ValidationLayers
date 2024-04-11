@@ -595,6 +595,74 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     m_default_queue->wait();
 }
 
+TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
+    TEST_DESCRIPTION("test loading and storing with GL_EXT_buffer_reference_uvec2");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_EXT_buffer_reference_uvec2 : enable
+
+        layout(buffer_reference, std430) buffer NodeA {
+            int a;
+        };
+
+        layout(buffer_reference, std430) buffer NodeB {
+            int b;
+        };
+
+        layout(set = 0, binding = 0) buffer Buffer {
+            uvec2 nodes[2];
+        } in_buffer;
+
+        void main() {
+            NodeA(in_buffer.nodes[0]).a = NodeB(in_buffer.nodes[1]).b;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer buffer_node_a(*m_device, 4, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    vkt::Buffer buffer_node_b(*m_device, 4, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    VkDeviceAddress block_a_ptr = buffer_node_a.address();
+    VkDeviceAddress block_b_ptr = buffer_node_b.address();
+
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer_node_b.memory().map());
+    *buffer_ptr = 1234;  // data to pass
+    buffer_node_b.memory().unmap();
+
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &block_a_ptr, sizeof(VkDeviceAddress));
+    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &block_b_ptr, sizeof(VkDeviceAddress));
+    in_buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
+
+    buffer_ptr = static_cast<uint32_t *>(buffer_node_a.memory().map());
+    ASSERT_TRUE(*buffer_ptr == 1234);
+    buffer_node_a.memory().unmap();
+}
+
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     TEST_DESCRIPTION("No false OOB detected - use VK_KHR_relaxed_block_layout");
     AddRequiredExtensions(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME);

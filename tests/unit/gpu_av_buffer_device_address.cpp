@@ -17,8 +17,7 @@
 #include "../framework/gpu_av_helper.h"
 #include "../layers/containers/range_vector.h"
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerPushConstant) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     TEST_DESCRIPTION("Read before the valid pointer - use Push Constants to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
@@ -43,11 +42,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerPushConstant)
                 int nWrites;
             } u_info;
             layout(buffer_reference, std140) buffer bufStruct {
-                int a[4];
+                int a[4]; // 16 byte strides
             };
             void main() {
                 for (int i=0; i < u_info.nWrites; ++i) {
-                    u_info.data.a[i] = 0xdeadca71;
+                    u_info.data.a[i] = 42;
                 }
             }
         )glsl";
@@ -77,10 +76,17 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerPushConstant)
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
+
+    // Make sure we wrote the other 3 values
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    for (int i = 0; i < 3; ++i) {
+        ASSERT_EQ(*buffer_ptr, 42);
+        buffer_ptr += 4;
+    }
+    buffer.memory().unmap();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerPushConstant) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     TEST_DESCRIPTION("Read after the valid pointer - use Push Constants to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
@@ -105,11 +111,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerPushConstant) 
                 int nWrites;
             } u_info;
             layout(buffer_reference, std140) buffer bufStruct {
-                int a[4];
+                int a[4]; // 16 byte stride
             };
             void main() {
                 for (int i=0; i < u_info.nWrites; ++i) {
-                    u_info.data.a[i] = 0xdeadca71;
+                    u_info.data.a[i] = 42;
                 }
             }
         )glsl";
@@ -138,10 +144,17 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerPushConstant) 
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
+
+    // Make sure we wrote the first 4 values
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    for (int i = 0; i < 4; ++i) {
+        ASSERT_EQ(*buffer_ptr, 42);
+        buffer_ptr += 4;
+    }
+    buffer.memory().unmap();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerDescriptor) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     TEST_DESCRIPTION("Read 16 bytes before the valid pointer - use Descriptor to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
@@ -177,11 +190,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerDescriptor) {
             int nWrites;
         } u_info;
         layout(buffer_reference, std140) buffer bufStruct {
-            int a[4];
+            int a[4]; // 16 byte stride
         };
         void main() {
             for (int i=0; i < u_info.nWrites; ++i) {
-                u_info.data.a[i] = 0xdeadca71;
+                u_info.data.a[i] = 42;
             }
         }
     )glsl";
@@ -206,10 +219,17 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerDescriptor) {
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
+
+    // Make sure we wrote the other 3 values
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    for (int i = 0; i < 3; ++i) {
+        ASSERT_EQ(*buffer_ptr, 42);
+        buffer_ptr += 4;
+    }
+    buffer.memory().unmap();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerDescriptor) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     TEST_DESCRIPTION("Read after the valid pointer - use Descriptor to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
@@ -248,7 +268,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerDescriptor) {
         };
         void main() {
             for (int i=0; i < u_info.nWrites; ++i) {
-                u_info.data.a[i] = 0xdeadca71;
+                u_info.data.a[i] = 42;
             }
         }
     )glsl";
@@ -272,10 +292,17 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerDescriptor) {
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
+
+    // Make sure we wrote the first 4 values
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    for (int i = 0; i < 4; ++i) {
+        ASSERT_EQ(*buffer_ptr, 42);
+        buffer_ptr += 4;
+    }
+    buffer.memory().unmap();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_UVec3Array) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     SetTargetApiVersion(VK_API_VERSION_1_2);  // need to use 12Feature struct
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
