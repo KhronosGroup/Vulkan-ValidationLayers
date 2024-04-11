@@ -282,16 +282,6 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
     VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
     linear_image_ = false;
 
-    // WORKAROUND for profile and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
-    if (image.create_info.tiling == VK_IMAGE_TILING_LINEAR) {
-        const VkImageAspectFlags first_aspect = AspectBit(0);  // AspectBit returns aspects by index
-        subres = {first_aspect, 0, 0};
-        DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.VkHandle(), &subres, &layout);
-        if (layout.size > 0) {
-            linear_image_ = true;
-        }
-    }
-
     // WORKAROUND for not being able to handle general linear images without resulting in non-monotonically increasing ranges
     // Need to clean this up to correctly detect aliasing conflicts between linear image(s) and buffers
     // Issues:
