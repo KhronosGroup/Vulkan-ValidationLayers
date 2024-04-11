@@ -28,30 +28,6 @@
 
 typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
-// Much of the data stored in vvl::CommandBuffer is only used by core validation, and is
-// set up by Record calls in class CoreChecks. Because both the state tracker and
-// core methods must lock vvl::CommandBuffer, it is possible for a Validate call to
-// 'interrupt' a Record call and get only the state updated by whichever code
-// locked and unlocked the CB first. This can only happen if the application
-// is violating section 3.6 'Threading Behavior' of the specification, which
-// requires that command buffers be externally synchronized. Still, we'd prefer
-// not to crash if that happens. In most cases the core Record method is operating
-// on separate data members from the state tracker. But in the case of vkCmdWaitEvents*,
-// both methods operate on the same state in ways that could very easily crash if
-// not done within the same lock guard. Overriding RecordWaitEvents() allows
-// this to all happen completely while the state tracker is holding the lock.
-// Eventually we'll probably want to move all of the core state into this derived
-// class.
-class CORE_CMD_BUFFER_STATE : public vvl::CommandBuffer {
-  public:
-    CORE_CMD_BUFFER_STATE(ValidationStateTracker& dev_data, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
-                          const vvl::CommandPool* cmd_pool)
-        : vvl::CommandBuffer(dev_data, handle, pCreateInfo, cmd_pool) {}
-
-    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
-                          VkPipelineStageFlags2KHR src_stage_mask) override;
-};
-
 namespace vvl {
 struct DrawDispatchVuid;
 }  // namespace vvl
@@ -2461,8 +2437,5 @@ class CoreChecks : public ValidationStateTracker {
                                                                       const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle, const VkCommandBufferAllocateInfo* create_info,
-                                                             const vvl::CommandPool* pool) override {
-        return std::static_pointer_cast<vvl::CommandBuffer>(
-            std::make_shared<CORE_CMD_BUFFER_STATE>(*this, handle, create_info, pool));
-    }
+                                                             const vvl::CommandPool* pool) final;
 };  // Class CoreChecks
