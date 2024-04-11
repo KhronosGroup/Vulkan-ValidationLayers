@@ -375,7 +375,8 @@ uint32_t TypeManager::TypeLength(const Type& type) {
                 }
             }
 
-            const uint32_t last_length = type.inst_.Operand(last_offset_index);
+            const Type* last_element_type = FindTypeById(type.inst_.Operand(last_offset_index));
+            const uint32_t last_length = TypeLength(*last_element_type);
             return last_offset + last_length;
         }
         case spv::OpTypeRuntimeArray:

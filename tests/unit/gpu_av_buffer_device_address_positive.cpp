@@ -1024,3 +1024,123 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     foo_storage_buffer.memory().unmap();
     bar_storage_buffer.memory().unmap();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
+    TEST_DESCRIPTION("No false OOB detected when using a struct");
+
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+        #extension GL_EXT_buffer_reference : enable
+
+        struct Vertex {
+          float x, y, z;
+          float r, g, b;
+          vec2 uv;
+        };
+        
+        layout(std430, buffer_reference) readonly buffer VertexBuffer {
+          Vertex vertices[];
+        };
+
+        layout(set = 0, binding = 0) uniform foo {
+            VertexBuffer vb;
+        } ssbo;
+
+        void main() {
+            ssbo.vb.vertices[1] = ssbo.vb.vertices[0];
+            ssbo.vb.vertices[2] = ssbo.vb.vertices[1];
+        }
+    )glsl";
+
+    // Make a uniform buffer to be passed to the shader that contains the pointer
+    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.CreateComputePipeline();
+
+    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
+                              &pipeline.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_commandBuffer->end();
+
+    struct Vertex {
+        float x, y, z;
+        float r, g, b;
+        float uv[2];
+    };
+
+    // Create storage buffer
+    const uint32_t storage_buffer_size = 3 * sizeof(Vertex);  // float + vec3
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
+                               &allocate_flag_info);
+
+    // Write vertex 0
+    auto vertex_buffer_ptr = static_cast<Vertex *>(storage_buffer.memory().map());
+    vertex_buffer_ptr[0].x = 1.0f;
+    vertex_buffer_ptr[0].y = 2.0f;
+    vertex_buffer_ptr[0].z = 3.0f;
+
+    vertex_buffer_ptr[0].r = 4.0f;
+    vertex_buffer_ptr[0].g = 5.0f;
+    vertex_buffer_ptr[0].b = 6.0f;
+
+    vertex_buffer_ptr[0].uv[0] = 7.0f;
+    vertex_buffer_ptr[0].uv[1] = 8.0f;
+
+    storage_buffer.memory().unmap();
+
+    // Get device address of buffer to write to
+    auto storage_buffer_addr = storage_buffer.address();
+
+    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+    data[0] = storage_buffer_addr;
+    uniform_buffer.memory().unmap();
+
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
+
+    // Make sure shader wrote to float and vec3
+    vertex_buffer_ptr = static_cast<Vertex *>(storage_buffer.memory().map());
+    ASSERT_EQ(vertex_buffer_ptr[0].x, 1.0f);
+    ASSERT_EQ(vertex_buffer_ptr[0].y, 2.0f);
+    ASSERT_EQ(vertex_buffer_ptr[0].z, 3.0f);
+    ASSERT_EQ(vertex_buffer_ptr[0].r, 4.0f);
+    ASSERT_EQ(vertex_buffer_ptr[0].g, 5.0f);
+    ASSERT_EQ(vertex_buffer_ptr[0].b, 6.0f);
+    ASSERT_EQ(vertex_buffer_ptr[0].uv[0], 7.0f);
+    ASSERT_EQ(vertex_buffer_ptr[0].uv[1], 8.0f);
+
+    ASSERT_EQ(vertex_buffer_ptr[1].x, 1.0f);
+    ASSERT_EQ(vertex_buffer_ptr[1].y, 2.0f);
+    ASSERT_EQ(vertex_buffer_ptr[1].z, 3.0f);
+    ASSERT_EQ(vertex_buffer_ptr[1].r, 4.0f);
+    ASSERT_EQ(vertex_buffer_ptr[1].g, 5.0f);
+    ASSERT_EQ(vertex_buffer_ptr[1].b, 6.0f);
+    ASSERT_EQ(vertex_buffer_ptr[1].uv[0], 7.0f);
+    ASSERT_EQ(vertex_buffer_ptr[1].uv[1], 8.0f);
+
+    ASSERT_EQ(vertex_buffer_ptr[2].x, 1.0f);
+    ASSERT_EQ(vertex_buffer_ptr[2].y, 2.0f);
+    ASSERT_EQ(vertex_buffer_ptr[2].z, 3.0f);
+    ASSERT_EQ(vertex_buffer_ptr[2].r, 4.0f);
+    ASSERT_EQ(vertex_buffer_ptr[2].g, 5.0f);
+    ASSERT_EQ(vertex_buffer_ptr[2].b, 6.0f);
+    ASSERT_EQ(vertex_buffer_ptr[2].uv[0], 7.0f);
+    ASSERT_EQ(vertex_buffer_ptr[2].uv[1], 8.0f);
+
+    storage_buffer.memory().unmap();
+}
