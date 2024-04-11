@@ -1158,21 +1158,6 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
     return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
 }
 
-void CORE_CMD_BUFFER_STATE::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                             VkPipelineStageFlags2KHR srcStageMask) {
-    // vvl::CommandBuffer will add to the events vector.
-    auto first_event_index = events.size();
-    vvl::CommandBuffer::RecordWaitEvents(command, eventCount, pEvents, srcStageMask);
-    auto event_added_count = events.size() - first_event_index;
-    eventUpdates.emplace_back([command, event_added_count, first_event_index, srcStageMask](
-                                  vvl::CommandBuffer &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,
-                                  VkQueue queue, const Location &loc) {
-        if (!do_validate) return false;
-        return CoreChecks::ValidateWaitEventsAtSubmit(command, cb_state, event_added_count, first_event_index, srcStageMask,
-                                                      local_event_signal_info, queue, loc);
-    });
-}
-
 void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                             VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
                                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,

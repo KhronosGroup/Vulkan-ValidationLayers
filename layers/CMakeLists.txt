@@ -169,6 +169,8 @@ target_sources(vvl PRIVATE
     core_checks/cc_spirv.cpp
     core_checks/cc_shader_interface.cpp
     core_checks/cc_shader_object.cpp
+    core_checks/cc_state_tracker.h
+    core_checks/cc_state_tracker.cpp
     core_checks/cc_synchronization.cpp
     core_checks/cc_video.cpp
     core_checks/cc_vuid_maps.cpp
