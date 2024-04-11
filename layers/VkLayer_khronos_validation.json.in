@@ -331,6 +331,10 @@
                             "value": true
                         },
                         {
+                            "key": "sync_queue_submit",
+                            "value": true
+                        },
+                        {
                             "key": "validate_gpu_based",
                             "value": "GPU_BASED_NONE"
                         },
