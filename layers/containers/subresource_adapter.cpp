@@ -277,18 +277,18 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
     if (image.create_info.extent.depth > 1) {
         limits_.arrayLayer = image.create_info.extent.depth;
     }
-    VkSubresourceLayout layout = {};
-    VkImageSubresource subres = {};
-    VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
-    linear_image_ = false;
 
-    // WORKAROUND for profile and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
+    linear_image_ = false;
     if (image.create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+        linear_image_ = true;
+
+        // WORKAROUND for profile and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
         const VkImageAspectFlags first_aspect = AspectBit(0);  // AspectBit returns aspects by index
-        subres = {first_aspect, 0, 0};
-        DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.VkHandle(), &subres, &layout);
-        if (layout.size > 0) {
-            linear_image_ = true;
+        VkImageSubresource mock_test_subres = {first_aspect, 0, 0};
+        VkSubresourceLayout mock_test_layout = {};
+        DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.VkHandle(), &mock_test_subres, &mock_test_layout);
+        if (mock_test_layout.size == 0) {  // Happens only for mock icd
+            linear_image_ = false;
         }
     }
 
@@ -309,7 +309,12 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
 
     is_3_d_ = image.create_info.imageType == VK_IMAGE_TYPE_3D;
     y_interleave_ = false;
+
+    VkSubresourceLayout layout = {};
+    VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
+
     for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
+        VkImageSubresource subres = {};
         subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
         subres_layers.aspectMask = subres.aspectMask;
         texel_sizes_.push_back(
