@@ -100,6 +100,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     return skip;
 }
 
+// VTG = Vertex Tessellation Geometry
 bool CoreChecks::ValidateVTGShaderStages(const vvl::CommandBuffer &cb_state, const Location &loc) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
@@ -1514,28 +1515,8 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
             skip |= ValidateShaderObjectDrawtimeState(last_bound_state, loc);
         }
 
-        if (cb_state.activeFramebuffer) {
-            // Verify attachments for unprotected/protected command buffer.
-            if (enabled_features.protectedMemory == VK_TRUE && cb_state.active_attachments) {
-                uint32_t i = 0;
-                for (const auto &view_state : *cb_state.active_attachments.get()) {
-                    const auto &subpass = cb_state.active_subpasses->at(i);
-                    if (subpass.used && view_state && !view_state->Destroyed()) {
-                        std::string image_desc = "Image is ";
-                        image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
-                        // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
-                        // Some Functions could not be protected. See VUID 02711.
-                        if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT &&
-                            vuid.protected_command_buffer_02712 != kVUIDUndefined) {
-                            skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, loc,
-                                                             vuid.protected_command_buffer_02712, image_desc.c_str());
-                        }
-                        skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc,
-                                                       vuid.unprotected_command_buffer_02707, image_desc.c_str());
-                    }
-                    ++i;
-                }
-            }
+        if (cb_state.activeFramebuffer && has_last_pipeline) {
+            skip |= ValidateCmdDrawFramebuffer(cb_state, *last_pipeline, vuid, loc);
         }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR || bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
         skip |= ValidateRayTracingDynamicStateSetStatus(last_bound_state, loc);
@@ -1849,6 +1830,44 @@ bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, co
         skip |= LogError(vuid.indirect_count_offset_04129, objlist, loc,
                          "countBufferOffset (%" PRIu64 ") + sizeof(uint32_t) is greater than the buffer size of %" PRIu64 ".",
                          count_buffer_offset, count_buffer_state.create_info.size);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
+                                            const vvl::DrawDispatchVuid &vuid, const Location &loc) const {
+    bool skip = false;
+    // Verify attachments for unprotected/protected command buffer.
+    if (enabled_features.protectedMemory == VK_TRUE && cb_state.active_attachments) {
+        uint32_t i = 0;
+        for (const auto &view_state : *cb_state.active_attachments.get()) {
+            const auto &subpass = cb_state.active_subpasses->at(i);
+            if (subpass.used && view_state && !view_state->Destroyed()) {
+                std::string image_desc = "Image is ";
+                image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
+                // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
+                // Some Functions could not be protected. See VUID 02711.
+                if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT && vuid.protected_command_buffer_02712 != kVUIDUndefined) {
+                    skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, loc, vuid.protected_command_buffer_02712,
+                                                     image_desc.c_str());
+                }
+                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc, vuid.unprotected_command_buffer_02707,
+                                               image_desc.c_str());
+            }
+            ++i;
+        }
+    }
+
+    for (auto &stage_state : pipeline.stage_states) {
+        const VkShaderStageFlagBits stage = stage_state.GetStage();
+        if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_layer &&
+            cb_state.activeFramebuffer->create_info.layers == 1) {
+            LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+            skip |= LogUndefinedValue("Undefined-Layer-Written", objlist, loc,
+                                      "Shader stage %s writes to Layer (gl_Layer) but the framebuffer was created with "
+                                      "VkFramebufferCreateInfo::layer of 1, this write will have an undefined value set to it.",
+                                      string_VkShaderStageFlags(stage).c_str());
+        }
     }
     return skip;
 }

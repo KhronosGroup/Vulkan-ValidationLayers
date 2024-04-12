@@ -463,6 +463,7 @@ struct EntryPoint {
 
     // Mark if a BuiltIn is written to
     bool written_builtin_point_size{false};
+    bool written_builtin_layer{false};
     bool written_builtin_primitive_shading_rate_khr{false};
     bool written_builtin_viewport_index{false};
     bool written_builtin_viewport_mask_nv{false};

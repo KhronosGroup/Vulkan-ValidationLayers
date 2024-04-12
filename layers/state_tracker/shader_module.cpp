@@ -766,6 +766,9 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
         if ((decoration_inst->GetBuiltIn() == spv::BuiltInPointSize) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
             written_builtin_point_size = true;
         }
+        if ((decoration_inst->GetBuiltIn() == spv::BuiltInLayer) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
+            written_builtin_layer = true;
+        }
         if ((decoration_inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) &&
             module_state.IsBuiltInWritten(decoration_inst, *this)) {
             written_builtin_primitive_shading_rate_khr = true;

@@ -1512,3 +1512,37 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeGeometryTessellation, WritingToLayerWithSingleFramebufferLayer) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3019");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();  // Creates a framebuffer with a single layer
+    if (m_device->phy().limits_.maxGeometryOutputVertices == 0) {
+        GTEST_SKIP() << "Device doesn't support required maxGeometryOutputVertices";
+    }
+    const std::string_view gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 1) out;
+        void main() {
+            gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+            EmitVertex();
+            gl_Layer = 4;
+        }
+    )glsl";
+    const VkShaderObj gs(this, gsSource.data(), VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "Undefined-Layer-Written");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
