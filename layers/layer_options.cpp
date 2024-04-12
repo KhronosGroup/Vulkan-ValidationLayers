@@ -26,50 +26,63 @@
 #include "mimalloc-new-delete.h"
 #endif
 
-const char *SETTING_ENABLES = "enables";
-const char *SETTING_VALIDATE_BEST_PRACTICES = "validate_best_practices";
-const char *SETTING_VALIDATE_BEST_PRACTICES_ARM = "validate_best_practices_arm";
-const char *SETTING_VALIDATE_BEST_PRACTICES_AMD = "validate_best_practices_amd";
-const char *SETTING_VALIDATE_BEST_PRACTICES_IMG = "validate_best_practices_img";
-const char *SETTING_VALIDATE_BEST_PRACTICES_NVIDIA = "validate_best_practices_nvidia";
-const char *SETTING_VALIDATE_SYNC = "validate_sync";
-const char *SETTING_VALIDATE_GPU_BASED = "validate_gpu_based";
-const char *SETTING_RESERVE_BINDING_SLOT = "reserve_binding_slot";
+// To enable "my_setting",
+// Set env var VK_LAYER_MY_SETTING to 1
+//
+// The ["VK_LAYER_" + toUpper(key)] logic is don in vk_layer_setting (VUL)
+//
+// To quickly be able to find the env var corresponding to a setting,
+// the following `const char*` holding setting names match their corresponding environment variable
+const char *VK_LAYER_ENABLES = "enables";
+const char *VK_LAYER_VALIDATE_BEST_PRACTICES = "validate_best_practices";
+const char *VK_LAYER_VALIDATE_BEST_PRACTICES_ARM = "validate_best_practices_arm";
+const char *VK_LAYER_VALIDATE_BEST_PRACTICES_AMD = "validate_best_practices_amd";
+const char *VK_LAYER_VALIDATE_BEST_PRACTICES_IMG = "validate_best_practices_img";
+const char *VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA = "validate_best_practices_nvidia";
+const char *VK_LAYER_VALIDATE_SYNC = "validate_sync";
+const char *VK_LAYER_VALIDATE_GPU_BASED = "validate_gpu_based";
+const char *VK_LAYER_RESERVE_BINDING_SLOT = "reserve_binding_slot";
 
-const char *SETTING_DISABLES = "disables";
-const char *SETTING_STATELESS_PARAM = "stateless_param";
-const char *SETTING_THREAD_SAFETY = "thread_safety";
-const char *SETTING_VALIDATE_CORE = "validate_core";
-const char *SETTING_CHECK_COMMAND_BUFFER = "check_command_buffer";
-const char *SETTING_CHECK_OBJECT_IN_USE = "check_object_in_use";
-const char *SETTING_CHECK_QUERY = "check_query";
-const char *SETTING_CHECK_IMAGE_LAYOUT = "check_image_layout";
-const char *SETTING_UNIQUE_HANDLES = "unique_handles";
-const char *SETTING_OBJECT_LIFETIME = "object_lifetime";
-const char *SETTING_CHECK_SHADERS = "check_shaders";
-const char *SETTING_CHECK_SHADERS_CACHING = "check_shaders_caching";
-const char *SETTING_VALIDATE_SYNC_QUEUE_SUBMIT = "sync_queue_submit";
+const char *VK_LAYER_DISABLES = "disables";
+const char *VK_LAYER_STATELESS_PARAM = "stateless_param";
+const char *VK_LAYER_THREAD_SAFETY = "thread_safety";
+const char *VK_LAYER_VALIDATE_CORE = "validate_core";
+const char *VK_LAYER_CHECK_COMMAND_BUFFER = "check_command_buffer";
+const char *VK_LAYER_CHECK_OBJECT_IN_USE = "check_object_in_use";
+const char *VK_LAYER_CHECK_QUERY = "check_query";
+const char *VK_LAYER_CHECK_IMAGE_LAYOUT = "check_image_layout";
+const char *VK_LAYER_UNIQUE_HANDLES = "unique_handles";
+const char *VK_LAYER_OBJECT_LIFETIME = "object_lifetime";
+const char *VK_LAYER_CHECK_SHADERS = "check_shaders";
+const char *VK_LAYER_CHECK_SHADERS_CACHING = "check_shaders_caching";
+const char *VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT = "sync_queue_submit";
 
-const char *SETTING_MESSAGE_ID_FILTER = "message_id_filter";
-const char *SETTING_CUSTOM_STYPE_LIST = "custom_stype_list";
-const char *SETTING_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
-const char *SETTING_FINE_GRAINED_LOCKING = "fine_grained_locking";
+const char *VK_LAYER_MESSAGE_ID_FILTER = "message_id_filter";
+const char *VK_LAYER_CUSTOM_STYPE_LIST = "custom_stype_list";
+const char *VK_LAYER_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
+const char *VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 
-const char *SETTING_PRINTF_TO_STDOUT = "printf_to_stdout";
-const char *SETTING_PRINTF_VERBOSE = "printf_verbose";
-const char *SETTING_PRINTF_BUFFER_SIZE = "printf_buffer_size";
+const char *VK_LAYER_PRINTF_TO_STDOUT = "printf_to_stdout";
+const char *VK_LAYER_PRINTF_VERBOSE = "printf_verbose";
+const char *VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 
-const char *SETTING_GPUAV_VALIDATE_DESCRIPTORS = "gpuav_descriptor_checks";
-const char *SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER = "gpuav_validate_indirect_buffer";
-const char *SETTING_GPUAV_VALIDATE_COPIES = "gpuav_validate_copies";
-const char *SETTING_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
-const char *SETTING_GPUAV_VMA_LINEAR_OUTPUT = "vma_linear_output";
-const char *SETTING_GPUAV_WARN_ON_ROBUST_OOB = "warn_on_robust_oob";
-const char *SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE = "use_instrumented_shader_cache";
-const char *SETTING_GPUAV_SELECT_INSTRUMENTED_SHADERS = "select_instrumented_shaders";
-const char *SETTING_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS = "gpuav_max_buffer_device_addresses";
-const char *SETTING_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "gpuav_debug_validate_instrumented_shaders";
-const char *SETTING_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS = "gpuav_debug_dump_instrumented_shaders";
+const char *VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS = "gpuav_descriptor_checks";
+const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER = "gpuav_validate_indirect_buffer";
+const char *VK_LAYER_GPUAV_VALIDATE_COPIES = "gpuav_validate_copies";
+const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
+const char *VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
+const char *VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB = "gpuav_warn_on_robust_oob";
+const char *VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS = "gpuav_cache_instrumented_shaders";
+const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
+const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS = "gpuav_max_buffer_device_addresses";
+const char *VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "debug_validate_instrumented_shaders";
+const char *VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS = "gpuav_debug_dump_instrumented_shaders";
+
+// These were deprecated after the 1.3.280 SDK release
+const char *DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT = "vma_linear_output";
+const char *DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB = "warn_on_robust_oob";
+const char *DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE = "use_instrumented_shader_cache";
+const char *DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS = "select_instrumented_shaders";
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
@@ -360,111 +373,129 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     // Read legacy "enables" flags for backward compatibility
     std::vector<std::string> enables;
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_ENABLES)) {
-        vkuGetLayerSettingValues(layer_setting_set, SETTING_ENABLES, enables);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_ENABLES)) {
+        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_ENABLES, enables);
     }
     const std::string &string_enables = Merge(enables);
     SetLocalEnableSetting(string_enables, ",", settings_data->enables);
 
     // Read legacy "disables" flags for backward compatibility
     std::vector<std::string> disables;
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_DISABLES)) {
-        vkuGetLayerSettingValues(layer_setting_set, SETTING_DISABLES, disables);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DISABLES)) {
+        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_DISABLES, disables);
     }
     const std::string &string_disables = Merge(disables);
     SetLocalDisableSetting(string_disables, ",", settings_data->disables);
 
     // Fine Grained Locking
     *settings_data->fine_grained_locking = true;
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_FINE_GRAINED_LOCKING)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_FINE_GRAINED_LOCKING, *settings_data->fine_grained_locking);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING, *settings_data->fine_grained_locking);
     }
 
     // Message ID Filtering
     std::vector<std::string> message_id_filter;
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_MESSAGE_ID_FILTER)) {
-        vkuGetLayerSettingValues(layer_setting_set, SETTING_MESSAGE_ID_FILTER, message_id_filter);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER)) {
+        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER, message_id_filter);
     }
     const std::string &string_message_id_filter = Merge(message_id_filter);
     CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->message_filter_list);
 
     // Duplicate message limit
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT)) {
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT)) {
         uint32_t config_limit_setting = 0;
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
         if (config_limit_setting != 0) {
             *settings_data->duplicate_message_limit = config_limit_setting;
         }
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_CUSTOM_STYPE_LIST)) {
-        vkuGetLayerSettingValues(layer_setting_set, SETTING_CUSTOM_STYPE_LIST, custom_stype_info);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST)) {
+        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST, custom_stype_info);
     }
 
     DebugPrintfSettings &printf_settings = *settings_data->printf_settings;
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_PRINTF_TO_STDOUT)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_PRINTF_TO_STDOUT, printf_settings.to_stdout);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT, printf_settings.to_stdout);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_PRINTF_VERBOSE)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_PRINTF_VERBOSE, printf_settings.verbose);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_VERBOSE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_VERBOSE, printf_settings.verbose);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_PRINTF_BUFFER_SIZE)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_PRINTF_BUFFER_SIZE, printf_settings.buffer_size);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, printf_settings.buffer_size);
     }
 
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_DESCRIPTORS)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_DESCRIPTORS, gpuav_settings.validate_descriptors);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS, gpuav_settings.validate_descriptors);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER, gpuav_settings.validate_indirect_buffer);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER,
+                                gpuav_settings.validate_indirect_buffer);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_COPIES)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_COPIES, gpuav_settings.validate_copies);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_COPIES)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_COPIES, gpuav_settings.validate_copies);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_RAY_QUERY)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_RAY_QUERY, gpuav_settings.validate_ray_query);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY, gpuav_settings.validate_ray_query);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VMA_LINEAR_OUTPUT)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
+    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
+        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n", DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT,
+               VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_WARN_ON_ROBUST_OOB)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
+    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB)) {
+        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.vma_linear_output);
+        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n", DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB,
+               VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE,
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS,
                                 gpuav_settings.cache_instrumented_shaders);
+    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE)) {
+        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE,
+                                gpuav_settings.vma_linear_output);
+        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
+               DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_SELECT_INSTRUMENTED_SHADERS,
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS,
                                 gpuav_settings.select_instrumented_shaders);
+    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS, gpuav_settings.vma_linear_output);
+        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
+               DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS,
-                                gpuav_settings.gpuav_max_buffer_device_addresses);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS,
+                                gpuav_settings.max_buffer_device_addresses);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS,
-                                gpuav_settings.gpuav_debug_validate_instrumented_shaders);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS,
+                                gpuav_settings.debug_validate_instrumented_shaders);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS,
-                                gpuav_settings.gpuav_debug_dump_instrumented_shaders);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS,
+                                gpuav_settings.debug_dump_instrumented_shaders);
     }
 
-    if (gpuav_settings.gpuav_debug_validate_instrumented_shaders || gpuav_settings.gpuav_debug_dump_instrumented_shaders) {
+    if (gpuav_settings.debug_validate_instrumented_shaders || gpuav_settings.debug_dump_instrumented_shaders) {
         // When debugging instrumented shaders, if it is cached, it will never get to the InstrumentShader() call
         gpuav_settings.cache_instrumented_shaders = false;
     }
@@ -483,41 +514,41 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // Only read the legacy enables flags when used, not their replacement.
     // Avoid Android C.I. performance regression from reading Android env variables
     if (use_fine_grained_settings) {
-        SetValidationSetting(layer_setting_set, settings_data->enables, best_practices, SETTING_VALIDATE_BEST_PRACTICES);
-        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_arm, SETTING_VALIDATE_BEST_PRACTICES_ARM);
-        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_amd, SETTING_VALIDATE_BEST_PRACTICES_AMD);
-        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_img, SETTING_VALIDATE_BEST_PRACTICES_IMG);
+        SetValidationSetting(layer_setting_set, settings_data->enables, best_practices, VK_LAYER_VALIDATE_BEST_PRACTICES);
+        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_arm, VK_LAYER_VALIDATE_BEST_PRACTICES_ARM);
+        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_amd, VK_LAYER_VALIDATE_BEST_PRACTICES_AMD);
+        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_img, VK_LAYER_VALIDATE_BEST_PRACTICES_IMG);
         SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_nvidia,
-                             SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
-        SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC);
+                             VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
+        SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, VK_LAYER_VALIDATE_SYNC);
 
-        if (vkuHasLayerSetting(layer_setting_set, SETTING_VALIDATE_GPU_BASED)) {
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_VALIDATE_GPU_BASED)) {
             std::string setting_value;
-            vkuGetLayerSettingValue(layer_setting_set, SETTING_VALIDATE_GPU_BASED, setting_value);
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_VALIDATE_GPU_BASED, setting_value);
             settings_data->enables[gpu_validation] = setting_value == "GPU_BASED_GPU_ASSISTED";
             settings_data->enables[debug_printf_validation] = setting_value == "GPU_BASED_DEBUG_PRINTF";
         }
 
         SetValidationSetting(layer_setting_set, settings_data->enables, gpu_validation_reserve_binding_slot,
-                             SETTING_RESERVE_BINDING_SLOT);
+                             VK_LAYER_RESERVE_BINDING_SLOT);
     }
 
     // Only read the legacy disables flags when used, not their replacement.
     // Avoid Android C.I. performance regression from reading Android env variables
     if (use_fine_grained_settings) {
-        SetValidationSetting(layer_setting_set, settings_data->disables, stateless_checks, SETTING_STATELESS_PARAM);
-        SetValidationSetting(layer_setting_set, settings_data->disables, thread_safety, SETTING_THREAD_SAFETY);
-        SetValidationSetting(layer_setting_set, settings_data->disables, core_checks, SETTING_VALIDATE_CORE);
-        SetValidationSetting(layer_setting_set, settings_data->disables, command_buffer_state, SETTING_CHECK_COMMAND_BUFFER);
-        SetValidationSetting(layer_setting_set, settings_data->disables, object_in_use, SETTING_CHECK_OBJECT_IN_USE);
-        SetValidationSetting(layer_setting_set, settings_data->disables, query_validation, SETTING_CHECK_QUERY);
-        SetValidationSetting(layer_setting_set, settings_data->disables, image_layout_validation, SETTING_CHECK_IMAGE_LAYOUT);
-        SetValidationSetting(layer_setting_set, settings_data->disables, handle_wrapping, SETTING_UNIQUE_HANDLES);
-        SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
-        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, SETTING_CHECK_SHADERS);
-        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
+        SetValidationSetting(layer_setting_set, settings_data->disables, stateless_checks, VK_LAYER_STATELESS_PARAM);
+        SetValidationSetting(layer_setting_set, settings_data->disables, thread_safety, VK_LAYER_THREAD_SAFETY);
+        SetValidationSetting(layer_setting_set, settings_data->disables, core_checks, VK_LAYER_VALIDATE_CORE);
+        SetValidationSetting(layer_setting_set, settings_data->disables, command_buffer_state, VK_LAYER_CHECK_COMMAND_BUFFER);
+        SetValidationSetting(layer_setting_set, settings_data->disables, object_in_use, VK_LAYER_CHECK_OBJECT_IN_USE);
+        SetValidationSetting(layer_setting_set, settings_data->disables, query_validation, VK_LAYER_CHECK_QUERY);
+        SetValidationSetting(layer_setting_set, settings_data->disables, image_layout_validation, VK_LAYER_CHECK_IMAGE_LAYOUT);
+        SetValidationSetting(layer_setting_set, settings_data->disables, handle_wrapping, VK_LAYER_UNIQUE_HANDLES);
+        SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, VK_LAYER_OBJECT_LIFETIME);
+        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, VK_LAYER_CHECK_SHADERS);
+        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, VK_LAYER_CHECK_SHADERS_CACHING);
         SetValidationSetting(layer_setting_set, settings_data->disables, sync_validation_queue_submit,
-                             SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
+                             VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT);
     }
 
     vkuDestroyLayerSettingSet(layer_setting_set, nullptr);

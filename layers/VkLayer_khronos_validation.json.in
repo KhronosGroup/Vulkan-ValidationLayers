@@ -835,7 +835,7 @@
                                             }
                                         },
                                         {
-                                            "key": "vma_linear_output",
+                                            "key": "gpuav_vma_linear_output",
                                             "label": "Linear Memory Allocation Mode",
                                             "description": "Use VMA linear memory allocations for GPU-AV output buffers instead of finding best place for new allocations among free regions to optimize memory usage. Enabling this setting reduces performance cost but disabling this method minimizes memory usage.",
                                             "type": "BOOL",
@@ -876,7 +876,7 @@
                                             },
                                             "settings": [
                                                 {
-                                                    "key": "warn_on_robust_oob",
+                                                    "key": "gpuav_warn_on_robust_oob",
                                                     "label": "Generate warning on out of bounds accesses even if buffer robustness is enabled",
                                                     "description": "Warn on out of bounds accesses even if robustness is enabled",
                                                     "type": "BOOL",
@@ -958,7 +958,7 @@
                                             }
                                         },
                                         {
-                                            "key": "use_instrumented_shader_cache",
+                                            "key": "gpuav_cache_instrumented_shaders",
                                             "label": "Cache instrumented shaders rather than instrumenting them on every run",
                                             "description": "Enable instrumented shader caching",
                                             "type": "BOOL",
@@ -978,7 +978,7 @@
                                             }
                                         },
                                         {
-                                            "key": "select_instrumented_shaders",
+                                            "key": "gpuav_select_instrumented_shaders",
                                             "label": "Enable instrumenting shaders selectively",
                                             "description": "Select which shaders to instrument passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext",
                                             "type": "BOOL",

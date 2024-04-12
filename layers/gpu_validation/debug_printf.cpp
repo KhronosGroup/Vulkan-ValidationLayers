@@ -37,6 +37,7 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
     use_stdout = printf_settings.to_stdout;
 
     // This option was published when Debug PrintF came out, leave to not break people's flow
+    // Deprecated right after the 1.3.280 SDK release
     if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
         LogWarning("WARNING-DEBUG-PRINTF", device, loc,
                    "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");

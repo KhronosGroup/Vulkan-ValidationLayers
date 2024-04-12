@@ -125,7 +125,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
     binaries[0].reserve(input.size());
     binaries[0].insert(binaries[0].end(), &input.front(), &input.back() + 1);
 
-    if (gpuav_settings.gpuav_debug_dump_instrumented_shaders) {
+    if (gpuav_settings.debug_dump_instrumented_shaders) {
         std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
         std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
         debug_file.write(reinterpret_cast<char *>(binaries[0].data()),
@@ -159,7 +159,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
 
     module.ToBinary(instrumented_spirv);
 
-    if (gpuav_settings.gpuav_debug_dump_instrumented_shaders) {
+    if (gpuav_settings.debug_dump_instrumented_shaders) {
         std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
         std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
         debug_file.write(reinterpret_cast<char *>(instrumented_spirv.data()),
@@ -167,7 +167,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
     }
 
     // (Maybe) validate the instrumented and linked shader
-    if (gpuav_settings.gpuav_debug_validate_instrumented_shaders) {
+    if (gpuav_settings.debug_validate_instrumented_shaders) {
         std::string instrumented_error;
         if (!GpuValidateShader(instrumented_spirv, device_extensions.vk_khr_relaxed_block_layout,
                                device_extensions.vk_ext_scalar_block_layout, target_env, instrumented_error)) {
@@ -194,7 +194,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
             return false;
         }
 
-        if (gpuav_settings.gpuav_debug_dump_instrumented_shaders) {
+        if (gpuav_settings.debug_dump_instrumented_shaders) {
             std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_opt.spv";
             std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
             debug_file.write(reinterpret_cast<char *>(instrumented_spirv.data()),
@@ -285,11 +285,11 @@ void gpuav::Validator::UpdateBDABuffer(const Location &loc) {
     const auto [ranges_to_update_count, total_address_ranges_count] = GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
     bda_table_ptr[0] = ranges_to_update_count;
 
-    if (total_address_ranges_count > size_t(gpuav_settings.gpuav_max_buffer_device_addresses)) {
+    if (total_address_ranges_count > size_t(gpuav_settings.max_buffer_device_addresses)) {
         std::ostringstream problem_string;
         problem_string << "Number of buffer device addresses ranges in use (" << total_address_ranges_count
                        << ") is greater than khronos_validation.gpuav_max_buffer_device_addresses ("
-                       << gpuav_settings.gpuav_max_buffer_device_addresses
+                       << gpuav_settings.max_buffer_device_addresses
                        << "). Truncating buffer device address table could result in invalid validation";
         ReportSetupProblem(device, loc, problem_string.str().c_str());
     }

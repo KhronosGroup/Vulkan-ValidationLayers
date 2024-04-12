@@ -144,8 +144,8 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
-        app_bda_buffer_byte_size = (1  // 1 QWORD for the number of address ranges
-                                    + 2 * gpuav_settings.gpuav_max_buffer_device_addresses  // 2 QWORDS to hold an address range
+        app_bda_buffer_byte_size = (1                                                 // 1 QWORD for the number of address ranges
+                                    + 2 * gpuav_settings.max_buffer_device_addresses  // 2 QWORDS to hold an address range
                                     ) *
                                    8;  // 64 bit words
         buffer_info.size = app_bda_buffer_byte_size;
