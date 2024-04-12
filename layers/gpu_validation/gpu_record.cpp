@@ -279,6 +279,12 @@ void gpuav::Validator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuff
     RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
+void gpuav::Validator::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                     VkPipeline pipeline, const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
+    UpdateBoundPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj.location);
+}
+
 void gpuav::Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                            VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                                            const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,

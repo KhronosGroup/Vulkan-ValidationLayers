@@ -1174,7 +1174,6 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
                 set_info.validated_set = descriptor_set.get();
                 set_info.validated_set_change_count = descriptor_set->GetChangeCount();
                 set_info.validated_set_image_layout_change_count = image_layout_change_count;
-                set_info.validated_set_binding_req_map = BindingVariableMap();
             }
         }
     }

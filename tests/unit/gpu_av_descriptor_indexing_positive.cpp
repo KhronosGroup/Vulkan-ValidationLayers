@@ -533,3 +533,75 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
     m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7737");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    char const *fs_source_2d = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 outColor;
+        layout(set = 1, binding = 2) uniform sampler2D tex;
+
+        void main() {
+            outColor = texture(tex, gl_FragCoord.xy);
+        }
+    )glsl";
+
+    char const *fs_source_3d = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 outColor;
+        layout(set = 1, binding = 2) uniform sampler3D tex;
+
+        void main() {
+            outColor = texture(tex, gl_FragCoord.xyz);
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_2d(this, fs_source_2d, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_3d(this, fs_source_3d, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    vkt::Image image_3d(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view_3d = image_3d.CreateView(VK_IMAGE_VIEW_TYPE_3D);
+
+    // Want to make sure using set = 0 / binding = 0 isn't covering up the issue
+    OneOffDescriptorSet descriptor_set(m_device, {{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set_unused(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_unused.layout_, &descriptor_set.layout_});
+    descriptor_set.WriteDescriptorImageInfo(2, image_view_3d, sampler.handle());
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe_2d(*this);
+    pipe_2d.shader_stages_ = {vs.GetStageCreateInfo(), fs_2d.GetStageCreateInfo()};
+    pipe_2d.gp_ci_.layout = pipeline_layout.handle();
+    pipe_2d.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_3d(*this);
+    pipe_3d.shader_stages_ = {vs.GetStageCreateInfo(), fs_3d.GetStageCreateInfo()};
+    pipe_3d.gp_ci_.layout = pipeline_layout.handle();
+    pipe_3d.CreateGraphicsPipeline();
+
+    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2d.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_3d.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
+}
