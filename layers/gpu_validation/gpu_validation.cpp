@@ -302,6 +302,46 @@ void gpuav::Validator::UpdateBDABuffer(const Location &loc) {
     gpuav_bda_buffer_version = buffer_device_address_ranges_version;
 }
 
+void gpuav::Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                           VkPipeline pipeline, const Location &loc) {
+    if (aborted) return;
+    if (!gpuav_settings.validate_descriptors) return;
+
+    auto cb_node = GetWrite<CommandBuffer>(commandBuffer);
+    if (!cb_node) {
+        ReportSetupProblem(commandBuffer, loc, "Unrecognized command buffer");
+        aborted = true;
+        return;
+    }
+    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
+    auto const &last_bound = cb_node->lastBound[lv_bind_point];
+    // Should have just been updated
+    if (!last_bound.pipeline_state) {
+        ReportSetupProblem(pipeline, loc, "Unrecognized pipeline");
+        aborted = true;
+        return;
+    }
+
+    // Catch if pipeline is bound before any descriptor sets
+    if (cb_node->di_input_buffer_list.empty()) {
+        return;
+    }
+
+    // Update the last vkCmdBindDescriptorSet with the new pipeline
+    auto &descriptor_set_buffers = cb_node->di_input_buffer_list.back().descriptor_set_buffers;
+
+    // If the user calls vkCmdBindDescriptorSet::firstSet to a non-zero value, these indexes don't line up
+    size_t update_index = 0;
+    for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
+        if (last_bound.per_set[i].bound_descriptor_set) {
+            auto slot = last_bound.pipeline_state->active_slots.find(i);
+            if (slot != last_bound.pipeline_state->active_slots.end()) {
+                descriptor_set_buffers[update_index++].binding_req = slot->second;
+            }
+        }
+    }
+}
+
 void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               const Location &loc) {
     if (aborted) return;
@@ -359,6 +399,7 @@ void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkP
                 desc_set_state.num = i;
                 desc_set_state.state = std::static_pointer_cast<DescriptorSet>(set);
                 bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutState();
+                // The pipeline might not have been bound yet, so will need to update binding_req later
                 if (last_bound.pipeline_state) {
                     auto slot = last_bound.pipeline_state->active_slots.find(i);
                     if (slot != last_bound.pipeline_state->active_slots.end()) {

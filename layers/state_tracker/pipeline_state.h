@@ -660,7 +660,6 @@ struct LastBound {
         const vvl::DescriptorSet *validated_set{nullptr};
         uint64_t validated_set_change_count{~0ULL};
         uint64_t validated_set_image_layout_change_count{~0ULL};
-        BindingVariableMap validated_set_binding_req_map;
 
         void Reset() {
             bound_descriptor_set.reset();

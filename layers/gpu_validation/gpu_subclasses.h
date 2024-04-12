@@ -52,6 +52,8 @@ struct DescSetState {
 struct DescBindingInfo {
     VkBuffer bindless_state_buffer;
     VmaAllocation bindless_state_buffer_allocation;
+    // Hold a buffer for each descriptor set
+    // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     std::vector<DescSetState> descriptor_set_buffers;
 };
 
@@ -81,7 +83,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 
     bool PreProcess() final;
     void PostProcess(VkQueue queue, const Location &loc) final;
-    
+
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
         return instrumentation_desc_set_layout_;
