@@ -114,7 +114,7 @@ Shader code is instrumented to validate buffer_reference addresses and report an
 Note: The mapping between a `VkBuffer` and a GPU address is not necessarily one to one. For instance, if multiple `VkBuffer` are bound to the same memory region, they can have the same GPU address.
 
 ### Selective Shader Instrumentation
-With the khronos_validation.select_instrumented_shaders feature, an application can control which shaders are instrumented and thus, will return GPU-AV errors.
+With the khronos_validation.gpuav_select_instrumented_shaders feature, an application can control which shaders are instrumented and thus, will return GPU-AV errors.
 After enabling the feature, the application will need to include a `VkValidationFeaturesEXT` structure with `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT` in the pEnabledFeatures list
 in the pNext chain of the VkShaderModuleCreateInfo used to create the shader. Otherwise, the shader will not be instrumented.
 

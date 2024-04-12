@@ -100,21 +100,27 @@ khronos_validation.enables =
 
 # Cache instrumented shaders rather than instrumenting them on every run
 # =====================
-# <LayerIdentifier>.use_instrumented_shader_cache
+# <LayerIdentifier>.gpuav_cache_instrumented_shaders
 # Enable instrumented shader caching
-#khronos_validation.use_instrumented_shader_cache = true
+#khronos_validation.gpuav_cache_instrumented_shaders = true
 
 # Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext
 # =====================
-# <LayerIdentifier>.
+# <LayerIdentifier>.gpuav_select_instrumented_shaders
 # Enable selection of shaders to instrument
-#khronos_validation.select_instrumented_shaders = false
+#khronos_validation.gpuav_select_instrumented_shaders = false
 
 # Use linear vma allocator for GPU-AV output buffers
 # =====================
 # <LayerIdentifier>.gpuav_vma_linear_output
 # Use VMA linear memory allocations for GPU-AV output buffers
-#khronos_validation.vma_linear_output = true
+#khronos_validation.gpuav_vma_linear_output = true
+
+# Generate warning on out of bounds accesses even if buffer robustness is enabled
+# =====================
+# <LayerIdentifier>.gpuav_warn_on_robust_oob
+# Warn on out of bounds accesses even if robustness is enabled
+#khronos_validation.gpuav_warn_on_robust_oob = true
 
 # Specify the maximum number of buffer device addresses in simultaneous use
 # =====================
