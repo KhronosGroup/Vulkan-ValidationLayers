@@ -180,3 +180,51 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearAttachments) {
 
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_attachment, 1, &clear_rect);
 }
+
+TEST_F(PositiveDynamicRenderingLocalRead, CmdClearDepthAttachment) {
+    TEST_DESCRIPTION("Clear depth attachment.");
+
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+
+    vkt::Image depthImage(*m_device, 32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depthImageView = depthImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkClearValue clearValue;
+    clearValue.depthStencil.depth = 1.0f;
+    clearValue.depthStencil.stencil = 0u;
+
+    VkRenderingAttachmentInfo depthAttachment = vku::InitStructHelper();
+    depthAttachment.imageView = depthImageView;
+    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depthAttachment.clearValue = clearValue;
+
+    VkRenderingInfo renderingInfo = vku::InitStructHelper();
+    renderingInfo.renderArea = {{0, 0}, {32u, 32u}};
+    renderingInfo.layerCount = 1u;
+    renderingInfo.pDepthAttachment = &depthAttachment;
+
+    VkRenderingAttachmentLocationInfoKHR locationInfo = vku::InitStructHelper();
+    locationInfo.colorAttachmentCount = 0u;
+    locationInfo.pColorAttachmentLocations = nullptr;
+
+    VkClearAttachment attachment;
+    attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    attachment.colorAttachment = 0u;
+    attachment.clearValue = clearValue;
+
+    VkClearRect rect;
+    rect.rect = {{0, 0}, {32u, 32u}};
+    rect.baseArrayLayer = 0u;
+    rect.layerCount = 1u;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(renderingInfo);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &locationInfo);
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1u, &attachment, 1u, &rect);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
