@@ -1227,8 +1227,7 @@ bool CoreChecks::ValidateGraphicsPipelineMeshTask(const vvl::Pipeline &pipeline,
     if (has_mesh && has_task) {
         for (const auto &stage : pipeline.stage_states) {
             if (stage.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT && stage.spirv_state->static_data_.has_builtin_draw_index) {
-                // VUID being made in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6560
-                skip |= LogError("UNASSIGNED-VkGraphicsPipelineCreateInfo-Mesh-DrawIndex", device, create_info_loc,
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09631", device, create_info_loc,
                                  "The pipeline is being created with a Task and Mesh shader bound, but the Mesh Shader "
                                  "uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
             }
