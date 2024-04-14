@@ -5150,6 +5150,7 @@ void ValidationStateTracker::PostCallRecordCmdSetPrimitiveRestartEnable(VkComman
                                                                         const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE);
+    cb_state->dynamic_state_value.primitive_restart_enable = primitiveRestartEnable;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer,

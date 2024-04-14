@@ -223,6 +223,8 @@ class CommandBuffer : public RefcountedStateObject {
         bool logic_op_enable;
         // VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR
         VkExtent2D fragment_size;
+        // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE
+        bool primitive_restart_enable;
 
         uint32_t color_write_enable_attachment_count;
 

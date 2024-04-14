@@ -67,6 +67,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDraw-None-04877";
         logic_op_04878                           = "VUID-vkCmdDraw-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDraw-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDraw-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDraw-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDraw-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDraw-None-04914";
@@ -380,6 +381,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMultiEXT-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMultiEXT-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawMultiEXT-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawMultiEXT-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawMultiEXT-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawMultiEXT-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawMultiEXT-None-04914";
@@ -694,6 +696,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawIndexed-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawIndexed-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawIndexed-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawIndexed-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawIndexed-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndexed-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndexed-None-04914";
@@ -1008,6 +1011,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMultiIndexedEXT-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMultiIndexedEXT-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawMultiIndexedEXT-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawMultiIndexedEXT-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawMultiIndexedEXT-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawMultiIndexedEXT-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawMultiIndexedEXT-None-04914";
@@ -1322,6 +1326,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawIndirect-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawIndirect-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawIndirect-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawIndirect-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawIndirect-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndirect-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndirect-None-04914";
@@ -1635,6 +1640,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawIndexedIndirect-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawIndexedIndirect-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawIndexedIndirect-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawIndexedIndirect-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawIndexedIndirect-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndexedIndirect-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndexedIndirect-None-04914";
@@ -2045,6 +2051,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawIndirectCount-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawIndirectCount-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawIndirectCount-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawIndirectCount-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawIndirectCount-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndirectCount-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndirectCount-None-04914";
@@ -2361,6 +2368,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawIndexedIndirectCount-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawIndexedIndirectCount-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawIndexedIndirectCount-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawIndexedIndirectCount-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawIndexedIndirectCount-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndexedIndirectCount-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndexedIndirectCount-None-04914";
@@ -4659,6 +4667,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawIndirectByteCountEXT-logicOp-04878";
         primitive_restart_enable_04879           = "VUID-vkCmdDrawIndirectByteCountEXT-None-04879";
+        primitive_restart_list_09637             = "VUID-vkCmdDrawIndirectByteCountEXT-None-09637";
         vertex_input_04912                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndirectByteCountEXT-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-04914";

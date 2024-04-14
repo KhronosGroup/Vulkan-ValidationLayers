@@ -301,3 +301,28 @@ TEST_F(NegativePipelineTopology, FillRectangleNV) {
     polygon_mode = VK_POLYGON_MODE_FILL_RECTANGLE_NV;
     CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit);
 }
+
+TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnable) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4413");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE);
+    pipe.ia_ci_.primitiveRestartEnable = VK_FALSE;
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09637");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
