@@ -356,6 +356,25 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
+    // "a shader object bound to the VK_SHADER_STAGE_VERTEX_BIT stage or the bound graphics pipeline state was created with the
+    // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE"
+    if ((pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) ||
+        (!pipeline_state && vertex_shader_bound)) {
+        if (!enabled_features.primitiveTopologyListRestart && cb_state.dynamic_state_value.primitive_restart_enable) {
+            VkPrimitiveTopology topology = pipeline_state
+                                               ? pipeline_state->InputAssemblyState()->topology
+                                               : last_bound_state.GetShaderState(ShaderObjectStage::VERTEX)->GetTopology();
+            if (IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
+                skip |= LogError(vuid.primitive_restart_list_09637, cb_state.Handle(), loc,
+                                 "the topology set is %s, the primitiveTopologyListRestart feature was not enabled, but "
+                                 "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
+                                 string_VkPrimitiveTopology(topology));
+            }
+        }
+    }
+
     if ((pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) || fragment_shader_bound) {
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT] &&
             cb_state.dynamic_state_value.sample_locations_enable) {
