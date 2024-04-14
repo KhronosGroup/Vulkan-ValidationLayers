@@ -506,11 +506,12 @@ class GoodRepo(object):
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
         if platform.system() == 'Windows' and self._args.generator != "Ninja":
+            cmake_cmd.append('-A')
             if self._args.arch.lower() == '64' or self._args.arch == 'x64' or self._args.arch == 'win64':
-                cmake_cmd.append('-A')
                 cmake_cmd.append('x64')
+            elif self._args.arch == 'arm64':
+                cmake_cmd.append('arm64')
             else:
-                cmake_cmd.append('-A')
                 cmake_cmd.append('Win32')
 
         # Apply a generator, if one is specified.  This can be used to supply
@@ -691,7 +692,7 @@ def main():
     parser.add_argument(
         '--arch',
         dest='arch',
-        choices=['32', '64', 'x86', 'x64', 'win32', 'win64'],
+        choices=['32', '64', 'x86', 'x64', 'win32', 'win64', 'arm64'],
         type=str.lower,
         help="Set build files architecture (Visual Studio Generator Only)",
         default='64')
