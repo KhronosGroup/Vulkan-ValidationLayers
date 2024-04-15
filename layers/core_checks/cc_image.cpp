@@ -725,10 +725,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
             bool supported_video_format = false;
             for (auto &format_props : format_props_list) {
+                const bool compatible_usage = (pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) ||
+                                              ((pCreateInfo->usage & format_props.imageUsageFlags) == pCreateInfo->usage);
                 if (pCreateInfo->format == format_props.format &&
                     (pCreateInfo->flags & format_props.imageCreateFlags) == pCreateInfo->flags &&
                     pCreateInfo->imageType == format_props.imageType && pCreateInfo->tiling == format_props.imageTiling &&
-                    (pCreateInfo->usage & format_props.imageUsageFlags) == pCreateInfo->usage) {
+                    compatible_usage) {
                     supported_video_format = true;
                 }
             }
