@@ -924,6 +924,8 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
     TEST_DESCRIPTION(
         "Copy depth buffer to image with all depth values in the [0, 1] legal range. Depth image has format "
         "VK_FORMAT_D32_SFLOAT.");
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -985,6 +987,8 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     TEST_DESCRIPTION(
         "Copy depth buffer to image with all depth values in the [0, 1] legal range. Depth image has format "
         "VK_FORMAT_D32_SFLOAT_S8_UINT.");
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 

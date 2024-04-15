@@ -140,6 +140,16 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
                                       IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
                                      shaderInt64 && enabled_features.bufferDeviceAddress);
 
+    // gpu_pre_copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
+    if (gpuav_settings.validate_copies) {
+        if (!enabled_features.uniformAndStorageBuffer8BitAccess) {
+            gpuav_settings.validate_copies = false;
+            LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
+                       "gpuav_validate_copies option was enabled, but uniformAndStorageBuffer8BitAccess feature is not available. "
+                       "Disabling option.");
+        }
+    }
+
     if (buffer_device_address_enabled) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
