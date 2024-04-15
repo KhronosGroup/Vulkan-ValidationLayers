@@ -781,6 +781,8 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32) {
     TEST_DESCRIPTION(
         "Copy depth buffer to image with some of its depth value being outside of the [0, 1] legal range. Depth image has format "
         "VK_FORMAT_D32_SFLOAT.");
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -843,11 +845,9 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32Vk13) {
         "Copy depth buffer to image with some of its depth value being outside of the [0, 1] legal range. Depth image has format "
         "VK_FORMAT_D32_SFLOAT.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV(*this)) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
@@ -912,6 +912,8 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8) {
     TEST_DESCRIPTION(
         "Copy depth buffer to image with some of its depth value being outside of the [0, 1] legal range. Depth image has format "
         "VK_FORMAT_D32_SFLOAT_S8_UINT.");
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -971,11 +973,9 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
         "Copy depth buffer to image with some of its depth value being outside of the [0, 1] legal range. Depth image has format "
         "VK_FORMAT_D32_SFLOAT_S8_UINT.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV(*this)) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
