@@ -744,6 +744,7 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
                                       VkPresentModeKHR present_mode) {
     auto guard = Lock();
     auto &cache = cache_[phys_dev];
+    // Get entry for a given presentation mode
     PresentModeInfo *info = nullptr;
     for (auto &cur_info : cache.present_mode_infos) {
         if (cur_info.present_mode == present_mode) {
@@ -755,20 +756,17 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
         cache.present_mode_infos.push_back(PresentModeInfo{});
         info = &cache.present_mode_infos.back();
         info->present_mode = present_mode;
-        info->surface_capabilities = surface_caps.surfaceCapabilities;
     }
-    if (!info->scaling_capabilities.has_value()) {
-        const auto *present_scaling_caps = vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesEXT>(surface_caps.pNext);
-        if (present_scaling_caps) {
-            info->scaling_capabilities = *present_scaling_caps;
-        }
+    // Update entry
+    info->surface_capabilities = surface_caps.surfaceCapabilities;
+    const auto *present_scaling_caps = vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesEXT>(surface_caps.pNext);
+    if (present_scaling_caps) {
+        info->scaling_capabilities = *present_scaling_caps;
     }
-    if (!info->compatible_present_modes.has_value()) {
-        const auto *compat_modes = vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(surface_caps.pNext);
-        if (compat_modes && compat_modes->pPresentModes) {
-            info->compatible_present_modes.emplace(compat_modes->pPresentModes,
-                                                   compat_modes->pPresentModes + compat_modes->presentModeCount);
-        }
+    const auto *compat_modes = vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(surface_caps.pNext);
+    if (compat_modes && compat_modes->pPresentModes) {
+        info->compatible_present_modes.emplace(compat_modes->pPresentModes,
+                                               compat_modes->pPresentModes + compat_modes->presentModeCount);
     }
 }
 
