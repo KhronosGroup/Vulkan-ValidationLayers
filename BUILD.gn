@@ -115,6 +115,7 @@ vvl_sources = [
   "layers/best_practices/bp_synchronization.cpp",
   "layers/best_practices/bp_video.cpp",
   "layers/best_practices/bp_wsi.cpp",
+  "layers/chassis/chassis_handle_data.h",
   "layers/chassis/chassis_modification_state.h",
   "layers/chassis/layer_chassis_dispatch_manual.cpp",
   "layers/containers/custom_containers.h",
