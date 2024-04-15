@@ -302,6 +302,33 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
         delete modified_create_info->pEnabledFeatures;
         modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
     }
+
+    auto add_missing_features = [this, modified_create_info]() {
+        if (force_buffer_device_address) {
+            // Add buffer device address feature
+            auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
+            if (bda_features) {
+                bda_features->bufferDeviceAddress = VK_TRUE;
+            } else {
+                VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
+                new_bda_features.bufferDeviceAddress = VK_TRUE;
+                vku::AddToPnext(*modified_create_info, new_bda_features);
+            }
+        }
+
+        // Add timeline semaphore feature
+        auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
+            vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info));
+        if (ts_features) {
+            ts_features->timelineSemaphore = VK_TRUE;
+        } else {
+            VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
+            new_ts_features.timelineSemaphore = VK_TRUE;
+            vku::AddToPnext(*modified_create_info, new_ts_features);
+        }
+    };
+
     // TODO How to handle multi-device
     if (api_version > VK_API_VERSION_1_1) {
         auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
@@ -312,19 +339,10 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
                 features12->bufferDeviceAddress = VK_TRUE;
             }
         } else {
-            auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info->pNext));
-            if (bda_features) {
-                bda_features->bufferDeviceAddress = VK_TRUE;
-            } else {
-                VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
-                new_bda_features.bufferDeviceAddress = VK_TRUE;
-                new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
-                modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
-            }
+            add_missing_features();
         }
     } else if (api_version == VK_API_VERSION_1_1) {
-        static const std::string bda_ext{"VK_KHR_buffer_device_address"};
+        const std::string_view bda_ext{"VK_KHR_buffer_device_address"};
         bool found_bda = false;
         for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
             if (bda_ext == modified_create_info->ppEnabledExtensionNames[i]) {
@@ -332,7 +350,7 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
                 break;
             }
         }
-        static const std::string ts_ext{"VK_KHR_timeline_semaphore"};
+        const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
         bool found_ts = false;
         for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
             if (ts_ext == modified_create_info->ppEnabledExtensionNames[i]) {
@@ -341,55 +359,15 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
             }
         }
 
-        if (!found_bda || !found_ts) {
-            size_t modify_count = modified_create_info->enabledExtensionCount;
-            if (!found_bda) {
-                modify_count++;
-            }
-            if (!found_ts) {
-                modify_count++;
-            }
-            const char **ext_names = new const char *[modify_count];
-            // Copy the existing pointer table
-            std::copy(modified_create_info->ppEnabledExtensionNames,
-                      modified_create_info->ppEnabledExtensionNames + modified_create_info->enabledExtensionCount, ext_names);
-            // Add our new extensions
-            if (!found_bda) {
-                char *bda_ext_copy = new char[bda_ext.size() + 1]{};
-                bda_ext.copy(bda_ext_copy, bda_ext.size());
-                bda_ext_copy[bda_ext.size()] = '\0';
-                ext_names[modified_create_info->enabledExtensionCount++] = bda_ext_copy;
-            }
-            if (!found_ts) {
-                char *ts_ext_copy = new char[ts_ext.size() + 1]{};
-                ts_ext.copy(ts_ext_copy, ts_ext.size());
-                ts_ext_copy[ts_ext.size()] = '\0';
-                ext_names[modified_create_info->enabledExtensionCount++] = ts_ext_copy;
-            }
-            // Patch up the safe struct
-            delete[] modified_create_info->ppEnabledExtensionNames;
-            modified_create_info->ppEnabledExtensionNames = ext_names;
+        // Add our new extensions
+        if (!found_bda) {
+            vku::AddExtension(*modified_create_info, bda_ext.data());
         }
-        auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
-        if (bda_features) {
-            bda_features->bufferDeviceAddress = VK_TRUE;
-        } else {
-            VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
-            new_bda_features.bufferDeviceAddress = VK_TRUE;
-            new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
-            modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
+        if (!found_ts) {
+            vku::AddExtension(*modified_create_info, ts_ext.data());
         }
-        auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info));
-        if (ts_features) {
-            ts_features->timelineSemaphore = VK_TRUE;
-        } else {
-            VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
-            new_ts_features.timelineSemaphore = VK_TRUE;
-            new_ts_features.pNext = const_cast<void *>(modified_create_info->pNext);
-            modified_create_info->pNext = new VkPhysicalDeviceTimelineSemaphoreFeatures(new_ts_features);
-        }
+
+        add_missing_features();
     } else {
         force_buffer_device_address = false;
     }
@@ -510,6 +488,10 @@ gpu_tracker::Queue::~Queue() {
     if (barrier_command_pool_) {
         DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
         barrier_command_pool_ = VK_NULL_HANDLE;
+    }
+    if (barrier_sem_) {
+        DispatchDestroySemaphore(state_.device, barrier_sem_, nullptr);
+        barrier_sem_ = VK_NULL_HANDLE;
     }
 }
 
