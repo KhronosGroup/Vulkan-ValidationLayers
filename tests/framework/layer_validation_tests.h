@@ -316,6 +316,8 @@ class NegativeDebugPrintf : public VkLayerTest {
 class VkSyncValTest : public VkLayerTest {
   public:
     void InitSyncValFramework(bool disable_queue_submit_validation = false);
+    void InitSyncVal();
+    void InitTimelineSemaphore();
 
   protected:
     const VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};

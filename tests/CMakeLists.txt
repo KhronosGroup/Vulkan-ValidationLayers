@@ -198,6 +198,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/sync_object_positive.cpp
     unit/sync_val.cpp
     unit/sync_val_positive.cpp
+    unit/sync_val_semaphore.cpp
+    unit/sync_val_semaphore_positive.cpp
     unit/threading.cpp
     unit/threading_positive.cpp
     unit/tooling.cpp
