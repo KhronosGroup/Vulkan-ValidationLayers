@@ -1054,6 +1054,12 @@ template <typename T>
 bool Contains(const std::vector<T> &v, const T &value) {
     return std::find(v.cbegin(), v.cend(), value) != v.cend();
 }
+// Overload for the case of shared_ptr<const T> and shared_ptr<T>.
+// They are convertible but conversion is not performed during template type deduction.
+template <typename T>
+bool Contains(const std::vector<std::shared_ptr<const T>> &v, const std::shared_ptr<T> &value) {
+    return std::find(v.cbegin(), v.cend(), value) != v.cend();
+}
 
 //
 // if (auto* thing = vvl::Find(map, key)) { thing->jump(); }
@@ -1106,6 +1112,16 @@ typename Container::size_type EraseIf(Container &c, Predicate &&p) {
         }
     }
     return before_size - c.size();
+}
+
+// Replace with the std version after VVL switches to C++20.
+// https://en.cppreference.com/w/cpp/container/vector/erase2
+template <typename T, typename Pred>
+typename std::vector<T>::size_type erase_if(std::vector<T> &c, Pred pred) {
+    auto it = std::remove_if(c.begin(), c.end(), pred);
+    auto r = c.end() - it;
+    c.erase(it, c.end());
+    return r;
 }
 
 template <typename T>
