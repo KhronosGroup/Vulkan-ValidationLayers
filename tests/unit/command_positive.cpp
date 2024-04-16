@@ -436,14 +436,13 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> transfer =
-        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
-    if (!transfer) {
-        GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
+    const std::optional<uint32_t> transfer_qfi = m_device->TransferQueueFamily();
+    if (!transfer_qfi) {
+        GTEST_SKIP() << "Transfer queue family not found";
     }
-    vkt::Queue *queue = m_device->queue_family_queues(transfer.value())[0].get();
+    vkt::Queue *queue = m_device->queue_family_queues(transfer_qfi.value())[0].get();
 
-    vkt::CommandPool pool(*m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(*m_device, transfer_qfi.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer cb(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 

@@ -694,10 +694,9 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
-    const std::optional<uint32_t> queue_family_index =
-        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
+    const std::optional<uint32_t> queue_family_index = m_device->ComputeQueueFamily();
     if (!queue_family_index) {
-        GTEST_SKIP() << "No non-graphics queue supporting compute found; skipped";
+        GTEST_SKIP() << "No compute queue found; skipped";
     }
 
     VkBufferMemoryBarrier buf_barrier = vku::InitStructHelper();
@@ -1123,10 +1122,9 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
-    const std::optional<uint32_t> queue_family_index =
-        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
+    const std::optional<uint32_t> queue_family_index = m_device->ComputeQueueFamily();
     if (!queue_family_index) {
-        GTEST_SKIP() << "No non-graphics queue supporting compute found";
+        GTEST_SKIP() << "No compute queue found";
     }
 
     VkBufferMemoryBarrier2KHR buf_barrier = vku::InitStructHelper();

@@ -317,7 +317,7 @@ const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_fami
     return queue_families_[queue_family];
 }
 
-std::optional<uint32_t> Device::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) {
+std::optional<uint32_t> Device::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) const {
     for (uint32_t i = 0; i < phy_.queue_properties_.size(); i++) {
         const auto flags = phy_.queue_properties_[i].queueFlags;
         const bool matches = all_bits ? (flags & with) == with : (flags & with) != 0;
@@ -326,6 +326,14 @@ std::optional<uint32_t> Device::QueueFamilyMatching(VkQueueFlags with, VkQueueFl
         }
     }
     return {};
+}
+
+std::optional<uint32_t> Device::ComputeQueueFamily() const {
+    return QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+}
+
+std::optional<uint32_t> Device::TransferQueueFamily() const {
+    return QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
 }
 
 bool Device::IsEnabledExtension(const char *extension) const {

@@ -798,9 +798,9 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
                                          indices, offsets);
     m_errorMonitor->VerifyFound();
 
-    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx_qfi) {
-        vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    if (compute_qfi) {
+        vkt::CommandPool command_pool(*m_device, compute_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
         vkt::CommandBuffer command_buffer(*m_device, &command_pool);
         index = 0;
@@ -1077,13 +1077,13 @@ TEST_F(NegativeDescriptorBuffer, BindPoint) {
     }
 
     {
-        const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-        if (!no_gfx_qfi) {
-            GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
+        const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+        if (!compute_qfi) {
+            GTEST_SKIP() << "No compute queue family, skipping bindpoint and queue tests.";
             return;
         }
 
-        vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
+        vkt::CommandPool command_pool(*m_device, compute_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
         vkt::CommandBuffer command_buffer(*m_device, &command_pool);
 

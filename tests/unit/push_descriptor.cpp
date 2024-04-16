@@ -660,11 +660,10 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
 
     // Section 1: Queue family matching/capabilities.
     // Create command pool on a non-graphics queue
-    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    const std::optional<uint32_t> transfer_only_qfi =
-        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
-    if (transfer_only_qfi || no_gfx_qfi) {
-        const uint32_t err_qfi = no_gfx_qfi ? no_gfx_qfi.value() : transfer_only_qfi.value();
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> transfer_qfi = m_device->TransferQueueFamily();
+    if (transfer_qfi || compute_qfi) {
+        const uint32_t err_qfi = compute_qfi ? compute_qfi.value() : transfer_qfi.value();
 
         vkt::CommandPool command_pool(*m_device, err_qfi);
         ASSERT_TRUE(command_pool.initialized());
@@ -674,7 +673,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363");
         m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
-        if (err_qfi == transfer_only_qfi) {
+        if (err_qfi == transfer_qfi) {
             // This as this queue neither supports the gfx or compute bindpoints, we'll get two errors
             m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-commandBuffer-cmdpool");
         }
@@ -684,9 +683,9 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
         command_buffer.end();
 
         // If we succeed in testing only one condition above, we need to test the other below.
-        if (transfer_only_qfi && err_qfi != transfer_only_qfi.value()) {
+        if (transfer_qfi && err_qfi != transfer_qfi.value()) {
             // Need to test the neither compute/gfx supported case separately.
-            vkt::CommandPool tran_command_pool(*m_device, transfer_only_qfi.value());
+            vkt::CommandPool tran_command_pool(*m_device, transfer_qfi.value());
             ASSERT_TRUE(tran_command_pool.initialized());
             vkt::CommandBuffer tran_command_buffer(*m_device, &tran_command_pool);
             ASSERT_TRUE(tran_command_buffer.initialized());
@@ -794,12 +793,12 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (!no_gfx_qfi.has_value()) {
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    if (!compute_qfi.has_value()) {
         GTEST_SKIP() << "Required queue family capabilities not found.";
     }
 
-    vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
+    vkt::CommandPool command_pool(*m_device, compute_qfi.value());
     vkt::CommandBuffer command_buffer(*m_device, &command_pool);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();

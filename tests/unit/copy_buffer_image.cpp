@@ -2352,10 +2352,9 @@ TEST_F(NegativeCopyBufferImage, ImageTransferQueueFlags) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> transfer =
-        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
-    if (!transfer) {
-        GTEST_SKIP() << "Non-graphics/compute queue family not found";
+    const std::optional<uint32_t> transfer_qfi = m_device->TransferQueueFamily();
+    if (!transfer_qfi) {
+        GTEST_SKIP() << "Transfer queue family not found";
     }
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -2375,7 +2374,7 @@ TEST_F(NegativeCopyBufferImage, ImageTransferQueueFlags) {
     region.bufferOffset = 5;
 
     // Create command pool on a non-graphics queue
-    vkt::CommandPool command_pool(*m_device, transfer.value());
+    vkt::CommandPool command_pool(*m_device, transfer_qfi.value());
 
     // Setup command buffer on pool
     vkt::CommandBuffer command_buffer(*m_device, &command_pool);

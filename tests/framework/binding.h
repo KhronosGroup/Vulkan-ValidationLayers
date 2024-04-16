@@ -230,11 +230,14 @@ class Device : public internal::Handle<VkDevice> {
     const QueueFamilyQueues &queue_family_queues(uint32_t queue_family) const;
 
     // Find a queue family with and without desired capabilities
-    std::optional<uint32_t> QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true);
+    std::optional<uint32_t> QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true) const;
     std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags capabilities) {
         // an all_bits match with 0 matches all
         return QueueFamilyMatching(VkQueueFlags(0), capabilities, true /* all_bits with */);
     }
+
+    std::optional<uint32_t> ComputeQueueFamily() const;
+    std::optional<uint32_t> TransferQueueFamily() const;
 
     uint32_t graphics_queue_node_index_;
 
