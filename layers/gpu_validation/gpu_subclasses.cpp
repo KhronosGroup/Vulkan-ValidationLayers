@@ -139,7 +139,7 @@ void gpuav::CommandBuffer::AllocateResources() {
                                                 kShaderStageAllRayTracing;
 
     // Instrumentation descriptor set layout
-    {
+    if (instrumentation_desc_set_layout_ == VK_NULL_HANDLE) {
         assert(!gpuav->validation_bindings_.empty());
         VkDescriptorSetLayoutCreateInfo instrumentation_desc_set_layout_ci = vku::InitStructHelper();
         instrumentation_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(gpuav->validation_bindings_.size());
@@ -196,16 +196,18 @@ void gpuav::CommandBuffer::AllocateResources() {
             {glsl::kBindingDiagCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, all_stages_flags, nullptr},
         };
 
-        VkDescriptorSetLayoutCreateInfo validation_cmd_desc_set_layout_ci = vku::InitStructHelper();
-        validation_cmd_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(validation_cmd_bindings.size());
-        validation_cmd_desc_set_layout_ci.pBindings = validation_cmd_bindings.data();
-        result = DispatchCreateDescriptorSetLayout(gpuav->device, &validation_cmd_desc_set_layout_ci, nullptr,
-                                                   &validation_cmd_desc_set_layout_);
-        if (result != VK_SUCCESS) {
-            gpuav->ReportSetupProblem(gpuav->device, Location(Func::vkAllocateCommandBuffers),
-                                      "Unable to create descriptor set layout used for validation commands. Aborting GPU-AV");
-            gpuav->aborted = true;
-            return;
+        if (validation_cmd_desc_set_layout_ == VK_NULL_HANDLE) {
+            VkDescriptorSetLayoutCreateInfo validation_cmd_desc_set_layout_ci = vku::InitStructHelper();
+            validation_cmd_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(validation_cmd_bindings.size());
+            validation_cmd_desc_set_layout_ci.pBindings = validation_cmd_bindings.data();
+            result = DispatchCreateDescriptorSetLayout(gpuav->device, &validation_cmd_desc_set_layout_ci, nullptr,
+                                                       &validation_cmd_desc_set_layout_);
+            if (result != VK_SUCCESS) {
+                gpuav->ReportSetupProblem(gpuav->device, Location(Func::vkAllocateCommandBuffers),
+                                          "Unable to create descriptor set layout used for validation commands. Aborting GPU-AV");
+                gpuav->aborted = true;
+                return;
+            }
         }
 
         assert(validation_cmd_desc_pool_ == VK_NULL_HANDLE);
