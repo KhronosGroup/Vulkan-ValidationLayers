@@ -2159,10 +2159,10 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
                                     gpuav::glsl::kMaxErrorsPerCmd);
     m_default_queue->submit(cb_1, false);
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
+    m_errorMonitor->SetDesiredError(
+        "vkCmdDispatch():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
+    m_errorMonitor->SetDesiredError(
+        "vkCmdDispatch():  (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
     m_default_queue->submit(cb_2, false);
 
     m_default_queue->wait();
