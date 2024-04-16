@@ -333,6 +333,12 @@ target_sources(vvl PRIVATE
 get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 
+option(BUILD_SELF_VVL "Setup a VVL build that will be used for self validation" FALSE)
+if (BUILD_SELF_VVL)
+    target_compile_definitions(VkLayer_utils PUBLIC BUILD_SELF_VVL)
+    target_compile_definitions(vvl PUBLIC BUILD_SELF_VVL)
+endif()
+
 set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 
 if(MSVC)
