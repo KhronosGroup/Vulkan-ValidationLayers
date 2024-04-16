@@ -2035,7 +2035,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
-    if (m_device->sparse_queues().empty()) {
+    if (m_device->QueuesWithSparseCapability().empty()) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 

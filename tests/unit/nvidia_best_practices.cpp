@@ -247,11 +247,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     GetPhysicalDeviceFeatures2(bda_features);
     RETURN_IF_SKIP(InitState(nullptr, &bda_features));
 
-    vkt::Queue *graphics_queue = m_device->graphics_queues()[0];
+    vkt::Queue *graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
 
     vkt::Queue *compute_queue = nullptr;
-    for (uint32_t i = 0; i < m_device->compute_queues().size(); ++i) {
-        auto cqi = m_device->compute_queues()[i];
+    for (uint32_t i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
+        auto cqi = m_device->QueuesWithComputeCapability()[i];
         if (cqi->get_family_index() != graphics_queue->get_family_index()) {
             compute_queue = cqi;
             break;

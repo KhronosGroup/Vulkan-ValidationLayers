@@ -4453,7 +4453,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    QSTestContext test(m_device, m_device->graphics_queues()[0]);
+    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
@@ -4514,7 +4514,7 @@ TEST_F(NegativeSyncVal, QSSubmit2) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    QSTestContext test(m_device, m_device->graphics_queues()[0]);
+    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
@@ -4545,7 +4545,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsIdle) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    QSTestContext test(m_device, m_device->graphics_queues()[0]);
+    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
@@ -4585,7 +4585,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    QSTestContext test(m_device, m_device->graphics_queues()[0]);
+    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }

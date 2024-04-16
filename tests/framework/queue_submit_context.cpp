@@ -28,7 +28,7 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
             q1 = q0;  // Allow the two queues to be the same and valid if forced
         }
     } else {
-        const auto& queues = device->dma_queues();
+        const auto& queues = device->QueuesWithTransferCapability();
 
         const uint32_t q_count = static_cast<uint32_t>(queues.size());
         for (uint32_t q0_index = 0; q0_index < q_count; ++q0_index) {

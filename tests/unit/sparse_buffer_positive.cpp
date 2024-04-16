@@ -18,7 +18,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
-    if (m_device->sparse_queues().empty()) {
+    if (m_device->QueuesWithSparseCapability().empty()) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
@@ -65,7 +65,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     bind_info.signalSemaphoreCount = 1;
     bind_info.pSignalSemaphores = &semaphore.handle();
 
-    vkt::Queue* sparse_queue = m_device->sparse_queues()[0];
+    vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
     sparse_queue->wait();
     // Set up complete
@@ -104,7 +104,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
-    if (m_device->sparse_queues().empty()) {
+    if (m_device->QueuesWithSparseCapability().empty()) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
@@ -152,7 +152,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     bind_info.signalSemaphoreCount = 1;
     bind_info.pSignalSemaphores = &semaphore.handle();
 
-    VkQueue sparse_queue = m_device->sparse_queues()[0]->handle();
+    VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
@@ -183,7 +183,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
-    if (m_device->sparse_queues().empty()) {
+    if (m_device->QueuesWithSparseCapability().empty()) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
@@ -229,7 +229,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     bind_info.signalSemaphoreCount = 1;
     bind_info.pSignalSemaphores = &semaphore.handle();
 
-    vkt::Queue* sparse_queue = m_device->sparse_queues()[0];
+    vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, sparse_queue_fence);
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
@@ -260,7 +260,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
-    if (m_device->sparse_queues().empty()) {
+    if (m_device->QueuesWithSparseCapability().empty()) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
@@ -303,7 +303,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     bind_info.signalSemaphoreCount = 1;
     bind_info.pSignalSemaphores = &semaphore.handle();
 
-    vkt::Queue* sparse_queue = m_device->sparse_queues()[0];
+    vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, sparse_queue_fence);
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
@@ -339,11 +339,11 @@ TEST_F(PositiveSparseBuffer, BindSparseEmpty) {
     AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
-    if (m_device->sparse_queues().empty()) {
+    if (m_device->QueuesWithSparseCapability().empty()) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
-    vkt::Queue* sparse_queue = m_device->sparse_queues()[0];
+    vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vk::QueueBindSparse(sparse_queue->handle(), 0u, nullptr, VK_NULL_HANDLE);
     sparse_queue->wait();
 }

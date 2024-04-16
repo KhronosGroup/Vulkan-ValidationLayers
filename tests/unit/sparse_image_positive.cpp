@@ -331,7 +331,7 @@ TEST_F(PositiveSparseImage, BindImage) {
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
-    if (m_device->sparse_queues().empty()) {
+    if (m_device->QueuesWithSparseCapability().empty()) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
@@ -361,7 +361,7 @@ TEST_F(PositiveSparseImage, BindImage) {
     bind_info.imageBindCount = 1;
     bind_info.pImageBinds = &image_memory_bind_info;
 
-    vkt::Queue *sparse_queue = m_device->sparse_queues()[0];
+    vkt::Queue *sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
     sparse_queue->wait();
 }

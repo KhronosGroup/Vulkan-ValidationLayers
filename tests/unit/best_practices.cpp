@@ -1774,11 +1774,11 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Queue *graphics_queue = m_device->graphics_queues()[0];
+    vkt::Queue *graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
 
     vkt::Queue *compute_queue = nullptr;
-    for (uint32_t i = 0; i < m_device->compute_queues().size(); ++i) {
-        auto cqi = m_device->compute_queues()[i];
+    for (uint32_t i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
+        auto cqi = m_device->QueuesWithComputeCapability()[i];
         if (cqi->get_family_index() != graphics_queue->get_family_index()) {
             compute_queue = cqi;
             break;

@@ -220,11 +220,10 @@ class Device : public internal::Handle<VkDevice> {
     // vkGetDeviceProcAddr()
     PFN_vkVoidFunction get_proc(const char *name) const { return vk::GetDeviceProcAddr(handle(), name); }
 
-    // vkGetDeviceQueue()
-    const std::vector<Queue *> &graphics_queues() const { return queues_[GRAPHICS]; }
-    const std::vector<Queue *> &compute_queues() { return queues_[COMPUTE]; }
-    const std::vector<Queue *> &dma_queues() { return queues_[DMA]; }
-    const std::vector<Queue *> &sparse_queues() { return queues_[SPARSE]; }
+    const std::vector<Queue *> &QueuesWithGraphicsCapability() const { return queues_[GRAPHICS]; }
+    const std::vector<Queue *> &QueuesWithComputeCapability() const { return queues_[COMPUTE]; }
+    const std::vector<Queue *> &QueuesWithTransferCapability() const { return queues_[TRANSFER]; }
+    const std::vector<Queue *> &QueuesWithSparseCapability() const { return queues_[SPARSE]; }
 
     typedef std::vector<std::unique_ptr<Queue>> QueueFamilyQueues;
     typedef std::vector<QueueFamilyQueues> QueueFamilies;
@@ -284,12 +283,12 @@ class Device : public internal::Handle<VkDevice> {
                                                    uint32_t count);
 
   private:
-    enum QueueIndex {
+    enum QueueCapabilityIndex {
         GRAPHICS = 0,
         COMPUTE = 1,
-        DMA = 2,
+        TRANSFER = 2,
         SPARSE = 3,
-        QUEUE_COUNT = 4,
+        QUEUE_CAPABILITY_COUNT = 4,
     };
 
     void init_queues(const VkDeviceCreateInfo &info);
@@ -297,7 +296,7 @@ class Device : public internal::Handle<VkDevice> {
     std::vector<const char *> enabled_extensions_;
 
     QueueFamilies queue_families_;
-    std::vector<Queue *> queues_[QUEUE_COUNT];
+    std::vector<Queue *> queues_[QUEUE_CAPABILITY_COUNT];
 };
 
 class Queue : public internal::Handle<VkQueue> {
