@@ -44,6 +44,18 @@ void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
     InitFramework(&features_);
 }
 
+void VkSyncValTest::InitSyncVal() {
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+}
+
+void VkSyncValTest::InitTimelineSemaphore() {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitSyncVal());
+}
+
 TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     TEST_DESCRIPTION(
         "Clear one attachment layer and copy to a different one."

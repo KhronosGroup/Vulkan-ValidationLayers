@@ -1080,6 +1080,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
     }
 
+    void Copy(const Buffer &src, const Buffer &dst);
+
   private:
     VkDevice dev_handle_;
     VkCommandPool cmd_pool_;

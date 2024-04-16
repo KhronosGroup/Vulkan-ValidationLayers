@@ -1798,6 +1798,12 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
     vkCmdEndVideoCodingKHR(handle(), &endInfo);
 }
 
+void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
+    assert(src.create_info().size == dst.create_info().size);
+    const VkBufferCopy region = {0, 0, src.create_info().size};
+    vk::CmdCopyBuffer(handle(), src.handle(), dst.handle(), 1, &region);
+}
+
 void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
 }
