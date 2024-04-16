@@ -438,7 +438,7 @@ ValidValue StatelessValidation::IsValidEnumValue(VkFormat value) const {
         case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             return IsExtEnabled(device_extensions.vk_img_format_pvrtc) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_FORMAT_R16G16_S10_5_NV:
+        case VK_FORMAT_R16G16_SFIXED5_NV:
             return IsExtEnabled(device_extensions.vk_nv_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR:
         case VK_FORMAT_A8_UNORM_KHR:
@@ -2166,7 +2166,7 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkFormat value) const {
         case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             return {vvl::Extension::_VK_IMG_format_pvrtc};
-        case VK_FORMAT_R16G16_S10_5_NV:
+        case VK_FORMAT_R16G16_SFIXED5_NV:
             return {vvl::Extension::_VK_NV_optical_flow};
         case VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR:
         case VK_FORMAT_A8_UNORM_KHR:
