@@ -817,7 +817,7 @@ TEST_F(VkLayerTest, InvalidAllocationCallbacks) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional queueFamilyIndex = DeviceObj()->QueueFamilyMatching(0, 0, true);
+    const std::optional queueFamilyIndex = DeviceObj()->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
     if (!queueFamilyIndex) {
         GTEST_SKIP() << "Required queue families not present";
     }

@@ -660,8 +660,8 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
 
     // Section 1: Queue family matching/capabilities.
     // Create command pool on a non-graphics queue
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
-    const std::optional<uint32_t> transfer_qfi = m_device->TransferQueueFamily();
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
+    const std::optional<uint32_t> transfer_qfi = m_device->TransferOnlyQueueFamily();
     if (transfer_qfi || compute_qfi) {
         const uint32_t err_qfi = compute_qfi ? compute_qfi.value() : transfer_qfi.value();
 
@@ -793,7 +793,7 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (!compute_qfi.has_value()) {
         GTEST_SKIP() << "Required queue family capabilities not found.";
     }

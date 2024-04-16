@@ -694,9 +694,9 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
-    const std::optional<uint32_t> queue_family_index = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> queue_family_index = m_device->ComputeOnlyQueueFamily();
     if (!queue_family_index) {
-        GTEST_SKIP() << "No compute queue found; skipped";
+        GTEST_SKIP() << "No compute-only queue found; skipped";
     }
 
     VkBufferMemoryBarrier buf_barrier = vku::InitStructHelper();
@@ -1122,9 +1122,9 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
-    const std::optional<uint32_t> queue_family_index = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> queue_family_index = m_device->ComputeOnlyQueueFamily();
     if (!queue_family_index) {
-        GTEST_SKIP() << "No compute queue found";
+        GTEST_SKIP() << "No compute-only queue found";
     }
 
     VkBufferMemoryBarrier2KHR buf_barrier = vku::InitStructHelper();

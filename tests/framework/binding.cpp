@@ -317,23 +317,44 @@ const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_fami
     return queue_families_[queue_family];
 }
 
-std::optional<uint32_t> Device::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) const {
+std::optional<uint32_t> Device::QueueFamily(VkQueueFlags with, VkQueueFlags without) const {
     for (uint32_t i = 0; i < phy_.queue_properties_.size(); i++) {
-        const auto flags = phy_.queue_properties_[i].queueFlags;
-        const bool matches = all_bits ? (flags & with) == with : (flags & with) != 0;
-        if (matches && ((flags & without) == 0) && (phy_.queue_properties_[i].queueCount > 0)) {
-            return i;
+        if (phy_.queue_properties_[i].queueCount > 0) {
+            const auto flags = phy_.queue_properties_[i].queueFlags;
+            const bool matches = (flags & with) == with;
+            if (matches && ((flags & without) == 0)) {
+                return i;
+            }
         }
     }
     return {};
 }
 
-std::optional<uint32_t> Device::ComputeQueueFamily() const {
-    return QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+std::optional<uint32_t> Device::QueueFamilyWithoutCapabilities(VkQueueFlags without) {
+    for (uint32_t i = 0; i < phy_.queue_properties_.size(); i++) {
+        if (phy_.queue_properties_[i].queueCount > 0) {
+            const auto flags = phy_.queue_properties_[i].queueFlags;
+            if ((flags & without) == 0) {
+                return i;
+            }
+        }
+    }
+    return {};
 }
 
-std::optional<uint32_t> Device::TransferQueueFamily() const {
-    return QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+std::optional<uint32_t> Device::NonGraphicsQueueFamily() const {
+    if (auto compute_qfi = ComputeOnlyQueueFamily(); compute_qfi.has_value()) {
+        return compute_qfi;
+    }
+    return TransferOnlyQueueFamily();
+}
+
+std::optional<uint32_t> Device::ComputeOnlyQueueFamily() const {
+    return QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+}
+
+std::optional<uint32_t> Device::TransferOnlyQueueFamily() const {
+    return QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
 }
 
 bool Device::IsEnabledExtension(const char *extension) const {

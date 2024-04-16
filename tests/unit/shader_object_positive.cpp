@@ -1450,7 +1450,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
+    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -1570,7 +1570,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
+    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);

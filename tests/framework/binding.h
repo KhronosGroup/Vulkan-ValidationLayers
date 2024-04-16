@@ -229,15 +229,20 @@ class Device : public internal::Handle<VkDevice> {
     typedef std::vector<QueueFamilyQueues> QueueFamilies;
     const QueueFamilyQueues &queue_family_queues(uint32_t queue_family) const;
 
-    // Find a queue family with and without desired capabilities
-    std::optional<uint32_t> QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true) const;
-    std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags capabilities) {
-        // an all_bits match with 0 matches all
-        return QueueFamilyMatching(VkQueueFlags(0), capabilities, true /* all_bits with */);
-    }
+    // Queue family that has "with" capabilities and optionally without "without" capabilities.
+    std::optional<uint32_t> QueueFamily(VkQueueFlags with, VkQueueFlags without = 0) const;
 
-    std::optional<uint32_t> ComputeQueueFamily() const;
-    std::optional<uint32_t> TransferQueueFamily() const;
+    // Queue family that does not have "without" capabilities
+    std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags without);
+
+    // Dedicated compute queue family: has compute but no graphics
+    std::optional<uint32_t> ComputeOnlyQueueFamily() const;
+
+    // Dedicated transfer queue family: has tranfer but no graphics/compute
+    std::optional<uint32_t> TransferOnlyQueueFamily() const;
+
+    // Compute or transfer
+    std::optional<uint32_t> NonGraphicsQueueFamily() const;
 
     uint32_t graphics_queue_node_index_;
 
