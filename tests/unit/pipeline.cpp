@@ -1584,7 +1584,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     TEST_DESCRIPTION("Check that validation path catches pipeline layout inconsistencies for bind vs. dispatch");
     RETURN_IF_SKIP(Init());
 
-    if (m_device->compute_queues().empty()) {
+    if (m_device->QueuesWithComputeCapability().empty()) {
         GTEST_SKIP() << "compute queue not supported";
     }
 

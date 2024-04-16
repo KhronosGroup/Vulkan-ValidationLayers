@@ -2927,7 +2927,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
 
-    if (m_device->graphics_queues().size() < 2) {
+    if (m_device->QueuesWithGraphicsCapability().size() < 2) {
         GTEST_SKIP() << "2 graphics queues are needed";
     }
 
@@ -2942,7 +2942,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     fence.wait(kWaitTimeout);
     SetImageLayoutPresentSrc(images[image_index]);
 
-    vkt::Queue *other = m_device->graphics_queues()[1];
+    vkt::Queue *other = m_device->QueuesWithGraphicsCapability()[1];
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkSubmitInfo wait_submit = vku::InitStructHelper();

@@ -2043,13 +2043,13 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
     GetPhysicalDeviceFeatures2(sync2_features);
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    if (m_device->graphics_queues().size() < 2) {
+    if (m_device->QueuesWithGraphicsCapability().size() < 2) {
         GTEST_SKIP() << "2 graphics queues are needed";
     }
 
     vkt::Semaphore semaphore(*m_device);
 
-    VkQueue other = m_device->graphics_queues()[1]->handle();
+    VkQueue other = m_device->QueuesWithGraphicsCapability()[1]->handle();
 
     {
         VkSubmitInfo signal_submit = vku::InitStructHelper();
@@ -2070,7 +2070,7 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
         m_default_queue->wait();
         vk::QueueWaitIdle(other);
     }
-    if (m_device->phy().queue_properties_[m_device->graphics_queues()[0]->get_family_index()].queueFlags &
+    if (m_device->phy().queue_properties_[m_device->QueuesWithGraphicsCapability()[0]->get_family_index()].queueFlags &
         VK_QUEUE_SPARSE_BINDING_BIT) {
         VkBindSparseInfo signal_bind = vku::InitStructHelper();
         signal_bind.signalSemaphoreCount = 1;
@@ -2762,7 +2762,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue->handle(), 2, submit_info, VK_NULL_HANDLE));
         m_default_queue->wait();
     }
-    if (m_device->phy().queue_properties_[m_device->graphics_queues()[0]->get_family_index()].queueFlags &
+    if (m_device->phy().queue_properties_[m_device->QueuesWithGraphicsCapability()[0]->get_family_index()].queueFlags &
         VK_QUEUE_SPARSE_BINDING_BIT) {
         vkt::Semaphore semaphore[3];
         semaphore[0].init(*m_device, semaphore_create_info);
@@ -3333,10 +3333,10 @@ TEST_F(NegativeSyncObject, DetectInterQueueEventUsage) {
     TEST_DESCRIPTION("Sets event on one queue and tries to wait on a different queue (CmdSetEvent/CmdWaitEvents)");
     RETURN_IF_SKIP(Init());
 
-    if (m_device->graphics_queues().size() < 2) {
+    if (m_device->QueuesWithGraphicsCapability().size() < 2) {
         GTEST_SKIP() << "2 graphics queues are needed";
     }
-    const VkQueue other_gfx_queue = m_device->graphics_queues()[1]->handle();
+    const VkQueue other_gfx_queue = m_device->QueuesWithGraphicsCapability()[1]->handle();
     assert(other_gfx_queue != m_default_queue->handle());
 
     const vkt::Event event(*m_device);
@@ -3370,10 +3370,10 @@ TEST_F(NegativeSyncObject, DetectInterQueueEventUsage2) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    if (m_device->graphics_queues().size() < 2) {
+    if (m_device->QueuesWithGraphicsCapability().size() < 2) {
         GTEST_SKIP() << "2 graphics queues are needed";
     }
-    const VkQueue other_gfx_queue = m_device->graphics_queues()[1]->handle();
+    const VkQueue other_gfx_queue = m_device->QueuesWithGraphicsCapability()[1]->handle();
     assert(other_gfx_queue != m_default_queue->handle());
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();

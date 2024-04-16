@@ -285,8 +285,6 @@ void Device::init_queues(const VkDeviceCreateInfo &info) {
         QueueFamilyQueues &queue_storage = queue_families_[queue_family_i];
         queue_storage.reserve(queue_create_info.queueCount);
         for (uint32_t queue_i = 0; queue_i < queue_create_info.queueCount; ++queue_i) {
-            // TODO: Need to add support for separate MEMMGR and work queues,
-            // including synchronization
             VkQueue queue = VK_NULL_HANDLE;
             vk::GetDeviceQueue(handle(), queue_family_i, queue_i, &queue);
 
@@ -302,7 +300,7 @@ void Device::init_queues(const VkDeviceCreateInfo &info) {
             }
 
             if (queue_family_prop.queueFlags & VK_QUEUE_TRANSFER_BIT) {
-                queues_[DMA].push_back(queue_storage.back().get());
+                queues_[TRANSFER].push_back(queue_storage.back().get());
             }
 
             if (queue_family_prop.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
@@ -311,7 +309,7 @@ void Device::init_queues(const VkDeviceCreateInfo &info) {
         }
     }
 
-    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[DMA].empty() || !queues_[SPARSE].empty());
+    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[TRANSFER].empty() || !queues_[SPARSE].empty());
 }
 
 const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_family) const {
@@ -1326,7 +1324,7 @@ void CommandBuffer::Init(const Device &dev, const CommandPool *pool, VkCommandBu
     if (queue) {
         m_queue = queue;
     } else {
-        m_queue = dev.graphics_queues()[0];
+        m_queue = dev.QueuesWithGraphicsCapability()[0];
     }
     assert(m_queue);
 

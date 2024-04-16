@@ -1196,7 +1196,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
         bi[1].pWaitSemaphores = &import_semaphore.handle();
         bi[2] = bi[0];
         bi[3] = bi[1];
-        vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), bi.size(), bi.data(), VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_device->QueuesWithSparseCapability()[0]->handle(), bi.size(), bi.data(), VK_NULL_HANDLE);
     }
 
     // Cleanup
@@ -1625,14 +1625,14 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *q0 = m_device->graphics_queues()[0];
+    vkt::Queue *q0 = m_device->QueuesWithGraphicsCapability()[0];
     vkt::Queue *q1 = nullptr;
 
-    if (m_device->graphics_queues().size() > 1) {
-        q1 = m_device->graphics_queues()[1];
+    if (m_device->QueuesWithGraphicsCapability().size() > 1) {
+        q1 = m_device->QueuesWithGraphicsCapability()[1];
     }
     if (q1 == nullptr) {
-        for (auto *q : m_device->compute_queues()) {
+        for (auto *q : m_device->QueuesWithComputeCapability()) {
             if (q != q0) {
                 q1 = q;
                 break;
@@ -1640,7 +1640,7 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
         }
     }
     if (q1 == nullptr) {
-        for (auto *q : m_device->dma_queues()) {
+        for (auto *q : m_device->QueuesWithTransferCapability()) {
             if (q != q0) {
                 q1 = q;
                 break;
@@ -2033,7 +2033,7 @@ struct SemBufferRaceData {
             thread_buffer = std::move(buffer);
 
             submit_info.pCommandBuffers = &cb.handle();
-            err = vk::QueueSubmit(dev.graphics_queues()[0]->handle(), 1, &submit_info, VK_NULL_HANDLE);
+            err = vk::QueueSubmit(dev.QueuesWithGraphicsCapability()[0]->handle(), 1, &submit_info, VK_NULL_HANDLE);
             ASSERT_EQ(VK_SUCCESS, err);
 
             err = Signal(host_signal_value);
@@ -2048,7 +2048,7 @@ struct SemBufferRaceData {
         ASSERT_EQ(VK_SUCCESS, err);
         thread.join();
         error_mon.SetBailout(nullptr);
-        vk::QueueWaitIdle(dev.graphics_queues()[0]->handle());
+        vk::QueueWaitIdle(dev.QueuesWithGraphicsCapability()[0]->handle());
     }
 };
 

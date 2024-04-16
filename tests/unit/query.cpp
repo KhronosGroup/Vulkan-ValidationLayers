@@ -1287,8 +1287,8 @@ TEST_F(NegativeQuery, PreciseBit) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cmd_buffer2;
-    vk::QueueSubmit(test_device.graphics_queues().front()->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(test_device.graphics_queues().front()->handle());
+    vk::QueueSubmit(test_device.QueuesWithGraphicsCapability().front()->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(test_device.QueuesWithGraphicsCapability().front()->handle());
 
     vk::BeginCommandBuffer(cmd_buffer, &begin_info);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-00800");

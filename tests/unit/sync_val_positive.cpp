@@ -909,7 +909,7 @@ TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
     RETURN_IF_SKIP(InitSyncValFramework(true));  // Disable QueueSubmit validation
     RETURN_IF_SKIP(InitState());
 
-    QSTestContext test(m_device, m_device->graphics_queues()[0]);
+    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
     if (!test.Valid()) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }

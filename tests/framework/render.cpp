@@ -675,7 +675,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
         vk::InitDeviceExtension(instance_, *m_device, device_ext_name);
     }
 
-    m_default_queue = m_device->graphics_queues()[0];
+    m_default_queue = m_device->QueuesWithGraphicsCapability()[0];
 
     m_depthStencil = new vkt::Image();
 
