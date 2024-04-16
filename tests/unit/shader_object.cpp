@@ -598,9 +598,8 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_COMPUTE_BIT);
-
-    if (!graphics_queue_family_index) {
+    const std::optional<uint32_t> transfer_queue_family_index = m_device->TransferOnlyQueueFamily();
+    if (!transfer_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
     }
 
@@ -616,7 +615,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
     vkt::Shader shader(*m_device, createInfo);
     VkShaderEXT shaderHandle = shader.handle();
 
-    vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
+    vkt::CommandPool command_pool(*m_device, transfer_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, &command_pool);
     command_buffer.begin();
 
@@ -633,7 +632,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
 
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
@@ -668,7 +667,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(nullptr, VK_API_VERSION_1_3, false, true));
 
-    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
 
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";

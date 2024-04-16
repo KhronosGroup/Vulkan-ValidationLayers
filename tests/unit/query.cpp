@@ -1718,15 +1718,14 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> graphics_queue_family_index =
-        m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT);
-    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeQueueFamily();
-    if (!graphics_queue_family_index && !compute_queue_family_index) {
+    const std::optional<uint32_t> decode_queue_family_index = m_device->QueueFamily(VK_QUEUE_VIDEO_DECODE_BIT_KHR);
+    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeOnlyQueueFamily();
+    if (!decode_queue_family_index && !compute_queue_family_index) {
         GTEST_SKIP() << "required queue families not found";
     }
 
-    if (graphics_queue_family_index) {
-        vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
+    if (decode_queue_family_index) {
+        vkt::CommandPool command_pool(*m_device, decode_queue_family_index.value());
 
         vkt::CommandBuffer command_buffer(*m_device, &command_pool);
         command_buffer.begin();
@@ -1794,7 +1793,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_properties);
 
-    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeOnlyQueueFamily();
     if (!compute_queue_family_index) {
         GTEST_SKIP() << "required queue family not found, skipping test";
     }

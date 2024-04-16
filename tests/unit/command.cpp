@@ -2668,9 +2668,9 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (!compute_qfi) {
-        GTEST_SKIP() << "No compute queue family, skipping bindpoint and queue tests.";
+        GTEST_SKIP() << "No compute-only queue family, skipping bindpoint and queue tests.";
     }
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2695,9 +2695,9 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     AddRequiredFeature(vkt::Feature::maintenance6);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (!compute_qfi) {
-        GTEST_SKIP() << "No compute queue family, skipping bindpoint and queue tests.";
+        GTEST_SKIP() << "No compute-only queue family, skipping bindpoint and queue tests.";
     }
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -3711,7 +3711,7 @@ TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyMatching(0u, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
 
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";

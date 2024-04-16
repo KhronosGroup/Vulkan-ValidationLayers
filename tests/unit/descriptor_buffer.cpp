@@ -798,7 +798,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
                                          indices, offsets);
     m_errorMonitor->VerifyFound();
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (compute_qfi) {
         vkt::CommandPool command_pool(*m_device, compute_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
@@ -1077,9 +1077,9 @@ TEST_F(NegativeDescriptorBuffer, BindPoint) {
     }
 
     {
-        const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+        const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
         if (!compute_qfi) {
-            GTEST_SKIP() << "No compute queue family, skipping bindpoint and queue tests.";
+            GTEST_SKIP() << "No compute-only queue family, skipping bindpoint and queue tests.";
             return;
         }
 

@@ -706,9 +706,9 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
         "compute opeartions");
 
     RETURN_IF_SKIP(Init());
-    const std::optional<uint32_t> transfer_qfi = m_device->TransferQueueFamily();
+    const std::optional<uint32_t> transfer_qfi = m_device->TransferOnlyQueueFamily();
     if (!transfer_qfi) {
-        GTEST_SKIP() << "Transfer queue family not found";
+        GTEST_SKIP() << "Transfer-only queue family not found";
     }
     vkt::Queue *queue = m_device->queue_family_queues(transfer_qfi.value())[0].get();
 

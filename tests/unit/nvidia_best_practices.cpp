@@ -134,8 +134,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     general_queue_ci.queueCount = 1;
     general_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
-        const std::optional<uint32_t> familyIndex =
-            m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_SPARSE_BINDING_BIT, 0);
+        const std::optional<uint32_t> familyIndex = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_SPARSE_BINDING_BIT);
         if (!familyIndex) {
             GTEST_SKIP() << "Required queue families not present";
         }
@@ -146,8 +145,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     transfer_queue_ci.queueCount = 1;
     transfer_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
-        const std::optional<uint32_t> familyIndex = m_device->QueueFamilyMatching(
-            VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT, VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
+        const std::optional<uint32_t> familyIndex = m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
+                                                                          VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
         if (!familyIndex) {
             GTEST_SKIP() << "Required queue families not present";
         }

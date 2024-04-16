@@ -2308,8 +2308,7 @@ TEST_F(NegativeCopyBufferImage, DepthStencilImageCopyNoGraphicsQueueFlags) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> no_gfx =
-        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
+    const std::optional<uint32_t> no_gfx = m_device->NonGraphicsQueueFamily();
     if (!no_gfx) {
         GTEST_SKIP() << "Non-graphics queue family not found";
     }
@@ -2352,9 +2351,9 @@ TEST_F(NegativeCopyBufferImage, ImageTransferQueueFlags) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> transfer_qfi = m_device->TransferQueueFamily();
+    const std::optional<uint32_t> transfer_qfi = m_device->TransferOnlyQueueFamily();
     if (!transfer_qfi) {
-        GTEST_SKIP() << "Transfer queue family not found";
+        GTEST_SKIP() << "Transfer-only queue family not found";
     }
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
