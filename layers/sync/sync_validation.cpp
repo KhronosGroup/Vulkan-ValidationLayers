@@ -47,11 +47,11 @@ ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const 
     return reserve;
 }
 
-void SyncValidator::UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update, const QueueBatchContext::Ptr &last_batch) {
+void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchContext::Ptr &last_batch) {
     // NOTE: All conserved QueueBatchContexts need to have their access logs reset to use the global
     // logger and the only conserved QBCs are those referenced by unwaited signals and the last batch.
 
-    for (auto &signal_entry : update.signals_to_add) {
+    for (auto &signal_entry : update.binary_signal_requests) {
         auto &signal_batch = signal_entry.second.batch;
         // Batches retained for signalled semaphore don't need to retain
         // event data, unless it's the last batch in the submit
@@ -63,10 +63,50 @@ void SyncValidator::UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update, c
         }
         const VkSemaphore semaphore = signal_entry.first;
         SignalInfo &signal_info = signal_entry.second;
-        signaled_semaphores_.insert_or_assign(semaphore, std::move(signal_info));
+        binary_signals_.insert_or_assign(semaphore, std::move(signal_info));
     }
-    for (VkSemaphore semaphore : update.signals_to_remove) {
-        signaled_semaphores_.erase(semaphore);
+    for (VkSemaphore semaphore : update.binary_unsignal_requests) {
+        binary_signals_.erase(semaphore);
+    }
+    for (auto &[semaphore, new_signals] : update.timeline_signals) {
+        std::vector<SignalInfo> &signals = timeline_signals_[semaphore];
+        vvl::Append(signals, new_signals);
+
+        // Update host sync points
+        std::deque<TimelineHostSyncPoint> &host_sync_points = host_waitable_semaphores_[semaphore];
+        for (SignalInfo &new_signal : new_signals) {
+            if (new_signal.batch) {
+                // The lifetimes of the semaphore host sync points are managed by vkWaitSemaphores.
+                // kMaxTimelineHostSyncPoints limit is used when the program does not use vkWaitSemaphores.
+                // We accumulate up to kMaxTimelineHostSyncPoints of the host sync points per semaphore.
+                // Dropping old sync points cannot introduce false positives but may miss a sync hazard.
+                // The limit is chosen to be large enough comparing to typical numbers of queue submissions
+                // between host synchronization points.
+                const uint32_t kMaxTimelineHostSyncPoints = 256;  // max ~6 Kb per semaphore
+                if (host_sync_points.size() >= kMaxTimelineHostSyncPoints) {
+                    host_sync_points.pop_front();
+                }
+                // Add a host sync point for this signal
+                TimelineHostSyncPoint sync_point;
+                assert(new_signal.first_scope.queue != kQueueIdInvalid);
+                sync_point.queue_id = new_signal.first_scope.queue;
+                sync_point.tag = new_signal.batch->GetTagRange().end - 1;
+                sync_point.timeline_value = new_signal.timeline_value;
+                host_sync_points.emplace_back(sync_point);
+            }
+        }
+    }
+    for (const auto &remove_signals_request : update.remove_timeline_signals_requests) {
+        auto &signals = timeline_signals_[remove_signals_request.semaphore];
+        for (auto it = signals.begin(); it != signals.end();) {
+            const SignalInfo &signal = *it;
+            if (signal.first_scope.queue == remove_signals_request.queue &&
+                signal.timeline_value < remove_signals_request.signal_threshold_value) {
+                it = signals.erase(it);
+                continue;
+            }
+            ++it;
+        }
     }
 }
 
@@ -103,7 +143,7 @@ void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
     std::vector<QueueBatchContext::Ptr> batch_contexts = GetLastBatches([](auto) { return true; });
 
     // Get batches from signaled binary semaphores
-    for (auto &[_, signal_info] : signaled_semaphores_) {
+    for (auto &[_, signal_info] : binary_signals_) {
         if (!vvl::Contains(batch_contexts, signal_info.batch)) {
             batch_contexts.emplace_back(signal_info.batch);
         }
@@ -125,25 +165,18 @@ void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
     }
 }
 
-void SyncValidator::UpdateFenceWaitInfo(VkFence fence, QueueId queue_id, ResourceUsageTag tag) {
+void SyncValidator::UpdateFenceHostSyncPoint(VkFence fence, FenceHostSyncPoint &&sync_point) {
     std::shared_ptr<const vvl::Fence> fence_state = Get<vvl::Fence>(fence);
-    UpdateFenceWaitInfo(fence_state, FenceSyncState(fence_state, queue_id, tag));
-}
-void SyncValidator::UpdateFenceWaitInfo(VkFence fence, const PresentedImage &image, ResourceUsageTag tag) {
-    std::shared_ptr<const vvl::Fence> fence_state = Get<vvl::Fence>(fence);
-    UpdateFenceWaitInfo(fence_state, FenceSyncState(fence_state, image, tag));
-}
-
-void SyncValidator::UpdateFenceWaitInfo(std::shared_ptr<const vvl::Fence> &fence_state, FenceSyncState &&wait_info) {
-    if (vvl::StateObject::Invalid(fence_state)) return;
-    waitable_fences_[fence_state->VkHandle()] = std::move(wait_info);
+    if (!vvl::StateObject::Invalid(fence_state)) {
+        waitable_fences_[fence_state->VkHandle()] = std::move(sync_point);
+    }
 }
 
 void SyncValidator::WaitForFence(VkFence fence) {
     auto fence_it = waitable_fences_.find(fence);
     if (fence_it != waitable_fences_.end()) {
         // The fence may no longer be waitable for several valid reasons.
-        FenceSyncState &wait_for = fence_it->second;
+        FenceHostSyncPoint &wait_for = fence_it->second;
         if (wait_for.acquired.Invalid()) {
             // This is just a normal fence wait
             ApplyTaggedWait(wait_for.queue_id, wait_for.tag);
@@ -153,6 +186,32 @@ void SyncValidator::WaitForFence(VkFence fence) {
         }
         waitable_fences_.erase(fence_it);
     }
+}
+
+void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
+    std::deque<TimelineHostSyncPoint> *sync_points = vvl::Find(host_waitable_semaphores_, semaphore);
+    if (!sync_points) {
+        return;
+    }
+    auto matching_sync_point = [value](const TimelineHostSyncPoint &sync_point) { return sync_point.timeline_value >= value; };
+    auto sync_point_it = std::find_if(sync_points->begin(), sync_points->end(), matching_sync_point);
+    if (sync_point_it == sync_points->end()) {
+        return;
+    }
+
+    const TimelineHostSyncPoint &sync_point = *sync_point_it;
+    ApplyTaggedWait(sync_point.queue_id, sync_point.tag);
+
+    // Remove signals before the resolving one (keep the resolving signal).
+    std::vector<SignalInfo> &signals = timeline_signals_[semaphore];
+    vvl::erase_if(signals, [&sync_point](SignalInfo &signal) {
+        return signal.first_scope.queue == sync_point.queue_id && signal.timeline_value < sync_point.timeline_value;
+    });
+
+    // We can remove all sync points that are in the scope of current wait.
+    // Subsequent attempts to synchronize on the host with already synchronized
+    // timeline values will result in noop.
+    sync_points->erase(sync_points->begin(), sync_point_it + 1 /* include resolving sync point too*/);
 }
 
 void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos) {
@@ -638,6 +697,22 @@ void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, cons
     }
     debug_cmdbuf_pattern = GetEnvironment("VK_SYNCVAL_DEBUG_CMDBUF_PATTERN");
     vvl::ToLower(debug_cmdbuf_pattern);
+}
+
+void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
+                                                  const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
+    if (record_obj.result != VK_SUCCESS) return;
+    assert(!vvl::Contains(timeline_signals_, *pSemaphore));
+}
+
+void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator,
+                                                  const RecordObject &record_obj) {
+    if (auto sem_state = Get<vvl::Semaphore>(semaphore); sem_state && (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE)) {
+        timeline_signals_.erase(semaphore);
+    }
+    StateTracker::PreCallRecordDestroySemaphore(device, semaphore, pAllocator, record_obj);
 }
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -2877,8 +2952,11 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
     QueueId waited_queue = queue_state->GetQueueId();
     ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
 
-    // Eliminate waitable fences from the current queue.
+    // Eliminate host waitable objects from the current queue.
     vvl::EraseIf(waitable_fences_, [waited_queue](const auto &sf) { return sf.second.queue_id == waited_queue; });
+    for (auto &[semaphore, sync_points] : host_waitable_semaphores_) {
+        vvl::EraseIf(sync_points, [waited_queue](const auto &sync_point) { return sync_point.queue_id == waited_queue; });
+    }
 }
 
 void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
@@ -2889,14 +2967,15 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
         [](const QueueBatchContext::Ptr &batch) { batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex); });
 
     // As we we've waited for everything on device, any waits are mooted. (except for acquires)
-    vvl::EraseIf(waitable_fences_, [](SignaledFences::value_type &waitable) { return waitable.second.acquired.Invalid(); });
+    vvl::EraseIf(waitable_fences_, [](const auto &waitable) { return waitable.second.acquired.Invalid(); });
+    host_waitable_semaphores_.clear();
 }
 
 struct QueuePresentCmdState {
     std::shared_ptr<const QueueSyncState> queue;
-    SignaledSemaphoresUpdate signaled_semaphores_update;
+    SignalsUpdate signals_update;
     PresentedImages presented_images;
-    QueuePresentCmdState(const SyncValidator &sync_validator) : signaled_semaphores_update(sync_validator) {}
+    QueuePresentCmdState(const SyncValidator &sync_validator) : signals_update(sync_validator) {}
 };
 
 bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
@@ -2905,6 +2984,8 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!syncval_settings.submit_time_validation) return skip;
+
+    ClearPending();
 
     vvl::TlsGuard<QueuePresentCmdState> cmd_state(&skip, *this);
     cmd_state->queue = GetQueueSyncStateShared(queue);
@@ -2919,8 +3000,14 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     uint32_t present_tag_count = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
 
     const auto wait_semaphores = vvl::make_span(pPresentInfo->pWaitSemaphores, pPresentInfo->waitSemaphoreCount);
-    const auto resolved_batches = batch->ResolvePresentDependencies(wait_semaphores, last_batch, cmd_state->presented_images,
-                                                                    cmd_state->signaled_semaphores_update);
+
+    auto resolved_batches = batch->ResolvePresentWaits(wait_semaphores, cmd_state->presented_images, cmd_state->signals_update);
+
+    // Import the previous batch information
+    if (last_batch && !vvl::Contains(resolved_batches, last_batch)) {
+        batch->ResolveLastBatch(last_batch);
+        resolved_batches.emplace_back(std::move(last_batch));
+    }
 
     // The purpose of keeping return value is to ensure async batches are alive during validation.
     // Validation accesses raw pointer to async contexts stored in AsyncReference.
@@ -2979,11 +3066,11 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
 
     // Update the state with the data from the validate phase
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
-    UpdateSignaledSemaphores(cmd_state->signaled_semaphores_update, queue_state->PendingLastBatch());
+    ApplySignalsUpdate(cmd_state->signals_update, queue_state->PendingLastBatch());
     for (auto &presented : cmd_state->presented_images) {
         presented.ExportToSwapchain(*this);
     }
-    queue_state->UpdateLastBatch();
+    queue_state->ApplyPendingLastBatch();
 }
 
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
@@ -3036,11 +3123,14 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
         if (sem_state) {
             // This will ignore any duplicated signal (emplace does not update existing entry),
             // and the core validation reports and error in this case.
-            signaled_semaphores_.emplace(sem_state->VkHandle(), SignalInfo(presented, acquire_tag));
+            binary_signals_.emplace(sem_state->VkHandle(), SignalInfo(sem_state, presented, acquire_tag));
         }
     }
     if (fence != VK_NULL_HANDLE) {
-        UpdateFenceWaitInfo(fence, presented, acquire_tag);
+        FenceHostSyncPoint sync_point;
+        sync_point.tag = acquire_tag;
+        sync_point.acquired = AcquiredImage(presented, acquire_tag);
+        UpdateFenceHostSyncPoint(fence, std::move(sync_point));
     }
 }
 
@@ -3050,6 +3140,18 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
     return ValidateQueueSubmit(queue, submitCount, submit_info.submit_infos2.data(), fence, error_obj);
 }
 
+static std::vector<CommandBufferConstPtr> GetCommandBuffers(const ValidationStateTracker &state_tracker,
+                                                            const VkSubmitInfo2 &submit_info) {
+    // Collected command buffers have the same indexing as in the input VkSubmitInfo2 for reporting purposes.
+    // If Get query returns null, it is stored in the result array to keep original indexing.
+    std::vector<CommandBufferConstPtr> command_buffers;
+    command_buffers.reserve(submit_info.commandBufferInfoCount);
+    for (const auto &cb_info : vvl::make_span(submit_info.pCommandBufferInfos, submit_info.commandBufferInfoCount)) {
+        command_buffers.emplace_back(state_tracker.Get<syncval_state::CommandBuffer>(cb_info.commandBuffer));
+    }
+    return command_buffers;
+}
+
 bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                         const ErrorObject &error_obj) const {
     bool skip = false;
@@ -3057,50 +3159,190 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!syncval_settings.submit_time_validation) return skip;
 
+    ClearPending();
+
     vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, *this);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
-    SignaledSemaphoresUpdate &signals_update = cmd_state->signaled_semaphores_update;
+    auto &queue_sync_state = cmd_state->queue;
+    SignalsUpdate &signals_update = cmd_state->signals_update;
 
     // The submit id is a mutable automic which is not recoverable on a skip == true condition
-    uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
+    uint64_t submit_id = queue_sync_state->ReserveSubmitId();
 
     // Update label stack as we progress through batches and command buffers
-    auto current_label_stack = cmd_state->queue->GetQueueState()->cmdbuf_label_stack;
+    auto current_label_stack = queue_sync_state->GetQueueState()->cmdbuf_label_stack;
 
-    QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
-    QueueBatchContext::Ptr batch;
+    BatchContextConstPtr last_batch = queue_sync_state->LastBatch();
+    bool has_unresolved_batches = !queue_sync_state->UnresolvedBatches().empty();
+
+    BatchContextPtr new_last_batch;
+    std::vector<UnresolvedBatch> new_unresolved_batches;
+    bool new_timeline_signals = false;
+
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
-        batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue);
+        auto batch = std::make_shared<QueueBatchContext>(*this, *queue_sync_state);
 
         const auto wait_semaphores = vvl::make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount);
-        const auto resolved_batches = batch->ResolveSubmitDependencies(wait_semaphores, last_batch, signals_update);
+        std::vector<VkSemaphoreSubmitInfo> unresolved_waits;
+        auto resolved_batches = batch->ResolveSubmitWaits(wait_semaphores, unresolved_waits, signals_update);
+
+        // Process unresolved batch
+        if (has_unresolved_batches || !unresolved_waits.empty()) {
+            UnresolvedBatch unresolved_batch;
+            unresolved_batch.batch = std::move(batch);
+            unresolved_batch.submit_index = submit_id;
+            unresolved_batch.batch_index = batch_idx;
+            unresolved_batch.command_buffers = GetCommandBuffers(*this, submit);
+            unresolved_batch.unresolved_waits = std::move(unresolved_waits);
+            unresolved_batch.resolved_dependencies = std::move(resolved_batches);
+            if (submit.pSignalSemaphoreInfos && submit.signalSemaphoreInfoCount) {
+                const auto last_info = submit.pSignalSemaphoreInfos + submit.signalSemaphoreInfoCount;
+                unresolved_batch.signals.assign(submit.pSignalSemaphoreInfos, last_info);
+            }
+            unresolved_batch.label_stack = current_label_stack;
+            new_unresolved_batches.emplace_back(std::move(unresolved_batch));
+            has_unresolved_batches = true;
+            continue;
+        }
+        new_last_batch = batch;
+
+        // Import the previous batch information
+        if (last_batch && !vvl::Contains(resolved_batches, last_batch)) {
+            batch->ResolveLastBatch(last_batch);
+            resolved_batches.emplace_back(std::move(last_batch));
+        }
 
         // The purpose of keeping return value is to ensure async batches are alive during validation.
         // Validation accesses raw pointer to async contexts stored in AsyncReference.
         // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case.
         const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
 
-        skip |= batch->ValidateSubmit(submit, submit_id, batch_idx, current_label_stack, error_obj);
+        const auto command_buffers = GetCommandBuffers(*this, submit);
+        skip |= batch->ValidateSubmit(command_buffers, submit_id, batch_idx, current_label_stack, error_obj);
 
-        const auto signal_semaphores = vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount);
-        for (const auto &semaphore_info : signal_semaphores) {
-            signals_update.OnSignal(batch, semaphore_info);
-        }
+        const auto submit_signals = vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount);
+        new_timeline_signals |= signals_update.RegisterSignals(batch, submit_signals);
 
         // Unless the previous batch was referenced by a signal it will self destruct
         // in the record phase when the last batch is updated.
         last_batch = batch;
     }
-    // The most recently created batch will become the queue's "last batch" in the record phase
-    if (batch) {
-        cmd_state->queue->SetPendingLastBatch(std::move(batch));
+
+    // Schedule state update
+    if (new_last_batch) {
+        queue_sync_state->SetPendingLastBatch(std::move(new_last_batch));
+    }
+    if (!new_unresolved_batches.empty()) {
+        auto unresolved_batches = queue_sync_state->UnresolvedBatches();
+        vvl::Append(unresolved_batches, new_unresolved_batches);
+        queue_sync_state->SetPendingUnresolvedBatches(std::move(unresolved_batches));
+    }
+
+    // Check if timeline signals resolve existing wait-before-signal dependencies
+    if (new_timeline_signals) {
+        skip |= PropagateTimelineSignals(signals_update, error_obj);
     }
 
     // Note that if we skip, guard cleans up for us, but cannot release the reserved tag range
     return skip;
+}
+
+bool SyncValidator::PropagateTimelineSignals(SignalsUpdate &signals_update, const ErrorObject &error_obj) const {
+    bool skip = false;
+    // Initialize per-queue unresolved batches state.
+    std::vector<UnresolvedQueue> queues;
+    for (const auto &queue_state : queue_sync_states_) {
+        if (!queue_state->PendingUnresolvedBatches().empty()) {
+            // Pending request defines the final unresolved list (current + new unresolved batches)
+            queues.emplace_back(UnresolvedQueue{queue_state, queue_state->PendingUnresolvedBatches()});
+        } else if (!queue_state->UnresolvedBatches().empty()) {
+            queues.emplace_back(UnresolvedQueue{queue_state, queue_state->UnresolvedBatches()});
+        }
+    }
+
+    // Each iteration uses registered timeline signals to resolve existing unresolved batches.
+    // Each resolved batch can generate new timeline signals which are used on the next iteration.
+    // This finishes when all unresolved batches are resolved or when iteration does not generate new timeline signals.
+    while (ProcessUnresolvedBatches(queues, signals_update, skip, error_obj)) {
+        ;
+    }
+
+    // Schedule unresolved state update
+    for (UnresolvedQueue &queue : queues) {
+        if (queue.update_unresolved) {
+            queue.queue_state->SetPendingUnresolvedBatches(std::move(queue.unresolved_batches));
+        }
+    }
+    return skip;
+}
+
+bool SyncValidator::ProcessUnresolvedBatches(std::vector<UnresolvedQueue> &queues, SignalsUpdate &signals_update, bool &skip,
+                                             const ErrorObject &error_obj) const {
+    bool has_new_timeline_signals = false;
+    for (auto &queue : queues) {
+        if (queue.unresolved_batches.empty()) {
+            continue;  // all batches for this queue were resolved
+        }
+        // Resolve waits that have matching signal
+        for (UnresolvedBatch &unresolved_batch : queue.unresolved_batches) {
+            auto it = unresolved_batch.unresolved_waits.begin();
+            while (it != unresolved_batch.unresolved_waits.end()) {
+                const VkSemaphoreSubmitInfo &wait_info = *it;
+                auto resolving_signal = signals_update.OnTimelineWait(wait_info.semaphore, wait_info.value);
+                if (!resolving_signal.has_value()) {
+                    ++it;
+                    continue;  // resolving signal not found, the wait stays unresolved
+                }
+                if (resolving_signal->batch) {  // null for host signals
+                    unresolved_batch.batch->ResolveSubmitSemaphoreWait(*resolving_signal, wait_info.stageMask);
+                    unresolved_batch.batch->ImportTags(*resolving_signal->batch);
+                    unresolved_batch.resolved_dependencies.emplace_back(resolving_signal->batch);
+                }
+                it = unresolved_batch.unresolved_waits.erase(it);
+            }
+        }
+
+        QueueBatchContext::Ptr queue_last_batch =
+            queue.queue_state->PendingLastBatch() ? queue.queue_state->PendingLastBatch() : queue.queue_state->LastBatch();
+
+        // Process batches that do not have unresolved waits anymore.
+        // Stop when find a batch with unresolved waits or when all the batches are processed.
+        bool has_new_last_batch = false;
+        while (!queue.unresolved_batches.empty() && queue.unresolved_batches.front().unresolved_waits.empty()) {
+            UnresolvedBatch &ready_batch = queue.unresolved_batches.front();
+
+            // Import the previous batch information
+            if (queue_last_batch && !vvl::Contains(ready_batch.resolved_dependencies, queue_last_batch)) {
+                ready_batch.batch->ResolveLastBatch(queue_last_batch);
+                ready_batch.resolved_dependencies.emplace_back(std::move(queue_last_batch));
+            }
+            queue_last_batch = ready_batch.batch;
+            has_new_last_batch = true;
+
+            const auto async_batches = ready_batch.batch->RegisterAsyncContexts(ready_batch.resolved_dependencies);
+
+            skip |= ready_batch.batch->ValidateSubmit(ready_batch.command_buffers, ready_batch.submit_index,
+                                                      ready_batch.batch_index, ready_batch.label_stack, error_obj);
+
+            // Process signals. New timeline signals can liberate more unresolved batches on the next iteration
+            const auto submit_signals = vvl::make_span(ready_batch.signals.data(), ready_batch.signals.size());
+            has_new_timeline_signals |= signals_update.RegisterSignals(ready_batch.batch, submit_signals);
+
+            // Remove processed batch from the (local) unresolved list
+            queue.unresolved_batches.erase(queue.unresolved_batches.begin());
+            // Because unresolved list was changed, propagate the change into the queue's (global) unresolved state
+            queue.update_unresolved = true;
+        }
+
+        // Schedule last batch update
+        if (has_new_last_batch) {
+            queue.queue_state->SetPendingLastBatch(std::move(queue_last_batch));
+        }
+    }
+    return has_new_timeline_signals;
 }
 
 void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
@@ -3123,11 +3365,19 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, const Record
 
     // Don't need to look up the queue state again, but we need a non-const version
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
-    UpdateSignaledSemaphores(cmd_state->signaled_semaphores_update, queue_state->PendingLastBatch());
-    queue_state->UpdateLastBatch();
+    ApplySignalsUpdate(cmd_state->signals_update, queue_state->PendingLastBatch());
 
-    ResourceUsageRange fence_tag_range = ReserveGlobalTagRange(1U);
-    UpdateFenceWaitInfo(fence, queue_state->GetQueueId(), fence_tag_range.begin);
+    // Apply the pending state from the validation phase. Check all queues because timeline signals
+    // on the current queue can resolve wait-before-signal batches on other queues.
+    for (const auto &qs : queue_sync_states_) {
+        qs->ApplyPendingLastBatch();
+        qs->ApplyPendingUnresolvedBatches();
+    }
+
+    FenceHostSyncPoint sync_point;
+    sync_point.queue_id = queue_state->GetQueueId();
+    sync_point.tag = ReserveGlobalTagRange(1).begin;
+    UpdateFenceHostSyncPoint(fence, std::move(sync_point));
 }
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
@@ -3169,6 +3419,99 @@ void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceC
             WaitForFence(pFences[i]);
         }
     }
+}
+
+bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
+                                                   const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!syncval_settings.submit_time_validation) {
+        return skip;
+    }
+    ClearPending();
+    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, *this);
+    SignalsUpdate &signals_update = cmd_state->signals_update;
+
+    auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
+    if (!semaphore_state) {
+        return skip;
+    }
+
+    std::vector<SignalInfo> &signals = signals_update.timeline_signals[pSignalInfo->semaphore];
+
+    // Reject invalid signal
+    if (!signals.empty() && pSignalInfo->value <= signals.back().timeline_value) {
+        return skip;  // [core validation check]: strictly increasing signal values
+    }
+
+    signals.emplace_back(SignalInfo(semaphore_state, pSignalInfo->value));
+    skip |= PropagateTimelineSignals(signals_update, error_obj);
+    return skip;
+}
+
+bool SyncValidator::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
+                                                      const ErrorObject &error_obj) const {
+    return PreCallValidateSignalSemaphore(device, pSignalInfo, error_obj);
+}
+
+void SyncValidator::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
+                                                  const RecordObject &record_obj) {
+    StateTracker::PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
+
+    // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
+    // static payload
+    vvl::TlsGuard<QueueSubmitCmdState> cmd_state;
+
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    ApplySignalsUpdate(cmd_state->signals_update, nullptr);
+    for (const auto &qs : queue_sync_states_) {
+        qs->ApplyPendingLastBatch();
+        qs->ApplyPendingUnresolvedBatches();
+    }
+}
+
+void SyncValidator::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
+                                                     const RecordObject &record_obj) {
+    PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
+}
+
+void SyncValidator::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
+                                                 const RecordObject &record_obj) {
+    StateTracker::PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
+    const bool wait_all = pWaitInfo->semaphoreCount == 1 || (pWaitInfo->flags & VK_SEMAPHORE_WAIT_ANY_BIT) == 0;
+    if (record_obj.result == VK_SUCCESS && wait_all) {
+        for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
+            WaitForSemaphore(pWaitInfo->pSemaphores[i], pWaitInfo->pValues[i]);
+        }
+    }
+}
+
+void SyncValidator::PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
+                                                    const RecordObject &record_obj) {
+    PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
+}
+
+void SyncValidator::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                           const RecordObject &record_obj) {
+    StateTracker::PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
+    if (record_obj.result == VK_SUCCESS) {
+        WaitForSemaphore(semaphore, *pValue);
+    }
+}
+
+void SyncValidator::PostCallRecordGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                              const RecordObject &record_obj) {
+    PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
 }
 
 void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,

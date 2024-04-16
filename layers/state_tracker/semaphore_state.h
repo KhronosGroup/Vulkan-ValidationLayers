@@ -73,6 +73,9 @@ class Semaphore : public RefcountedStateObject {
     Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
         : Semaphore(dev, handle, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
 
+    std::shared_ptr<const Semaphore> shared_from_this() const { return SharedFromThisImpl(this); }
+    std::shared_ptr<Semaphore> shared_from_this() { return SharedFromThisImpl(this); }
+
     VkSemaphore VkHandle() const { return handle_.Cast<VkSemaphore>(); }
     enum Scope Scope() const;
 
@@ -117,6 +120,7 @@ class Semaphore : public RefcountedStateObject {
     const VkSemaphoreType type;
     const VkSemaphoreCreateFlags flags;
     const VkExternalSemaphoreHandleTypeFlags export_handle_types;
+    const uint64_t initial_value;  // for timelines
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     static bool GetMetalExport(const VkSemaphoreCreateInfo *info);
