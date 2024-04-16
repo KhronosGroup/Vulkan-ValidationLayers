@@ -6352,10 +6352,9 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    const std::optional<uint32_t> transfer_family =
-        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
+    const std::optional<uint32_t> transfer_family = m_device->TransferQueueFamily();
     if (!transfer_family) {
-        GTEST_SKIP() << "Transfer-only queue family is not present";
+        GTEST_SKIP() << "Transfer queue family is not present";
     }
     vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
 
@@ -6419,10 +6418,9 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    const std::optional<uint32_t> transfer_family =
-        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
+    const std::optional<uint32_t> transfer_family = m_device->TransferQueueFamily();
     if (!transfer_family) {
-        GTEST_SKIP() << "Transfer-only queue family is not present";
+        GTEST_SKIP() << "Transfer queue family is not present";
     }
     vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
 
@@ -6517,17 +6515,16 @@ TEST_F(NegativeSyncVal, QSWriteRacingRead) {
     vkt::Queue* gfx_queue = m_device->queue_family_queues(gfx_family.value())[0].get();
     vkt::CommandPool gfx_pool(*m_device, gfx_queue->get_family_index());
 
-    const std::optional<uint32_t> compute_family = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> compute_family = m_device->ComputeQueueFamily();
     if (!compute_family) {
         GTEST_SKIP() << "Compute-only queue family is not present";
     }
     vkt::Queue* compute_queue = m_device->queue_family_queues(compute_family.value())[0].get();
     vkt::CommandPool compute_pool(*m_device, compute_queue->get_family_index());
 
-    const std::optional<uint32_t> transfer_family =
-        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> transfer_family = m_device->TransferQueueFamily();
     if (!transfer_family) {
-        GTEST_SKIP() << "Transfer-only queue family is not present";
+        GTEST_SKIP() << "Transfer queue family is not present";
     }
     vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
     vkt::CommandPool transfer_pool(*m_device, transfer_queue->get_family_index());

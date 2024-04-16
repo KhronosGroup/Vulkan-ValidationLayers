@@ -2668,9 +2668,9 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (!no_gfx_qfi) {
-        GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    if (!compute_qfi) {
+        GTEST_SKIP() << "No compute queue family, skipping bindpoint and queue tests.";
     }
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2679,7 +2679,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
+    vkt::CommandPool command_pool(*m_device, compute_qfi.value());
     vkt::CommandBuffer command_buffer(*m_device, &command_pool);
     command_buffer.begin();
 
@@ -2695,9 +2695,9 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     AddRequiredFeature(vkt::Feature::maintenance6);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (!no_gfx_qfi) {
-        GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
+    const std::optional<uint32_t> compute_qfi = m_device->ComputeQueueFamily();
+    if (!compute_qfi) {
+        GTEST_SKIP() << "No compute queue family, skipping bindpoint and queue tests.";
     }
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2706,7 +2706,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
+    vkt::CommandPool command_pool(*m_device, compute_qfi.value());
     vkt::CommandBuffer command_buffer(*m_device, &command_pool);
     command_buffer.begin();
 

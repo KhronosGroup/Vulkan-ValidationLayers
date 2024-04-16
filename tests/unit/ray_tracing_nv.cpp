@@ -79,8 +79,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     uint32_t ray_tracing_queue_family_index = 0;
 
     // If supported, run on the compute only queue.
-    const std::optional<uint32_t> compute_only_queue_family_index =
-        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> compute_only_queue_family_index = m_device->ComputeQueueFamily();
     if (compute_only_queue_family_index) {
         const auto &compute_only_queues = m_device->queue_family_queues(compute_only_queue_family_index.value());
         if (!compute_only_queues.empty()) {

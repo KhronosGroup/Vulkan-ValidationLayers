@@ -1720,8 +1720,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
 
     const std::optional<uint32_t> graphics_queue_family_index =
         m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT);
-    const std::optional<uint32_t> compute_queue_family_index =
-        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeQueueFamily();
     if (!graphics_queue_family_index && !compute_queue_family_index) {
         GTEST_SKIP() << "required queue families not found";
     }
@@ -1795,8 +1794,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_properties);
 
-    const std::optional<uint32_t> compute_queue_family_index =
-        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeQueueFamily();
     if (!compute_queue_family_index) {
         GTEST_SKIP() << "required queue family not found, skipping test";
     }
