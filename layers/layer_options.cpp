@@ -321,6 +321,7 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
     }
 }
 
+#if !defined(BUILD_SELF_VVL)
 static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
                                  const DisableFlags feature_disable, const char *setting) {
     if (vkuHasLayerSetting(layer_setting_set, setting)) {
@@ -359,9 +360,16 @@ static const char *GetDefaultPrefix() {
     return "LAYER";
 #endif
 }
-
+#endif
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
+    // When compiling a build for self validation, ProcessConfigAndEnvSettings immediately returns,
+    // so that the layer always defaults to the standard validation options we want,
+    // and does not try to process option coming from the VVL we are debugging
+#if defined(BUILD_SELF_VVL)
+    (void)settings_data;
+    return;
+#else
     // If not cleared, garbage has been seen in some Android run effecting the error message
     custom_stype_info.clear();
 
@@ -552,4 +560,5 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     vkuDestroyLayerSettingSet(layer_setting_set, nullptr);
+#endif
 }
