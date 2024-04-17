@@ -1513,8 +1513,6 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
     exe_pipe_ci.layout = layout;
     exe_pipe_ci.renderPass = renderPass();
 
-    exe_pipe_ci.stageCount = 2;
-    exe_pipe_ci.pStages = stages;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }

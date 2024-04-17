@@ -78,8 +78,9 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
         // shader stages need to be recorded in pipeline order
 
         for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
-            if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS && !pipe_state.fragment_shader_state &&
-                !pipe_state.pre_raster_state) {
+            if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS &&
+                !pipe_state.OwnsSubState(pipe_state.fragment_shader_state) &&
+                !pipe_state.OwnsSubState(pipe_state.pre_raster_state)) {
                 break;  // pStages are ignored if not using one of these substates
             }
 
@@ -177,8 +178,8 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
 
 static uint32_t GetCreateInfoShaders(const Pipeline &pipe_state) {
     uint32_t result = 0;
-    if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS && !pipe_state.fragment_shader_state &&
-        !pipe_state.pre_raster_state) {
+    if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS && !pipe_state.OwnsSubState(pipe_state.fragment_shader_state) &&
+        !pipe_state.OwnsSubState(pipe_state.pre_raster_state)) {
         return result;  // pStages are ignored if not using one of these substates
     }
 

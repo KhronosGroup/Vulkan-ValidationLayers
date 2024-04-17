@@ -3207,7 +3207,7 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentOutput) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreStages) {
+TEST_F(NegativeGraphicsLibrary, VertexInputIgnoreStages) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     CreatePipelineHelper pipe(*this);
@@ -3219,7 +3219,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreStages) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(PositiveGraphicsLibrary, FragmentOutputIgnoreStages) {
+TEST_F(NegativeGraphicsLibrary, FragmentOutputIgnoreStages) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
@@ -3229,6 +3229,59 @@ TEST_F(PositiveGraphicsLibrary, FragmentOutputIgnoreStages) {
     pipe.gp_ci_.pStages = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
     pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, LinkedPipelineIgnoreStages) {
+    TEST_DESCRIPTION("Create an executable library by linking one or more graphics libraries");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    layout = pre_raster_lib.gp_ci_.layout;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.gp_ci_.layout = layout;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib.Handle(),
+        pre_raster_lib.Handle(),
+        frag_shader_lib.Handle(),
+        frag_out_lib.Handle(),
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    exe_pipe_ci.stageCount = 1;
+    exe_pipe_ci.pStages = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
 
