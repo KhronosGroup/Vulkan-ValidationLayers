@@ -2728,9 +2728,13 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
     RETURN_IF_SKIP(Init());
-    if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
-        GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
+
+    vkt::Queue *queue0 = m_default_queue;
+    vkt::Queue *queue1 = m_device->ComputeOnlyQueue();
+    if (!queue0 || !queue1) {
+        GTEST_SKIP() << "Can't find two different queue families";
     }
+    assert(queue0->get_family_index() != queue1->get_family_index());
 
     uint32_t counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), 0, &counterCount, nullptr, nullptr);
@@ -2747,7 +2751,7 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     }
 
     auto query_pool_performance_ci = vku::InitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
-    query_pool_performance_ci.queueFamilyIndex = 0;
+    query_pool_performance_ci.queueFamilyIndex = queue0->get_family_index();
     query_pool_performance_ci.counterIndexCount = enabledCounterCount;
     query_pool_performance_ci.pCounterIndices = enabledCounters.data();
 
@@ -2760,12 +2764,11 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
-    pool_create_info.queueFamilyIndex = 1;
+    pool_create_info.queueFamilyIndex = queue1->get_family_index();
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vkt::CommandPool command_pool(*m_device, pool_create_info);
 
-    vkt::Queue *queue = m_device->queue_family_queues(1)[0].get();
-    vkt::CommandBuffer cb(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    vkt::CommandBuffer cb(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue1);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
     acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();

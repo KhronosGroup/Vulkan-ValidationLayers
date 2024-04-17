@@ -6352,11 +6352,10 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    const std::optional<uint32_t> transfer_family = m_device->TransferOnlyQueueFamily();
-    if (!transfer_family) {
-        GTEST_SKIP() << "Transfer-only queue family is not present";
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
     }
-    vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
 
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -6391,7 +6390,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     vk::QueueSubmit2(*m_default_queue, 1, &submit0, VK_NULL_HANDLE);
 
     // Submit from Transfer queue: write image data (racing WRITE access)
-    vkt::CommandPool transfer_pool(*m_device, transfer_family.value());
+    vkt::CommandPool transfer_pool(*m_device, transfer_queue->get_family_index());
     vkt::CommandBuffer cb1(*m_device, &transfer_pool);
     cb1.begin();
     vk::CmdCopyBufferToImage(cb1, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
@@ -6418,11 +6417,10 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    const std::optional<uint32_t> transfer_family = m_device->TransferOnlyQueueFamily();
-    if (!transfer_family) {
-        GTEST_SKIP() << "Transfer-only queue family is not present";
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
     }
-    vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
 
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -6468,7 +6466,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     vk::QueueSubmit2(*m_default_queue, 1, &submit1, VK_NULL_HANDLE);
 
     // Submit on Transfer queue: write image data (racing WRITE access)
-    vkt::CommandPool transfer_pool(*m_device, transfer_family.value());
+    vkt::CommandPool transfer_pool(*m_device, transfer_queue->get_family_index());
     vkt::CommandBuffer cb2(*m_device, &transfer_pool);
     cb2.begin();
     vk::CmdCopyBufferToImage(cb2, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
@@ -6508,25 +6506,19 @@ TEST_F(NegativeSyncVal, QSWriteRacingRead) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    const std::optional<uint32_t> gfx_family = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
-    if (!gfx_family) {
-        GTEST_SKIP() << "Graphics family is not present";
-    }
-    vkt::Queue* gfx_queue = m_device->queue_family_queues(gfx_family.value())[0].get();
+    vkt::Queue* gfx_queue = m_default_queue;
     vkt::CommandPool gfx_pool(*m_device, gfx_queue->get_family_index());
 
-    const std::optional<uint32_t> compute_family = m_device->ComputeOnlyQueueFamily();
-    if (!compute_family) {
-        GTEST_SKIP() << "Compute-only queue family is not present";
+    vkt::Queue* compute_queue = m_device->ComputeOnlyQueue();
+    if (!compute_queue) {
+        GTEST_SKIP() << "Compute-only queue is not present";
     }
-    vkt::Queue* compute_queue = m_device->queue_family_queues(compute_family.value())[0].get();
     vkt::CommandPool compute_pool(*m_device, compute_queue->get_family_index());
 
-    const std::optional<uint32_t> transfer_family = m_device->TransferOnlyQueueFamily();
-    if (!transfer_family) {
-        GTEST_SKIP() << "Transfer-only queue family is not present";
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
     }
-    vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
     vkt::CommandPool transfer_pool(*m_device, transfer_queue->get_family_index());
 
     constexpr VkDeviceSize size = 1024;

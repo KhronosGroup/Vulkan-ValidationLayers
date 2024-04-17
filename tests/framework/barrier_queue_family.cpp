@@ -35,7 +35,7 @@ BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<ui
     queue_families.reserve(queue_family_indices.size());
     default_index = queue_family_indices[0];
     for (auto qfi : queue_family_indices) {
-        VkQueue queue = device_obj->queue_family_queues(qfi)[0]->handle();
+        VkQueue queue = device_obj->QueuesFromFamily(qfi)[0]->handle();
         queue_families.emplace(std::make_pair(qfi, QueueFamilyObjs()));
         queue_families[qfi].Init(device_obj, qfi, queue, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     }
