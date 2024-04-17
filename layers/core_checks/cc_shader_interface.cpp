@@ -565,9 +565,9 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 const LogObjectList objlist(producer.handle(), consumer.handle());
                 skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-08743", objlist, create_info_loc,
                                  "(SPIR-V Interface) %s declared input at Location %" PRIu32 " Component %" PRIu32
-                                 " but it is not an Output declared in %s",
+                                 " %sbut it is not an Output declared in %s",
                                  string_VkShaderStageFlagBits(consumer_stage), location, component,
-                                 string_VkShaderStageFlagBits(producer_stage));
+                                 input_var->is_patch ? "(Tessellation Patch) " : "", string_VkShaderStageFlagBits(producer_stage));
                 break;  // Only need to report for the first component found
             }
         }
