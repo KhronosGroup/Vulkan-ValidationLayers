@@ -1355,11 +1355,10 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    const std::optional<uint32_t> transfer_family = m_device->TransferOnlyQueueFamily();
-    if (!transfer_family) {
-        GTEST_SKIP() << "Transfer-only queue family is not present";
+    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
     }
-    vkt::Queue *transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
 
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);

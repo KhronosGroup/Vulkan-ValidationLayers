@@ -312,7 +312,7 @@ void Device::init_queues(const VkDeviceCreateInfo &info) {
     ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[TRANSFER].empty() || !queues_[SPARSE].empty());
 }
 
-const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_family) const {
+const Device::QueueFamilyQueues &Device::QueuesFromFamily(uint32_t queue_family) const {
     assert(queue_family < queue_families_.size());
     return queue_families_[queue_family];
 }
@@ -330,7 +330,7 @@ std::optional<uint32_t> Device::QueueFamily(VkQueueFlags with, VkQueueFlags with
     return {};
 }
 
-std::optional<uint32_t> Device::QueueFamilyWithoutCapabilities(VkQueueFlags without) {
+std::optional<uint32_t> Device::QueueFamilyWithoutCapabilities(VkQueueFlags without) const {
     for (uint32_t i = 0; i < phy_.queue_properties_.size(); i++) {
         if (phy_.queue_properties_[i].queueCount > 0) {
             const auto flags = phy_.queue_properties_[i].queueFlags;
@@ -342,6 +342,29 @@ std::optional<uint32_t> Device::QueueFamilyWithoutCapabilities(VkQueueFlags with
     return {};
 }
 
+Queue *Device::QueueWithoutCapabilities(VkQueueFlags without) const {
+    auto family_index = QueueFamilyWithoutCapabilities(without);
+    return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
+}
+
+std::optional<uint32_t> Device::ComputeOnlyQueueFamily() const {
+    return QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+}
+
+Queue *Device::ComputeOnlyQueue() const {
+    auto family_index = ComputeOnlyQueueFamily();
+    return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
+}
+
+std::optional<uint32_t> Device::TransferOnlyQueueFamily() const {
+    return QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+}
+
+Queue *Device::TransferOnlyQueue() const {
+    auto family_index = TransferOnlyQueueFamily();
+    return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
+}
+
 std::optional<uint32_t> Device::NonGraphicsQueueFamily() const {
     if (auto compute_qfi = ComputeOnlyQueueFamily(); compute_qfi.has_value()) {
         return compute_qfi;
@@ -349,12 +372,9 @@ std::optional<uint32_t> Device::NonGraphicsQueueFamily() const {
     return TransferOnlyQueueFamily();
 }
 
-std::optional<uint32_t> Device::ComputeOnlyQueueFamily() const {
-    return QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-}
-
-std::optional<uint32_t> Device::TransferOnlyQueueFamily() const {
-    return QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+Queue *Device::NonGraphicsQueue() const {
+    auto family_index = NonGraphicsQueueFamily();
+    return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
 }
 
 bool Device::IsEnabledExtension(const char *extension) const {

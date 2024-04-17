@@ -225,24 +225,27 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Queue *> &QueuesWithTransferCapability() const { return queues_[TRANSFER]; }
     const std::vector<Queue *> &QueuesWithSparseCapability() const { return queues_[SPARSE]; }
 
-    typedef std::vector<std::unique_ptr<Queue>> QueueFamilyQueues;
-    typedef std::vector<QueueFamilyQueues> QueueFamilies;
-    const QueueFamilyQueues &queue_family_queues(uint32_t queue_family) const;
+    using QueueFamilyQueues = std::vector<std::unique_ptr<Queue>>;
+    const QueueFamilyQueues &QueuesFromFamily(uint32_t queue_family) const;
 
     // Queue family that has "with" capabilities and optionally without "without" capabilities.
     std::optional<uint32_t> QueueFamily(VkQueueFlags with, VkQueueFlags without = 0) const;
 
     // Queue family that does not have "without" capabilities
-    std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags without);
+    std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags without) const;
+    Queue *QueueWithoutCapabilities(VkQueueFlags without) const;
 
     // Dedicated compute queue family: has compute but no graphics
     std::optional<uint32_t> ComputeOnlyQueueFamily() const;
+    Queue *ComputeOnlyQueue() const;
 
     // Dedicated transfer queue family: has tranfer but no graphics/compute
     std::optional<uint32_t> TransferOnlyQueueFamily() const;
+    Queue *TransferOnlyQueue() const;
 
     // Compute or transfer
     std::optional<uint32_t> NonGraphicsQueueFamily() const;
+    Queue *NonGraphicsQueue() const;
 
     uint32_t graphics_queue_node_index_;
 
@@ -303,7 +306,7 @@ class Device : public internal::Handle<VkDevice> {
 
     std::vector<const char *> enabled_extensions_;
 
-    QueueFamilies queue_families_;
+    std::vector<QueueFamilyQueues> queue_families_;
     std::vector<Queue *> queues_[QUEUE_CAPABILITY_COUNT];
 };
 

@@ -20,13 +20,12 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (!no_gfx) {
-        GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
+    vkt::Queue *no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (!no_gfx_queue) {
+        GTEST_SKIP() << "Required queue not present (non-graphics non-compute capable required)";
     }
-    vkt::Queue *no_gfx_queue = m_device->queue_family_queues(no_gfx.value())[0].get();
 
-    vkt::CommandPool no_gfx_pool(*m_device, no_gfx.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
@@ -39,12 +38,12 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
                              &buffer_barrier, nullptr);
 
     // Transfer it to non-gfx
-    buffer_barrier.dstQueueFamilyIndex = no_gfx.value();
+    buffer_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
     ValidOwnershipTransfer(m_errorMonitor, m_commandBuffer, &no_gfx_cb, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                            VK_PIPELINE_STAGE_TRANSFER_BIT, &buffer_barrier, nullptr);
 
     // Transfer it to gfx
-    buffer_barrier.srcQueueFamilyIndex = no_gfx.value();
+    buffer_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
     ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                            VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, &buffer_barrier, nullptr);
