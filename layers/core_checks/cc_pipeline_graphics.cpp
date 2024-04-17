@@ -112,7 +112,11 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
         }
     }
 
-    skip |= ValidateShaderModuleId(pipeline, create_info_loc);
+    // pStages are ignored if not using one of these sub states
+    if (pipeline.OwnsSubState(pipeline.fragment_shader_state) || pipeline.OwnsSubState(pipeline.pre_raster_state)) {
+        skip |= ValidateShaderModuleId(pipeline, create_info_loc);
+    }
+
     skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, create_info_loc.dot(Field::flags),
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
     skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, create_info_loc.dot(Field::flags));
@@ -555,7 +559,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                          string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
     }
 
-    if (!pipeline.fragment_shader_state && !pipeline.pre_raster_state && pipeline.shader_stages_ci.size() > 0) {
+    if (!pipeline.OwnsSubState(pipeline.fragment_shader_state) && !pipeline.OwnsSubState(pipeline.pre_raster_state) &&
+        pipeline.shader_stages_ci.size() > 0) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587", device, create_info_loc.dot(Field::stageCount),
                          "is %zu, but the pipeline does not have a pre-rasterization or fragment shader state.",
                          pipeline.shader_stages_ci.size());

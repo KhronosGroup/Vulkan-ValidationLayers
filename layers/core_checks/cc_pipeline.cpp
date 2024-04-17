@@ -653,10 +653,6 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
 bool CoreChecks::ValidateShaderModuleId(const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
 
-    if (!pipeline.fragment_shader_state && !pipeline.pre_raster_state && pipeline.IsGraphicsLibrary()) {
-        return skip;  // pStages are ignored if not using one of these substates
-    }
-
     for (const auto &stage_ci : pipeline.shader_stages_ci) {
         const auto module_identifier = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
         const auto module_create_info = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
