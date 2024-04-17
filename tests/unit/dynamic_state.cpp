@@ -4583,7 +4583,6 @@ TEST_F(NegativeDynamicState, MissingCmdSetVertexInput) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04912");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04914");
     vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
