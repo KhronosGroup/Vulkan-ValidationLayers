@@ -80,7 +80,6 @@ struct DrawDispatchVuid {
     const char* logic_op_04878 = kVUIDUndefined;
     const char* primitive_restart_enable_04879 = kVUIDUndefined;
     const char* primitive_restart_list_09637 = kVUIDUndefined;
-    const char* vertex_input_04912 = kVUIDUndefined;
     const char* vertex_input_binding_stride_04913 = kVUIDUndefined;
     const char* vertex_input_04914 = kVUIDUndefined;
     const char* vertex_input_08734 = kVUIDUndefined;
