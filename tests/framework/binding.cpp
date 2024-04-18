@@ -51,29 +51,21 @@ namespace vkt {
 
 VkPhysicalDeviceProperties PhysicalDevice::properties() const {
     VkPhysicalDeviceProperties info;
-
     vk::GetPhysicalDeviceProperties(handle(), &info);
-
     return info;
 }
 
 std::vector<VkQueueFamilyProperties> PhysicalDevice::queue_properties() const {
-    std::vector<VkQueueFamilyProperties> info;
-    uint32_t count;
-
-    // Call once with NULL data to receive count
-    vk::GetPhysicalDeviceQueueFamilyProperties(handle(), &count, NULL);
-    info.resize(count);
+    uint32_t count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(handle(), &count, nullptr);
+    std::vector<VkQueueFamilyProperties> info(count);
     vk::GetPhysicalDeviceQueueFamilyProperties(handle(), &count, info.data());
-
     return info;
 }
 
 VkPhysicalDeviceMemoryProperties PhysicalDevice::memory_properties() const {
     VkPhysicalDeviceMemoryProperties info;
-
     vk::GetPhysicalDeviceMemoryProperties(handle(), &info);
-
     return info;
 }
 

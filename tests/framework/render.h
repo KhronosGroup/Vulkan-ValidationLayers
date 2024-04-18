@@ -73,7 +73,10 @@ class VkRenderFramework : public VkTestFramework {
     VkPhysicalDevice gpu() const;
     VkRenderPass renderPass() const { return m_renderPass; }
     VkFramebuffer framebuffer() const { return m_framebuffer->handle(); }
-    VkQueue DefaultQueue() const { return m_default_queue->handle(); }
+
+    vkt::Queue *DefaultQueue() const { return m_default_queue; }
+    vkt::Queue *SecondQueue() const { return m_second_queue; }
+
     ErrorMonitor &Monitor();
     const VkPhysicalDeviceProperties &physDevProps() const;
 
@@ -214,7 +217,12 @@ class VkRenderFramework : public VkTestFramework {
     VkClearColorValue m_clear_color;
     vkt::Image *m_depthStencil;
     // first graphics queue, used must often, don't overwrite, use Device class
-    vkt::Queue *m_default_queue;
+    vkt::Queue *m_default_queue = nullptr;
+
+    // A different queue than a default one. The queue with the most capabilities is selected (graphics > compute > transfer).
+    // It is null if implementation provides the only queue. Capabilities should be checked if necessary (m_second_queue_caps).
+    vkt::Queue *m_second_queue = nullptr;
+    VkQueueFlags m_second_queue_caps = 0;
 
     // Requested extensions to enable at device creation time
     std::vector<const char *> m_required_extensions;
