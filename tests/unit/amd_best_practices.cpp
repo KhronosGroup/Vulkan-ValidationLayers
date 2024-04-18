@@ -461,7 +461,8 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     vkt::Image image1D_1(*m_device, img_info, vkt::set_layout);
 
     img_info.tiling = VK_IMAGE_TILING_LINEAR;
-    img_info.usage = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    img_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    img_info.initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     vkt::Image image_1D_2(*m_device, img_info, vkt::set_layout);
     if (!image_1D_2.initialized()) {
         GTEST_SKIP() << "Could not initilize Linear image, skipping image to image copy test";
