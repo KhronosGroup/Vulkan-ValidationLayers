@@ -677,6 +677,30 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     m_default_queue = m_device->QueuesWithGraphicsCapability()[0];
 
+    m_second_queue = [this]() -> vkt::Queue * {
+        if (m_device->QueuesWithGraphicsCapability().size() > 1) {
+            return m_device->QueuesWithGraphicsCapability()[1];  // skip default queue
+        }
+        const auto &with_compute_caps = m_device->QueuesWithComputeCapability();
+        if (with_compute_caps.size() > 0 && with_compute_caps[0] != m_default_queue) {
+            return with_compute_caps[0];
+        }
+        if (with_compute_caps.size() > 1) {
+            return with_compute_caps[1];
+        }
+        const auto &with_transfer_caps = m_device->QueuesWithTransferCapability();
+        if (with_transfer_caps.size() > 0 && with_transfer_caps[0] != m_default_queue) {
+            return with_transfer_caps[0];
+        }
+        if (with_transfer_caps.size() > 1) {
+            return with_transfer_caps[1];
+        }
+        return nullptr;
+    }();
+    if (m_second_queue) {
+        m_second_queue_caps = m_device->phy().queue_properties_[m_second_queue->get_family_index()].queueFlags;
+    }
+
     m_depthStencil = new vkt::Image();
 
     m_render_target_fmt = GetRenderTargetFormat();

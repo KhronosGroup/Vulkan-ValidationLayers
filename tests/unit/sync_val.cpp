@@ -384,7 +384,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         end_render(command_buffer);
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        vk::QueueWaitIdle(test.DefaultQueue());
+        test.DefaultQueue()->wait();
     }
 
     // RAW hazard: clear render target then copy from it.
@@ -416,7 +416,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        vk::QueueWaitIdle(test.DefaultQueue());
+        test.DefaultQueue()->wait();
     }
 
     // RAW hazard: two regions with a single pixel overlap, otherwise the same as the previous scenario.
@@ -449,7 +449,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        vk::QueueWaitIdle(test.DefaultQueue());
+        test.DefaultQueue()->wait();
     }
 
     // Nudge regions by one pixel compared to the previous test, now they touch but do not overlap. There should be no errors.
@@ -479,7 +479,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         end_render(command_buffer);
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        vk::QueueWaitIdle(test.DefaultQueue());
+        test.DefaultQueue()->wait();
     }
 }
 
