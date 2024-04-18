@@ -18,6 +18,7 @@
 #include "descriptor_validator.h"
 #include "generated/spirv_grammar_helper.h"
 #include "utils/shader_utils.h"
+#include "error_message/error_strings.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
@@ -865,6 +866,32 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                     "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32 ") Image View %s, type %s, is used by %s.",
                     FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
                     string_VkImageViewType(image_view_ci.viewType), FormatHandle(sampler_state->Handle()).c_str());
+            }
+
+            if (ResolveRemainingLevels(image_view_state->image_state->create_info, image_view_ci.subresourceRange) != 1) {
+                auto set = descriptor_set.Handle();
+                const LogObjectList objlist(set, image_view, sampler_state->Handle());
+                return dev_state.LogError(
+                    vuids.unnormalized_coordinates_09635, objlist, loc,
+                    "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                    ") Image View %s was created with levelCount of %s, but the sampler (%s) was created with "
+                    "unnormalizedCoordinates.",
+                    FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                    string_LevelCount(image_view_state->image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    FormatHandle(sampler_state->Handle()).c_str());
+            }
+
+            if (ResolveRemainingLayers(image_view_state->image_state->create_info, image_view_ci.subresourceRange) != 1) {
+                auto set = descriptor_set.Handle();
+                const LogObjectList objlist(set, image_view, sampler_state->Handle());
+                return dev_state.LogError(
+                    vuids.unnormalized_coordinates_09635, objlist, loc,
+                    "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                    ") Image View %s was created with layerCount of %s, but the sampler (%s) was created with "
+                    "unnormalizedCoordinates.",
+                    FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                    string_LayerCount(image_view_state->image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    FormatHandle(sampler_state->Handle()).c_str());
             }
 
             // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*

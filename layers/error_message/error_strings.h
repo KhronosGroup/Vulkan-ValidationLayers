@@ -56,3 +56,27 @@
        << ", extent.height = " << rect.extent.height;
     return ss.str();
 }
+
+[[maybe_unused]] static std::string string_LevelCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+    std::stringstream ss;
+    if (range.levelCount == VK_REMAINING_MIP_LEVELS) {
+        const uint32_t level_count = ci.mipLevels - range.baseMipLevel;
+        ss << "VK_REMAINING_MIP_LEVELS [mipLevels (" << ci.mipLevels << ") - baseMipLevel (" << range.baseMipLevel
+           << ") = " << level_count << "]";
+    } else {
+        ss << range.levelCount;
+    }
+    return ss.str();
+}
+
+[[maybe_unused]] static std::string string_LayerCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+    std::stringstream ss;
+    if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        const uint32_t layer_count = ci.arrayLayers - range.baseArrayLayer;
+        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << ci.arrayLayers << ") - baseArrayLayer (" << range.baseArrayLayer
+           << ") = " << layer_count << "]";
+    } else {
+        ss << range.layerCount;
+    }
+    return ss.str();
+}
