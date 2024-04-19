@@ -1437,6 +1437,80 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeSyncObject, BufferBarrierWithHostStageSync1) {
+    TEST_DESCRIPTION("Buffer barrier includes VK_PIPELINE_STAGE_HOST_BIT as srcStageMask or dstStageMask");
+    RETURN_IF_SKIP(Init());
+
+    if (m_device->phy().queue_properties_.size() < 2) {
+        GTEST_SKIP() << "Two queue families are required";
+    }
+    vkt::Buffer buffer(*m_device, 32);
+
+    VkBufferMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcQueueFamilyIndex = 0;
+    barrier.dstQueueFamilyIndex = 1;  // dstQueueFamilyIndex != srcQueueFamilyIndex
+    barrier.buffer = buffer.handle();
+    barrier.size = VK_WHOLE_SIZE;
+
+    // HOST stage as source
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-09634");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           1, &barrier, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    // HOST stage as destination
+    barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_HOST_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-09634");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr,
+                           1, &barrier, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncObject, ImageBarrierWithHostStageSync1) {
+    TEST_DESCRIPTION("Image barrier includes VK_PIPELINE_STAGE_HOST_BIT as srcStageMask or dstStageMask");
+    RETURN_IF_SKIP(Init());
+
+    if (m_device->phy().queue_properties_.size() < 2) {
+        GTEST_SKIP() << "Two queue families are required";
+    }
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcQueueFamilyIndex = 0;
+    barrier.dstQueueFamilyIndex = 1;  // dstQueueFamilyIndex != srcQueueFamilyIndex
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.image = image.handle();
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    // HOST stage as source
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-09633");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    // HOST stage as destination
+    barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_HOST_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-09633");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 // TODO - Figure out if test or VU are bad
 TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families when memory extension is enabled ");
