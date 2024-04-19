@@ -729,24 +729,23 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
             return nullptr;
         }
 
-        std::array<VkDescriptorBufferInfo, 2> buffer_infos{};
-        buffer_infos[0].buffer = count_buffer;
-        buffer_infos[0].offset = 0;
-        buffer_infos[0].range = VK_WHOLE_SIZE;
-        buffer_infos[1].buffer = indirect_buffer;
-        buffer_infos[1].offset = 0;
-        buffer_infos[1].range = VK_WHOLE_SIZE;
-
-        std::array<VkWriteDescriptorSet, buffer_infos.size()> desc_writes{};
-        for (uint32_t i = 0; i < desc_writes.size(); i++) {
-            desc_writes[i] = vku::InitStructHelper();
-            desc_writes[i].dstBinding = i;
-            desc_writes[i].descriptorCount = 1;
-            desc_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            desc_writes[i].pBufferInfo = &buffer_infos[i];
-            desc_writes[i].dstSet = draw_resources->buffer_desc_set;
+        std::vector<VkDescriptorBufferInfo> buffer_infos;
+        buffer_infos.emplace_back(VkDescriptorBufferInfo{indirect_buffer, 0, VK_WHOLE_SIZE});
+        if (count_buffer) {
+            buffer_infos.emplace_back(VkDescriptorBufferInfo{count_buffer, 0, VK_WHOLE_SIZE});
         }
-        DispatchUpdateDescriptorSets(device, static_cast<uint32_t>(buffer_infos.size()), desc_writes.data(), 0, NULL);
+
+        std::vector<VkWriteDescriptorSet> desc_writes{};
+        for (size_t i = 0; i < buffer_infos.size(); ++i) {
+            VkWriteDescriptorSet &desc_write = desc_writes.emplace_back();
+            desc_write = vku::InitStructHelper();
+            desc_write.dstBinding = uint32_t(i);
+            desc_write.descriptorCount = 1;
+            desc_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            desc_write.pBufferInfo = &buffer_infos[i];
+            desc_write.dstSet = draw_resources->buffer_desc_set;
+        }
+        DispatchUpdateDescriptorSets(device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, NULL);
 
         // Insert a draw that can examine some device memory right before the draw we're validating (Pre Draw Validation)
         //
