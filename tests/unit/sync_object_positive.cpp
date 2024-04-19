@@ -1102,6 +1102,72 @@ TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
     vk::FreeCommandBuffers(device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
+TEST_F(PositiveSyncObject, WaitBeforeSignalOnDifferentQueuesSignalLargerThanWait) {
+    TEST_DESCRIPTION("Wait before signal on different queues, signal value is larger than the wait value");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    vkt::CommandPool second_pool(*m_device, m_second_queue->get_family_index());
+    vkt::CommandBuffer second_cb(*m_device, &second_pool);
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+
+    VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&semaphore_type_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+
+    // Wait for value 1 (or greater)
+    {
+        m_commandBuffer->begin();
+        vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_b, 1, &region);
+        m_commandBuffer->end();
+
+        VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+        cb_info.commandBuffer = *m_commandBuffer;
+        VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+        wait_info.semaphore = semaphore;
+        wait_info.value = 1;
+        wait_info.stageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        submit.waitSemaphoreInfoCount = 1;
+        submit.pWaitSemaphoreInfos = &wait_info;
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &cb_info;
+        vk::QueueSubmit2(*m_default_queue, 1, &submit, VK_NULL_HANDLE);
+    }
+    // Signal value 2
+    {
+        second_cb.begin();
+        vk::CmdCopyBuffer(second_cb, buffer_a, buffer_b, 1, &region);
+        second_cb.end();
+
+        VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+        cb_info.commandBuffer = second_cb;
+        VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+        signal_info.semaphore = semaphore;
+        signal_info.value = 2;
+        signal_info.stageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &cb_info;
+        submit.signalSemaphoreInfoCount = 1;
+        submit.pSignalSemaphoreInfos = &signal_info;
+        vk::QueueSubmit2(*m_second_queue, 1, &submit, VK_NULL_HANDLE);
+    }
+    m_device->wait();
+}
+
 TEST_F(PositiveSyncObject, LongSemaphoreChain) {
     RETURN_IF_SKIP(Init());
     std::vector<VkSemaphore> semaphores;
