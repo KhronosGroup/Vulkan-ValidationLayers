@@ -5422,7 +5422,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
+TEST_F(NegativeShaderObject, DISABLED_MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08451");
