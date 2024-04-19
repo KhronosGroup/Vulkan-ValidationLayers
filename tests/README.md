@@ -30,10 +30,11 @@ export VK_LOADER_LAYERS_DISABLE=VK_LAYER_OBS_HOOK
 
 ## Running Test on Linux
 
-**IMPORTANT** Make sure you have the correct `VK_LAYER_PATH` set on Linux
+`VK_LAYER_PATH` is set automatically by the tests. However if you wish to use a different validation layer than the one that was built, or if you wish to use multiple layers in the tests at the same time, you must set `VK_LAYER_PATH` to include each path to the desired layers, including the validation layer.
 
+To set `VK_LAYER_PATH` with multiple layers:
 ```bash
-export VK_LAYER_PATH=/path/to/Vulkan-ValidationLayers/build/layers/
+export VK_LAYER_PATH=/path/to/Vulkan-ValidationLayers/build/layers/:/path/to/other/layers/
 ```
 
 To run the tests

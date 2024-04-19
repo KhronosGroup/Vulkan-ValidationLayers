@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@
 #endif
 
 std::string GetEnvironment(const char *variable);
+
+// Not supported on Android
+void SetEnvironment(const char *variable, const char *value);
 
 enum SettingsFileSource {
     kVkConfig,
@@ -68,9 +71,8 @@ const char *getLayerOption(const char *option);
 const SettingsFileInfo *GetLayerSettingsFileInfo();
 
 FILE *getLayerLogOutput(const char *option, const char *layer_name);
-VkFlags GetLayerOptionFlags(const std::string &option,
-                                            vvl::unordered_map<std::string, VkFlags> const &enum_data,
-                                            uint32_t option_default);
+VkFlags GetLayerOptionFlags(const std::string &option, vvl::unordered_map<std::string, VkFlags> const &enum_data,
+                            uint32_t option_default);
 
 void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
 void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
