@@ -4315,6 +4315,20 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
 
 TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature) {
     TEST_DESCRIPTION("Use VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT when nextedCommandBuffers is not enabled");
+    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-contents-09640");
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo,
+                           VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature2) {
+    TEST_DESCRIPTION("Use VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT when nextedCommandBuffers is not enabled");
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);

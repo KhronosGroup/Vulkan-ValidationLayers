@@ -599,8 +599,10 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
 
     if (contents == VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT &&
         !enabled_features.nestedCommandBuffer) {
+        const char *vuid = error_obj.location.function == Func::vkCmdBeginRenderPass ? "VUID-vkCmdBeginRenderPass-contents-09640"
+                                                                                     : "VUID-VkSubpassBeginInfo-contents-09382";
         skip |=
-            LogError("VUID-VkSubpassBeginInfo-contents-09382", commandBuffer, error_obj.location.dot(Field::contents),
+            LogError(vuid, commandBuffer, error_obj.location.dot(Field::contents),
                      " is VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT, but nestedCommandBuffer was not enabled.");
     }
 
