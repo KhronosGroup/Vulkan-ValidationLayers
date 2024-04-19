@@ -5430,27 +5430,13 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
 
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    if (!shaderObjectFeatures.shaderObject) {
-        GTEST_SKIP() << "shaderObject not supported.";
+    if (m_device->phy().limits_.maxSampleMaskWords > 1) {
+        GTEST_SKIP() << "maxSampleMaskWords is greater than 1";
     }
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    // Set limit to match with hardcoded values in shaders
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
-    props.limits.maxSampleMaskWords = 3;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
     char const* fs_src = R"glsl(
         #version 450
