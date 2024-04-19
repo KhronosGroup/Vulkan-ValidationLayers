@@ -2237,24 +2237,24 @@ static bool Validate(const CoreChecks *device_data, const ValidatorState &val, c
 
 static bool ValidateHostStage(const ValidationObject *validation_obj, const LogObjectList &objects, const Location &barrier_loc,
                               const QueueFamilyBarrier &barrier) {
-    // QueueError::kHostStage vuids are applicable only to sync2
-    if (barrier_loc.structure != vvl::Struct::VkBufferMemoryBarrier2 &&
-        barrier_loc.structure != vvl::Struct::VkImageMemoryBarrier2) {
-        return false;
-    }
-    auto log_msg = [validation_obj, &objects, &barrier](const Location &stage_loc) {
-        const auto &vuid = GetBarrierQueueVUID(stage_loc, QueueError::kHostStage);
-        return validation_obj->LogError(vuid, objects, stage_loc,
-                                        "is VK_PIPELINE_STAGE_2_HOST_BIT but srcQueueFamilyIndex (%" PRIu32
-                                        ") != dstQueueFamilyIndex (%" PRIu32 ").",
-                                        barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
-    };
     bool skip = false;
+    // src/dst queue families should be equal if HOST_BIT is used
     if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) {
+        const bool is_sync2 = barrier_loc.structure == vvl::Struct::VkBufferMemoryBarrier2 ||
+                              barrier_loc.structure == vvl::Struct::VkImageMemoryBarrier2;
+        auto stage_field = vvl::Field::Empty;
         if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
-            skip |= log_msg(barrier_loc.dot(vvl::Field::srcStageMask));
+            stage_field = vvl::Field::srcStageMask;
         } else if (barrier.dstStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
-            skip |= log_msg(barrier_loc.dot(vvl::Field::dstStageMask));
+            stage_field = vvl::Field::dstStageMask;
+        }
+        if (stage_field != vvl::Field::Empty) {
+            const auto &vuid = GetBarrierQueueVUID(barrier_loc, QueueError::kHostStage);
+            const Location stage_loc = is_sync2 ? barrier_loc.dot(stage_field) : Location(barrier_loc.function, stage_field);
+            skip |= validation_obj->LogError(vuid, objects, stage_loc,
+                                             "is %s but srcQueueFamilyIndex (%" PRIu32 ") != dstQueueFamilyIndex (%" PRIu32 ").",
+                                             is_sync2 ? "VK_PIPELINE_STAGE_2_HOST_BIT" : "VK_PIPELINE_STAGE_HOST_BIT",
+                                             barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
         }
     }
     return skip;
