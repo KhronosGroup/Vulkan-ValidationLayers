@@ -55,14 +55,15 @@ layout(push_constant) uniform UniformInfo {
 #define max_workgroup_count_z push_constant_word_9
 #define max_workgroup_total_count push_constant_word_10
 
+layout(set = kDiagPerCmdDescriptorSet, binding = 0) buffer DrawBuffer {
+    uint draws_buffer[];
+};
+
 // CountBuffer won't be bound for non-count draws
-layout(set = kDiagPerCmdDescriptorSet, binding = 0) buffer CountBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = 1) buffer CountBuffer {
     uint count_buffer[];
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = 1) buffer DrawBuffer {
-    uint draws_buffer[];
-};
 
 void main() {
     if (gl_VertexIndex == 0) {
