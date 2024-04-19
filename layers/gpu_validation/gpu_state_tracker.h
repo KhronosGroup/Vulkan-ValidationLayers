@@ -207,6 +207,7 @@ class Validator : public ValidationStateTracker {
     std::atomic<uint32_t> unique_shader_module_id = 1;  // zero represents no shader module found
     uint32_t output_buffer_byte_size = 0;
     VkDescriptorSetLayout debug_desc_layout_ = VK_NULL_HANDLE;
+    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
     VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
     VkPipelineLayout debug_pipeline_layout = VK_NULL_HANDLE;
     uint32_t desc_set_bind_index = 0;

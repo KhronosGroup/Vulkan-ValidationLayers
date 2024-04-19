@@ -434,9 +434,9 @@ void gpuav::Validator::BindDiagnosticCallsCommonDescSet(const LockedSharedPtr<Co
 
 // Common resource allocations functions
 
-gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
-                                                                         const Location &loc,
-                                                                         const CmdIndirectState *indirect_state /*= nullptr*/) {
+gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(
+    const LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard> &cmd_buffer, VkPipelineBindPoint bind_point, const Location &loc,
+    const CmdIndirectState *indirect_state /*= nullptr*/) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         assert(false);
@@ -445,19 +445,13 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
 
     if (aborted) return CommandResources();
 
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-        aborted = true;
-        return CommandResources();
-    }
-
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto const &last_bound = cb_node->lastBound[lv_bind_point];
+    auto const &last_bound = cmd_buffer->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
-        ReportSetupProblem(cmd_buffer, loc, "Neither pipeline state nor shader object states were found, aborting GPU-AV");
+        ReportSetupProblem(cmd_buffer->VkHandle(), loc,
+                           "Neither pipeline state nor shader object states were found, aborting GPU-AV");
         aborted = true;
         return CommandResources();
     }
@@ -465,10 +459,11 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
     VkDescriptorSet instrumentation_desc_set = VK_NULL_HANDLE;
     VkDescriptorPool instrumentation_desc_pool = VK_NULL_HANDLE;
     VkResult result = desc_set_manager->GetDescriptorSet(
-        &instrumentation_desc_pool, cb_node->GetInstrumentationDescriptorSetLayout(), &instrumentation_desc_set);
+        &instrumentation_desc_pool, cmd_buffer->GetInstrumentationDescriptorSetLayout(), &instrumentation_desc_set);
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate instrumentation descriptor sets. Device could become unstable.");
+        ReportSetupProblem(cmd_buffer->VkHandle(), loc,
+                           "Unable to allocate instrumentation descriptor sets. Device could become unstable.");
         aborted = true;
         return CommandResources();
     }
@@ -484,7 +479,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
         VkDescriptorBufferInfo error_output_desc_buffer_info = {};
         {
             error_output_desc_buffer_info.range = VK_WHOLE_SIZE;
-            error_output_desc_buffer_info.buffer = cb_node->GetErrorOutputBuffer();
+            error_output_desc_buffer_info.buffer = cmd_buffer->GetErrorOutputBuffer();
             error_output_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -526,7 +521,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
         VkDescriptorBufferInfo cmd_errors_counts_desc_buffer_info = {};
         {
             cmd_errors_counts_desc_buffer_info.range = VK_WHOLE_SIZE;
-            cmd_errors_counts_desc_buffer_info.buffer = cb_node->GetCmdErrorsCountsBuffer();
+            cmd_errors_counts_desc_buffer_info.buffer = cmd_buffer->GetCmdErrorsCountsBuffer();
             cmd_errors_counts_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -540,9 +535,9 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
 
         // Current bindless buffer
         VkDescriptorBufferInfo di_input_desc_buffer_info = {};
-        if (cb_node->current_bindless_buffer != VK_NULL_HANDLE) {
+        if (cmd_buffer->current_bindless_buffer != VK_NULL_HANDLE) {
             di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-            di_input_desc_buffer_info.buffer = cb_node->current_bindless_buffer;
+            di_input_desc_buffer_info.buffer = cmd_buffer->current_bindless_buffer;
             di_input_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -589,38 +584,39 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
 
     CommandResources cmd_resources;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
-        cmd_resources.operation_index = cb_node->draw_index++;
+        cmd_resources.operation_index = cmd_buffer->draw_index++;
     else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
-        cmd_resources.operation_index = cb_node->compute_index++;
+        cmd_resources.operation_index = cmd_buffer->compute_index++;
     else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-        cmd_resources.operation_index = cb_node->trace_rays_index++;
+        cmd_resources.operation_index = cmd_buffer->trace_rays_index++;
 
-    // Using cb_node->per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a parameter
+    // Using cmd_buffer->per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a parameter
     const std::array<uint32_t, 2> dynamic_offsets = {
         {cmd_resources.operation_index * static_cast<uint32_t>(sizeof(uint32_t)),
-         static_cast<uint32_t>(cb_node->per_command_resources.size()) * static_cast<uint32_t>(sizeof(uint32_t))}};
+         static_cast<uint32_t>(cmd_buffer->per_command_resources.size()) * static_cast<uint32_t>(sizeof(uint32_t))}};
     if ((pipeline_layout && pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
         pipeline_layout_handle != VK_NULL_HANDLE) {
-        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1,
+        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, pipeline_layout_handle, desc_set_bind_index, 1,
                                       &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, debug_pipeline_layout, desc_set_bind_index, 1,
+        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, debug_pipeline_layout, desc_set_bind_index, 1,
                                       &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     }
 
     if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
-        ReportSetupProblem(cmd_buffer, loc, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
+        ReportSetupProblem(cmd_buffer->Handle(), loc,
+                           "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
         aborted = true;
         return CommandResources();
     }
 
     // It is possible to have no descriptor sets bound, for example if using push constants.
     uint32_t di_buf_index =
-        cb_node->di_input_buffer_list.size() > 0 ? uint32_t(cb_node->di_input_buffer_list.size()) - 1 : vvl::kU32Max;
+        cmd_buffer->di_input_buffer_list.size() > 0 ? uint32_t(cmd_buffer->di_input_buffer_list.size()) - 1 : vvl::kU32Max;
 
     const bool uses_robustness = (enabled_features.robustBufferAccess || enabled_features.robustBufferAccess2 ||
                                   (pipeline_state && pipeline_state->uses_pipeline_robustness));
@@ -632,8 +628,20 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
     cmd_resources.uses_shader_object = pipeline_state == nullptr;
     cmd_resources.command = loc.function;
     cmd_resources.desc_binding_index = di_buf_index;
-    cmd_resources.desc_binding_list = &cb_node->di_input_buffer_list;
+    cmd_resources.desc_binding_list = &cmd_buffer->di_input_buffer_list;
     return cmd_resources;
+}
+
+gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
+                                                                         const Location &loc,
+                                                                         const CmdIndirectState *indirect_state /*= nullptr*/) {
+    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_node) {
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
+        aborted = true;
+        return CommandResources();
+    }
+    return AllocateActionCommandResources(cb_node, bind_point, loc, indirect_state);
 }
 
 bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location &loc) {
@@ -674,28 +682,21 @@ bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Lo
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndirectValidationResources(
     const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride) {
+    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_node) {
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
+        aborted = true;
+        return nullptr;
+    }
+
     if (!gpuav_settings.validate_indirect_buffer) {
-        CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
+        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
 
-    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
-    if (aborted) {
-        return nullptr;
-    }
-
     auto draw_resources = std::make_unique<PreDrawResources>();
-    CommandResources &base = *draw_resources;
-    base = cmd_resources;
     {
-        auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-        if (!cb_node) {
-            ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-            aborted = true;
-            return nullptr;
-        }
-
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
         auto const &last_bound = cb_node->lastBound[lv_bind_point];
         const auto *pipeline_state = last_bound.pipeline_state;
@@ -840,6 +841,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
                 push_constants[10] = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
             }
         }
+
         // Insert diagnostic draw
         if (use_shader_objects) {
             VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -855,6 +857,13 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_resources->pipeline_layout,
                                       glsl::kDiagPerCmdDescriptorSet, 1, &draw_resources->buffer_desc_set, 0, nullptr);
         DispatchCmdDraw(cmd_buffer, 3, 1, 0, 0);
+
+        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
+        if (aborted) {
+            return nullptr;
+        }
+        CommandResources &base = *draw_resources;
+        base = cmd_resources;
 
         // Restore the previous graphics pipeline state.
         restorable_state.Restore(cmd_buffer);
@@ -956,15 +965,17 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
 
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIndirectValidationResources(
     const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset) {
-    if (!gpuav_settings.validate_indirect_buffer) {
-        CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
-        auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
-        return cmd_resources_ptr;
+    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_node) {
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
+        aborted = true;
+        return nullptr;
     }
 
-    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
-    if (aborted) {
-        return nullptr;
+    if (!gpuav_settings.validate_indirect_buffer) {
+        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
+        auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
+        return cmd_resources_ptr;
     }
 
     // Insert a dispatch that can examine some device memory right before the dispatch we're validating
@@ -972,17 +983,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
     // NOTE that this validation does not attempt to abort invalid api calls as most other validation does. A crash
     // or DEVICE_LOST resulting from the invalid call will prevent preceding validation errors from being reported.
     auto dispatch_resources = std::make_unique<PreDispatchResources>();
-    CommandResources &base = *dispatch_resources;
-    base = cmd_resources;
 
     {
-        auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-        if (!cb_node) {
-            ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-            aborted = true;
-            return nullptr;
-        }
-
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
         auto const &last_bound = cb_node->lastBound[lv_bind_point];
         const auto *pipeline_state = last_bound.pipeline_state;
@@ -1044,6 +1046,13 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
                                       glsl::kDiagPerCmdDescriptorSet, 1, &dispatch_resources->indirect_buffer_desc_set, 0, nullptr);
         DispatchCmdDispatch(cmd_buffer, 1, 1, 1);
+
+        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
+        if (aborted) {
+            return nullptr;
+        }
+        CommandResources &base = *dispatch_resources;
+        base = cmd_resources;
 
         // Restore the previous compute pipeline state.
         restorable_state.Restore(cmd_buffer);
@@ -1155,27 +1164,22 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
 
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysValidationResources(
     const Location &loc, VkCommandBuffer cmd_buffer, VkDeviceAddress indirect_data_address) {
+    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_node) {
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
+        aborted = true;
+        return nullptr;
+    }
+
     if (!gpuav_settings.validate_indirect_buffer) {
-        CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
+        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
 
-    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
-    if (aborted) {
-        return nullptr;
-    }
     auto trace_rays_resources = std::make_unique<PreTraceRaysResources>();
-    CommandResources &base = *trace_rays_resources;
-    base = cmd_resources;
-    {
-        auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-        if (!cb_node) {
-            ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-            aborted = true;
-            return nullptr;
-        }
 
+    {
         PreTraceRaysResources::SharedResources *shared_resources =
             GetSharedTraceRaysValidationResources(cb_node->GetValidationCmdCommonDescriptorSetLayout(), loc);
         if (!shared_resources) {
@@ -1217,6 +1221,13 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
 
         VkStridedDeviceAddressRegionKHR empty_sbt{};
         DispatchCmdTraceRaysKHR(cmd_buffer, &ray_gen_sbt, &empty_sbt, &empty_sbt, &empty_sbt, 1, 1, 1);
+
+        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
+        if (aborted) {
+            return nullptr;
+        }
+        CommandResources &base = *trace_rays_resources;
+        base = cmd_resources;
 
         // Restore the previous ray tracing pipeline state.
         restorable_state.Restore(cmd_buffer);

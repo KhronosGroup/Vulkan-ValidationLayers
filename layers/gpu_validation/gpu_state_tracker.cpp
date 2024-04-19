@@ -413,7 +413,6 @@ void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo,
 
     result1 = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, nullptr, &debug_desc_layout_);
 
-    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index.
     VkResult result2 = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, nullptr, &dummy_desc_layout_);
 
     std::vector<VkDescriptorSetLayout> debug_layouts;
