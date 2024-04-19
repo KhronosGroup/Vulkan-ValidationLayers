@@ -1116,11 +1116,48 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     }
 }
 
+std::string Module::GetDecorations(uint32_t id) const {
+    std::ostringstream ss;
+    for (const spirv::Instruction& insn : GetInstructions()) {
+        if (insn.Opcode() == spv::OpFunction) {
+            break;  // decorations are found before first function block
+        } else if (insn.Opcode() == spv::OpDecorate && insn.Word(1) == id) {
+            ss << " " << string_SpvDecoration(insn.Word(2));
+        }
+    }
+    return ss.str();
+}
+
+std::string Module::GetName(uint32_t id) const {
+    for (const spirv::Instruction& insn : GetInstructions()) {
+        if (insn.Opcode() == spv::OpFunction) {
+            break;  // names are found before first function block
+        } else if (insn.Opcode() == spv::OpName && insn.Word(1) == id) {
+            return insn.GetAsString(2);
+        }
+    }
+    return "";
+}
+
+std::string Module::GetMemberName(uint32_t id, uint32_t member_index) const {
+    for (const spirv::Instruction& insn : GetInstructions()) {
+        if (insn.Opcode() == spv::OpFunction) {
+            break;  // names are found before first function block
+        } else if (insn.Opcode() == spv::OpMemberName && insn.Word(1) == id && insn.Word(2) == member_index) {
+            return insn.GetAsString(3);
+        }
+    }
+    return "";
+}
+
+// Used to pretty-print the OpType* for an error message
 void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t indent) const {
     const Instruction* insn = FindDef(type);
-    for (uint32_t i = 0; i < indent; i++) {
-        ss << "\t";
-    }
+    auto indent_by = [&ss](uint32_t i) {
+        for (uint32_t x = 0; x < i; x++) {
+            ss << "\t";
+        }
+    };
 
     switch (insn->Opcode()) {
         case spv::OpTypeBool:
@@ -1142,29 +1179,39 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
             break;
         case spv::OpTypeArray:
             ss << "array[" << GetConstantValueById(insn->Word(3)) << "] of ";
-            DescribeTypeInner(ss, insn->Word(2), 0);  // if struct, has pointer in between
+            DescribeTypeInner(ss, insn->Word(2), indent);
             break;
         case spv::OpTypeRuntimeArray:
             ss << "runtime array[] of ";
-            DescribeTypeInner(ss, insn->Word(2), 0);  // if struct, has pointer in between
+            DescribeTypeInner(ss, insn->Word(2), indent);
             break;
         case spv::OpTypePointer:
-            ss << "pointer to " << string_SpvStorageClass(insn->Word(2)) << " ->\n";
-            indent++;
+            ss << "pointer to " << string_SpvStorageClass(insn->Word(2)) << " -> ";
             DescribeTypeInner(ss, insn->Word(3), indent);
             break;
         case spv::OpTypeStruct: {
             ss << "struct of {\n";
             indent++;
             for (uint32_t i = 2; i < insn->Length(); i++) {
+                indent_by(indent);
+                ss << "- ";
                 DescribeTypeInner(ss, insn->Word(i), indent);
+
+                auto name = GetMemberName(type, i - 2);
+                if (!name.empty()) {
+                    ss << " \"" << name << "\"";
+                }
+
                 ss << "\n";
             }
             indent--;
-            for (uint32_t i = 0; i < indent; i++) {
-                ss << "\t";
-            }
+            indent_by(indent);
             ss << "}";
+
+            auto name = GetName(type);
+            if (!name.empty()) {
+                ss << " \"" << name << "\"";
+            }
             break;
         }
         case spv::OpTypeSampler:
@@ -1189,6 +1236,20 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
 std::string Module::DescribeType(uint32_t type) const {
     std::ostringstream ss;
     DescribeTypeInner(ss, type, 0);
+    return ss.str();
+}
+
+std::string Module::DescribeVariable(uint32_t id) const {
+    std::ostringstream ss;
+    auto name = GetName(id);
+    if (!name.empty()) {
+        ss << "Variable \"" << name << "\"";
+        auto decorations = GetDecorations(id);
+        if (!decorations.empty()) {
+            ss << " (Decorations:" << decorations << ")";
+        }
+        ss << "\n";
+    }
     return ss.str();
 }
 

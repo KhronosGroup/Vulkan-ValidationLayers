@@ -501,13 +501,14 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 if ((component_info.output_type != component_info.input_type) ||
                     (component_info.output_width != component_info.input_width)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
-                    skip |=
-                        LogError("VUID-RuntimeSpirv-OpEntryPoint-07754", objlist, create_info_loc,
-                                 "(SPIR-V Interface) Type mismatch on Location %" PRIu32 " Component %" PRIu32
-                                 ", between\n%s stage:\n%s\n%s stage:\n%s\n",
-                                 location, component, string_VkShaderStageFlagBits(producer_stage),
-                                 producer.DescribeType(output_var->type_id).c_str(), string_VkShaderStageFlagBits(consumer_stage),
-                                 consumer.DescribeType(input_var->type_id).c_str());
+                    skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-07754", objlist, create_info_loc,
+                                     "(SPIR-V Interface) Type mismatch on Location %" PRIu32 " Component %" PRIu32
+                                     ", between\n\n%s stage:\n%s%s\n\n%s stage:\n%s%s\n\n",
+                                     location, component, string_VkShaderStageFlagBits(producer_stage),
+                                     producer.DescribeVariable(output_var->id).c_str(),
+                                     producer.DescribeType(output_var->type_id).c_str(),
+                                     string_VkShaderStageFlagBits(consumer_stage), consumer.DescribeVariable(input_var->id).c_str(),
+                                     consumer.DescribeType(input_var->type_id).c_str());
                     break;  // Only need to report for the first component found
                 }
 

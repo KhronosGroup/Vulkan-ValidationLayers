@@ -645,8 +645,12 @@ struct Module {
     }
 
     // Used to get human readable strings for error messages
+    std::string GetDecorations(uint32_t id) const;
+    std::string GetName(uint32_t id) const;
+    std::string GetMemberName(uint32_t id, uint32_t member_index) const;
     void DescribeTypeInner(std::ostringstream &ss, uint32_t type, uint32_t indent) const;
     std::string DescribeType(uint32_t type) const;
+    std::string DescribeVariable(uint32_t id) const;
 
     std::optional<VkPrimitiveTopology> GetTopology(const EntryPoint &entrypoint) const;
 
