@@ -111,6 +111,18 @@ std::string GetEnvironment(const char *variable) {
 #endif
 }
 
+void SetEnvironment(const char *variable, const char *value) {
+#if !defined(__ANDROID__) && !defined(_WIN32)
+    setenv(variable, value, 1);
+#elif defined(_WIN32)
+    SetEnvironmentVariable(variable, value);
+#elif defined(__ANDROID__)
+    (void)variable;
+    (void)value;
+    assert(false && "Not supported on android");
+#endif
+}
+
 const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
 
 const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }

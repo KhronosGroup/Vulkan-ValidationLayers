@@ -272,6 +272,24 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
 )
 
+# setup framework/config.h using framework/config.h.in as a source
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/config$<CONFIG>.h" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/framework/config.h.in")
+
+# copy config$<CONFIG>.h to the build directory
+add_custom_command(
+    PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} "-E" "copy_if_different" "${CMAKE_CURRENT_BINARY_DIR}/config$<CONFIG>.h" "${CMAKE_CURRENT_BINARY_DIR}/config.h"
+    VERBATIM
+    DEPENDS  "${CMAKE_CURRENT_BINARY_DIR}/config$<CONFIG>.h"
+    OUTPUT   "${CMAKE_CURRENT_BINARY_DIR}/config.h"
+    COMMENT  "creating config.h file ({event: PRE_BUILD}, {filename: config.h })"
+    )
+add_custom_target (generate_framework_config DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/config.h")
+add_dependencies (generate_framework_config vk_layer_validation_tests)
+
+target_sources(vk_layer_validation_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+target_include_directories(vk_layer_validation_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
 # More details in tests/android/mock/README.md
 option(VVL_MOCK_ANDROID "Enable building for Android on desktop for testing with MockICD setup")
 if(VVL_MOCK_ANDROID)

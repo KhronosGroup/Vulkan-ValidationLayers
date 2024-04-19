@@ -18,6 +18,7 @@
 
 #include "test_framework.h"
 #include "render.h"
+#include "config.h"
 #include <filesystem>
 #include <cmath>
 #include <cstdarg>
@@ -71,68 +72,103 @@ static std::vector<std::string> GetVkEnvironmentVariable(const char *env_var) {
     return items;
 }
 
-static void CheckEnvironmentVariables() {
+static void CheckAndSetEnvironmentVariables() {
     for (const char *env_var : {"VK_DRIVER_FILES", "VK_ICD_FILENAMES"}) {
         const std::vector<std::string> driver_files = GetVkEnvironmentVariable(env_var);
         for (const std::string &driver_file : driver_files) {
             const std::filesystem::path icd_file(driver_file);
-
             // TODO: Error check relative paths (platform dependent)
             if (icd_file.is_relative()) {
                 continue;
             }
-
             std::string user_provided;
             user_provided += "\n\n";
             user_provided += env_var;
             user_provided += " = ";
             user_provided += driver_file;
+            if (std::filesystem::is_directory(icd_file)) {
+                if (!std::filesystem::exists(icd_file)) {
+                    std::cerr << "Invalid " << env_var << "! Directory doesn't exist!" << user_provided << std::endl;
+                    std::exit(EXIT_FAILURE);
+                }
+                bool contains_json = false;
+                for (auto const &dir_entry : std::filesystem::directory_iterator{icd_file}) {
+                    if (dir_entry.path().extension() == ".json") {
+                        contains_json = true;
+                    }
+                }
+                if (!contains_json) {
+                    std::cerr << "Invalid " << env_var << "! " << env_var << " must contain a json file!" << user_provided
+                              << std::endl;
+                    std::exit(EXIT_FAILURE);
+                }
 
-            if (!std::filesystem::exists(icd_file)) {
-                std::cerr << "Invalid " << env_var << "! File doesn't exist!" << user_provided << std::endl;
-                std::exit(EXIT_FAILURE);
-            }
+            } else {
+                if (!std::filesystem::exists(icd_file)) {
+                    std::cerr << "Invalid " << env_var << "! File doesn't exist!" << user_provided << std::endl;
+                    std::exit(EXIT_FAILURE);
+                }
 
-            if (icd_file.extension() != ".json") {
-                std::cerr << "Invalid " << env_var << "! " << env_var << " must be a json file!\n" << user_provided << std::endl;
-                std::exit(EXIT_FAILURE);
+                if (icd_file.extension() != ".json") {
+                    std::cerr << "Invalid " << env_var << "! " << env_var << " must be a json file!" << user_provided << std::endl;
+                    std::exit(EXIT_FAILURE);
+                }
             }
         }
     }
 
-    const std::vector<std::string> vk_layer_paths = GetVkEnvironmentVariable("VK_LAYER_PATH");
     bool found_json = false;
-    for (const std::string &layer_path : vk_layer_paths) {
-        const std::filesystem::path layer_dir(layer_path);
-
-        // TODO: Error check relative paths (platform dependent)
-        if (layer_dir.is_relative()) {
-            continue;
+    bool vk_layer_env_vars_present = false;
+    std::stringstream error_log;  // Build up error log in case the validation json cannot be found
+    for (const char *env_var : {"VK_LAYER_PATH", "VK_ADD_LAYER_PATH"}) {
+        const std::vector<std::string> vk_layer_paths = GetVkEnvironmentVariable(env_var);
+        if (!vk_layer_paths.empty()) {
+            vk_layer_env_vars_present = true;
         }
-        const std::string user_provided = "\n\nVK_LAYER_PATH = " + layer_path;
+        for (const std::string &vk_layer_path : vk_layer_paths) {
+            const std::filesystem::path layer_path(vk_layer_path);
 
-        if (!std::filesystem::exists(layer_dir)) {
-            std::cerr << "Invalid VK_LAYER_PATH! Directory " << layer_dir << " doesn't exist!" << user_provided << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
+            if (!std::filesystem::exists(layer_path)) {
+                error_log << "Invalid " << env_var << "! " << layer_path << " doesn't exist." << std::endl;
+                continue;
+            }
 
-        if (!std::filesystem::is_directory(layer_dir)) {
-            std::cerr << "Invalid VK_LAYER_PATH! " << layer_dir << " must be a directory!" << user_provided << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-        for (auto const &dir_entry : std::filesystem::directory_iterator{layer_dir}) {
-            if (dir_entry.path().filename() == "VkLayer_khronos_validation.json") {
-                found_json = true;
+            if (std::filesystem::is_directory(layer_path)) {
+                for (auto const &dir_entry : std::filesystem::directory_iterator{layer_path}) {
+                    if (dir_entry.path().filename() == "VkLayer_khronos_validation.json") {
+                        if (std::filesystem::exists(dir_entry)) {
+                            found_json = true;
+                            break;
+                        } else {
+                            error_log << "Invalid " << env_var << "! " << dir_entry << " doen not exist!" << std::endl;
+                        }
+                    }
+                }
+                if (!found_json) {
+                    error_log << "Invalid " << env_var << "! " << layer_path
+                              << " is a directory but doesn't contain a VkLayer_khronos_validation.json file!" << std::endl;
+                }
+            } else {
+                if (layer_path.filename() == "VkLayer_khronos_validation.json") {
+                    found_json = true;
+                    break;
+                } else {
+                    error_log << "Invalid " << env_var << "! The filename of path" << layer_path
+                              << " is not VkLayer_khronos_validation.json!" << std::endl;
+                }
+            }
+            if (found_json) {
                 break;
             }
         }
     }
 
     if (!found_json) {
-        std::cerr << "Invalid VK_LAYER_PATH! VK_LAYER_PATH directory must contain VkLayer_khronos_validation.json!"
-                  << GetEnvironment("VK_LAYER_PATH") << std::endl;
-        std::exit(EXIT_FAILURE);
+        if (vk_layer_env_vars_present) {
+            std::cerr << error_log.str() << std::endl;
+            std::cerr << "Automatically setting VK_LAYER_PATH to " << VALIDATION_LAYERS_BUILD_PATH << std::endl;
+        }
+        SetEnvironment("VK_LAYER_PATH", VALIDATION_LAYERS_BUILD_PATH);
     }
 }
 #endif
@@ -142,7 +178,7 @@ static void CheckEnvironmentVariables() {
 void TestEnvironment::SetUp() {
 #if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     // Helps ensure common developer environment variables are set correctly
-    CheckEnvironmentVariables();
+    CheckAndSetEnvironmentVariables();
 #endif
 
     // Initialize GLSL to SPV compiler utility
@@ -191,7 +227,8 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
                 "\t--device-index <physical device index>\n"
                 "\t\tIndex into VkPhysicalDevice array returned from vkEnumeratePhysicalDevices.\n"
                 "\t\tThe default behavior is to automatically choose \"the most reasonable device.\"\n"
-                "\t\tAn invalid index (i.e., outside the range [0, *pPhysicalDeviceCount)) will result in the default behavior\n");
+                "\t\tAn invalid index (i.e., outside the range [0, *pPhysicalDeviceCount)) will result in the default "
+                "behavior\n");
             exit(0);
         } else {
             printf("\nUnrecognized option: %s\n", argv[i]);
