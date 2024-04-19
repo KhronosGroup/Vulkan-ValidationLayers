@@ -124,6 +124,9 @@ class Validator : public gpu_tracker::Validator {
     // Should only be used by action commands.
     // Allocate per action (draw, dispatch, trace rays) command validation resources,
     // and bind descriptor sets needed for shader instrumentation.
+    [[nodiscard]] gpuav::CommandResources AllocateActionCommandResources(
+        const LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard>& cmd_buffer, VkPipelineBindPoint bind_point,
+        const Location& loc, const CmdIndirectState* indirect_state = nullptr);
     [[nodiscard]] gpuav::CommandResources AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
                                                                          const Location& loc,
                                                                          const CmdIndirectState* indirect_state = nullptr);
