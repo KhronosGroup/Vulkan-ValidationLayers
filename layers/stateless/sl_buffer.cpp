@@ -87,6 +87,21 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
                               "VUID-VkBufferCreateInfo-None-09500");
     }
 
+    if (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) {
+        const VkBufferUsageFlags invalid =
+            VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT | VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT |
+            VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
+            VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+            VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT |
+            VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT;
+        if (pCreateInfo->usage & invalid) {
+            skip |= LogError("VUID-VkBufferCreateInfo-flags-09641", device, create_info_loc.dot(Field::flags),
+                             "includes VK_BUFFER_CREATE_PROTECTED_BIT, but the usage is %s.",
+                             string_VkBufferUsageFlags(pCreateInfo->usage).c_str());
+        }
+    };
+
     return skip;
 }
 
