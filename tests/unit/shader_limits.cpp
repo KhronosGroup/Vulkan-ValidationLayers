@@ -19,30 +19,20 @@
 TEST_F(NegativeShaderLimits, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
 
-    RETURN_IF_SKIP(InitFramework());
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    // Set limit to match with hardcoded values in shaders
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
-    props.limits.maxSampleMaskWords = 3;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    if (m_device->phy().limits_.maxSampleMaskWords > 1) {
+        GTEST_SKIP() << "maxSampleMaskWords is greater than 1";
+    }
 
     // Valid input of sample mask
     char const *validSource = R"glsl(
         #version 450
         layout(location = 0) out vec4 uFragColor;
         void main(){
-           int x = gl_SampleMaskIn[2];
            int y = gl_SampleMaskIn[0];
-           uFragColor = vec4(0,1,0,1) * x * y;
+           uFragColor = vec4(0,1,0,1) * y;
         }
     )glsl";
     VkShaderObj fsValid(this, validSource, VK_SHADER_STAGE_FRAGMENT_BIT);
