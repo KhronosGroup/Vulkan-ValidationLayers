@@ -1626,6 +1626,66 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
+TEST_F(NegativeQuery, DestroyActiveQueryPoolSecondary) {
+    TEST_DESCRIPTION(
+        "Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS (secondary command "
+        "buffer version)");
+
+    RETURN_IF_SKIP(Init());
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
+    }
+
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &query_pool_create_info, nullptr, &query_pool);
+
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
+    hinfo.renderPass = VK_NULL_HANDLE;
+    hinfo.subpass = 0;
+    hinfo.framebuffer = VK_NULL_HANDLE;
+    hinfo.occlusionQueryEnable = VK_FALSE;
+    hinfo.queryFlags = 0;
+    hinfo.pipelineStatistics = 0;
+
+    vkt::CommandBuffer secondary_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferBeginInfo secondary_cmd_begin = vku::InitStructHelper();
+    secondary_cmd_begin.pInheritanceInfo = &hinfo;
+    secondary_cmd_begin.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    secondary_buffer.begin(&secondary_cmd_begin);
+    vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    secondary_buffer.end();
+
+    VkCommandBufferBeginInfo primary_cmd_begin = vku::InitStructHelper();
+    primary_cmd_begin.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    m_commandBuffer->begin(&primary_cmd_begin);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_buffer.handle());
+    m_commandBuffer->end();
+
+    m_default_queue->submit(*m_commandBuffer);
+
+    const size_t out_data_size = 16;
+    uint8_t data[out_data_size];
+    VkResult res;
+    do {
+        res = vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data, 4, 0);
+    } while (res != VK_SUCCESS);
+
+    // Submit the command buffer again, making query pool in use and invalid to destroy
+    m_default_queue->submit(*m_commandBuffer);
+
+    m_errorMonitor->SetDesiredError("VUID-vkDestroyQueryPool-queryPool-00793");
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->wait();
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+}
+
 TEST_F(NegativeQuery, MultiviewBeginQuery) {
     TEST_DESCRIPTION("Test CmdBeginQuery in subpass with multiview");
 
