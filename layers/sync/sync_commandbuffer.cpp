@@ -224,6 +224,8 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
             if (attachment.resolve_gen) {
                 const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
                 const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
+                const SyncStageAccessIndex kResolveRead = is_color ? kColorResolveRead : kDepthStencilResolveRead;
+
                 // The logic about whether to resolve is embedded in the Attachment constructor
                 assert(attachment.view);
                 HazardResult hazard = access_context->DetectHazard(attachment.view_gen, kResolveRead, kResolveOrder);
@@ -234,6 +236,8 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
                                                   attachment.info.resolveMode);
                 }
                 if (!skip) {
+                    const SyncStageAccessIndex kResolveWrite = is_color ? kColorResolveWrite : kDepthStencilResolveWrite;
+
                     hazard = access_context->DetectHazard(*attachment.resolve_gen, kResolveWrite, kResolveOrder);
                     if (hazard.IsHazard()) {
                         Location loc = attachment.GetLocation(error_obj.location, i);
@@ -273,6 +277,8 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
             if (attachment.resolve_gen) {
                 const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
                 const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
+                const SyncStageAccessIndex kResolveRead = is_color ? kColorResolveRead : kDepthStencilResolveRead;
+                const SyncStageAccessIndex kResolveWrite = is_color ? kColorResolveWrite : kDepthStencilResolveWrite;
                 access_context->UpdateAccessState(attachment.view_gen, kResolveRead, kResolveOrder, store_tag);
                 access_context->UpdateAccessState(*attachment.resolve_gen, kResolveWrite, kResolveOrder, store_tag);
             }

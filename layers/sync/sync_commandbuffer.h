@@ -242,9 +242,12 @@ class CommandExecutionContext : public SyncValidationInfo {
 class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProvider {
   public:
     using SyncOpPointer = std::shared_ptr<SyncOpBase>;
-    constexpr static SyncStageAccessIndex kResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
-    constexpr static SyncStageAccessIndex kResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+    constexpr static SyncStageAccessIndex kColorResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
+    constexpr static SyncStageAccessIndex kColorResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
     constexpr static SyncOrdering kColorResolveOrder = SyncOrdering::kColorAttachment;
+
+    constexpr static SyncStageAccessIndex kDepthStencilResolveRead = SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ;
+    constexpr static SyncStageAccessIndex kDepthStencilResolveWrite = SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
     // Although depth resolve runs on the color attachment output stage and uses color accesses, depth accesses
     // still participate in the ordering. That's why using raster and not only color attachment ordering
     constexpr static SyncOrdering kDepthStencilResolveOrder = SyncOrdering::kRaster;
