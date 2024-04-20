@@ -2007,6 +2007,14 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
                 }
             }
         }
+    } else {
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) &&
+            !pipeline.IsDynamic(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-09639", device, raster_loc.dot(Field::pNext),
+                             "is missing VkPipelineRasterizationConservativeStateCreateInfoEXT which it needs because this "
+                             "pipeline has VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT but not "
+                             "VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT.");
+        }
     }
 
     if (const auto *depth_bias_representation = vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(raster_state->pNext);
