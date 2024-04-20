@@ -1160,12 +1160,6 @@ TEST_F(NegativeDynamicState, PipelineFeatureDisabledRasterizationStream) {
         "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationStream-07381");
 }
 
-TEST_F(NegativeDynamicState, PipelineFeatureDisabledConservativeRasterizationMode) {
-    ExtendedDynamicState3PipelineFeatureDisabled(
-        VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT,
-        "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ConservativeRasterizationMode-07382");
-}
-
 TEST_F(NegativeDynamicState, PipelineFeatureDisabledExtraPrimitiveOverestimationSize) {
     ExtendedDynamicState3PipelineFeatureDisabled(
         VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT,
@@ -2388,6 +2382,33 @@ TEST_F(NegativeDynamicState, PipelineColorWriteCreateInfoEXTDynaimcState3) {
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.pNext = &color_write;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-07608");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicState, PipelineFeatureDisabledConservativeRasterizationMode) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT);
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ConservativeRasterizationMode-07382");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-09639");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicState, RasterizationConservative) {
+    AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ConservativeRasterizationMode);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT);
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-09639");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -5048,7 +5069,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
 
 TEST_F(NegativeDynamicState, InvalidConservativeRasterizationMode) {
     TEST_DESCRIPTION("Test pipeline with invalid dynamic conservative rasterization mode");
-
+    AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ConservativeRasterizationMode);
     RETURN_IF_SKIP(Init());
@@ -5061,9 +5082,14 @@ TEST_F(NegativeDynamicState, InvalidConservativeRasterizationMode) {
         GTEST_SKIP() << "conservativePointAndLineRasterization is required to be VK_FALSE";
     }
 
+    VkPipelineRasterizationConservativeStateCreateInfoEXT cs_info = vku::InitStructHelper();
+    cs_info.conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
+    cs_info.extraPrimitiveOverestimationSize = 0.0f;
+
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT);
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipe.rs_state_ci_.pNext = &cs_info;
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
