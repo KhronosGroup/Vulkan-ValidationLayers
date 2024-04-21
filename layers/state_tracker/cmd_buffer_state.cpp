@@ -395,7 +395,7 @@ void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
         SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
         return false;
     });
-    updatedQueries.insert(query_obj);
+    recursiveUpdatedQueries.insert(query_obj);
     if (query_obj.inside_render_pass) {
         renderPassQueries.insert(query_obj);
     }
@@ -407,7 +407,7 @@ void CommandBuffer::EndQuery(const QueryObject &query_obj) {
                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
         return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
     });
-    updatedQueries.insert(query_obj);
+    recursiveUpdatedQueries.insert(query_obj);
     if (query_obj.inside_render_pass) {
         renderPassQueries.erase(query_obj);
     }
@@ -417,13 +417,7 @@ bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     // Clear out the perf_pass from the caller because it isn't known when the command buffer is recorded.
     auto key = query_obj;
     key.perf_pass = 0;
-    for (auto *sub_cb : linkedCommandBuffers) {
-        auto guard = sub_cb->ReadLock();
-        if (sub_cb->updatedQueries.find(key) != sub_cb->updatedQueries.end()) {
-            return true;
-        }
-    }
-    return updatedQueries.find(key) != updatedQueries.end();
+    return recursiveUpdatedQueries.find(key) != recursiveUpdatedQueries.end();
 }
 
 static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
@@ -439,7 +433,7 @@ void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint3
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         activeQueries.erase(query_obj);
-        updatedQueries.insert(query_obj);
+        recursiveUpdatedQueries.insert(query_obj);
     }
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
@@ -451,7 +445,7 @@ void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint3
 void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
-        updatedQueries.insert(query_obj);
+        recursiveUpdatedQueries.insert(query_obj);
     }
 
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
@@ -834,7 +828,7 @@ void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQuer
         return false;
     });
     for (uint32_t i = 0; i < query_info.queryCount; i++) {
-        updatedQueries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
+        recursiveUpdatedQueries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
     }
 }
 
@@ -984,7 +978,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         initial_device_mask = (1 << dev_data.physical_device_count) - 1;
     }
     performance_lock_acquired = dev_data.performance_lock_acquired;
-    updatedQueries.clear();
+    recursiveUpdatedQueries.clear();
 }
 
 void CommandBuffer::End(VkResult result) {
@@ -1037,6 +1031,9 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             }
             return skip;
         });
+        for (const auto &updatedQuery : sub_cb_state->recursiveUpdatedQueries) {
+            recursiveUpdatedQueries.insert(updatedQuery);
+        }
         for (auto &function : sub_cb_state->eventUpdates) {
             eventUpdates.push_back(function);
         }

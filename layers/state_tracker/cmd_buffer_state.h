@@ -400,7 +400,7 @@ class CommandBuffer : public RefcountedStateObject {
     std::vector<VkEvent> events;
     vvl::unordered_set<QueryObject> activeQueries;
     vvl::unordered_set<QueryObject> startedQueries;
-    vvl::unordered_set<QueryObject> updatedQueries;
+    vvl::unordered_set<QueryObject> recursiveUpdatedQueries;  // Includes updates by linked secondary command buffers
     vvl::unordered_set<QueryObject> renderPassQueries;
     ImageLayoutMap image_layout_map;
     AliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
