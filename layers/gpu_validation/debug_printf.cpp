@@ -44,15 +44,13 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
         use_stdout = true;
     }
 
-    // GpuAssistedBase::CreateDevice will set up bindings
-    VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_EXT |
-                                                VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT |
-                                                kShaderStageAllRayTracing,
-                                            NULL};
+    const uint32_t kDebugOutputPrintfStream = 3;  // from instrument.hpp
+    VkDescriptorSetLayoutBinding binding = {kDebugOutputPrintfStream, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                                            kShaderStageAllGraphics | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing,
+                                            nullptr};
     validation_bindings_.push_back(binding);
 
-    BaseClass::CreateDevice(pCreateInfo, loc);
+    BaseClass::CreateDevice(pCreateInfo, loc);  // will set up bindings
 
     if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, loc, "Debug Printf requires Vulkan 1.1 or later.  Debug Printf disabled.");
@@ -703,7 +701,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     desc_writes.pBufferInfo = &output_desc_buffer_info;
     desc_writes.dstSet = desc_sets[0];
     desc_writes.dstBinding = 3;
-    DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, NULL);
+    DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, nullptr);
 
     const auto pipeline_layout =
         pipeline_state ? pipeline_state->PipelineLayoutState() : Get<vvl::PipelineLayout>(last_bound.pipeline_layout);
