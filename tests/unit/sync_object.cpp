@@ -3239,6 +3239,7 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     m_errorMonitor->VerifyFound();
 
     signal_info.value = 20;
+    wait_info.value = 15;
     wait_info.semaphore = semaphore[1].handle();
     ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE));
 
