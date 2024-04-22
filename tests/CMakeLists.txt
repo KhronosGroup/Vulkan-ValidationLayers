@@ -247,8 +247,6 @@ elseif(MSVC)
         /wd4267 # Disable some signed/unsigned mismatch warnings.
     )
 
-    set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:vvl>")
-
     if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
         target_link_options(vk_layer_validation_tests PRIVATE /LARGEADDRESSAWARE)
