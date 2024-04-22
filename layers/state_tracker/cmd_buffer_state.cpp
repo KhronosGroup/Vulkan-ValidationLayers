@@ -418,7 +418,6 @@ bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     auto key = query_obj;
     key.perf_pass = 0;
     for (auto *sub_cb : linkedCommandBuffers) {
-        auto guard = sub_cb->ReadLock();
         if (sub_cb->updatedQueries.find(key) != sub_cb->updatedQueries.end()) {
             return true;
         }
