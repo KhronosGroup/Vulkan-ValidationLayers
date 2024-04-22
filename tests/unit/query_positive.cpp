@@ -544,3 +544,31 @@ TEST_F(PositiveQuery, HostQueryResetSuccess) {
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
     vk::ResetQueryPoolEXT(device(), query_pool.handle(), 0, 1);
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7874
+TEST_F(PositiveQuery, ReuseSecondaryWithQueryCommand) {
+    TEST_DESCRIPTION("Regression test for a deadlock when secondary command buffer is reused and records a query command");
+
+    RETURN_IF_SKIP(Init());
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
+    }
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+
+    vkt::CommandBuffer secondary_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    secondary_buffer.end();
+
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_buffer.handle());
+    m_commandBuffer->end();
+
+    m_default_queue->submit(*m_commandBuffer);
+    // Submit the command buffer again.
+    m_default_queue->submit(*m_commandBuffer);
+
+    m_default_queue->wait();
+}
