@@ -168,6 +168,32 @@ template StatelessValidation* ValidationObject::GetValidationObject<StatelessVal
 template ObjectLifetimes* ValidationObject::GetValidationObject<ObjectLifetimes>() const;
 template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
 
+// Takes the layer and removes it from the chassis so it will not be called anymore
+void ValidationObject::ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    for (auto object_it = layer_data->object_dispatch.begin(); object_it != layer_data->object_dispatch.end(); object_it++) {
+        if ((*object_it)->container_type == type_id) {
+            ValidationObject* object = *object_it;
+
+            layer_data->object_dispatch.erase(object_it);
+
+            for (auto intercept_vector_it = layer_data->intercept_vectors.begin();
+                 intercept_vector_it != layer_data->intercept_vectors.end(); intercept_vector_it++) {
+                for (auto intercept_object_it = intercept_vector_it->begin(); intercept_object_it != intercept_vector_it->end();
+                     intercept_object_it++) {
+                    if (object == *intercept_object_it) {
+                        intercept_vector_it->erase(intercept_object_it);
+                        break;
+                    }
+                }
+            }
+
+            delete object;
+            break;
+        }
+    }
+}
+
 namespace vulkan_layer_chassis {
 
 static const VkLayerProperties global_layer = {

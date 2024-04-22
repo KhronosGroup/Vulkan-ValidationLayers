@@ -2235,6 +2235,7 @@ class ValidationObject {
 
     std::vector<ValidationObject*> object_dispatch;
     LayerObjectTypeId container_type;
+    void ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const;
 
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>

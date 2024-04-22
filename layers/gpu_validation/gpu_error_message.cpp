@@ -884,5 +884,8 @@ void gpu_tracker::Validator::ReportSetupProblem(LogObjectList objlist, const Loc
         logit += stats_string;
         vmaFreeStatsString(vmaAllocator, stats_string);
     }
-    LogError(setup_vuid, objlist, loc, "Setup Error. Detail: (%s)", logit.c_str());
+
+    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "Debug PrintF" : "GPU-AV";
+
+    LogError(setup_vuid, objlist, loc, "Setup Error, %s is being disabled. Detail: (%s)", layer_name, logit.c_str());
 }
