@@ -144,18 +144,18 @@ static const vvl::unordered_map<std::string, ValidationCheckEnables> ValidationE
 
 // This should mirror the 'DisableFlags' enumerated type
 static const std::vector<std::string> DisableFlagNameHelper = {
-    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",                     // command_buffer_state,
-    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                            // object_in_use,
-    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                         // query_validation,
-    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",                  // image_layout_validation,
-    "VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",  // queuesubmit time sync_validation,
-    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",                // object_tracking,
-    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",                     // core_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",                   // thread_safety,
-    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",                  // stateless_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",                  // handle_wrapping,
-    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                         // shader_validation,
-    "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT"        // shader_validation_caching
+    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",                    // command_buffer_state,
+    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                           // object_in_use,
+    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                        // query_validation,
+    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",                 // image_layout_validation,
+    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",               // object_tracking,
+    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",                    // core_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",                  // thread_safety,
+    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",                 // stateless_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",                 // handle_wrapping,
+    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                        // shader_validation,
+    "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT",      // shader_validation_caching
+    "VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"  // queuesubmit time sync_validation,
 };
 
 // This should mirror the 'EnableFlags' enumerated type
