@@ -25,10 +25,7 @@
 // Perform initializations that can be done at Create Device time.
 void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     if (enabled[gpu_validation]) {
-        ReportSetupProblem(device, loc,
-                           "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
-                           "Debug Printf disabled.");
-        aborted = true;
+        ReportSetupProblem(device, loc, "Debug Printf cannot be enabled when gpu assisted validation is enabled.");
         return;
     }
 
@@ -53,17 +50,13 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
     BaseClass::CreateDevice(pCreateInfo, loc);  // will set up bindings
 
     if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
-        ReportSetupProblem(device, loc, "Debug Printf requires Vulkan 1.1 or later.  Debug Printf disabled.");
-        aborted = true;
+        ReportSetupProblem(device, loc, "Debug Printf requires Vulkan 1.1 or later.");
         return;
     }
 
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
     if (!supported_features.fragmentStoresAndAtomics || !supported_features.vertexPipelineStoresAndAtomics) {
-        ReportSetupProblem(device, loc,
-                           "Debug Printf requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.  "
-                           "Debug Printf disabled.");
-        aborted = true;
+        ReportSetupProblem(device, loc, "Debug Printf requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.");
         return;
     }
 }
@@ -79,7 +72,6 @@ void debug_printf::Validator::DestroyBuffer(BufferInfo &buffer_info) {
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
                                                uint32_t unique_shader_id, const Location &loc) {
-    if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
 
     // Load original shader SPIR-V
@@ -635,15 +627,12 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     }
     VkResult result;
 
-    if (aborted) return;
-
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
     result = desc_set_manager->GetDescriptorSets(1, &desc_pool, debug_desc_layout_, &desc_sets);
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor sets.  Device could become unstable.");
-        aborted = true;
+        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor sets.");
         return;
     }
 
@@ -652,8 +641,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
 
     auto cb_node = GetWrite<debug_printf::CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-        aborted = true;
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer.");
         return;
     }
 
@@ -662,8 +650,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
-        ReportSetupProblem(cmd_buffer, loc, "Neither pipeline state nor shader object states were found, aborting Debug Printf");
-        aborted = true;
+        ReportSetupProblem(cmd_buffer, loc, "Neither pipeline state nor shader object states were found.");
         return;
     }
 
@@ -676,8 +663,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate device memory.  Device could become unstable.");
-        aborted = true;
+        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate device memory.");
         return;
     }
 
@@ -753,11 +739,15 @@ void debug_printf::CommandBuffer::Reset() {
 void debug_printf::CommandBuffer::ResetCBState() {
     auto debug_printf = static_cast<debug_printf::Validator *>(&dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
-    if (debug_printf->aborted) {
-        return;
-    }
     for (auto &buffer_info : buffer_infos) {
         debug_printf->DestroyBuffer(buffer_info);
     }
     buffer_infos.clear();
+}
+
+// TODO - Remove this function once ReleaseDeviceDispatchObject() is added to GPU-AV as well
+void debug_printf::Validator::ReportSetupProblemPrintF(LogObjectList objlist, const Location &loc,
+                                                       const char *const specific_message, bool vma_fail) const {
+    ReportSetupProblem(objlist, loc, specific_message, vma_fail);
+    ReleaseDeviceDispatchObject(this->container_type);
 }
