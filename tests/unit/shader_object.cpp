@@ -5422,7 +5422,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DISABLED_MaxSampleMaskWords) {
+TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08451");
@@ -5438,17 +5438,62 @@ TEST_F(NegativeShaderObject, DISABLED_MaxSampleMaskWords) {
         GTEST_SKIP() << "maxSampleMaskWords is greater than 1";
     }
 
-    char const* fs_src = R"glsl(
-        #version 450
-        layout(location = 0) out vec4 uFragColor;
-        void main(){
-           int x = gl_SampleMaskIn[2];
-           int y = gl_SampleMaskIn[0];
-           uFragColor = vec4(0,1,0,1) * x * y;
-        }
-    )glsl";
+    // layout(location = 0) out vec4 uFragColor;
+    // void main(){
+    //     int x = gl_SampleMaskIn[2];
+    //     int y = gl_SampleMaskIn[0];
+    //     uFragColor = vec4(0,1,0,1) * x * y;
+    // }
+    char const* fs_src = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %gl_SampleMaskIn %uFragColor
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %gl_SampleMaskIn Flat
+               OpDecorate %gl_SampleMaskIn BuiltIn SampleMask
+               OpDecorate %uFragColor Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+%_ptr_Function_int = OpTypePointer Function %int
+       %uint = OpTypeInt 32 0
+     %uint_3 = OpConstant %uint 3
+%_arr_int_uint_3 = OpTypeArray %int %uint_3
+%_ptr_Input__arr_int_uint_3 = OpTypePointer Input %_arr_int_uint_3
+%gl_SampleMaskIn = OpVariable %_ptr_Input__arr_int_uint_3 Input
+      %int_2 = OpConstant %int 2
+%_ptr_Input_int = OpTypePointer Input %int
+      %int_0 = OpConstant %int 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+ %uFragColor = OpVariable %_ptr_Output_v4float Output
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+         %28 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %x = OpVariable %_ptr_Function_int Function
+          %y = OpVariable %_ptr_Function_int Function
+         %16 = OpAccessChain %_ptr_Input_int %gl_SampleMaskIn %int_2
+         %17 = OpLoad %int %16
+               OpStore %x %17
+         %20 = OpAccessChain %_ptr_Input_int %gl_SampleMaskIn %int_0
+         %21 = OpLoad %int %20
+               OpStore %y %21
+         %29 = OpLoad %int %x
+         %30 = OpConvertSToF %float %29
+         %31 = OpVectorTimesScalar %v4float %28 %30
+         %32 = OpLoad %int %y
+         %33 = OpConvertSToF %float %32
+         %34 = OpVectorTimesScalar %v4float %31 %33
+               OpStore %uFragColor %34
+               OpReturn
+               OpFunctionEnd
+    )";
 
-    const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src, SPV_ENV_VULKAN_1_3);
+    std::vector<uint32_t> spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
 
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;

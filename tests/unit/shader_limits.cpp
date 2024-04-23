@@ -16,10 +16,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
-
-TEST_F(NegativeShaderLimits, DISABLED_MaxSampleMaskWords) {
+TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -27,52 +25,110 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxSampleMaskWords) {
         GTEST_SKIP() << "maxSampleMaskWords is greater than 1";
     }
 
-    // Valid input of sample mask
-    char const *validSource = R"glsl(
-        #version 450
-        layout(location = 0) out vec4 uFragColor;
-        void main(){
-           int y = gl_SampleMaskIn[0];
-           uFragColor = vec4(0,1,0,1) * y;
-        }
-    )glsl";
-    VkShaderObj fsValid(this, validSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const auto validPipeline = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsValid.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit);
-
-    // Exceed sample mask input array size
-    char const *inputSource = R"glsl(
-        #version 450
-        layout(location = 0) out vec4 uFragColor;
-        void main(){
-           int x = gl_SampleMaskIn[3];
-           uFragColor = vec4(0,1,0,1) * x;
-        }
-    )glsl";
-    VkShaderObj fsInput(this, inputSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    // layout(location = 0) out vec4 uFragColor;
+    // void main(){
+    //     int x = gl_SampleMaskIn[3]; // Exceed sample mask input array size
+    //     uFragColor = vec4(0,1,0,1) * x;
+    // }
+    char const *source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %gl_SampleMaskIn %uFragColor
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %gl_SampleMaskIn Flat
+               OpDecorate %gl_SampleMaskIn BuiltIn SampleMask
+               OpDecorate %uFragColor Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+%_ptr_Function_int = OpTypePointer Function %int
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_int_uint_4 = OpTypeArray %int %uint_4
+%_ptr_Input__arr_int_uint_4 = OpTypePointer Input %_arr_int_uint_4
+%gl_SampleMaskIn = OpVariable %_ptr_Input__arr_int_uint_4 Input
+      %int_3 = OpConstant %int 3
+%_ptr_Input_int = OpTypePointer Input %int
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+ %uFragColor = OpVariable %_ptr_Output_v4float Output
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+         %24 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %x = OpVariable %_ptr_Function_int Function
+         %16 = OpAccessChain %_ptr_Input_int %gl_SampleMaskIn %int_3
+         %17 = OpLoad %int %16
+               OpStore %x %17
+         %25 = OpLoad %int %x
+         %26 = OpConvertSToF %float %25
+         %27 = OpVectorTimesScalar %v4float %24 %26
+               OpStore %uFragColor %27
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const auto inputPipeline = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsInput.GetStageCreateInfo()};
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, inputPipeline, kErrorBit,
                                       "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711");
+}
 
-    // Exceed sample mask output array size
-    char const *outputSource = R"glsl(
-        #version 450
-        layout(location = 0) out vec4 uFragColor;
-        void main(){
-           gl_SampleMask[3] = 1;
-           uFragColor = vec4(0,1,0,1);
-        }
-    )glsl";
-    VkShaderObj fsOutput(this, outputSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
+    TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    if (m_device->phy().limits_.maxSampleMaskWords > 1) {
+        GTEST_SKIP() << "maxSampleMaskWords is greater than 1";
+    }
+
+    // layout(location = 0) out vec4 uFragColor;
+    // void main(){
+    //    gl_SampleMask[3] = 1; // Exceed sample mask output array size
+    //    uFragColor = vec4(0,1,0,1);
+    // }
+    char const *source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %gl_SampleMask %uFragColor
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %gl_SampleMask BuiltIn SampleMask
+               OpDecorate %uFragColor Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_int_uint_4 = OpTypeArray %int %uint_4
+%_ptr_Output__arr_int_uint_4 = OpTypePointer Output %_arr_int_uint_4
+%gl_SampleMask = OpVariable %_ptr_Output__arr_int_uint_4 Output
+      %int_3 = OpConstant %int 3
+      %int_1 = OpConstant %int 1
+%_ptr_Output_int = OpTypePointer Output %int
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+ %uFragColor = OpVariable %_ptr_Output_v4float Output
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+         %22 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %15 = OpAccessChain %_ptr_Output_int %gl_SampleMask %int_3
+               OpStore %15 %int_1
+               OpStore %uFragColor %22
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const auto outputPipeline = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsOutput.GetStageCreateInfo()};
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit,
                                       "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711");
