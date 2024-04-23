@@ -559,6 +559,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pipeline& pipeline,
                                                            const vku::safe_VkSubpassDescription2* subpass_desc,
                                                            const Location& color_loc) const;
+    bool IsColorBlendStateAttachmentCountIgnore(const vvl::Pipeline& pipeline) const;
     bool ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline& pipeline, const vku::safe_VkSubpassDescription2* subpass_desc,
                                                  const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline& pipeline,
