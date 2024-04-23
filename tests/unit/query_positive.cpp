@@ -233,6 +233,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     TEST_DESCRIPTION("Issue a query on a secondary command buffer and copy it on a primary.");
 
+    all_queue_count_ = true;
     RETURN_IF_SKIP(Init());
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
@@ -289,6 +290,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
 TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     TEST_DESCRIPTION("Issue a query and copy from it on a second command buffer.");
 
+    all_queue_count_ = true;
     RETURN_IF_SKIP(Init());
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";

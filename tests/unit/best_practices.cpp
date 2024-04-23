@@ -1062,7 +1062,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     }
 
     // Now get information correctly
-    vkt::QueueCreateInfoArray queue_info(phys_device_obj.queue_properties_);
+    vkt::QueueCreateInfoArray queue_info(phys_device_obj.queue_properties_, true);
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();

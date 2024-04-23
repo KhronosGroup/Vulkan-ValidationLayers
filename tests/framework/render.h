@@ -191,6 +191,7 @@ class VkRenderFramework : public VkTestFramework {
     VkPhysicalDevice gpu_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties physDevProps_;
     vkt::FeatureRequirements feature_requirements_;
+    bool all_queue_count_ = false;
 
     uint32_t m_gpu_index;
     vkt::Device *m_device;

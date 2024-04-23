@@ -2921,6 +2921,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreOutOfOrder) {
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    all_queue_count_ = true;
     RETURN_IF_SKIP(Init());
 
     // We need two queues for this

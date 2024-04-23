@@ -329,8 +329,8 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
 
 TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
     TEST_DESCRIPTION("General testing of vkGetDeviceQueue and general Device creation cases");
+    all_queue_count_ = true;
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
