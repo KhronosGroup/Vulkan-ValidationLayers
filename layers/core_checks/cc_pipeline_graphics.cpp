@@ -1709,6 +1709,13 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pi
     return skip;
 }
 
+bool CoreChecks::IsColorBlendStateAttachmentCountIgnore(const vvl::Pipeline &pipeline) const {
+    return pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+           pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
+           pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
+           (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) || !enabled_features.advancedBlendCoherentOperations);
+}
+
 bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pipeline,
                                                          const vku::safe_VkSubpassDescription2 *subpass_desc,
                                                          const Location &create_info_loc) const {
@@ -1760,13 +1767,7 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
     }
 
     if (!null_rp && subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
-        // attachmentCount can be ignored
-        const bool ignored =
-            pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-            pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
-            pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
-            (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) || !enabled_features.advancedBlendCoherentOperations);
-        if (!ignored) {
+        if (!IsColorBlendStateAttachmentCountIgnore(pipeline)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-07609", device, color_loc.dot(Field::attachmentCount),
                              "(%" PRIu32 ") is different than %s pSubpasses[%" PRIu32 "].colorAttachmentCount (%" PRIu32 ").",
                              color_blend_state->attachmentCount, FormatHandle(rp_state->Handle()).c_str(), pipeline.Subpass(),
@@ -3101,7 +3102,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
                              string_VkFormat(rendering_struct->stencilAttachmentFormat));
         }
 
-        if (color_blend_state && rendering_struct->colorAttachmentCount != color_blend_state->attachmentCount) {
+        if (color_blend_state && rendering_struct->colorAttachmentCount != color_blend_state->attachmentCount &&
+            !IsColorBlendStateAttachmentCountIgnore(pipeline)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06055", device,
                              create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
                              "(%" PRIu32 ") is different from %s (%" PRIu32 ").", rendering_struct->colorAttachmentCount,
