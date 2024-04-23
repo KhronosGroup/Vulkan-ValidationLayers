@@ -122,6 +122,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
   private:
     void AllocateResources();
     void ResetCBState();
+    bool NeedsPostProcess();
 
     Validator &state_;
 

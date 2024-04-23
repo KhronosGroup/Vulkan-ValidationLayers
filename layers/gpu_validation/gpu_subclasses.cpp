@@ -275,19 +275,10 @@ void gpuav::CommandBuffer::AllocateResources() {
 gpuav::CommandBuffer::~CommandBuffer() { Destroy(); }
 
 void gpuav::CommandBuffer::Destroy() {
-    ResetCBState();
-    auto gpuav = static_cast<Validator *>(&dev_data);
-
-    if (instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(gpuav->device, instrumentation_desc_set_layout_, nullptr);
-        instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
+    {
+        auto guard = WriteLock();
+        ResetCBState();
     }
-
-    if (validation_cmd_desc_set_layout_ != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(gpuav->device, validation_cmd_desc_set_layout_, nullptr);
-        validation_cmd_desc_set_layout_ = VK_NULL_HANDLE;
-    }
-
     vvl::CommandBuffer::Destroy();
 }
 
@@ -322,6 +313,16 @@ void gpuav::CommandBuffer::ResetCBState() {
     validation_cmd_desc_pool_ = VK_NULL_HANDLE;
     validation_cmd_desc_set_ = VK_NULL_HANDLE;
 
+    if (instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(gpuav->device, instrumentation_desc_set_layout_, nullptr);
+        instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
+    }
+
+    if (validation_cmd_desc_set_layout_ != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(gpuav->device, validation_cmd_desc_set_layout_, nullptr);
+        validation_cmd_desc_set_layout_ = VK_NULL_HANDLE;
+    }
+
     draw_index = compute_index = trace_rays_index = 0;
 }
 
@@ -346,8 +347,17 @@ bool gpuav::CommandBuffer::PreProcess() {
     return !per_command_resources.empty() || has_build_as_cmd;
 }
 
+bool gpuav::CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsNull(); }
+
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
+    // CommandBuffer::Destroy can happen on an other thread,
+    // so when getting here after acquiring command buffer's lock,
+    // make sure there are still things to process
+    if (!NeedsPostProcess()) {
+        return;
+    }
+
     auto gpuav = static_cast<Validator *>(&dev_data);
     bool error_found = false;
     uint32_t *error_output_buffer_ptr = nullptr;
