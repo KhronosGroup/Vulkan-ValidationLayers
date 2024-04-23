@@ -14,6 +14,29 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
+    TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Valid input of sample mask
+    char const *fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           int y = gl_SampleMaskIn[0];
+           uFragColor = vec4(0,1,0,1) * y;
+        }
+    )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto validPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit);
+}
+
 TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
     TEST_DESCRIPTION(
         "Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "
