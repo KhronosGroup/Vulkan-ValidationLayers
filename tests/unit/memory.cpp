@@ -489,6 +489,24 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
     m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09572");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
+
+    const VkDeviceSize unaligned_size = allocation_size + map_placed_props.minPlacedMemoryMapAlignment / 2;
+    memory_info.allocationSize = unaligned_size;
+    vkt::DeviceMemory unaligned_memory(*m_device, memory_info);
+
+    map_info.memory = unaligned_memory;
+    map_info.offset = 0;
+    map_info.size = VK_WHOLE_SIZE;
+
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09651");
+    vk::MapMemory2KHR(device(), &map_info, &pData);
+    m_errorMonitor->VerifyFound();
+
+    map_info.size = unaligned_size;
+
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09574");
+    vk::MapMemory2KHR(device(), &map_info, &pData);
+    m_errorMonitor->VerifyFound();
 }
 #endif
 

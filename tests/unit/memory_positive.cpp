@@ -131,6 +131,14 @@ TEST_F(PositiveMemory, MapMemoryPlaced) {
     res = vk::UnmapMemory2KHR(device(), &unmap_info);
     ASSERT_EQ(VK_SUCCESS, res);
 
+    /* Test mapping with the whole size but not VK_WHOLE_SIZE */
+    map_info.size = allocation_size;
+    res = vk::MapMemory2KHR(device(), &map_info, &pData);
+    ASSERT_EQ(VK_SUCCESS, res);
+
+    res = vk::UnmapMemory2KHR(device(), &unmap_info);
+    ASSERT_EQ(VK_SUCCESS, res);
+
     map_info.flags = 0;
     vk::MapMemory2KHR(device(), &map_info, &pData);
 
