@@ -50,7 +50,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     if (get_physical_device_properties2) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
-
+    all_queue_count_ = true;
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     VkBufferCreateInfo buffCI = vku::InitStructHelper();

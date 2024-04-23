@@ -185,7 +185,7 @@ class QueueCreateInfoArray {
     std::vector<std::vector<float>> queue_priorities_;
 
   public:
-    QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props);
+    QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props, bool all_queue_count = false);
     size_t size() const { return queue_info_.size(); }
     const VkDeviceQueueCreateInfo *data() const { return queue_info_.data(); }
 };
@@ -195,9 +195,9 @@ class Device : public internal::Handle<VkDevice> {
     explicit Device(VkPhysicalDevice phy) : phy_(phy) { init(); }
     explicit Device(VkPhysicalDevice phy, const VkDeviceCreateInfo &info) : phy_(phy) { init(info); }
     explicit Device(VkPhysicalDevice phy, std::vector<const char *> &extension_names, VkPhysicalDeviceFeatures *features = nullptr,
-                    void *create_device_pnext = nullptr)
+                    void *create_device_pnext = nullptr, bool all_queue_count = false)
         : phy_(phy) {
-        init(extension_names, features, create_device_pnext);
+        init(extension_names, features, create_device_pnext, all_queue_count);
     }
 
     ~Device() noexcept;
@@ -206,7 +206,7 @@ class Device : public internal::Handle<VkDevice> {
     // vkCreateDevice()
     void init(const VkDeviceCreateInfo &info);
     void init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features = nullptr,
-              void *create_device_pnext = nullptr);  // all queues, all extensions, etc
+              void *create_device_pnext = nullptr, bool all_queue_count = false);  // all queues, all extensions, etc
     void init() {
         std::vector<const char *> extensions;
         init(extensions);

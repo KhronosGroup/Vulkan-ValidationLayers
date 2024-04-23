@@ -187,7 +187,7 @@ std::vector<VkLayerProperties> PhysicalDevice::layers() const {
     }
 }
 
-QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props)
+QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props, bool all_queue_count)
     : queue_info_(), queue_priorities_() {
     queue_info_.reserve(queue_props.size());
 
@@ -195,7 +195,8 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
         if (queue_props[i].queueCount > 0) {
             VkDeviceQueueCreateInfo qi = vku::InitStructHelper();
             qi.queueFamilyIndex = i;
-            qi.queueCount = queue_props[i].queueCount;
+            // It is very slow on some drivers (ex Windows NVIDIA) to create all 16/32 queues supported
+            qi.queueCount = all_queue_count ? queue_props[i].queueCount : 1;
             queue_priorities_.emplace_back(qi.queueCount, 0.0f);
             qi.pQueuePriorities = queue_priorities_[i].data();
             queue_info_.push_back(qi);
@@ -211,9 +212,10 @@ void Device::destroy() noexcept {
 
 Device::~Device() noexcept { destroy(); }
 
-void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext) {
+void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext,
+                  bool all_queue_count) {
     // request all queues
-    QueueCreateInfoArray queue_info(phy_.queue_properties_);
+    QueueCreateInfoArray queue_info(phy_.queue_properties_, all_queue_count);
     for (uint32_t i = 0; i < (uint32_t)phy_.queue_properties_.size(); i++) {
         if (phy_.queue_properties_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             graphics_queue_node_index_ = i;

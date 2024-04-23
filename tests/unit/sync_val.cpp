@@ -2178,6 +2178,7 @@ TEST_F(NegativeSyncVal, CmdClear) {
 
 TEST_F(NegativeSyncVal, CmdQuery) {
     // CmdCopyQueryPoolResults
+    all_queue_count_ = true;
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
