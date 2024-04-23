@@ -1235,15 +1235,6 @@ bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMap
                                  "minPlacedMemoryMapAlignment (0x%" PRIx64 ") while VK_MEMORY_MAP_PLACED_BIT_EXT is set",
                                  pMemoryMapInfo->offset, phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment);
                 }
-
-                if (pMemoryMapInfo->size != VK_WHOLE_SIZE &&
-                    pMemoryMapInfo->size % phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment != 0) {
-                    skip |= LogError("VUID-VkMemoryMapInfoKHR-flags-09574", pMemoryMapInfo->memory, info_loc.dot(Field::size),
-                                     "(0x%" PRIx64
-                                     ") is not VK_WHOLE_SIZE and is not an integer multiple of "
-                                     "minPlacedMemoryMapAlignment (0x%" PRIx64 ") while VK_MEMORY_MAP_PLACED_BIT_EXT is set",
-                                     pMemoryMapInfo->size, phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment);
-                }
             } else {
                 if (pMemoryMapInfo->offset != 0) {
                     skip |= LogError("VUID-VkMemoryMapInfoKHR-flags-09571", pMemoryMapInfo->memory, info_loc.dot(Field::offset),
@@ -1253,12 +1244,30 @@ bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMap
                                      pMemoryMapInfo->offset);
                 }
 
-                if (pMemoryMapInfo->size != VK_WHOLE_SIZE) {
+                if (pMemoryMapInfo->size != VK_WHOLE_SIZE && pMemoryMapInfo->size != mem_info->allocate_info.allocationSize) {
                     skip |= LogError("VUID-VkMemoryMapInfoKHR-flags-09572", pMemoryMapInfo->memory, info_loc.dot(Field::size),
                                      "(0x%" PRIx64
-                                     ") is not VK_WHOLE_SIZE while VK_MEMORY_MAP_PLACED_BIT_EXT is set and "
-                                     "memoryMapRangePlaced is not enabled.",
-                                     pMemoryMapInfo->size);
+                                     ") is not VK_WHOLE_SIZE or the size of memory (%" PRIu64
+                                     ") while VK_MEMORY_MAP_PLACED_BIT_EXT is set and memoryMapRangePlaced is not enabled.",
+                                     pMemoryMapInfo->size, mem_info->allocate_info.allocationSize);
+                }
+            }
+
+            if (pMemoryMapInfo->size == VK_WHOLE_SIZE) {
+                if (mem_info->allocate_info.allocationSize % phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment != 0) {
+                    skip |= LogError("VUID-VkMemoryMapInfoKHR-flags-09651", pMemoryMapInfo->memory, info_loc.dot(Field::size),
+                                     "is VK_WHOLE_SIZE but the size of the memory (0x%" PRIx64
+                                     ") is not an integer multiple of minPlacedMemoryMapAlignment (0x%" PRIx64 ")",
+                                     mem_info->allocate_info.allocationSize,
+                                     phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment);
+                }
+            } else {
+                if (pMemoryMapInfo->size % phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment != 0) {
+                    skip |= LogError("VUID-VkMemoryMapInfoKHR-flags-09574", pMemoryMapInfo->memory, info_loc.dot(Field::size),
+                                     "(0x%" PRIx64
+                                     ") is not VK_WHOLE_SIZE and is not an integer multiple of "
+                                     "minPlacedMemoryMapAlignment (0x%" PRIx64 ") while VK_MEMORY_MAP_PLACED_BIT_EXT is set",
+                                     pMemoryMapInfo->size, phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment);
                 }
             }
 
