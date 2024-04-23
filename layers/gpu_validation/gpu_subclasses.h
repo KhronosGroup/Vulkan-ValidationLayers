@@ -124,6 +124,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
   private:
     void AllocateResources();
     void ResetCBState();
+    bool NeedsPostProcess();
 
     VkDeviceSize GetBdaRangesBufferByteSize() const;
     [[nodiscard]] bool UpdateBdaRangesBuffer();

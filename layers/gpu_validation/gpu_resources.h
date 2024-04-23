@@ -24,8 +24,8 @@ class Validator;
 struct DescBindingInfo;
 
 struct DeviceMemoryBlock {
-    VkBuffer buffer;
-    VmaAllocation allocation;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
     void Destroy(VmaAllocator allocator) {
         if (buffer != VK_NULL_HANDLE) {
             vmaDestroyBuffer(allocator, buffer, allocation);
@@ -33,6 +33,7 @@ struct DeviceMemoryBlock {
             allocation = VK_NULL_HANDLE;
         }
     }
+    bool IsNull() { return buffer == VK_NULL_HANDLE; }
 };
 
 struct AccelerationStructureBuildValidationState {
