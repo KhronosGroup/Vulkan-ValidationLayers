@@ -1337,74 +1337,97 @@ void DispatchGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerati
 void DispatchGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo, size_t dataSize, void *pDescriptor) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
+    // When using a union of pointer we still need to unwrap the handles, but since it is a pointer, we can just use the pointer
+    // from the incoming parameter instead of using safe structs as it is less complex doing it here
     vku::safe_VkDescriptorGetInfoEXT local_pDescriptorInfo;
-    {
-        if (pDescriptorInfo) {
-            local_pDescriptorInfo.initialize(pDescriptorInfo);
+    // TODO - Use safe struct once VUL is updated
+    // There are no pNext for this function so nothing in short term will break
+    // local_pDescriptorInfo.initialize(pDescriptorInfo);
+    local_pDescriptorInfo.pNext = nullptr;
+    local_pDescriptorInfo.sType = pDescriptorInfo->sType;
+    local_pDescriptorInfo.type = pDescriptorInfo->type;
 
-            switch (pDescriptorInfo->type) {
-                case VK_DESCRIPTOR_TYPE_SAMPLER: {
-                    if (local_pDescriptorInfo.data.pSampler)
-                        *(VkSampler *)local_pDescriptorInfo.data.pSampler = layer_data->Unwrap(*pDescriptorInfo->data.pSampler);
+    // need in local scope to call down whatever we use
+    VkSampler sampler;
+    VkDescriptorImageInfo image_info;
+    vku::safe_VkDescriptorAddressInfoEXT address_info;
 
-                    break;
-                }
-                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-                    if (local_pDescriptorInfo.data.pCombinedImageSampler) {
-                        if (pDescriptorInfo->data.pCombinedImageSampler->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo.data.pCombinedImageSampler->sampler =
-                                layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->sampler);
-                        }
-                        if (pDescriptorInfo->data.pCombinedImageSampler->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo.data.pCombinedImageSampler->imageView =
-                                layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->imageView);
-                        }
-                    }
-                    break;
-                }
-                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
-                    if (local_pDescriptorInfo.data.pSampledImage) {
-                        if (pDescriptorInfo->data.pSampledImage->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo.data.pSampledImage->sampler =
-                                layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->sampler);
-                        }
-                        if (pDescriptorInfo->data.pSampledImage->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo.data.pSampledImage->imageView =
-                                layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->imageView);
-                        }
-                    }
-                    break;
-                }
-                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
-                    if (local_pDescriptorInfo.data.pStorageImage) {
-                        if (pDescriptorInfo->data.pStorageImage->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo.data.pStorageImage->sampler =
-                                layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->sampler);
-                        }
-                        if (pDescriptorInfo->data.pStorageImage->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo.data.pStorageImage->imageView =
-                                layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->imageView);
-                        }
-                    }
-                    break;
-                }
-                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
-                    if (local_pDescriptorInfo.data.pInputAttachmentImage) {
-                        if (pDescriptorInfo->data.pInputAttachmentImage->sampler) {
-                            *(VkSampler *)&local_pDescriptorInfo.data.pInputAttachmentImage->sampler =
-                                layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->sampler);
-                        }
-                        if (pDescriptorInfo->data.pInputAttachmentImage->imageView) {
-                            *(VkImageView *)&local_pDescriptorInfo.data.pInputAttachmentImage->imageView =
-                                layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->imageView);
-                        }
-                    }
-                    break;
-                }
-                default:
-                    break;
+    assert(pDescriptorInfo);
+    switch (pDescriptorInfo->type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER: {
+            // if using null descriptors can be null
+            if (pDescriptorInfo->data.pSampler) {
+                sampler = layer_data->Unwrap(*pDescriptorInfo->data.pSampler);
+                local_pDescriptorInfo.data.pSampler = &sampler;
             }
+            break;
         }
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
+            if (pDescriptorInfo->data.pCombinedImageSampler) {
+                image_info.sampler = layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->sampler);
+                image_info.imageView = layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->imageView);
+                image_info.imageLayout = pDescriptorInfo->data.pCombinedImageSampler->imageLayout;
+                local_pDescriptorInfo.data.pCombinedImageSampler = &image_info;
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
+            if (pDescriptorInfo->data.pSampledImage) {
+                image_info.sampler = layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->sampler);
+                image_info.imageView = layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->imageView);
+                image_info.imageLayout = pDescriptorInfo->data.pSampledImage->imageLayout;
+                local_pDescriptorInfo.data.pSampledImage = &image_info;
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
+            if (pDescriptorInfo->data.pStorageImage) {
+                image_info.sampler = layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->sampler);
+                image_info.imageView = layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->imageView);
+                image_info.imageLayout = pDescriptorInfo->data.pStorageImage->imageLayout;
+                local_pDescriptorInfo.data.pStorageImage = &image_info;
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
+            if (pDescriptorInfo->data.pInputAttachmentImage) {
+                image_info.sampler = layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->sampler);
+                image_info.imageView = layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->imageView);
+                image_info.imageLayout = pDescriptorInfo->data.pInputAttachmentImage->imageLayout;
+                local_pDescriptorInfo.data.pInputAttachmentImage = &image_info;
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            if (pDescriptorInfo->data.pUniformTexelBuffer) {
+                address_info.initialize(pDescriptorInfo->data.pUniformTexelBuffer);
+                local_pDescriptorInfo.data.pUniformTexelBuffer = &address_info;
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            if (pDescriptorInfo->data.pStorageTexelBuffer) {
+                address_info.initialize(pDescriptorInfo->data.pStorageTexelBuffer);
+                local_pDescriptorInfo.data.pStorageTexelBuffer = &address_info;
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            if (pDescriptorInfo->data.pUniformBuffer) {
+                address_info.initialize(pDescriptorInfo->data.pUniformBuffer);
+                local_pDescriptorInfo.data.pUniformBuffer = &address_info;
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            if (pDescriptorInfo->data.pStorageBuffer) {
+                address_info.initialize(pDescriptorInfo->data.pStorageBuffer);
+                local_pDescriptorInfo.data.pStorageBuffer = &address_info;
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            local_pDescriptorInfo.data.accelerationStructure = pDescriptorInfo->data.accelerationStructure;
+            break;
+        default:
+            break;
     }
 
     layer_data->device_dispatch_table.GetDescriptorEXT(device, (const VkDescriptorGetInfoEXT *)&local_pDescriptorInfo, dataSize,
