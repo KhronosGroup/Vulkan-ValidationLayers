@@ -1570,8 +1570,19 @@ void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, const Re
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    for (auto &queue : queue_map_.snapshot()) {
-        queue.second->NotifyAndWait(record_obj.location);
+
+    // Sort the queues by id to notify in deterministic order (queue creation order).
+    // This is not needed for correctness, but gives deterministic behavior to certain
+    // types of bugs in the queue thread.
+    std::vector<std::shared_ptr<vvl::Queue>> queues;
+    queues.reserve(queue_map_.size());
+    for (const auto &entry : queue_map_.snapshot()) {
+        queues.push_back(entry.second);
+    }
+    std::sort(queues.begin(), queues.end(), [](const auto &q1, const auto &q2) { return q1->GetId() < q2->GetId(); });
+
+    for (auto &queue : queues) {
+        queue->NotifyAndWait(record_obj.location);
     }
 }
 
