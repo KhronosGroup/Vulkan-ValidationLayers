@@ -3283,7 +3283,18 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
 
     // Verify vertex binding
     if (pipeline && pipeline->vertex_input_state) {
+        vvl::unordered_set<uint32_t> bound_pipeline_bindings;
+        for (const auto &description : pipeline->vertex_input_state->binding_descriptions) {
+            bound_pipeline_bindings.insert(description.binding);
+        }
+
         for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
+            // Only validate the bindings from the last bound pipeline (unlesss it used VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+            if (!pipeline->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+                bound_pipeline_bindings.find(vertex_buffer_binding.first) == bound_pipeline_bindings.end()) {
+                continue;
+            }
+
             if (vertex_buffer_binding.second.buffer == VK_NULL_HANDLE) {
                 if (!enabled_features.nullDescriptor) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
