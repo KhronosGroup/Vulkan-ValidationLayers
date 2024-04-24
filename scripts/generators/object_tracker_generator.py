@@ -214,7 +214,6 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'VkSparseImageMemoryBind',
             'VkBufferViewCreateInfo',
             'VkPipelineShaderStageCreateInfo',
-            'VkPipelineLayoutCreateInfo',
             'VkBufferMemoryBarrier',
             'VkImageMemoryBarrier',
             'VkImageMemoryRequirementsInfo2',
@@ -642,6 +641,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 return "\"VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273\""
             elif commandName == 'vkGetPipelineExecutableInternalRepresentationsKHR':
                 return "\"VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277\""
+        # TODO - Need to get spec to generate these VUs
+        if structName == 'VkPipelineLayoutCreateInfo' and member.name == 'pSetLayouts':
+            return "\"UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent\""
 
         if singleParentVuid:
             return getVUID(self.valid_vuids, f'VUID-{structName}-{member.name}-parent')
