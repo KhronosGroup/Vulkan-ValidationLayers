@@ -1581,8 +1581,14 @@ void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, const
     }
     std::sort(queues.begin(), queues.end(), [](const auto &q1, const auto &q2) { return q1->GetId() < q2->GetId(); });
 
+    // Notify all queues before waiting.
+    // NotifyAndWait is not safe here. It deadlocks when a wait depends on the not yet issued notify.
     for (auto &queue : queues) {
-        queue->NotifyAndWait(record_obj.location);
+        queue->Notify();
+    }
+    // All possible forward progress is initiated. Now it's safe to wait.
+    for (auto &queue : queues) {
+        queue->Wait(record_obj.location);
     }
 }
 
