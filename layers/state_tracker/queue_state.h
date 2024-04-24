@@ -96,13 +96,16 @@ class Queue: public StateObject {
     // called from the various PostCallRecordQueueSubmit() methods
     void PostSubmit();
 
-    // Tell the queue thread that submissions up to the submission with sequence number until_seq have finished
-    uint64_t Notify(uint64_t until_seq = kU64Max);
+    // Tell the queue thread that submissions up to and including the submission with
+    // sequence number until_seq have finished. kU64Max means to finish all submissions.
+    void Notify(uint64_t until_seq = kU64Max);
 
-    // Tell the queue and then wait for it to finish updating its state.
-    // UINT64_MAX means to finish all submissions.
+    // Wait for the queue thread to finish processing submissions with sequence numbers
+    // up to and including until_seq. kU64Max means to finish all submissions.
+    void Wait(const Location &loc, uint64_t until_seq = kU64Max);
+
+    // Helper that combines Notify and Wait
     void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
-    std::shared_future<void> Wait(uint64_t until_seq = kU64Max);
 
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;
