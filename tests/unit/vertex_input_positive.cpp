@@ -814,3 +814,44 @@ TEST_F(PositiveVertexInput, BindVertexBufferNull) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveVertexInput, InterleavedAttributes) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7892");
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    // Has item in Binding = 1 which we never bind with CmdBindVertexBuffers
+    CreatePipelineHelper pipe0(*this);
+    VkVertexInputBindingDescription vtx_binding_des[2] = {{0, 12, VK_VERTEX_INPUT_RATE_VERTEX},
+                                                          {1, 12, VK_VERTEX_INPUT_RATE_VERTEX}};
+    VkVertexInputAttributeDescription vtx_attri_des[2] = {{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+                                                          {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0}};
+    pipe0.vi_ci_.vertexBindingDescriptionCount = 2;
+    pipe0.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
+    pipe0.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe0.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
+    pipe0.CreateGraphicsPipeline();
+
+    vtx_attri_des[1].binding = 0;
+    CreatePipelineHelper pipe1(*this);
+    pipe1.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe1.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
+    pipe1.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe1.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
+    pipe1.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    // We bind, but rebind with valid pipeline
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());  // invalid
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());  // valid
+    VkDeviceSize offset = 0;
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
