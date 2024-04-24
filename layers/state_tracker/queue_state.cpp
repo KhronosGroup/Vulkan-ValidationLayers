@@ -93,29 +93,33 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) 
     return retire_early_seq;
 }
 
-std::shared_future<void> vvl::Queue::Wait(uint64_t until_seq) {
+void vvl::Queue::Notify(uint64_t until_seq) {
     auto guard = Lock();
     if (until_seq == kU64Max) {
-        until_seq = seq_;
+        until_seq = seq_.load();
     }
-    if (submissions_.empty() || until_seq < submissions_.begin()->seq) {
-        std::promise<void> already_done;
-        auto result = already_done.get_future();
-        already_done.set_value();
-        return result;
+    if (request_seq_ < until_seq) {
+        request_seq_ = until_seq;
     }
-    auto index = until_seq - submissions_.begin()->seq;
-    assert(index < submissions_.size());
-    // Make sure we don't overflow if size_t is 32 bit
-    assert(index < std::numeric_limits<size_t>::max());
-    return submissions_[static_cast<size_t>(index)].waiter;
+    cond_.notify_one();
 }
 
-void vvl::Queue::NotifyAndWait(const Location &loc, uint64_t until_seq) {
-    until_seq = Notify(until_seq);
-    auto waiter = Wait(until_seq);
-    auto result = waiter.wait_until(GetCondWaitTimeout());
-    if (result != std::future_status::ready) {
+void vvl::Queue::Wait(const Location &loc, uint64_t until_seq) {
+    std::shared_future<void> waiter;
+    {
+        auto guard = Lock();
+        if (until_seq == kU64Max) {
+            until_seq = seq_.load();
+        }
+        if (submissions_.empty() || until_seq < submissions_.begin()->seq) {
+            return;
+        }
+        uint64_t index = until_seq - submissions_.begin()->seq;
+        assert(index < submissions_.size());
+        waiter = submissions_[static_cast<size_t>(index)].waiter;
+    }
+    auto wait_status = waiter.wait_until(GetCondWaitTimeout());
+    if (wait_status != std::future_status::ready) {
         dev_data_.LogError(
             "INTERNAL-ERROR-VkQueue-state-timeout", Handle(), loc,
             "The Validation Layers hit a timeout waiting for queue state to update (this is most likely a validation bug)."
@@ -124,16 +128,9 @@ void vvl::Queue::NotifyAndWait(const Location &loc, uint64_t until_seq) {
     }
 }
 
-uint64_t vvl::Queue::Notify(uint64_t until_seq) {
-    auto guard = Lock();
-    if (until_seq == kU64Max) {
-        until_seq = seq_;
-    }
-    if (request_seq_ < until_seq) {
-        request_seq_ = until_seq;
-    }
-    cond_.notify_one();
-    return until_seq;
+void vvl::Queue::NotifyAndWait(const Location &loc, uint64_t until_seq) {
+    Notify(until_seq);
+    Wait(loc, until_seq);
 }
 
 void vvl::Queue::Destroy() {
