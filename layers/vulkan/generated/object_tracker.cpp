@@ -1203,7 +1203,8 @@ bool ObjectLifetimes::PreCallValidateCreatePipelineLayout(VkDevice device, const
         if ((pCreateInfo->setLayoutCount > 0) && (pCreateInfo->pSetLayouts)) {
             for (uint32_t index1 = 0; index1 < pCreateInfo->setLayoutCount; ++index1) {
                 skip |= ValidateObject(pCreateInfo->pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, true,
-                                       "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                       "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
+                                       "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
                                        pCreateInfo_loc.dot(Field::pSetLayouts, index1));
             }
         }
@@ -4323,7 +4324,8 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer c
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
                 for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
-                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
+                                           "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
                                            pNext_loc.dot(Field::pSetLayouts, index2));
                 }
             }
@@ -4349,7 +4351,8 @@ bool ObjectLifetimes::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer comman
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
                 for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
-                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
+                                           "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
                                            pNext_loc.dot(Field::pSetLayouts, index2));
                 }
             }
@@ -4384,7 +4387,8 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
                 for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
-                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
+                                           "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
                                            pNext_loc.dot(Field::pSetLayouts, index2));
                 }
             }
@@ -4414,7 +4418,8 @@ bool ObjectLifetimes::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
                 for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
-                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
+                                           "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
                                            pNext_loc.dot(Field::pSetLayouts, index2));
                 }
             }
@@ -4444,7 +4449,8 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
                 for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
-                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
+                                           "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
                                            pNext_loc.dot(Field::pSetLayouts, index2));
                 }
             }

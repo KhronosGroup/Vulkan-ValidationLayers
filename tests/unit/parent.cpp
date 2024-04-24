@@ -672,3 +672,24 @@ TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
     ds.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeParent, DescriptorSetLayout) {
+    TEST_DESCRIPTION("Create pipeline layout from a descriptor set layout that was created on a different device");
+    RETURN_IF_SKIP(Init());
+
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1u;
+    pipeline_layout_ci.pSetLayouts = &descriptor_set.layout_.handle();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent");
+    VkPipelineLayout handle;
+    vk::CreatePipelineLayout(m_second_device->handle(), &pipeline_layout_ci, nullptr, &handle);
+    m_errorMonitor->VerifyFound();
+}
