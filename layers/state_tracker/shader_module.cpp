@@ -565,10 +565,6 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
         case spv::OpImageSparseFetch:
         case spv::OpImageGather:
         case spv::OpImageSparseGather:
-        case spv::OpImageQuerySizeLod:
-        case spv::OpImageQuerySize:
-        case spv::OpImageQueryLevels:
-        case spv::OpImageQuerySamples:
         case spv::OpImageQueryLod:
             break;
 
@@ -952,16 +948,18 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
             case spv::OpImageSparseRead:
             case spv::OpImageFetch:
             case spv::OpImageGather:
-            case spv::OpImageQuerySizeLod:
-            case spv::OpImageQuerySize:
             case spv::OpImageQueryLod:
-            case spv::OpImageQueryLevels:
-            case spv::OpImageQuerySamples:
             case spv::OpImageSparseFetch:
             case spv::OpImageSparseGather: {
                 image_instructions.push_back(&insn);
                 break;
             }
+            case spv::OpImageQuerySizeLod:
+            case spv::OpImageQuerySize:
+            case spv::OpImageQueryLevels:
+            case spv::OpImageQuerySamples:
+                // from spec "return properties of the image descriptor that would be accessed. The image itself is not accessed."
+                break;
             case spv::OpStore: {
                 store_pointer_ids.emplace_back(insn.Word(1));  // object id or AccessChain id
                 break;
