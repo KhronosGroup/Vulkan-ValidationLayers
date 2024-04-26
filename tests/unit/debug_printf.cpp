@@ -429,7 +429,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -806,7 +806,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -942,7 +942,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1285,7 +1285,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }

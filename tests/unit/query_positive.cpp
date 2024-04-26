@@ -155,14 +155,14 @@ TEST_F(PositiveQuery, BasicQuery) {
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
     m_commandBuffer->begin();
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
 
@@ -283,7 +283,8 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
         primary_buffer.end();
     }
 
-    primary_buffer.QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(primary_buffer);
+    m_default_queue->wait();
     vk::QueueWaitIdle(queue);
 }
 

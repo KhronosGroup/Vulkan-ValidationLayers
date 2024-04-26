@@ -385,7 +385,8 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
         end_render(command_buffer);
         command_buffer.end();
-        command_buffer.QueueCommandBuffer(&queue);
+        queue.submit(command_buffer);
+        queue.wait();
         test.DefaultQueue()->wait();
     }
 
@@ -417,7 +418,8 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         test.VerifyFound();
 
         command_buffer.end();
-        command_buffer.QueueCommandBuffer(&queue);
+        queue.submit(command_buffer);
+        queue.wait();
         test.DefaultQueue()->wait();
     }
 
@@ -450,7 +452,8 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         test.VerifyFound();
 
         command_buffer.end();
-        command_buffer.QueueCommandBuffer(&queue);
+        queue.submit(command_buffer);
+        queue.wait();
         test.DefaultQueue()->wait();
     }
 
@@ -480,7 +483,8 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         vk::CmdClearAttachments(command_buffer, 1, &clear_attachment, 1, &clear_rect);
         end_render(command_buffer);
         command_buffer.end();
-        command_buffer.QueueCommandBuffer(&queue);
+        queue.submit(command_buffer);
+        queue.wait();
         test.DefaultQueue()->wait();
     }
 }
@@ -4083,7 +4087,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
 

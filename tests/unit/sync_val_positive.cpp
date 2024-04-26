@@ -134,7 +134,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
     vk::CmdEndRenderPass(*m_commandBuffer);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
 
@@ -1601,7 +1601,8 @@ TEST_F(PositiveSyncVal, ThreadedSubmitAndFenceWaitAndPresent) {
                                    nullptr, 1, &transition);
         }
         cmd.end();
-        cmd.QueueCommandBuffer(m_default_queue);
+        m_default_queue->submit(cmd);
+        m_default_queue->wait();
     }
 
     constexpr int N = 1'000;

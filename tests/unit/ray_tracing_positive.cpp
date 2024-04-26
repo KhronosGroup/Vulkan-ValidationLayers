@@ -71,7 +71,7 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     blas->BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     m_commandBuffer->begin();
@@ -80,7 +80,7 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     tlas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 }
 
@@ -227,7 +227,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
 
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue, true);
+    m_default_queue->submit(*m_commandBuffer);
 
     m_device->wait();
 
@@ -412,13 +412,13 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
     }
 
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     m_commandBuffer->begin();
     vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 }
 
@@ -491,7 +491,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
         m_commandBuffer->end();
 
-        m_commandBuffer->QueueCommandBuffer(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer);
         m_device->wait();
     }
 }
@@ -893,7 +893,7 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 }
 

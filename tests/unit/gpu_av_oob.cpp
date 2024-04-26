@@ -83,7 +83,8 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     m_errorMonitor->SetDesiredWarning(
         "Descriptor index 0 access out of bounds. Descriptor size is 4 and highest byte accessed was 19", 3);
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
     data = (uint32_t *)uniform_buffer.memory().map();
     *data = 1;
@@ -91,7 +92,8 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     // normally VUID-vkCmdDraw-storageBuffers-06936
     m_errorMonitor->SetDesiredWarning(
         "Descriptor index 0 access out of bounds. Descriptor size is 16 and highest byte accessed was 35", 3);
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -255,7 +257,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
         m_commandBuffer->EndRenderPass();
     }
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     vk::DeviceWaitIdle(*m_device);
     m_errorMonitor->VerifyFound();
     DestroyRenderTarget();

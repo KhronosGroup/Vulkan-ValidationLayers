@@ -147,7 +147,12 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
             // the Fence resolves to VK_NULL_HANLE... i.e. no fence
             qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
         } else {
-            qf->command_buffer->QueueCommandBuffer(qf->queue, positive);  // Check for success on positive tests only
+            if (positive) {  // Check for success on positive tests only
+                qf->queue->submit(*qf->command_buffer);
+            } else {
+                qf->queue->submit(*qf->command_buffer, false);
+            }
+            qf->queue->wait();
         }
     }
 
@@ -198,7 +203,12 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
             // the Fence resolves to VK_NULL_HANLE... i.e. no fence
             qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
         } else {
-            qf->command_buffer->QueueCommandBuffer(qf->queue, positive);  // Check for success on positive tests only
+            if (positive) {  // Check for success on positive tests only
+                qf->queue->submit(*qf->command_buffer);
+            } else {
+                qf->queue->submit(*qf->command_buffer, false);
+            }
+            qf->queue->wait();
         }
     }
 
@@ -217,7 +227,8 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     vk::CmdPipelineBarrier(cb->handle(), src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier,
                            img_barrier);
     cb->end();
-    cb->QueueCommandBuffer(queue);  // Implicitly waits
+    queue->submit(*cb);
+    queue->wait();
 }
 
 void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer *cb_from, vkt::Queue *queue_to,
@@ -238,7 +249,8 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     dep_info.pImageMemoryBarriers = img_barrier;
     vk::CmdPipelineBarrier2KHR(cb->handle(), &dep_info);
     cb->end();
-    cb->QueueCommandBuffer(queue);  // Implicitly waits
+    queue->submit(*cb);
+    queue->wait();
 }
 
 void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer *cb_from, vkt::Queue *queue_to,
