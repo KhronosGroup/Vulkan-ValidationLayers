@@ -897,8 +897,7 @@ class enumeration {
     size_t size() const { return count_; }
     bool empty() const { return count_ == 0; }
 
-    pointer data() { return data_; }
-    const_pointer data() const { return data_; }
+    pointer data() const { return data_; }
 
   private:
     pointer data_ = {};

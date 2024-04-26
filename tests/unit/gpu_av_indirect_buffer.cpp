@@ -200,9 +200,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimitSubmit2) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    vkt::Fence null_fence;
     // use vkQueueSumit2
-    m_default_queue->submit2(*m_commandBuffer, null_fence);
+    m_default_queue->submit2(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }

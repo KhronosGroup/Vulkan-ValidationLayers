@@ -561,7 +561,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
-        m_default_queue->submit(cmd_buffer_frame_0, fence_frame_0);
+        m_default_queue->submit_with_fence(cmd_buffer_frame_0, fence_frame_0);
     }
 
     // Frame 1
@@ -595,7 +595,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
-        m_default_queue->submit(cmd_buffer_frame_1, fence_frame_1);
+        m_default_queue->submit_with_fence(cmd_buffer_frame_1, fence_frame_1);
     }
 
     // Frame 2
@@ -644,7 +644,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
-        m_default_queue->submit(cmd_buffer_frame_2, fence_frame_2);
+        m_default_queue->submit_with_fence(cmd_buffer_frame_2, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);
@@ -696,7 +696,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
-        m_default_queue->submit(cmd_buffer_frame_0, fence_frame_0);
+        m_default_queue->submit_with_fence(cmd_buffer_frame_0, fence_frame_0);
     }
 
     // Frame 1
@@ -718,7 +718,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
-        m_default_queue->submit(cmd_buffer_frame_1, fence_frame_1);
+        m_default_queue->submit_with_fence(cmd_buffer_frame_1, fence_frame_1);
     }
 
     // Frame 2
@@ -742,7 +742,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
-        m_default_queue->submit(cmd_buffer_frame_2, fence_frame_2);
+        m_default_queue->submit_with_fence(cmd_buffer_frame_2, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);

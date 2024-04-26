@@ -5784,9 +5784,9 @@ TEST_F(NegativeSyncVal, QSDebugRegion) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
 
-    std::vector<const vkt::CommandBuffer*> command_buffers = {&cb0, &cb1};
+    std::array command_buffers = {&cb0, &cb1};
     m_errorMonitor->SetDesiredError("RegionA");
-    m_default_queue->submit(command_buffers, vkt::Fence{}, false);
+    m_default_queue->submit(command_buffers, false);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5819,7 +5819,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion2) {
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
     m_errorMonitor->SetDesiredError("RegionA");
-    m_default_queue->submit(cb1, vkt::Fence{}, false);
+    m_default_queue->submit(cb1, false);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5888,9 +5888,9 @@ TEST_F(NegativeSyncVal, QSDebugRegion3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // VulkanFrame_CommandBuffer1
     cb1.end();
 
-    std::vector<const vkt::CommandBuffer*> command_buffers = {&cb0, &cb1};
+    std::array command_buffers = {&cb0, &cb1};
     m_errorMonitor->SetDesiredError("VulkanFrame_CommandBuffer0::FirstPass::CopyAToB");
-    m_default_queue->submit(command_buffers, vkt::Fence{}, false);
+    m_default_queue->submit(command_buffers, false);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5931,7 +5931,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     vk::CmdEndDebugUtilsLabelEXT(cb2);  // RegionA
     cb2.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb2, vkt::Fence{}, false);
+    m_default_queue->submit(cb2, false);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5965,15 +5965,15 @@ TEST_F(NegativeSyncVal, QSDebugRegion5) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
     cb1.end();
 
-    std::vector<const vkt::CommandBuffer*> command_buffers = {&cb0, &cb1};
-    m_default_queue->submit(command_buffers, vkt::Fence{});
+    std::array command_buffers = {&cb0, &cb1};
+    m_default_queue->submit(command_buffers);
 
     vkt::CommandBuffer cb2(*m_device, m_commandPool);
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb2, vkt::Fence{}, false);
+    m_default_queue->submit(cb2, false);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -6021,7 +6021,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion6) {
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb2, vkt::Fence{}, false);
+    m_default_queue->submit(cb2, false);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -6055,7 +6055,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion7) {
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_default_queue->submit(cb1, vkt::Fence{}, false);
+    m_default_queue->submit(cb1, false);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }
@@ -6096,7 +6096,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb1, vkt::Fence{}, false);
+    m_default_queue->submit(cb1, false);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -6173,7 +6173,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_TimelineStability) {
     vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
     m_commandBuffer->end();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_default_queue->submit(*m_commandBuffer, vkt::Fence{}, false);
+    m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }

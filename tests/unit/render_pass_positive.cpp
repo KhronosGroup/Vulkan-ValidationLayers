@@ -205,13 +205,11 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    vkt::Fence fence(*m_device);
-    m_default_queue->submit(*m_commandBuffer, fence);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     vkt::Image destImage(*m_device, 100, 100, 1, depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    fence.wait(kWaitTimeout);
     vkt::CommandBuffer cmdbuf(*m_device, m_commandPool);
     cmdbuf.begin();
 
