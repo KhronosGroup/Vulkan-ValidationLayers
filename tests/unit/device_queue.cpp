@@ -85,7 +85,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
         m_commandBuffer->begin();
         vk::CmdFillBuffer(m_commandBuffer->handle(), ib.handle(), 0, 16, 5);
         m_commandBuffer->end();
-        m_commandBuffer->QueueCommandBuffer(false);
+        m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
         m_errorMonitor->VerifyFound();
     }
 

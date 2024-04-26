@@ -175,7 +175,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &image_barrier);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(true);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
 
     // Get memory size of tiled image
     VkImageSubresource2KHR subresource = vku::InitStructHelper();

@@ -301,6 +301,7 @@ struct ClearAttachmentHazardHelper {
     const VkImageUsageFlags ds_usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | kTransferUsage;
     VkLayerTest& test;
     vkt::Device& device;
+    vkt::Queue& queue;
     vkt::CommandBuffer& command_buffer;
     const VkFormat ds_format;
     vkt::Image image;
@@ -310,9 +311,10 @@ struct ClearAttachmentHazardHelper {
     vkt::ImageView rt_view;
     vkt::ImageView ds_view;
 
-    ClearAttachmentHazardHelper(VkLayerTest& test_, vkt::Device& device_, vkt::CommandBuffer& cb_)
+    ClearAttachmentHazardHelper(VkLayerTest& test_, vkt::Device& device_, vkt::Queue& queue_, vkt::CommandBuffer& cb_)
         : test(test_),
           device(device_),
+          queue(queue_),
           command_buffer(cb_),
           ds_format(FindSupportedDepthStencilFormat(test_.gpu())),
           image(),
@@ -383,7 +385,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
         end_render(command_buffer);
         command_buffer.end();
-        command_buffer.QueueCommandBuffer();
+        command_buffer.QueueCommandBuffer(&queue);
         test.DefaultQueue()->wait();
     }
 
@@ -415,7 +417,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         test.VerifyFound();
 
         command_buffer.end();
-        command_buffer.QueueCommandBuffer();
+        command_buffer.QueueCommandBuffer(&queue);
         test.DefaultQueue()->wait();
     }
 
@@ -448,7 +450,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         test.VerifyFound();
 
         command_buffer.end();
-        command_buffer.QueueCommandBuffer();
+        command_buffer.QueueCommandBuffer(&queue);
         test.DefaultQueue()->wait();
     }
 
@@ -478,7 +480,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         vk::CmdClearAttachments(command_buffer, 1, &clear_attachment, 1, &clear_rect);
         end_render(command_buffer);
         command_buffer.end();
-        command_buffer.QueueCommandBuffer();
+        command_buffer.QueueCommandBuffer(&queue);
         test.DefaultQueue()->wait();
     }
 }
@@ -493,7 +495,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    ClearAttachmentHazardHelper helper(*this, *m_device, *m_commandBuffer);
+    ClearAttachmentHazardHelper helper(*this, *m_device, *m_default_queue, *m_commandBuffer);
     auto attachment_without_load_store = [](VkFormat format) {
         VkAttachmentDescription attachment = {};
         attachment.format = format;
@@ -553,7 +555,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsDynamicHazards) {
     }
     RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
 
-    ClearAttachmentHazardHelper helper(*this, *m_device, *m_commandBuffer);
+    ClearAttachmentHazardHelper helper(*this, *m_device, *m_default_queue, *m_commandBuffer);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = helper.rt_view;
@@ -4081,7 +4083,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_default_queue->wait();
 }
 

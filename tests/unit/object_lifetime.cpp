@@ -476,7 +476,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
     // Destroy image attached to framebuffer to invalidate cmd buffer
     // Now attempt to submit cmd buffer and verify error
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyFramebuffer(device(), fb, nullptr);

@@ -169,7 +169,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
         uint64_t(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkTraceRaysIndirectCommandKHR-depth-03640");
     }
-    m_commandBuffer->QueueCommandBuffer(true);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_errorMonitor->VerifyFound();
 
     m_device->wait();

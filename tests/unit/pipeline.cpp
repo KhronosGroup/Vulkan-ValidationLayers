@@ -211,7 +211,7 @@ TEST_F(NegativePipeline, CmdBufferPipelineDestroyed) {
 
     // Cause error by submitting command buffer that references destroyed pipeline
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_errorMonitor->VerifyFound();
 }
 

@@ -47,7 +47,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     }
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Create an "exclusive" image owned by the graphics queue.
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -58,8 +58,8 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
 
-    ValidOwnershipTransfer(m_errorMonitor, m_commandBuffer, &no_gfx_cb, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                           VK_PIPELINE_STAGE_TRANSFER_BIT, nullptr, &image_barrier);
+    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, nullptr, &image_barrier);
 
     // Change layouts while changing ownership
     image_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
@@ -72,8 +72,8 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
         image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
 
-    ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, nullptr, &image_barrier);
+    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, &no_gfx_cb, m_default_queue, m_commandBuffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, nullptr, &image_barrier);
 }
 
 TEST_F(PositiveImage, AliasedMemoryTracking) {
@@ -390,7 +390,7 @@ TEST_F(PositiveImage, SubresourceLayout) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
 }
 
 TEST_F(PositiveImage, ImagelessLayoutTracking) {
@@ -518,7 +518,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     m_commandBuffer->end();
 
     vkt::Fence fence(*m_device);
-    m_commandBuffer->QueueCommandBuffer(fence);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, fence);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;

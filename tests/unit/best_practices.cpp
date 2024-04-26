@@ -1838,7 +1838,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::CommandPool graphics_pool(*m_device, graphics_queue->get_family_index());
 
-    vkt::CommandBuffer graphics_buffer(*m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, graphics_queue);
+    vkt::CommandBuffer graphics_buffer(*m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     VkClearValue cv;
     cv.color = VkClearColorValue{};
@@ -1876,7 +1876,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::CommandPool compute_pool(*m_device, compute_queue->get_family_index());
 
-    vkt::CommandBuffer compute_buffer(*m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, compute_queue);
+    vkt::CommandBuffer compute_buffer(*m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Record command buffers without queue transition
 
@@ -1889,7 +1889,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     graphics_buffer.end();
 
-    graphics_buffer.QueueCommandBuffer();
+    graphics_buffer.QueueCommandBuffer(graphics_queue);
 
     // Record compute command buffer
     compute_buffer.begin();
@@ -1905,7 +1905,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     // Warning should trigger as we are potentially accessing undefined resources
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-ConcurrentUsageOfExclusiveImage");
-    compute_buffer.QueueCommandBuffer();
+    compute_buffer.QueueCommandBuffer(compute_queue);
     m_errorMonitor->VerifyFound();
 
     vk::ResetCommandPool(device(), graphics_pool.handle(), 0);
@@ -1938,7 +1938,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     graphics_buffer.end();
 
-    graphics_buffer.QueueCommandBuffer();
+    graphics_buffer.QueueCommandBuffer(graphics_queue);
 
     // Record compute command buffer
     compute_buffer.begin();
@@ -1957,7 +1957,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     // Warning shouldn't trigger
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-ConcurrentUsageOfExclusiveImage");
-    compute_buffer.QueueCommandBuffer();
+    compute_buffer.QueueCommandBuffer(compute_queue);
     m_errorMonitor->Finish();
 }
 

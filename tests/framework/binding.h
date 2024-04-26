@@ -312,12 +312,13 @@ class Device : public internal::Handle<VkDevice> {
 
 class Queue : public internal::Handle<VkQueue> {
   public:
-    explicit Queue(VkQueue queue, uint32_t index) : Handle(queue) { family_index_ = index; }
+    explicit Queue(VkQueue queue, uint32_t index) : Handle(queue), family_index(index) {}
 
     // vkQueueSubmit()
     VkResult submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
     VkResult submit(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
     VkResult submit(const CommandBuffer &cmd, bool expect_success = true);
+
     // vkQueueSubmit2()
     VkResult submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
     VkResult submit2(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
@@ -325,10 +326,8 @@ class Queue : public internal::Handle<VkQueue> {
     // vkQueueWaitIdle()
     VkResult wait();
 
-    uint32_t get_family_index() const { return family_index_; }
-
-  private:
-    uint32_t family_index_;
+    uint32_t get_family_index() const { return family_index; }  // DEPRECATED: use family_index directly
+    const uint32_t family_index;
 };
 
 class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
@@ -990,23 +989,20 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     explicit CommandBuffer() : Handle() {}
     explicit CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { init(dev, info); }
-    explicit CommandBuffer(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                           Queue *queue = nullptr) {
-        Init(dev, pool, level, queue);
+    explicit CommandBuffer(const Device &dev, const CommandPool *pool,
+                           VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+        Init(dev, pool, level);
     }
     CommandBuffer(CommandBuffer &&rhs) noexcept : Handle(std::move(rhs)) {
         dev_handle_ = rhs.dev_handle_;
         rhs.dev_handle_ = VK_NULL_HANDLE;
         cmd_pool_ = rhs.cmd_pool_;
         rhs.cmd_pool_ = VK_NULL_HANDLE;
-        m_queue = rhs.m_queue;
-        rhs.m_queue = nullptr;
     }
 
     // vkAllocateCommandBuffers()
     void init(const Device &dev, const VkCommandBufferAllocateInfo &info);
-    void Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-              Queue *queue = nullptr);
+    void Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // vkBeginCommandBuffer()
     void begin(const VkCommandBufferBeginInfo *info);
@@ -1036,8 +1032,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo);
 
-    void QueueCommandBuffer(bool check_success = true);
-    void QueueCommandBuffer(const Fence &fence, bool check_success = true, bool submit_2 = false);
+    void QueueCommandBuffer(Queue *queue, bool check_success = true);
+    void QueueCommandBuffer(Queue *queue, const Fence &fence, bool check_success = true, bool submit_2 = false);
 
     void SetEvent(Event &event, VkPipelineStageFlags stageMask) { event.cmd_set(*this, stageMask); }
     void ResetEvent(Event &event, VkPipelineStageFlags stageMask) { event.cmd_reset(*this, stageMask); }
@@ -1052,7 +1048,6 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
   private:
     VkDevice dev_handle_;
     VkCommandPool cmd_pool_;
-    Queue *m_queue;
 };
 
 class RenderPass : public internal::NonDispHandle<VkRenderPass> {
