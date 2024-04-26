@@ -995,7 +995,7 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
     SetLayout(&cmd_buf, aspect, image_layout);
     cmd_buf.end();
 
-    cmd_buf.QueueCommandBuffer();
+    cmd_buf.QueueCommandBuffer(device_->QueuesWithGraphicsCapability()[0]);
 }
 
 VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) const {
@@ -1363,14 +1363,7 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
     cmd_pool_ = info.commandPool;
 }
 
-void CommandBuffer::Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level, Queue *queue) {
-    if (queue) {
-        m_queue = queue;
-    } else {
-        m_queue = dev.QueuesWithGraphicsCapability()[0];
-    }
-    assert(m_queue);
-
+void CommandBuffer::Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level) {
     auto create_info = CommandBuffer::create_info(pool->handle());
     create_info.level = level;
     init(dev, create_info);
@@ -1494,25 +1487,25 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
     vkCmdEndVideoCodingKHR(handle(), &endInfo);
 }
 
-void CommandBuffer::QueueCommandBuffer(bool check_success) {
+void CommandBuffer::QueueCommandBuffer(Queue *queue, bool check_success) {
     Fence null_fence;
-    QueueCommandBuffer(null_fence, check_success);
+    QueueCommandBuffer(queue, null_fence, check_success);
 }
 
-void CommandBuffer::QueueCommandBuffer(const Fence &fence, bool check_success, bool submit_2) {
+void CommandBuffer::QueueCommandBuffer(Queue *queue, const Fence &fence, bool check_success, bool submit_2) {
     VkResult err = VK_SUCCESS;
     (void)err;
 
     if (submit_2) {
-        err = m_queue->submit2(*this, fence, check_success);
+        err = queue->submit2(*this, fence, check_success);
     } else {
-        err = m_queue->submit(*this, fence, check_success);
+        err = queue->submit(*this, fence, check_success);
     }
     if (check_success) {
         assert(err == VK_SUCCESS);
     }
 
-    err = m_queue->wait();
+    err = queue->wait();
     if (check_success) {
         assert(err == VK_SUCCESS);
     }

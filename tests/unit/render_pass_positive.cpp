@@ -205,7 +205,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 100, 100, 1, &clear);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(fence);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, fence);
 
     vkt::Image destImage(*m_device, 100, 100, 1, depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -305,7 +305,7 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
 }
 
 TEST_F(PositiveRenderPass, DestroyPipeline) {
@@ -916,7 +916,7 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &imb);
 
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
 }
 
 TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {
@@ -1196,7 +1196,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
         vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                                0, nullptr, 0, nullptr, 1, &stencil_barrier);
         m_commandBuffer->end();
-        m_commandBuffer->QueueCommandBuffer(false);
+        m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
         m_commandBuffer->reset();
     }
 
@@ -1284,7 +1284,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
 }
 
 TEST_F(PositiveRenderPass, InputResolve) {

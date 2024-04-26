@@ -26,7 +26,7 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
     }
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     auto buffer_barrier = buffer.buffer_memory_barrier(0, 0, 0, VK_WHOLE_SIZE);
@@ -34,19 +34,19 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
     // Let gfx own it.
     buffer_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    ValidOwnershipTransferOp(m_errorMonitor, m_commandBuffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             &buffer_barrier, nullptr);
+    ValidOwnershipTransferOp(m_errorMonitor, m_default_queue, m_commandBuffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, &buffer_barrier, nullptr);
 
     // Transfer it to non-gfx
     buffer_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
-    ValidOwnershipTransfer(m_errorMonitor, m_commandBuffer, &no_gfx_cb, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                           VK_PIPELINE_STAGE_TRANSFER_BIT, &buffer_barrier, nullptr);
+    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, &buffer_barrier, nullptr);
 
     // Transfer it to gfx
     buffer_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, &buffer_barrier, nullptr);
+    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, &no_gfx_cb, m_default_queue, m_commandBuffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, &buffer_barrier, nullptr);
 }
 
 TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {

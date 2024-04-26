@@ -139,7 +139,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Should not get a warning since shader wasn't instrumented
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_default_queue->wait();
     VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
     VkValidationFeaturesEXT features = vku::InitStructHelper();
@@ -163,7 +163,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     // Should get a warning since shader was instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-vkCmdDraw-storageBuffers-06936");
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -833,7 +833,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32) {
     m_commandBuffer->end();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_errorMonitor->VerifyFound();
     vk::DeviceWaitIdle(*m_device);
 }
@@ -903,7 +903,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32Vk13) {
     m_commandBuffer->end();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_errorMonitor->VerifyFound();
     vk::DeviceWaitIdle(*m_device);
 }
@@ -961,7 +961,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8) {
 
     m_commandBuffer->end();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 20475 that is not in the range [0, 1]");
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_errorMonitor->VerifyFound();
     vk::DeviceWaitIdle(*m_device);
 }
@@ -1030,7 +1030,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
 
     m_commandBuffer->end();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 20475 that is not in the range [0, 1]");
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_errorMonitor->VerifyFound();
     vk::DeviceWaitIdle(*m_device);
 }

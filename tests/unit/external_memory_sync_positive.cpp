@@ -247,7 +247,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
                            &mem_barrier, 0, nullptr, 0, nullptr);
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
 }
 
 TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {

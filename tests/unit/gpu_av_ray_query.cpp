@@ -50,7 +50,7 @@ TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipeline.CreateComputePipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -71,7 +71,7 @@ TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -104,7 +104,7 @@ TEST_F(NegativeGpuAVRayQuery, TMaxLessThenTmin) {
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipeline.CreateComputePipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -125,7 +125,7 @@ TEST_F(NegativeGpuAVRayQuery, TMaxLessThenTmin) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06350");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -156,7 +156,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsBothSkip) {
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipeline.CreateComputePipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -176,7 +176,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsBothSkip) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06889");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -207,7 +207,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsOpaque) {
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipeline.CreateComputePipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -227,7 +227,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsOpaque) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06891");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -261,7 +261,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNaN) {
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipeline.CreateComputePipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -282,7 +282,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNaN) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -316,7 +316,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNonFinite) {
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipeline.CreateComputePipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -337,7 +337,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNonFinite) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -372,7 +372,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeUseQueryUninit) {
                               {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipeline.CreateComputePipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -392,7 +392,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeUseQueryUninit) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -433,8 +433,8 @@ TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninit) {
     buffer->memory().unmap();
     pipeline.SetStorageBufferBinding(buffer, 1);
 
-    auto tlas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    auto tlas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
     pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
     pipeline.Build();
 
@@ -448,7 +448,7 @@ TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninit) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -488,7 +488,7 @@ TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     pipeline.CreateGraphicsPipeline();
 
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -511,7 +511,7 @@ TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349", gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }

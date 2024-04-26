@@ -706,13 +706,13 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
         "compute opeartions");
 
     RETURN_IF_SKIP(Init());
-    vkt::Queue* queue = m_device->TransferOnlyQueue();
-    if (!queue) {
-        GTEST_SKIP() << "Transfer-only queue not found";
+    auto transfer_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family not found";
     }
 
-    vkt::CommandPool pool(*m_device, queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    vkt::CommandPool pool(*m_device, transfer_family.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandBuffer cb(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     cb.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-apiVersion-07894");

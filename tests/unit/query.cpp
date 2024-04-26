@@ -2730,11 +2730,11 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     RETURN_IF_SKIP(Init());
 
     vkt::Queue *queue0 = m_default_queue;
-    vkt::Queue *queue1 = m_device->ComputeOnlyQueue();
-    if (!queue0 || !queue1) {
+    auto queue1_family = m_device->ComputeOnlyQueueFamily();
+    if (!queue1_family.has_value()) {
         GTEST_SKIP() << "Can't find two different queue families";
     }
-    assert(queue0->get_family_index() != queue1->get_family_index());
+    assert(queue0->family_index != queue1_family.value());
 
     uint32_t counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), 0, &counterCount, nullptr, nullptr);
@@ -2764,11 +2764,11 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
-    pool_create_info.queueFamilyIndex = queue1->get_family_index();
+    pool_create_info.queueFamilyIndex = queue1_family.value();
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vkt::CommandPool command_pool(*m_device, pool_create_info);
 
-    vkt::CommandBuffer cb(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue1);
+    vkt::CommandBuffer cb(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
     acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();

@@ -55,7 +55,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
@@ -66,7 +66,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_device->wait();
 }
 
@@ -99,7 +99,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     // Add uniform buffer binding
@@ -123,7 +123,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_device->wait();
 
     // Ray query with both t_min and t_max dynamically set to 42
@@ -133,7 +133,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
         uniform_buffer_ptr[1] = 42.0f;  // t_max
         uniform_buffer.memory().unmap();
     }
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_device->wait();
 }
 
@@ -164,7 +164,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     // Add uniform buffer binding
@@ -187,7 +187,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_device->wait();
 }
 
@@ -220,7 +220,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     // Add uniform buffer binding
@@ -242,7 +242,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_device->wait();
 }
 
@@ -272,7 +272,7 @@ TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
     pipeline.CreateGraphicsPipeline();
 
     // Add TLAS binding
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer);
     pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
@@ -285,7 +285,7 @@ TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_device->wait();
 }
 
@@ -315,8 +315,8 @@ TEST_F(PositiveGpuAVRayQuery, RayTracingBasic) {
     pipeline.SetRayGenShader(ray_gen);
 
     // Add TLAS binding
-    auto tlas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    auto tlas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
     pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
 
     // Build pipeline
@@ -331,6 +331,6 @@ TEST_F(PositiveGpuAVRayQuery, RayTracingBasic) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
     m_device->wait();
 }

@@ -5389,7 +5389,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         cmd.end();
 
         m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-        cmd.QueueCommandBuffer(false);
+        cmd.QueueCommandBuffer(m_default_queue, false);
         m_errorMonitor->VerifyFound();
     }
 
@@ -5403,7 +5403,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         cmd.end();
 
         m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-        cmd.QueueCommandBuffer(false);
+        cmd.QueueCommandBuffer(m_default_queue, false);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -5446,7 +5446,7 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-    m_commandBuffer->QueueCommandBuffer(false);
+    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
     m_errorMonitor->VerifyFound();
 }
 

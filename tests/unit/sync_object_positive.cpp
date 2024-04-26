@@ -34,7 +34,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     }
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Create an "exclusive" image owned by the graphics queue.
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -46,7 +46,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
 
-    ValidOwnershipTransfer(m_errorMonitor, m_commandBuffer, &no_gfx_cb, nullptr, &image_barrier);
+    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb, nullptr, &image_barrier);
 
     // Change layouts while changing ownership
     image_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
@@ -61,7 +61,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
         image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
 
-    ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, nullptr, &image_barrier);
+    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, &no_gfx_cb, m_default_queue, m_commandBuffer, nullptr, &image_barrier);
 }
 
 TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
@@ -77,7 +77,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     }
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     auto buffer_barrier =
@@ -87,11 +87,11 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     // Let gfx own it.
     buffer_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    ValidOwnershipTransferOp(m_errorMonitor, m_commandBuffer, &buffer_barrier, nullptr);
+    ValidOwnershipTransferOp(m_errorMonitor, m_default_queue, m_commandBuffer, &buffer_barrier, nullptr);
 
     // Transfer it to non-gfx
     buffer_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
-    ValidOwnershipTransfer(m_errorMonitor, m_commandBuffer, &no_gfx_cb, &buffer_barrier, nullptr);
+    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb, &buffer_barrier, nullptr);
 
     // Transfer it to gfx
     buffer_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
@@ -99,7 +99,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR;
 
-    ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, &buffer_barrier, nullptr);
+    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, &no_gfx_cb, m_default_queue, m_commandBuffer, &buffer_barrier, nullptr);
 }
 
 TEST_F(PositiveSyncObject, LayoutFromPresentWithoutAccessMemoryRead) {

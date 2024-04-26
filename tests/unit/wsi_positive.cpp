@@ -31,7 +31,7 @@ void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
     vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &layout_barrier);
     cmd_buf.end();
-    cmd_buf.QueueCommandBuffer();
+    cmd_buf.QueueCommandBuffer(m_default_queue);
 }
 
 VkImageMemoryBarrier WsiTest::TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout,
@@ -412,7 +412,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer();
+    m_commandBuffer->QueueCommandBuffer(m_default_queue);
 }
 
 TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {

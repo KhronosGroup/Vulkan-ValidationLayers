@@ -279,7 +279,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device& de
                                                            std::shared_ptr<BuildGeometryInfoKHR> on_host_bottom_level_geometry);
 
 // Create and build a top level acceleration structure
-BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device& device, vkt::CommandBuffer& cmd_buffer);
+BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device& device, vkt::Queue& queue, vkt::CommandBuffer& cmd_buffer);
 }  // namespace blueprint
 }  // namespace as
 

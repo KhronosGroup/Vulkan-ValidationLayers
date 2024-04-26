@@ -179,8 +179,8 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     vkt::rt::Pipeline rt_pipe(*this, m_device);
     rt_pipe.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
     rt_pipe.InitLibraryInfo();
-    auto top_level_accel_struct =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    auto top_level_accel_struct = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
     rt_pipe.AddTopLevelAccelStructBinding(std::move(top_level_accel_struct), 0);
     rt_pipe.SetRayGenShader(kRayTracingMinimalGlsl);
     rt_pipe.AddLibrary(rt_pipe_lib);

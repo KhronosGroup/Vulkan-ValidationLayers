@@ -1061,8 +1061,8 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup)
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
-    auto tlas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    auto tlas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
     pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
     pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
     pipeline.Build();
