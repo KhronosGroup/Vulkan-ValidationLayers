@@ -205,7 +205,8 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
 
     // Submit and verify no validation errors
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveMemory, BindMemory2) {
@@ -263,7 +264,8 @@ TEST_F(PositiveMemory, BindMemory2) {
 
     // Submit and verify no validation errors
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveMemory, NonCoherentMapping) {

@@ -1889,7 +1889,8 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     graphics_buffer.end();
 
-    graphics_buffer.QueueCommandBuffer(graphics_queue);
+    graphics_queue->submit(graphics_buffer);
+    graphics_queue->wait();
 
     // Record compute command buffer
     compute_buffer.begin();
@@ -1905,7 +1906,8 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     // Warning should trigger as we are potentially accessing undefined resources
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-ConcurrentUsageOfExclusiveImage");
-    compute_buffer.QueueCommandBuffer(compute_queue);
+    compute_queue->submit(compute_buffer);
+    compute_queue->wait();
     m_errorMonitor->VerifyFound();
 
     vk::ResetCommandPool(device(), graphics_pool.handle(), 0);
@@ -1937,8 +1939,8 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
 
     graphics_buffer.end();
-
-    graphics_buffer.QueueCommandBuffer(graphics_queue);
+    graphics_queue->submit(graphics_buffer);
+    graphics_queue->wait();
 
     // Record compute command buffer
     compute_buffer.begin();
@@ -1957,7 +1959,8 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     // Warning shouldn't trigger
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-ConcurrentUsageOfExclusiveImage");
-    compute_buffer.QueueCommandBuffer(compute_queue);
+    compute_queue->submit(compute_buffer);
+    compute_queue->wait();
     m_errorMonitor->Finish();
 }
 

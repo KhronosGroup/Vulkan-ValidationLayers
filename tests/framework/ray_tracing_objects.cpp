@@ -1166,7 +1166,7 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue
     bot_level_accel_struct->BuildCmdBuffer(cmd_buffer);
     cmd_buffer.end();
 
-    cmd_buffer.QueueCommandBuffer(&queue);
+    queue.submit(cmd_buffer);
     device.wait();
 
     cmd_buffer.begin();
@@ -1176,7 +1176,7 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue
     top_level_accel_struct.BuildCmdBuffer(cmd_buffer);
     cmd_buffer.end();
 
-    cmd_buffer.QueueCommandBuffer(&queue);
+    queue.submit(cmd_buffer);
     device.wait();
 
     return top_level_accel_struct;

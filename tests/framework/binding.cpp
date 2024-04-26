@@ -995,7 +995,9 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
     SetLayout(&cmd_buf, aspect, image_layout);
     cmd_buf.end();
 
-    cmd_buf.QueueCommandBuffer(device_->QueuesWithGraphicsCapability()[0]);
+    auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
+    graphics_queue->submit(cmd_buf);
+    graphics_queue->wait();
 }
 
 VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) const {
@@ -1485,34 +1487,6 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
     assert(vkCmdEndVideoCodingKHR);
 
     vkCmdEndVideoCodingKHR(handle(), &endInfo);
-}
-
-void CommandBuffer::QueueCommandBuffer(Queue *queue, bool check_success) {
-    Fence null_fence;
-    QueueCommandBuffer(queue, null_fence, check_success);
-}
-
-void CommandBuffer::QueueCommandBuffer(Queue *queue, const Fence &fence, bool check_success, bool submit_2) {
-    VkResult err = VK_SUCCESS;
-    (void)err;
-
-    if (submit_2) {
-        err = queue->submit2(*this, fence, check_success);
-    } else {
-        err = queue->submit(*this, fence, check_success);
-    }
-    if (check_success) {
-        assert(err == VK_SUCCESS);
-    }
-
-    err = queue->wait();
-    if (check_success) {
-        assert(err == VK_SUCCESS);
-    }
-
-    // TODO: Determine if we really want this serialization here
-    // Wait for work to finish before cleaning up.
-    vk::DeviceWaitIdle(dev_handle_);
 }
 
 void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {

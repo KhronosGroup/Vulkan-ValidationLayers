@@ -390,7 +390,8 @@ TEST_F(PositiveImage, SubresourceLayout) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveImage, ImagelessLayoutTracking) {
@@ -517,8 +518,8 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    vkt::Fence fence(*m_device);
-    m_commandBuffer->QueueCommandBuffer(m_default_queue, fence);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;

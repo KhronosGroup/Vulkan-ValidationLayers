@@ -199,13 +199,15 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
 
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &depth_image_view.handle(), 100, 100);
-    vkt::Fence fence(*m_device);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 100, 100, 1, &clear);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue, fence);
+
+    vkt::Fence fence(*m_device);
+    m_default_queue->submit(*m_commandBuffer, fence);
+    m_default_queue->wait();
 
     vkt::Image destImage(*m_device, 100, 100, 1, depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -305,7 +307,8 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveRenderPass, DestroyPipeline) {
@@ -916,7 +919,8 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &imb);
 
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {
@@ -1196,7 +1200,8 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
         vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                                0, nullptr, 0, nullptr, 1, &stencil_barrier);
         m_commandBuffer->end();
-        m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
+        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->wait();
         m_commandBuffer->reset();
     }
 
@@ -1284,7 +1289,8 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(m_default_queue, false);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveRenderPass, InputResolve) {

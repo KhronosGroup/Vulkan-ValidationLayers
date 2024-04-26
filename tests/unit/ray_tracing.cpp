@@ -3283,7 +3283,7 @@ TEST_F(NegativeRayTracing, InstanceBufferBadAddress) {
     blas->BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
@@ -3317,7 +3317,7 @@ TEST_F(NegativeRayTracing, InstanceBufferBadMemory) {
     blas->BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
@@ -3381,7 +3381,7 @@ TEST_F(NegativeRayTracing, UpdatedFirstVertex) {
 
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     m_commandBuffer->begin();
@@ -3421,7 +3421,7 @@ TEST_F(NegativeRayTracing, UpdatedFirstPrimitiveCount) {
 
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     m_commandBuffer->begin();
@@ -3510,7 +3510,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpUpdate) {
     blas.BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     m_commandBuffer->begin();
@@ -3608,7 +3608,7 @@ TEST_F(NegativeRayTracing, TooManyInstances) {
     blas->BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);

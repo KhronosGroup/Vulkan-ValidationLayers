@@ -9691,7 +9691,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     // Will succeed this time as we reset the query
@@ -9704,7 +9704,8 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     // Will succeed again after reset
     context.Queue().submit(cb);
@@ -9964,7 +9965,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
     m_device->wait();
 
     // Will succeed this time as we reset the query
@@ -9977,7 +9978,8 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
-    m_commandBuffer->QueueCommandBuffer(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     // Will succeed again after reset
     context.Queue().submit(cb);
