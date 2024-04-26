@@ -139,7 +139,8 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
 
-    m_default_queue->submit({&cb0, &cb1}, vkt::Fence{});
+    std::array cbs = {&cb0, &cb1};
+    m_default_queue->submit(cbs, vkt::Fence{});
     m_default_queue->wait();
 }
 

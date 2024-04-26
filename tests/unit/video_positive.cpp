@@ -67,8 +67,8 @@ TEST_F(PositiveVideo, MultipleCmdBufs) {
     cb2.EndVideoCoding(context.End());
     cb2.end();
 
-    vkt::Fence fence{};
-    context.Queue().submit({&cb1, &cb2}, fence, true);
+    std::array cbs = {&cb1, &cb2};
+    context.Queue().submit(cbs);
     m_device->wait();
 }
 

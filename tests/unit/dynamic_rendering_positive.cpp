@@ -304,7 +304,7 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     cb2.end();
 
     vkt::Fence fence;
-    std::vector<const vkt::CommandBuffer*> cbs = {m_commandBuffer, &cb1, &cb2};
+    std::array cbs = {m_commandBuffer, &cb1, &cb2};
     m_default_queue->submit(cbs, fence);
     m_default_queue->wait();
 }
@@ -658,7 +658,7 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     cb.end();
 
     vkt::Fence fence;
-    std::vector<const vkt::CommandBuffer*> cbs = {m_commandBuffer, &cb};
+    std::array cbs = {m_commandBuffer, &cb};
     m_default_queue->submit(cbs, fence);
     m_default_queue->wait();
 }

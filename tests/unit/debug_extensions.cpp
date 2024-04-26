@@ -510,7 +510,8 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
-    m_default_queue->submit({&cb0, &cb1}, vkt::Fence{}, false);
+    std::array cbs = {&cb0, &cb1};
+    m_default_queue->submit(cbs, false);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }

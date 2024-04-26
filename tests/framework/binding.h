@@ -47,6 +47,14 @@ std::vector<Dst> MakeVkHandles(const std::vector<Src *> &v) {
     return handles;
 }
 
+template <class Dst, class Src>
+std::vector<Dst> MakeVkHandles(const vvl::span<Src *> &v) {
+    std::vector<Dst> handles;
+    handles.reserve(v.size());
+    std::transform(v.begin(), v.end(), std::back_inserter(handles), [](const Src *o) { return o->handle(); });
+    return handles;
+}
+
 class PhysicalDevice;
 class Device;
 class Queue;
@@ -315,13 +323,14 @@ class Queue : public internal::Handle<VkQueue> {
     explicit Queue(VkQueue queue, uint32_t index) : Handle(queue), family_index(index) {}
 
     // vkQueueSubmit()
-    VkResult submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
-    VkResult submit(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
+    VkResult submit(const vvl::span<CommandBuffer *> &cmds, bool expect_success = true);
     VkResult submit(const CommandBuffer &cmd, bool expect_success = true);
 
+    VkResult submit_with_fence(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
+
     // vkQueueSubmit2()
-    VkResult submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
-    VkResult submit2(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
+    VkResult submit2(const vvl::span<const CommandBuffer> &cmds, bool expect_success = true);
+    VkResult submit2(const CommandBuffer &cmd, bool expect_success = true);
 
     // vkQueueWaitIdle()
     VkResult wait();

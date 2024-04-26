@@ -145,7 +145,8 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
             // the Fence resolves to VK_NULL_HANLE... i.e. no fence
-            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
+            std::array command_buffers{qf->command_buffer, qf->command_buffer2};
+            qf->queue->submit(command_buffers, positive);
         } else {
             if (positive) {  // Check for success on positive tests only
                 qf->queue->submit(*qf->command_buffer);
@@ -201,7 +202,8 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
             // the Fence resolves to VK_NULL_HANLE... i.e. no fence
-            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
+            std::array command_buffers{qf->command_buffer, qf->command_buffer2};
+            qf->queue->submit(command_buffers, positive);
         } else {
             if (positive) {  // Check for success on positive tests only
                 qf->queue->submit(*qf->command_buffer);
