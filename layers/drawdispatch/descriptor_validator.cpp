@@ -410,7 +410,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             if (!descriptor_set.IsPushDescriptor()) {
                 msg << "Descriptor set " << FormatHandle(set)
                     << " Image layout specified by vkCmdBindDescriptorSets doesn't match actual image layout at time "
-                       "descriptor is used.";
+                       "descriptor is used";
             } else {
                 msg << "Image layout specified by vkCmdPushDescriptorSetKHR doesn't match actual image layout at time "
                        "descriptor is used";
