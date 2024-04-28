@@ -1530,12 +1530,14 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     // Now complete other state checks
     if (pipeline) {
         for (const auto &ds : last_bound_state.per_set) {
+            // TODO - This currently implicitly is checking for VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT being set
             if (pipeline->descriptor_buffer_mode) {
                 if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), ds.bound_descriptor_set->Handle());
                     skip |=
                         LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, loc,
-                                 "pipeline bound to %s requires a descriptor buffer but has a bound descriptor set (%s)",
+                                 "pipeline bound to %s requires a descriptor buffer (because it was created with "
+                                 "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound VkDescriptorSet (%s)",
                                  string_VkPipelineBindPoint(bind_point), FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
                     break;
                 }
@@ -1544,7 +1546,8 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                 if (ds.bound_descriptor_buffer.has_value()) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
                     skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, objlist, loc,
-                                     "pipeline bound to %s requires a descriptor set but has a bound descriptor buffer"
+                                     "pipeline bound to %s requires a VkDescriptorSet (because it was not created with "
+                                     "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound descriptor buffer"
                                      " (index=%" PRIu32 " offset=%" PRIu64 ")",
                                      string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
                                      ds.bound_descriptor_buffer->offset);
