@@ -1079,7 +1079,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();
@@ -1173,7 +1173,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();
@@ -1328,7 +1328,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     for (auto fb : framebuffers) {
@@ -1440,7 +1440,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();

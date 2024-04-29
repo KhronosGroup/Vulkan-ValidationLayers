@@ -257,7 +257,7 @@ TEST_F(PositiveGpuAVSpirv, LoopHeaderPhi) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     data = (uint32_t *)buffer.memory().map();

@@ -2342,7 +2342,7 @@ class VideoEncodeRateControlTestUtils {
         cb.end();
 
         test_->Monitor().SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254");
-        context_.Queue().submit(cb, false);
+        context_.Queue().submit(cb);
         test_->Monitor().VerifyFound();
         test_->DeviceObj()->wait();
     }

@@ -432,7 +432,7 @@ void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &wri
                              copies.data());
 }
 
-VkResult Queue::submit(const vvl::span<CommandBuffer *> &cmds, bool expect_success) {
+VkResult Queue::submit(const vvl::span<CommandBuffer *> &cmds) {
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 0;
@@ -444,30 +444,24 @@ VkResult Queue::submit(const vvl::span<CommandBuffer *> &cmds, bool expect_succe
     submit_info.pSignalSemaphores = nullptr;
 
     VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, VK_NULL_HANDLE);
-    if (expect_success) {
-        EXPECT_EQ(VK_SUCCESS, result);
-    }
     return result;
 }
 
-VkResult Queue::submit_with_fence(const CommandBuffer &cmd, const Fence &fence, bool expect_success) {
+VkResult Queue::submit(const CommandBuffer &cmd) {
+    Fence fence;
+    return submit_with_fence(cmd, fence);
+}
+
+VkResult Queue::submit_with_fence(const CommandBuffer &cmd, const Fence &fence) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cmd.handle();
 
     VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
-    if (expect_success) {
-        EXPECT_EQ(VK_SUCCESS, result);
-    }
     return result;
 }
 
-VkResult Queue::submit(const CommandBuffer &cmd, bool expect_success) {
-    Fence fence;
-    return submit_with_fence(cmd, fence, expect_success);
-}
-
-VkResult Queue::submit2(const vvl::span<const CommandBuffer> &cmds, bool expect_success) {
+VkResult Queue::submit2(const vvl::span<const CommandBuffer> &cmds) {
     std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
     for (size_t i = 0; i < cmds.size(); i++) {
         VkCommandBufferSubmitInfo cmd_submit_info = vku::InitStructHelper();
@@ -485,15 +479,11 @@ VkResult Queue::submit2(const vvl::span<const CommandBuffer> &cmds, bool expect_
     submit_info.commandBufferInfoCount = static_cast<uint32_t>(cmd_submit_infos.size());
     submit_info.pCommandBufferInfos = cmd_submit_infos.data();
 
-    // requires synchronization2 to be enabled
     VkResult result = vk::QueueSubmit2(handle(), 1, &submit_info, VK_NULL_HANDLE);
-    if (expect_success) {
-        EXPECT_EQ(VK_SUCCESS, result);
-    }
     return result;
 }
 
-VkResult Queue::submit2(const CommandBuffer &cmd, bool expect_success) { return submit2(vvl::make_span(&cmd, 1), expect_success); }
+VkResult Queue::submit2(const CommandBuffer &cmd) { return submit2(vvl::make_span(&cmd, 1)); }
 
 VkResult Queue::wait() {
     VkResult result = vk::QueueWaitIdle(handle());

@@ -78,7 +78,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     // Destroy buffer dependency prior to submit to cause ERROR
     vk::DestroyBuffer(device(), buffer, NULL);
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
     vk::FreeMemory(m_device->handle(), mem, NULL);
@@ -117,7 +117,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
                            NULL, 1, &buf_barrier, 0, NULL);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeMemory-memory-00677");
     vk::FreeMemory(m_device->handle(), buffer_mem.handle(), nullptr);
@@ -159,7 +159,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
                            NULL, 0, NULL, 1, &img_barrier);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeMemory-memory-00677");
     vk::FreeMemory(m_device->handle(), image_mem.handle(), NULL);
@@ -222,7 +222,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     vk::DestroyBuffer(m_device->handle(), buffer, NULL);
@@ -278,7 +278,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     vk::DestroyImage(m_device->handle(), image, NULL);
@@ -373,7 +373,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     vk::DestroyBufferView(device(), view, NULL);
     // Now attempt submit of cmd buffer
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -412,7 +412,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
     }
     // Destroy image dependency prior to submit to cause ERROR
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -476,7 +476,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
     // Destroy image attached to framebuffer to invalidate cmd buffer
     // Now attempt to submit cmd buffer and verify error
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 
@@ -729,7 +729,7 @@ TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
     vk::DestroyEvent(device(), event, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -827,7 +827,7 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
         m_commandBuffer->end();
 
         // Submit cmd buffer and then pipeline destroyed while in-flight
-        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->submit(*m_commandBuffer);
     }  // Pipeline deletion triggered here
     m_errorMonitor->VerifyFound();
     // Make sure queue finished and then actually delete pipeline
@@ -1034,7 +1034,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
     // Destroy event dependency prior to submit to cause ERROR
     vk::DestroyEvent(device(), event, NULL);
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 

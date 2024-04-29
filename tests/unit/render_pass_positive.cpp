@@ -305,7 +305,7 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
 
@@ -917,7 +917,7 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &imb);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
 
@@ -1198,7 +1198,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
         vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                                0, nullptr, 0, nullptr, 1, &stencil_barrier);
         m_commandBuffer->end();
-        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->submit(*m_commandBuffer);
         m_default_queue->wait();
         m_commandBuffer->reset();
     }
@@ -1287,7 +1287,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 }
 

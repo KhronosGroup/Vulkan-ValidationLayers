@@ -550,7 +550,7 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->wait();
@@ -564,7 +564,7 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 
@@ -577,7 +577,7 @@ TEST_F(NegativeImage, BlitLayout) {
                      img_dst_transfer.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 
@@ -607,7 +607,7 @@ TEST_F(NegativeImage, BlitLayout) {
                      img_dst_transfer.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 
@@ -627,7 +627,7 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }
@@ -5389,7 +5389,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         cmd.end();
 
         m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-        m_default_queue->submit(cmd, false);
+        m_default_queue->submit(cmd);
         m_default_queue->wait();
         m_errorMonitor->VerifyFound();
     }
@@ -5404,7 +5404,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         cmd.end();
 
         m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-        m_default_queue->submit(cmd, false);
+        m_default_queue->submit(cmd);
         m_default_queue->wait();
         m_errorMonitor->VerifyFound();
     }
@@ -5448,7 +5448,7 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
