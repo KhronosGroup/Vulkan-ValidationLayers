@@ -87,8 +87,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     uniform_buffer_ptr[1] = 4;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
@@ -171,8 +171,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     uniform_buffer_ptr[1] = 4;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
@@ -244,8 +244,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     data[1] = 4;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
@@ -306,8 +306,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     uint8_t *bda_buffer_ptr = (uint8_t *)bda_buffer.memory().map();
     uint32_t output = *((uint32_t *)(bda_buffer_ptr + 32));
@@ -379,8 +379,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
@@ -456,8 +456,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
@@ -522,8 +522,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, UVec3Array) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7462
@@ -591,8 +591,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
@@ -655,8 +655,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     buffer_ptr = static_cast<uint32_t *>(buffer_node_a.memory().map());
     ASSERT_TRUE(*buffer_ptr == 1234);
@@ -774,8 +774,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     data[0] = storage_buffer_addr;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
@@ -848,8 +848,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     data[0] = storage_buffer_addr;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
@@ -929,8 +929,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
 
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote values to all nodes
     for (auto [buffer_i, buffer] : vvl::enumerate(storage_buffers)) {
@@ -1013,8 +1013,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     data[1] = bar_storage_buffer.address();
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     auto *foo_ptr = static_cast<int *>(foo_storage_buffer.memory().map());
@@ -1110,8 +1110,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     data[0] = storage_buffer_addr;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     vertex_buffer_ptr = static_cast<Vertex *>(storage_buffer.memory().map());

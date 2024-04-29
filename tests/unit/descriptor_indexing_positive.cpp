@@ -111,8 +111,8 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
@@ -218,7 +218,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     submit_info.pCommandBufferInfos = &cb_info;
 
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     vk::DestroyBuffer(device(), buffer2, nullptr);
     vk::DestroyBuffer(device(), buffer3, nullptr);
@@ -326,7 +326,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     submit_info.pCommandBufferInfos = &cb_info;
 
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     vk::DestroyBuffer(device(), buffer3, nullptr);
 

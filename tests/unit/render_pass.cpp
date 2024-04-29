@@ -1550,14 +1550,14 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->Submit(*m_commandBuffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyRenderPass-renderPass-00873");
     vk::DestroyRenderPass(device(), rp.Handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     // Wait for queue to complete so we can safely destroy rp
-    m_default_queue->wait();
+    m_default_queue->Wait();
     m_errorMonitor->SetUnexpectedError("If renderPass is not VK_NULL_HANDLE, renderPass must be a valid VkRenderPass handle");
     m_errorMonitor->SetUnexpectedError("Was it created? Has it already been destroyed?");
 }
@@ -4283,7 +4283,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_submit_info;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
@@ -4309,7 +4309,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferSubmitInfo-pNext-09446");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeSubmitInfoARM-semaphore-09447");
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 

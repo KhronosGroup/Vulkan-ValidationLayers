@@ -68,8 +68,8 @@ TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalled) {
@@ -306,7 +306,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &primary_command_buffer;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_device->wait();
+    m_device->Wait();
     vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &secondary_command_buffer);
     vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &primary_command_buffer);
 }
@@ -330,8 +330,8 @@ TEST_F(PositiveSecondaryCommandBuffer, EventStageMask) {
                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer.end();
 
-    m_default_queue->submit(commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
@@ -355,8 +355,8 @@ TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &scb);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, Nested) {

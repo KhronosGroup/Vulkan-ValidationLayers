@@ -270,11 +270,11 @@ class Device : public internal::Handle<VkDevice> {
     VkFormatFeatureFlags2 FormatFeaturesBuffer(VkFormat format) const;
 
     // vkDeviceWaitIdle()
-    void wait() const;
+    void Wait() const;
 
     // vkWaitForFences()
-    VkResult wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout);
-    VkResult wait(const Fence &fence) { return wait(std::vector<const Fence *>(1, &fence), true, (uint64_t)-1); }
+    VkResult Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout);
+    VkResult Wait(const Fence &fence) { return Wait(std::vector<const Fence *>(1, &fence), true, (uint64_t)-1); }
 
     // vkUpdateDescriptorSets()
     void update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &writes, const std::vector<VkCopyDescriptorSet> &copies);
@@ -323,19 +323,17 @@ class Queue : public internal::Handle<VkQueue> {
     explicit Queue(VkQueue queue, uint32_t index) : Handle(queue), family_index(index) {}
 
     // vkQueueSubmit()
-    VkResult submit(const vvl::span<CommandBuffer *> &cmds);
-    VkResult submit(const CommandBuffer &cmd);
-
-    VkResult submit_with_fence(const CommandBuffer &cmd, const Fence &fence);
+    VkResult Submit(const vvl::span<CommandBuffer *> &cmds);
+    VkResult Submit(const CommandBuffer &cmd);
+    VkResult SubmitWithFence(const CommandBuffer &cmd, const Fence &fence);
 
     // vkQueueSubmit2()
-    VkResult submit2(const vvl::span<const CommandBuffer> &cmds);
-    VkResult submit2(const CommandBuffer &cmd);
+    VkResult Submit2(const vvl::span<const CommandBuffer> &cmds);
+    VkResult Submit2(const CommandBuffer &cmd);
 
     // vkQueueWaitIdle()
-    VkResult wait();
+    VkResult Wait();
 
-    uint32_t get_family_index() const { return family_index; }  // DEPRECATED: use family_index directly
     const uint32_t family_index;
 };
 

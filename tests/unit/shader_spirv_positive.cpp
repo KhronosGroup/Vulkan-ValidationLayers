@@ -580,8 +580,8 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure spec constants were updated correctly
     void *pData;

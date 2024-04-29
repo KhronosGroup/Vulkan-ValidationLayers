@@ -95,8 +95,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Basic) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
@@ -215,8 +215,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
@@ -336,8 +336,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
@@ -431,8 +431,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
     data[0] = 1;
     buffer0.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
@@ -530,8 +530,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
     data[0] = 1;
     buffer0.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
@@ -602,6 +602,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }

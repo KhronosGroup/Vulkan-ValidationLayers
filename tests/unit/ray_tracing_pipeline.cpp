@@ -1075,7 +1075,7 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup)
     vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, pipeline.Handle(), 0, VK_SHADER_GROUP_SHADER_ANY_HIT_KHR);
     m_errorMonitor->VerifyFound();
 
-    m_device->wait();
+    m_device->Wait();
 }
 
 TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupHandles) {

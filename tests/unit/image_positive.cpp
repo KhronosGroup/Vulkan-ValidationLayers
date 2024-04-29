@@ -46,7 +46,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
         GTEST_SKIP() << "Required queue not present (non-graphics non-compute capable required)";
     }
 
-    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Create an "exclusive" image owned by the graphics queue.
@@ -56,13 +56,13 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     auto image_subres = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
     auto image_barrier = image.image_memory_barrier(0, 0, image.Layout(), image.Layout(), image_subres);
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    image_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
+    image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
 
     ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb,
                            VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, nullptr, &image_barrier);
 
     // Change layouts while changing ownership
-    image_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
+    image_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
     image_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.oldLayout = image.Layout();
     // Make sure the new layout is different from the old
@@ -124,7 +124,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     // memory. In fact, it was never used by the GPU.
     // Just be sure, wait for idle.
     buffer.reset(nullptr);
-    m_device->wait();
+    m_device->Wait();
 
     // VALIDATION FAILURE:
     image.bind_memory(mem, 0);
@@ -390,8 +390,8 @@ TEST_F(PositiveImage, SubresourceLayout) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveImage, ImagelessLayoutTracking) {
@@ -518,8 +518,8 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -528,7 +528,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     present.pImageIndices = &current_buffer;
     present.swapchainCount = 1;
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
@@ -903,8 +903,8 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
             cmd_buf.end();
-            m_default_queue->submit(cmd_buf);
-            m_default_queue->wait();
+            m_default_queue->Submit(cmd_buf);
+            m_default_queue->Wait();
             cmd_buf.begin();
         }
 
@@ -919,8 +919,8 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
         cmd_buf.end();
 
         // Submit cmd buffer
-        m_default_queue->submit(cmd_buf);
-        m_default_queue->wait();
+        m_default_queue->Submit(cmd_buf);
+        m_default_queue->Wait();
     }
 }
 
@@ -1083,8 +1083,8 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
             cmd_buf.end();
-            m_default_queue->submit(cmd_buf);
-            m_default_queue->wait();
+            m_default_queue->Submit(cmd_buf);
+            m_default_queue->Wait();
             cmd_buf.begin();
         }
 
@@ -1103,8 +1103,8 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
         cmd_buf.end();
 
         // Submit cmd buffer
-        m_default_queue->submit(cmd_buf);
-        m_default_queue->wait();
+        m_default_queue->Submit(cmd_buf);
+        m_default_queue->Wait();
     }
 }
 

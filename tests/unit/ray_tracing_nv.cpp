@@ -82,7 +82,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     vkt::Queue *compute_only_queue = m_device->ComputeOnlyQueue();
     if (compute_only_queue) {
         ray_tracing_queue = compute_only_queue;
-        ray_tracing_queue_family_index = compute_only_queue->get_family_index();
+        ray_tracing_queue_family_index = compute_only_queue->family_index;
     }
 
     vkt::CommandPool ray_tracing_command_pool(*m_device, ray_tracing_queue_family_index,
@@ -195,8 +195,8 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     ray_tracing_command_buffer.end();
 
-    ray_tracing_queue->submit(ray_tracing_command_buffer);
-    ray_tracing_queue->wait();
+    ray_tracing_queue->Submit(ray_tracing_command_buffer);
+    ray_tracing_queue->Wait();
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -819,8 +819,8 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         mapped_storage_buffer_data[11] = 0;
         storage_buffer.memory().unmap();
 
-        ray_tracing_queue->submit(ray_tracing_command_buffer);
-        ray_tracing_queue->wait();
+        ray_tracing_queue->Submit(ray_tracing_command_buffer);
+        ray_tracing_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         if (gpu_assisted) {
@@ -1715,7 +1715,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     vk::CmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                         bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->Submit(*m_commandBuffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyBuffer-buffer-00922");
     vk::DestroyBuffer(device(), ibo.handle(), nullptr);
@@ -1733,7 +1733,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     vk::DestroyAccelerationStructureNV(device(), bot_level_as.handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
@@ -1816,8 +1816,8 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     vk::CmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                         src_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Command buffer must be in recording state
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording");

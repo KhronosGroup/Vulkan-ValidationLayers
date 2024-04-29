@@ -415,9 +415,9 @@ VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
     }
 }
 
-void Device::wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
+void Device::Wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
 
-VkResult Device::wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
+VkResult Device::Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
     const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);
     VkResult err =
         vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
@@ -432,7 +432,7 @@ void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &wri
                              copies.data());
 }
 
-VkResult Queue::submit(const vvl::span<CommandBuffer *> &cmds) {
+VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds) {
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 0;
@@ -447,12 +447,12 @@ VkResult Queue::submit(const vvl::span<CommandBuffer *> &cmds) {
     return result;
 }
 
-VkResult Queue::submit(const CommandBuffer &cmd) {
+VkResult Queue::Submit(const CommandBuffer &cmd) {
     Fence fence;
-    return submit_with_fence(cmd, fence);
+    return SubmitWithFence(cmd, fence);
 }
 
-VkResult Queue::submit_with_fence(const CommandBuffer &cmd, const Fence &fence) {
+VkResult Queue::SubmitWithFence(const CommandBuffer &cmd, const Fence &fence) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cmd.handle();
@@ -461,7 +461,7 @@ VkResult Queue::submit_with_fence(const CommandBuffer &cmd, const Fence &fence) 
     return result;
 }
 
-VkResult Queue::submit2(const vvl::span<const CommandBuffer> &cmds) {
+VkResult Queue::Submit2(const vvl::span<const CommandBuffer> &cmds) {
     std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
     for (size_t i = 0; i < cmds.size(); i++) {
         VkCommandBufferSubmitInfo cmd_submit_info = vku::InitStructHelper();
@@ -483,9 +483,9 @@ VkResult Queue::submit2(const vvl::span<const CommandBuffer> &cmds) {
     return result;
 }
 
-VkResult Queue::submit2(const CommandBuffer &cmd) { return submit2(vvl::make_span(&cmd, 1)); }
+VkResult Queue::Submit2(const CommandBuffer &cmd) { return Submit2(vvl::make_span(&cmd, 1)); }
 
-VkResult Queue::wait() {
+VkResult Queue::Wait() {
     VkResult result = vk::QueueWaitIdle(handle());
     EXPECT_EQ(VK_SUCCESS, result);
     return result;
@@ -992,8 +992,8 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
     cmd_buf.end();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
-    graphics_queue->submit(cmd_buf);
-    graphics_queue->wait();
+    graphics_queue->Submit(cmd_buf);
+    graphics_queue->Wait();
 }
 
 VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) const {
