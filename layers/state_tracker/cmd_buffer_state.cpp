@@ -177,7 +177,6 @@ void CommandBuffer::ResetCBState() {
     active_color_attachments_index.clear();
     has_render_pass_striped = false;
     striped_count = 0;
-    attachments_view_states.clear();
     activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
     SetActiveSubpass(0);
     rendering_attachments.Reset();
@@ -218,9 +217,6 @@ void CommandBuffer::ResetCBState() {
     debug_label.Reset();
     label_stack_depth_ = 0;
     label_commands_.clear();
-
-    // Best practices info
-    small_indexed_draw_call_count = 0;
 
     transform_feedback_active = false;
     transform_feedback_buffers_bound = 0;
@@ -511,12 +507,10 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
     for (uint32_t i = 0; i < attachments.size(); ++i) {
         if (imageless) {
             if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
-                auto res = attachments_view_states.insert(dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]));
-                attachments[i] = res.first->get();
+                attachments[i] = dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
             }
         } else {
-            auto res = attachments_view_states.insert(activeFramebuffer->attachments_view_state[i]);
-            attachments[i] = res.first->get();
+            attachments[i] = activeFramebuffer->attachments_view_state[i].get();
         }
     }
 }
@@ -562,7 +556,6 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
         const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
         UpdateSubpassAttachments(subpass, *active_subpasses);
 
-        // Set cb_state->active_attachments & cb_state->attachments_view_states
         active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);
         UpdateAttachmentsView(pRenderPassBegin);
 
@@ -642,7 +635,6 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
-    // Set cb_state->active_attachments & cb_state->attachments_view_states
     active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(attachment_count);
     auto &attachments = *(active_attachments.get());
 
@@ -658,11 +650,10 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         rendering_attachments.color_indexes[i] = i;
 
         if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-            auto res = attachments_view_states.insert(dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView));
-            colorAttachment = res.first->get();
+            colorAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
             if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
                 pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
-                colorResolveAttachment = res.first->get();
+                colorResolveAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
             }
         }
     }
@@ -673,11 +664,10 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         depthAttachment = nullptr;
         depthResolveAttachment = nullptr;
 
-        auto res = attachments_view_states.insert(dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView));
-        depthAttachment = res.first->get();
+        depthAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
         if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
-            depthResolveAttachment = res.first->get();
+            depthResolveAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
         }
     }
 
@@ -687,11 +677,10 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         stencilAttachment = nullptr;
         stencilResolveAttachment = nullptr;
 
-        auto res = attachments_view_states.insert(dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView));
-        stencilAttachment = res.first->get();
+        stencilAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
         if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
-            stencilResolveAttachment = res.first->get();
+            stencilResolveAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
         }
     }
 }
@@ -946,7 +935,6 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                         const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
                         UpdateSubpassAttachments(subpass, *active_subpasses);
 
-                        // Set active_attachments & attachments_view_states
                         active_attachments =
                             std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);
                         UpdateAttachmentsView(nullptr);
