@@ -1401,25 +1401,25 @@ void DispatchGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDe
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pUniformTexelBuffer) {
                 address_info.initialize(pDescriptorInfo->data.pUniformTexelBuffer);
-                local_pDescriptorInfo.data.pUniformTexelBuffer = &address_info;
+                local_pDescriptorInfo.data.pUniformTexelBuffer = address_info.ptr();
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pStorageTexelBuffer) {
                 address_info.initialize(pDescriptorInfo->data.pStorageTexelBuffer);
-                local_pDescriptorInfo.data.pStorageTexelBuffer = &address_info;
+                local_pDescriptorInfo.data.pStorageTexelBuffer = address_info.ptr();
             }
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             if (pDescriptorInfo->data.pUniformBuffer) {
                 address_info.initialize(pDescriptorInfo->data.pUniformBuffer);
-                local_pDescriptorInfo.data.pUniformBuffer = &address_info;
+                local_pDescriptorInfo.data.pUniformBuffer = address_info.ptr();
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             if (pDescriptorInfo->data.pStorageBuffer) {
                 address_info.initialize(pDescriptorInfo->data.pStorageBuffer);
-                local_pDescriptorInfo.data.pStorageBuffer = &address_info;
+                local_pDescriptorInfo.data.pStorageBuffer = address_info.ptr();
             }
             break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
