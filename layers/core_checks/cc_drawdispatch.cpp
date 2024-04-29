@@ -1844,7 +1844,7 @@ bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, 
     if (enabled_features.protectedMemory == VK_TRUE && cb_state.active_attachments) {
         uint32_t i = 0;
         for (const auto &view_state : *cb_state.active_attachments.get()) {
-            const auto &subpass = cb_state.active_subpasses->at(i);
+            const auto &subpass = cb_state.active_subpasses[i];
             if (subpass.used && view_state && !view_state->Destroyed()) {
                 std::string image_desc = "Image is ";
                 image_desc.append(string_VkImageUsageFlagBits(subpass.usage));

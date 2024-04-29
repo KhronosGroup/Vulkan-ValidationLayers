@@ -173,7 +173,7 @@ void CommandBuffer::ResetCBState() {
     active_render_pass_begin_info = vku::safe_VkRenderPassBeginInfo();
     activeRenderPass = nullptr;
     active_attachments = nullptr;
-    active_subpasses = nullptr;
+    active_subpasses.clear();
     active_color_attachments_index.clear();
     has_render_pass_striped = false;
     striped_count = 0;
@@ -456,33 +456,33 @@ void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, u
     });
 }
 
-void CommandBuffer::UpdateSubpassAttachments(const vku::safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses) {
+void CommandBuffer::UpdateSubpassAttachments(const vku::safe_VkSubpassDescription2 &subpass) {
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
-            subpasses[attachment_index].used = true;
-            subpasses[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-            subpasses[attachment_index].layout = subpass.pInputAttachments[index].layout;
-            subpasses[attachment_index].aspectMask = subpass.pInputAttachments[index].aspectMask;
+            active_subpasses[attachment_index].used = true;
+            active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+            active_subpasses[attachment_index].layout = subpass.pInputAttachments[index].layout;
+            active_subpasses[attachment_index].aspectMask = subpass.pInputAttachments[index].aspectMask;
         }
     }
 
     for (uint32_t index = 0; index < subpass.colorAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pColorAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
-            subpasses[attachment_index].used = true;
-            subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            subpasses[attachment_index].layout = subpass.pColorAttachments[index].layout;
-            subpasses[attachment_index].aspectMask = subpass.pColorAttachments[index].aspectMask;
+            active_subpasses[attachment_index].used = true;
+            active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            active_subpasses[attachment_index].layout = subpass.pColorAttachments[index].layout;
+            active_subpasses[attachment_index].aspectMask = subpass.pColorAttachments[index].aspectMask;
             active_color_attachments_index.insert(index);
         }
         if (subpass.pResolveAttachments) {
             const uint32_t attachment_index2 = subpass.pResolveAttachments[index].attachment;
             if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
-                subpasses[attachment_index2].used = true;
-                subpasses[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-                subpasses[attachment_index2].layout = subpass.pResolveAttachments[index].layout;
-                subpasses[attachment_index2].aspectMask = subpass.pResolveAttachments[index].aspectMask;
+                active_subpasses[attachment_index2].used = true;
+                active_subpasses[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                active_subpasses[attachment_index2].layout = subpass.pResolveAttachments[index].layout;
+                active_subpasses[attachment_index2].aspectMask = subpass.pResolveAttachments[index].aspectMask;
             }
         }
     }
@@ -490,10 +490,10 @@ void CommandBuffer::UpdateSubpassAttachments(const vku::safe_VkSubpassDescriptio
     if (subpass.pDepthStencilAttachment) {
         const uint32_t attachment_index = subpass.pDepthStencilAttachment->attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
-            subpasses[attachment_index].used = true;
-            subpasses[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            subpasses[attachment_index].layout = subpass.pDepthStencilAttachment->layout;
-            subpasses[attachment_index].aspectMask = subpass.pDepthStencilAttachment->aspectMask;
+            active_subpasses[attachment_index].used = true;
+            active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            active_subpasses[attachment_index].layout = subpass.pDepthStencilAttachment->layout;
+            active_subpasses[attachment_index].aspectMask = subpass.pDepthStencilAttachment->aspectMask;
         }
     }
 }
@@ -547,14 +547,13 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
         active_render_pass_device_mask = initial_device_mask;
     }
 
-    active_subpasses = nullptr;
+    active_subpasses.clear();
     active_attachments = nullptr;
 
     if (activeFramebuffer) {
-        // Set cb_state->active_subpasses
-        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->create_info.attachmentCount);
+        active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
         const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
-        UpdateSubpassAttachments(subpass, *active_subpasses);
+        UpdateSubpassAttachments(subpass);
 
         active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);
         UpdateAttachmentsView(pRenderPassBegin);
@@ -569,14 +568,13 @@ void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     SetActiveSubpass(GetActiveSubpass() + 1);
     activeSubpassContents = contents;
 
-    // Update cb_state->active_subpasses
     if (activeFramebuffer) {
-        active_subpasses = nullptr;
-        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->create_info.attachmentCount);
+        active_subpasses.clear();
+        active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
 
         if (GetActiveSubpass() < activeRenderPass->create_info.subpassCount) {
             const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
-            UpdateSubpassAttachments(subpass, *active_subpasses);
+            UpdateSubpassAttachments(subpass);
         }
     }
 
@@ -590,7 +588,7 @@ void CommandBuffer::EndRenderPass(Func command) {
     RecordCmd(command);
     activeRenderPass = nullptr;
     active_attachments = nullptr;
-    active_subpasses = nullptr;
+    active_subpasses.clear();
     active_color_attachments_index.clear();
     SetActiveSubpass(0);
     activeFramebuffer = VK_NULL_HANDLE;
@@ -925,15 +923,13 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
                 if (beginInfo.pInheritanceInfo->framebuffer) {
                     activeFramebuffer = dev_data.Get<vvl::Framebuffer>(beginInfo.pInheritanceInfo->framebuffer);
-                    active_subpasses = nullptr;
+                    active_subpasses.clear();
                     active_attachments = nullptr;
 
                     if (activeFramebuffer) {
-                        // Set active_subpasses
-                        active_subpasses =
-                            std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->create_info.attachmentCount);
+                        active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
                         const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
-                        UpdateSubpassAttachments(subpass, *active_subpasses);
+                        UpdateSubpassAttachments(subpass);
 
                         active_attachments =
                             std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);

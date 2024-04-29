@@ -360,6 +360,8 @@ class CommandBuffer : public RefcountedStateObject {
     // The RenderPass created from vkCmdBeginRenderPass or vkCmdBeginRendering
     std::shared_ptr<vvl::RenderPass> activeRenderPass;
     // Used for both type of renderPass
+    // TOOD - Tried to get rid of this shared_ptr as it didn't seem to be needed, but would hit "Assertion failed: vector subscript
+    // out of range" on Windows and couldn't figure out where the lifetime of the ImageView pointer went wrong.
     std::shared_ptr<std::vector<vvl::ImageView *>> active_attachments;
     vvl::unordered_set<uint32_t> active_color_attachments_index;
     uint32_t active_render_pass_device_mask;
@@ -367,7 +369,7 @@ class CommandBuffer : public RefcountedStateObject {
     uint32_t striped_count;
     // only when not using dynamic rendering
     vku::safe_VkRenderPassBeginInfo active_render_pass_begin_info;
-    std::shared_ptr<std::vector<SubpassInfo>> active_subpasses;
+    std::vector<SubpassInfo> active_subpasses;
 
     VkSubpassContents activeSubpassContents;
     uint32_t GetActiveSubpass() const { return active_subpass_; }
@@ -540,7 +542,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     void BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
     void NextSubpass(Func command, VkSubpassContents contents);
-    void UpdateSubpassAttachments(const vku::safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses);
+    void UpdateSubpassAttachments(const vku::safe_VkSubpassDescription2 &subpass);
     void EndRenderPass(Func command);
 
     void BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo);
