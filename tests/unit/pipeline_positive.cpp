@@ -1700,3 +1700,23 @@ TEST_F(PositivePipeline, AttachmentCountIgnored) {
     pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, DynamicRasterizationState) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7899");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineMultisampleStateCreateInfo ms_ci = vku::InitStructHelper();
+    ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_ci.sampleShadingEnable = 0;
+    ms_ci.minSampleShading = 1.0;
+    ms_ci.pSampleMask = nullptr;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+    pipe.gp_ci_.pRasterizationState = nullptr;
+    pipe.ms_ci_ = ms_ci;
+    pipe.CreateGraphicsPipeline();
+}
