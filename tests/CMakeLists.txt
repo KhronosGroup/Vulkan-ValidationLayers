@@ -307,3 +307,4 @@ gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
 
 add_subdirectory(spirv)
 add_subdirectory(layers)
+add_subdirectory(icd)

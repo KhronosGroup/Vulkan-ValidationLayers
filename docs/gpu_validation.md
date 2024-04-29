@@ -64,7 +64,7 @@ This document covers the design of the layer portion of the implementation.
     - [GPU Assisted Buffer Access Validation](#gpu-assisted-buffer-access-validation)
     - [GPU Assisted Validation Testing](#gpu-assisted-validation-testing)
     - [Validating Vulkan calls made by GPU Assisted Validation](#validating-vulkan-calls-made-by-gpu-assisted-validation)
-        
+
 
 
 
@@ -918,7 +918,7 @@ this buffer access checking will be disabled since such accesses become valid.
 ## GPU Assisted Validation Testing
 
 Validation Layer Tests (VLTs) exist for GPU Assisted Validation.
-They cannot be run with the "mock ICD" in headless CI environments because they need to
+They cannot be run with any "mock ICD" in headless CI environments because they need to
 actually execute shaders.
 But they are still useful to run on real devices to check for regressions.
 
@@ -931,7 +931,7 @@ is built with debug info.
 
 ## Validating Vulkan calls made by GPU Assisted Validation
 
-Since GPU-AV itself utilizes the Vulkan API to perform its tasks, 
+Since GPU-AV itself utilizes the Vulkan API to perform its tasks,
 Vulkan function calls have to valid. To ensure that, those calls have to
 go through another instance of the Vulkan Validation Layer. We refer to this
 as "self validation".

@@ -561,6 +561,8 @@ bool VkRenderFramework::IgnoreDisableChecks() {
     return skip_disable_checks;
 }
 
+// Will also return true if using VVL Test ICD
+// Using "Mock" for aliasing legacy name
 static const std::string mock_icd_device_name = "Vulkan Mock Device";
 bool VkRenderFramework::IsPlatformMockICD() {
     if (VkRenderFramework::IgnoreDisableChecks()) {

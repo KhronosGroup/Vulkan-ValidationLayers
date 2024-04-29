@@ -23,6 +23,7 @@ class Extension:
     """<extension>"""
     name: str # ex) VK_KHR_SURFACE
     nameString: str # marco with string, ex) VK_KHR_SURFACE_EXTENSION_NAME
+    specVersion: str # marco with string, ex) VK_KHR_SURFACE_SPEC_VERSION
 
     # Only one will be True, the other is False
     instance: bool

@@ -96,17 +96,17 @@ You will have to direct the loader from Vulkan-Loader to the MoltenVK ICD:
 export VK_DRIVER_FILES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
 ```
 
-## Running Tests on MockICD and Profiles layer
+## Running Tests on Test Driver and Profiles layer
 
-To allow a much higher coverage of testing the Validation Layers a test writer can use the Profile layer. [More details here](https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_layer.html), but the main idea is the layer intercepts the Physical Device queries allowing testing of much more device properties. The Mock ICD is a "null driver" that is used to handle the Vulkan calls as the Validation Layers mostly only care about input "input" of the driver. If your tests relies on the "output" of the driver (such that a driver/implementation is correctly doing what it should do with valid input), then it might be worth looking into the [Vulkan CTS instead](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/vulkan_cts.md).
+To allow a much higher coverage of testing the Validation Layers a test writer can use the Profile layer. [More details here](https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_layer.html), but the main idea is the layer intercepts the Physical Device queries allowing testing of much more device properties. The `VVL Test ICD` is a "null driver" that is used to handle the Vulkan calls as the Validation Layers mostly only care about input "input" of the driver. If your tests relies on the "output" of the driver (such that a driver/implementation is correctly doing what it should do with valid input), then it might be worth looking into the [Vulkan CTS instead](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/vulkan_cts.md).
 
-The Profile Layer can be found in the Vulkan SDK, otherwise, they will need to be cloned from [Vulkan Profiles](https://github.com/KhronosGroup/Vulkan-Profiles). The MockICD can be built from source in [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools/tree/main/icd)
+The Profile Layer can be found in the Vulkan SDK, otherwise, they will need to be cloned from [Vulkan Profiles](https://github.com/KhronosGroup/Vulkan-Profiles). The Validation Layers test builds a test driver (Also known as a `MockICD` or a null driver).
 
-**NOTE**: While using the MockICD and Profiles layer the test will not be able to use Device Profiles API (`VK_LAYER_LUNARG_device_profile_api`) at the same time.
+**NOTE**: While using the Test Driver and Profiles layer the test will not be able to use Device Profiles API (`VK_LAYER_LUNARG_device_profile_api`) at the same time.
 - If a feature is needed, it can be adjusted in the profile JSON
 - Allowing both adds complexity due to the order the layers must be in, while adding little over value to test coverage
 
-Here is an example of setting up and running the Profile layer with MockICD on a Linux environment
+Here is an example of setting up and running the Profile layer with Test Driver on a Linux environment
 ```bash
 export VULKAN_SDK=/path/to/vulkansdk
 export VVL=/path/to/Vulkan-ValidationLayers
@@ -119,9 +119,9 @@ export VK_LAYER_PATH=$VVL/build/layers/
 export VK_LAYER_PATH=$VK_LAYER_PATH:$VULKAN_SDK/etc/vulkan/explicit_layer.d/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VULKAN_SDK/lib/
 
-# Set MockICD to be driver
-export VK_DRIVER_FILES=/path/to/Vulkan-Tools/build/icd/VkICD_mock_icd.json
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/Vulkan-Tools/build/icd/
+# Set Test Driver to be driver
+export VK_DRIVER_FILES=$VVL/build/tests/icd/VVL_Test_ICD.json
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VVL/build/tests/icd
 
 # Set Layers, the order here is VERY IMPORTANT otherwise the test will see the
 # profile layer but the layer won't see it and have a different value
@@ -136,7 +136,7 @@ export VK_KHRONOS_PROFILES_PROFILE_FILE=$VVL/tests/device_profiles/max_profile.j
 # Expose all the parts of the profile layer
 export VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES=SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT
 
-# MockICD exposes VK_KHR_portability_subset but most tests are not testing for it
+# Test Driver exposes VK_KHR_portability_subset but most tests are not testing for it
 export VK_KHRONOS_PROFILES_EMULATE_PORTABILITY=false
 
 # By default the Profile Layer logs warnings that mostly likely won't be useful for

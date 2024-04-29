@@ -392,9 +392,10 @@ class BaseGenerator(OutputGenerator):
             obsoletedby = interface.get('obsoletedby')
             specialuse = splitIfGet(interface, 'specialuse')
             # Not sure if better way to get this info
+            specVersion = self.featureDictionary[name]['enumconstant'][None][None][0]
             nameString = self.featureDictionary[name]['enumconstant'][None][None][1]
 
-            self.currentExtension = Extension(name, nameString, instance, device, depends, vendorTag,
+            self.currentExtension = Extension(name, nameString, specVersion, instance, device, depends, vendorTag,
                                             platform, protect, provisional, promotedto, deprecatedby,
                                             obsoletedby, specialuse)
             self.vk.extensions[name] = self.currentExtension
