@@ -630,7 +630,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureOverlappingMemory) {
     blas_1.BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_device->wait();
+    m_device->Wait();
 
     auto blas_2 = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas_2->SetDeviceBuffer(std::move(buffer_2));
@@ -2140,7 +2140,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
             m_commandBuffer->begin();
             blas.BuildCmdBuffer(m_commandBuffer->handle());
             m_commandBuffer->end();
-            m_default_queue->wait();
+            m_default_queue->Wait();
 
             // Possible 2nd step: insert memory barrier on acceleration structure buffer
             // => no need here since 2nd build call will not be executed by the driver
@@ -2187,7 +2187,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     m_commandBuffer->begin();
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->Submit(*m_commandBuffer);
 
     // This test used to destroy buffers used for building the acceleration structure,
     // to see if there life span was correctly tracked.
@@ -2198,7 +2198,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     vk::DestroyAccelerationStructureKHR(m_device->handle(), blas.GetDstAS()->handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
@@ -2442,7 +2442,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesHost) {
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_device->wait();
+    m_device->Wait();
 
     constexpr size_t stride = 1;
     constexpr size_t data_size = sizeof(uint32_t) * stride;
@@ -2491,7 +2491,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDevice) {
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_device->wait();
+    m_device->Wait();
 
     m_commandBuffer->begin();
     // Incorrect query type
@@ -2523,7 +2523,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesAccelStructDestr
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_device->wait();
+    m_device->Wait();
 
     blas.GetDstAS()->GetBuffer().memory().destroy();
 
@@ -2658,7 +2658,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Devi
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_device->wait();
+    m_device->Wait();
 
     m_commandBuffer->begin();
     // Incorrect query type
@@ -2852,7 +2852,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     blas.BuildCmdBuffer(m_commandBuffer->handle());
 
     m_commandBuffer->end();
-    m_device->wait();
+    m_device->Wait();
     m_commandBuffer->begin();
 
     blas.SetSrcAS(blas.GetDstAS());
@@ -3033,7 +3033,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     blas.BuildCmdBuffer(m_commandBuffer->handle());
 
     m_commandBuffer->end();
-    m_device->wait();
+    m_device->Wait();
     m_commandBuffer->begin();
 
     blas.SetSrcAS(blas.GetDstAS());
@@ -3283,8 +3283,8 @@ TEST_F(NegativeRayTracing, InstanceBufferBadAddress) {
     blas->BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
 
@@ -3317,8 +3317,8 @@ TEST_F(NegativeRayTracing, InstanceBufferBadMemory) {
     blas->BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
 
@@ -3381,8 +3381,8 @@ TEST_F(NegativeRayTracing, UpdatedFirstVertex) {
 
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     m_commandBuffer->begin();
 
@@ -3421,8 +3421,8 @@ TEST_F(NegativeRayTracing, UpdatedFirstPrimitiveCount) {
 
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     m_commandBuffer->begin();
 
@@ -3510,8 +3510,8 @@ TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpUpdate) {
     blas.BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     m_commandBuffer->begin();
     blas.SetScratchBuffer(scratch_buffer);
@@ -3608,8 +3608,8 @@ TEST_F(NegativeRayTracing, TooManyInstances) {
     blas->BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
     tlas.GetGeometries()[0].SetPrimitiveCount(std::numeric_limits<uint32_t>::max());

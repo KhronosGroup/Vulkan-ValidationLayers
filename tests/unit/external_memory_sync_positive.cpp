@@ -247,8 +247,8 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
                            &mem_barrier, 0, nullptr, 0, nullptr);
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {
@@ -324,7 +324,7 @@ TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
     vkt::Semaphore import_semaphore(*m_device);
     import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT

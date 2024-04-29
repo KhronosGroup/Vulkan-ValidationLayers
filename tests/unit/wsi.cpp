@@ -346,7 +346,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     // Even though both peer_image and swapchain_images[0] use the same memory and are in an invalid layout,
     // only peer_image is referenced by the command buffer so there should only be one error reported.
     m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->Submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 
     // peer_image is a presentable image and controlled by the implementation
@@ -1252,7 +1252,7 @@ TEST_F(NegativeWsi, DeviceMask) {
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, DisplayPlaneSurface) {
@@ -1427,7 +1427,7 @@ TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupSubmitInfo-signalSemaphoreCount-00084");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     VkSubmitInfo signal_submit_info = vku::InitStructHelper();
     signal_submit_info.signalSemaphoreCount = 1;
@@ -1451,7 +1451,7 @@ TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
     m_errorMonitor->VerifyFound();
 
     // Need to wait for semaphore to not be in use before destroying it
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
@@ -1468,7 +1468,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     VkAcquireNextImageInfoKHR acquire_info = vku::InitStructHelper();
     acquire_info.swapchain = m_swapchain;
@@ -1528,7 +1528,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
     m_errorMonitor->VerifyFound();
 
     // finish the wait
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // now it should be possible to acquire
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &dummy);
@@ -2179,7 +2179,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     uint32_t release_index = static_cast<uint32_t>(swapchain_images.size()) + 2;
     VkReleaseSwapchainImagesInfoEXT release_info = vku::InitStructHelper();
@@ -2460,7 +2460,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     vk::ReleaseSwapchainImagesEXT(device(), &release_info);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -2963,8 +2963,8 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     vk::QueuePresentKHR(other->handle(), &present);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
-    other->wait();
+    m_default_queue->Wait();
+    other->Wait();
 }
 
 TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
@@ -3011,7 +3011,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {
@@ -3084,7 +3084,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {

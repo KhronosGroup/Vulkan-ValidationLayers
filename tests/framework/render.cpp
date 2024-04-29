@@ -515,7 +515,7 @@ void VkRenderFramework::ShutdownFramework() {
     if (!instance_) return;
 
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
-        m_device->wait();
+        m_device->Wait();
     }
 
     delete m_commandBuffer;
@@ -700,7 +700,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
         return nullptr;
     }();
     if (m_second_queue) {
-        m_second_queue_caps = m_device->phy().queue_properties_[m_second_queue->get_family_index()].queueFlags;
+        m_second_queue_caps = m_device->phy().queue_properties_[m_second_queue->family_index].queueFlags;
     }
 
     m_depthStencil = new vkt::Image();
@@ -949,7 +949,7 @@ std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR 
 
 void VkRenderFramework::DestroySwapchain() {
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
-        m_device->wait();
+        m_device->Wait();
         if (m_swapchain != VK_NULL_HANDLE) {
             vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
             m_swapchain = VK_NULL_HANDLE;

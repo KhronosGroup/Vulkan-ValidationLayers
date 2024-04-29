@@ -4772,13 +4772,13 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     submit_info.commandBufferCount = 2;
     submit_info.pCommandBuffers = command_buffers;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06014");
 
     submit_info.commandBufferCount = 1;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 
@@ -4788,7 +4788,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     command_buffers[2] = cmd_buffer2.handle();
     submit_info.commandBufferCount = 3;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 
@@ -4797,7 +4797,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     command_buffers[0] = cmd_buffer2.handle();
     submit_info.commandBufferCount = 1;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 }
@@ -4856,13 +4856,13 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     submit_info.commandBufferInfoCount = 2;
     submit_info.pCommandBufferInfos = command_buffer_submit_info;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2KHR-commandBuffer-06010");
 
     submit_info.commandBufferInfoCount = 1;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 
@@ -4872,7 +4872,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     command_buffer_submit_info[2].commandBuffer = cmd_buffer2.handle();
     submit_info.commandBufferInfoCount = 3;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 
@@ -4881,7 +4881,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     command_buffer_submit_info[0].commandBuffer = cmd_buffer2.handle();
     submit_info.commandBufferInfoCount = 1;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 }
@@ -6621,7 +6621,7 @@ TEST_F(NegativeDynamicRendering, RenderPassStripeInfoQueueSubmit2) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_submit_info;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 
@@ -6648,7 +6648,7 @@ TEST_F(NegativeDynamicRendering, RenderPassStripeInfoQueueSubmit2) {
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferSubmitInfo-pNext-09446");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeSubmitInfoARM-semaphore-09447");
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 

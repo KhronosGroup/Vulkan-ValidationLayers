@@ -18,10 +18,10 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
     : dev(device), q0(VK_NULL_HANDLE), q1(VK_NULL_HANDLE) {
     if (force_q0) {
         q0 = force_q0->handle();
-        q_fam = force_q0->get_family_index();
+        q_fam = force_q0->family_index;
         if (force_q1) {
             // The object has some assumptions that the queues are from the the same family, so enforce this here
-            if (force_q1->get_family_index() == q_fam) {
+            if (force_q1->family_index == q_fam) {
                 q1 = force_q1->handle();
             }
         } else {
@@ -34,10 +34,10 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
         for (uint32_t q0_index = 0; q0_index < q_count; ++q0_index) {
             const auto* q0_entry = queues[q0_index];
             q0 = q0_entry->handle();
-            q_fam = q0_entry->get_family_index();
+            q_fam = q0_entry->family_index;
             for (uint32_t q1_index = (q0_index + 1); q1_index < q_count; ++q1_index) {
                 const auto* q1_entry = queues[q1_index];
-                if (q_fam == q1_entry->get_family_index()) {
+                if (q_fam == q1_entry->family_index) {
                     q1 = q1_entry->handle();
                     break;
                 }

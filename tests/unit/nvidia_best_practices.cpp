@@ -224,7 +224,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         m_errorMonitor->Finish();
     }
 
-    test_device.wait();
+    test_device.Wait();
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-QueueBindSparse-NotAsync");
@@ -251,7 +251,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     vkt::Queue *compute_queue = nullptr;
     for (uint32_t i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
         auto cqi = m_device->QueuesWithComputeCapability()[i];
-        if (cqi->get_family_index() != graphics_queue->get_family_index()) {
+        if (cqi->family_index != graphics_queue->family_index) {
             compute_queue = cqi;
             break;
         }
@@ -266,7 +266,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     auto build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 
     for (vkt::Queue *queue : queues) {
-        vkt::CommandPool compute_pool(*m_device, queue->get_family_index());
+        vkt::CommandPool compute_pool(*m_device, queue->family_index);
         vkt::CommandBuffer cmd_buffer(*m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
         cmd_buffer.begin();
@@ -1078,8 +1078,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer0.begin(&begin_info);
         command_buffer0.end();
 
-        m_default_queue->submit(command_buffer0);
-        m_device->wait();
+        m_default_queue->Submit(command_buffer0);
+        m_device->Wait();
 
         vk::BeginCommandBuffer(command_buffer0.handle(), &begin_info);
         m_errorMonitor->VerifyFound();
@@ -1091,8 +1091,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer1.end();
 
         for (int i = 0; i < 2; ++i) {
-            m_default_queue->submit(command_buffer1);
-            m_device->wait();
+            m_default_queue->Submit(command_buffer1);
+            m_device->Wait();
         }
 
         vk::BeginCommandBuffer(command_buffer1.handle(), &begin_info);
@@ -1105,8 +1105,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer2.begin(&begin_info);
         command_buffer2.end();
 
-        m_default_queue->submit(command_buffer2);
-        m_device->wait();
+        m_default_queue->Submit(command_buffer2);
+        m_device->Wait();
 
         vk::BeginCommandBuffer(command_buffer2.handle(), &begin_info);
         m_errorMonitor->Finish();

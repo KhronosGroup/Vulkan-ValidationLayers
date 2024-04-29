@@ -134,8 +134,8 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
     vk::CmdEndRenderPass(*m_commandBuffer);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 // Image transition ensures that image data is made visible and available when necessary.
@@ -465,7 +465,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
     ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue->handle(), &present));
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
@@ -523,7 +523,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
     ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue->handle(), &present));
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, PresentAfterSubmitNoneDstStage) {
@@ -585,7 +585,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitNoneDstStage) {
     present.pImageIndices = &image_index;
 
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
-    m_device->wait();
+    m_device->Wait();
 }
 
 TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
@@ -755,8 +755,8 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
@@ -826,8 +826,8 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
@@ -901,8 +901,8 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
@@ -1017,7 +1017,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     submit2.pCommandBufferInfos = &cbuf_info2;
 
     vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
@@ -1084,7 +1084,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
     submit2.commandBufferInfoCount = 1;
     submit2.pCommandBufferInfos = &cbuf_info2;
     vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, QSTransitionAndRead) {
@@ -1170,7 +1170,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     submit2.commandBufferInfoCount = 1;
     submit2.pCommandBufferInfos = &cbuf_info2;
     vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
@@ -1422,8 +1422,8 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     submit2.pCommandBufferInfos = &cbuf_info2;
     vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
 
-    m_default_queue->wait();
-    transfer_queue->wait();
+    m_default_queue->Wait();
+    transfer_queue->Wait();
 }
 
 // TODO:
@@ -1601,8 +1601,8 @@ TEST_F(PositiveSyncVal, ThreadedSubmitAndFenceWaitAndPresent) {
                                    nullptr, 1, &transition);
         }
         cmd.end();
-        m_default_queue->submit(cmd);
-        m_default_queue->wait();
+        m_default_queue->Submit(cmd);
+        m_default_queue->Wait();
     }
 
     constexpr int N = 1'000;

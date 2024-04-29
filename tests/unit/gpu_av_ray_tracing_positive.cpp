@@ -96,8 +96,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
@@ -185,8 +185,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
@@ -297,8 +297,8 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
@@ -404,8 +404,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
@@ -515,6 +515,6 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }

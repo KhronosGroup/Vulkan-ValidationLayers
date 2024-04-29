@@ -169,7 +169,7 @@ TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
     vk::DestroySemaphore(device(), s1, nullptr);
 
     // Force device idle and clean up remaining objects
-    m_device->wait();
+    m_device->Wait();
     vk::DestroySemaphore(device(), s2, nullptr);
     vk::DestroyFence(device(), fence, nullptr);
 }

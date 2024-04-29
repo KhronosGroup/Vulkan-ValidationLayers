@@ -31,8 +31,8 @@ void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
     vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &layout_barrier);
     cmd_buf.end();
-    m_default_queue->submit(cmd_buf);
-    m_default_queue->wait();
+    m_default_queue->Submit(cmd_buf);
+    m_default_queue->Wait();
 }
 
 VkImageMemoryBarrier WsiTest::TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout,
@@ -413,8 +413,8 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
@@ -457,7 +457,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
@@ -480,7 +480,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, WaitForAcquireFenceAndIgnoreSemaphore) {
@@ -510,7 +510,7 @@ TEST_F(PositiveWsi, WaitForAcquireFenceAndIgnoreSemaphore) {
 
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, WaitForAcquireSemaphoreAndIgnoreFence) {
@@ -544,7 +544,7 @@ TEST_F(PositiveWsi, WaitForAcquireSemaphoreAndIgnoreFence) {
     // (QueueWaitIdle does not wait for the fence signaled by the non-queue operation - AcquireNextImageKHR).
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
@@ -654,7 +654,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     //
     // Here we just wait on the queue.
     // If this line is removed we can get in-use error when begin command buffer.
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // Create new swapchain.
     CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, m_swapchain);
@@ -1480,7 +1480,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         //      command buffer is no longer in use and we can reset it.
         m_commandBuffer->reset();
     }
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
