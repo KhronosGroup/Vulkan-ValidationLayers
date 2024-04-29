@@ -1378,6 +1378,10 @@ class ValidationStateTracker : public ValidationObject {
                                                                 const RecordObject& record_obj) override;
     void PostCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode,
                                                      const RecordObject& record_obj) override;
+    void PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
+                                     const RecordObject& record_obj) override;
+    void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
+                                      const RecordObject& record_obj) override;
 
     VkFormatFeatureFlags2KHR GetExternalFormatFeaturesANDROID(const void* pNext) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
