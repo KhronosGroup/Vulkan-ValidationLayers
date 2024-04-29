@@ -1078,7 +1078,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer0.begin(&begin_info);
         command_buffer0.end();
 
-        m_default_queue->submit(command_buffer0, false);
+        m_default_queue->submit(command_buffer0);
         m_device->wait();
 
         vk::BeginCommandBuffer(command_buffer0.handle(), &begin_info);
@@ -1091,7 +1091,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer1.end();
 
         for (int i = 0; i < 2; ++i) {
-            m_default_queue->submit(command_buffer1, false);
+            m_default_queue->submit(command_buffer1);
             m_device->wait();
         }
 
@@ -1105,7 +1105,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         command_buffer2.begin(&begin_info);
         command_buffer2.end();
 
-        m_default_queue->submit(command_buffer2, false);
+        m_default_queue->submit(command_buffer2);
         m_device->wait();
 
         vk::BeginCommandBuffer(command_buffer2.handle(), &begin_info);

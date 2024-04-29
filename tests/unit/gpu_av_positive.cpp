@@ -209,7 +209,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     uint32_t *data = (uint32_t *)buffer.memory().map();
@@ -317,7 +317,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
         m_commandBuffer->end();
-        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->submit(*m_commandBuffer);
         m_default_queue->wait();
 
         pl_layout.destroy();
@@ -343,7 +343,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
         m_commandBuffer->end();
-        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->submit(*m_commandBuffer);
         m_default_queue->wait();
         uint32_t *data = (uint32_t *)buffer.memory().map();
         if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");

@@ -73,7 +73,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 
@@ -141,7 +141,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 
@@ -216,7 +216,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 
@@ -289,7 +289,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 
@@ -360,7 +360,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
@@ -431,7 +431,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }

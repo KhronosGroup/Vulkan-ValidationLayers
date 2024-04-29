@@ -456,7 +456,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
     }
     // buffer2 just went out of scope and was destroyed
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -504,7 +504,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
     // Attempt to submit cmd buffer
     // Invalid VkBuffer
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -744,7 +744,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     tmp_sampler.destroy();
     // Attempt to submit cmd buffer
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 
     // Now re-update descriptor with valid sampler and delete image
@@ -766,7 +766,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     tmp_image.destroy();
 
     // Attempt to submit cmd buffer
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     // Now update descriptor to be valid, but then update and free descriptor
     img_info.imageView = view2.handle();
@@ -808,7 +808,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
     // Attempt to submit cmd buffer containing the freed descriptor set
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1014,7 +1014,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
                     m_errorMonitor->SetDesiredError(err);
                 }
             }
-            m_default_queue->submit(cmd_buf, false);
+            m_default_queue->submit(cmd_buf);
             m_default_queue->wait();
             if (positive_test || (test_type == kInternal)) {
             } else {

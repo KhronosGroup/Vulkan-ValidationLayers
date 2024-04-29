@@ -140,7 +140,7 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
     cb1.end();
 
     std::array cbs = {&cb0, &cb1};
-    m_default_queue->submit(cbs, vkt::Fence{});
+    m_default_queue->submit(cbs);
     m_default_queue->wait();
 }
 

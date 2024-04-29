@@ -323,14 +323,14 @@ class Queue : public internal::Handle<VkQueue> {
     explicit Queue(VkQueue queue, uint32_t index) : Handle(queue), family_index(index) {}
 
     // vkQueueSubmit()
-    VkResult submit(const vvl::span<CommandBuffer *> &cmds, bool expect_success = true);
-    VkResult submit(const CommandBuffer &cmd, bool expect_success = true);
+    VkResult submit(const vvl::span<CommandBuffer *> &cmds);
+    VkResult submit(const CommandBuffer &cmd);
 
-    VkResult submit_with_fence(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
+    VkResult submit_with_fence(const CommandBuffer &cmd, const Fence &fence);
 
     // vkQueueSubmit2()
-    VkResult submit2(const vvl::span<const CommandBuffer> &cmds, bool expect_success = true);
-    VkResult submit2(const CommandBuffer &cmd, bool expect_success = true);
+    VkResult submit2(const vvl::span<const CommandBuffer> &cmds);
+    VkResult submit2(const CommandBuffer &cmd);
 
     // vkQueueWaitIdle()
     VkResult wait();

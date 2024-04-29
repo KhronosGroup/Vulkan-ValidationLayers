@@ -5786,7 +5786,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion) {
 
     std::array command_buffers = {&cb0, &cb1};
     m_errorMonitor->SetDesiredError("RegionA");
-    m_default_queue->submit(command_buffers, false);
+    m_default_queue->submit(command_buffers);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5819,7 +5819,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion2) {
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
     m_errorMonitor->SetDesiredError("RegionA");
-    m_default_queue->submit(cb1, false);
+    m_default_queue->submit(cb1);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5890,7 +5890,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion3) {
 
     std::array command_buffers = {&cb0, &cb1};
     m_errorMonitor->SetDesiredError("VulkanFrame_CommandBuffer0::FirstPass::CopyAToB");
-    m_default_queue->submit(command_buffers, false);
+    m_default_queue->submit(command_buffers);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5931,7 +5931,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     vk::CmdEndDebugUtilsLabelEXT(cb2);  // RegionA
     cb2.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb2, false);
+    m_default_queue->submit(cb2);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -5973,7 +5973,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion5) {
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb2, false);
+    m_default_queue->submit(cb2);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -6021,7 +6021,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion6) {
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb2, false);
+    m_default_queue->submit(cb2);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -6055,7 +6055,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion7) {
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_default_queue->submit(cb1, false);
+    m_default_queue->submit(cb1);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }
@@ -6096,7 +6096,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    m_default_queue->submit(cb1, false);
+    m_default_queue->submit(cb1);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
@@ -6173,7 +6173,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_TimelineStability) {
     vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
     m_commandBuffer->end();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }

@@ -346,7 +346,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     // Even though both peer_image and swapchain_images[0] use the same memory and are in an invalid layout,
     // only peer_image is referenced by the command buffer so there should only be one error reported.
     m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 
     // peer_image is a presentable image and controlled by the implementation

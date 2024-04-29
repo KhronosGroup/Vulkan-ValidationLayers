@@ -1722,7 +1722,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad);
 
     // This should give a warning
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
 
     m_errorMonitor->VerifyFound();
 

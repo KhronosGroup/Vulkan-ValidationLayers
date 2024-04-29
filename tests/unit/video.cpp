@@ -3482,7 +3482,7 @@ TEST_F(NegativeVideo, BeginCodingDecodeSlotInactive) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
@@ -3510,7 +3510,7 @@ TEST_F(NegativeVideo, BeginCodingDecodeSlotInactive) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }
@@ -3547,7 +3547,7 @@ TEST_F(NegativeVideo, BeginCodingDecodeInvalidSlotResourceAssociation) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }
@@ -4053,7 +4053,7 @@ TEST_F(NegativeVideo, ControlSessionUninitialized) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdControlVideoCodingKHR-flags-07017");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
 
     m_device->wait();
@@ -4225,7 +4225,7 @@ TEST_F(NegativeVideo, EncodeParamsQualityLevelMismatch) {
     cb.EndVideoCoding(context.End());
     cb.end();
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-None-08318");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
 
     // Same goes when encode quality level state is changed before/after
@@ -4264,7 +4264,7 @@ TEST_F(NegativeVideo, EncodeParamsQualityLevelMismatch) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-None-08318");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
 
     context.vk.DestroyVideoSessionParametersKHR(device(), params_quality_level_1, nullptr);
@@ -5895,7 +5895,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchNotDefault) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08253");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }
@@ -6351,7 +6351,7 @@ TEST_F(NegativeVideo, DecodeSessionUninitialized) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-None-07011");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }
@@ -6379,7 +6379,7 @@ TEST_F(NegativeVideo, EncodeSessionUninitialized) {
     cb.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-None-07012");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }
@@ -8665,7 +8665,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivation) {
     cb.EndVideoCoding(context.End());
     cb.end();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }
@@ -8707,7 +8707,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8730,7 +8730,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8753,7 +8753,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8776,7 +8776,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8799,7 +8799,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8822,7 +8822,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8867,7 +8867,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07267");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
 
@@ -8878,7 +8878,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07268");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8901,7 +8901,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07266");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
 
@@ -8912,7 +8912,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07268");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8935,7 +8935,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07266");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
 
@@ -8946,7 +8946,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07267");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -8991,7 +8991,7 @@ TEST_F(NegativeVideo, DecodeInvalidationOnlyH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07267");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -9016,7 +9016,7 @@ TEST_F(NegativeVideo, DecodeInvalidationOnlyH264Interlaced) {
         cb.EndVideoCoding(context.End());
         cb.end();
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07268");
-        context.Queue().submit(cb, false);
+        context.Queue().submit(cb);
         m_errorMonitor->VerifyFound();
         m_device->wait();
     }
@@ -9687,7 +9687,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
 
     // Will fail as query pool has never been reset before
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pNext-08366");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
@@ -9700,7 +9700,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
 
     // Will fail again as we did not reset after use
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pNext-08366");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
@@ -9961,7 +9961,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
 
     // Will fail as query pool has never been reset before
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pNext-08361");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 
@@ -9974,7 +9974,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
 
     // Will fail again as we did not reset after use
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pNext-08361");
-    context.Queue().submit(cb, false);
+    context.Queue().submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 

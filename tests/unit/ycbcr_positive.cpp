@@ -339,7 +339,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &copy_region);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     // Test to verify that views of multiplanar images have layouts tracked correctly

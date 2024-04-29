@@ -964,7 +964,7 @@ TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     // Destroy query pool dependency prior to submit to cause ERROR
     query_pool.destroy();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2523,7 +2523,7 @@ TEST_F(NegativeQuery, GetQueryPoolResultsWithoutReset) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-None-09402");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }

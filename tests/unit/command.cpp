@@ -161,7 +161,7 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();
