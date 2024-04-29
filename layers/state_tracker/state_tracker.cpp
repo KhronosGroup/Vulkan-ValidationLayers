@@ -5633,3 +5633,20 @@ void ValidationStateTracker::PostCallRecordCmdBindTransformFeedbackBuffersEXT(Vk
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->transform_feedback_buffers_bound = bindingCount;
 }
+
+void ValidationStateTracker::PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                         const VkLatencySleepInfoNV *pSleepInfo, const RecordObject &record_obj) {
+    auto semaphore_state = Get<vvl::Semaphore>(pSleepInfo->signalSemaphore);
+    if (semaphore_state) {
+        auto value = pSleepInfo->value;
+        semaphore_state->EnqueueSignal(vvl::SubmissionReference{}, value);
+    }
+}
+
+void ValidationStateTracker::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain,
+                                                          const VkLatencySleepInfoNV *pSleepInfo, const RecordObject &record_obj) {
+    auto semaphore_state = Get<vvl::Semaphore>(pSleepInfo->signalSemaphore);
+    if (semaphore_state) {
+        semaphore_state->Retire(nullptr, record_obj.location, pSleepInfo->value);
+    }
+}
