@@ -97,47 +97,47 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
                 Empty = 0,
             ''')
         # Want alpha-sort for ease of look at list while debugging
-        for index, command in enumerate(sorted(self.vk.commands.values()), start=1):
-            out.append(f'    {command.name} = {index},\n')
+        for command in sorted(self.vk.commands.values()):
+            out.append(f'    {command.name},\n')
         out.append('};\n')
 
         out.append('\n')
         out.append('enum class Struct {\n')
         out.append('    Empty = 0,\n')
         # Want alpha-sort for ease of look at list while debugging
-        for index, struct in enumerate(sorted(self.vk.structs.values()), start=1):
-            out.append(f'    {struct.name} = {index},\n')
+        for struct in sorted(self.vk.structs.values()):
+            out.append(f'    {struct.name},\n')
         out.append('};\n')
 
         out.append('\n')
         out.append('enum class Field {\n')
         out.append('    Empty = 0,\n')
         # Already alpha-sorted
-        for index, field in enumerate(self.fields, start=1):
-            out.append(f'    {field} = {index},\n')
+        for field in self.fields:
+            out.append(f'    {field},\n')
         out.append('};\n')
         out.append('\n')
 
         out.append('enum class Enum {\n')
         out.append('    Empty = 0,\n')
         # Want alpha-sort for ease of look at list while debugging
-        for index, enum in enumerate(sorted(self.vk.enums.values()), start=1):
-            out.append(f'    {enum.name} = {index},\n')
+        for enum in sorted(self.vk.enums.values()):
+            out.append(f'    {enum.name},\n')
         out.append('};\n')
 
         out.append('enum class FlagBitmask {\n')
         out.append('    Empty = 0,\n')
         # Want alpha-sort for ease of look at list while debugging
-        for index, bitmask in enumerate(sorted(self.vk.bitmasks.values()), start=1):
-            out.append(f'    {bitmask.name} = {index},\n')
+        for bitmask in sorted(self.vk.bitmasks.values()):
+            out.append(f'    {bitmask.name},\n')
         out.append('};\n')
 
         out.append('\n')
         out.append('// Need underscore prefix to not conflict with namespace, but still easy to match generation\n')
         out.append('enum class Extension {\n')
         out.append('    Empty = 0,\n')
-        for index, extension in enumerate(sorted(self.vk.extensions.values(), key=lambda x: x.name), start=1):
-            out.append(f'    _{extension.name} = {index},\n')
+        for extension in sorted(self.vk.extensions.values(), key=lambda x: x.name):
+            out.append(f'    _{extension.name},\n')
         out.append('};\n')
 
         out.append('''
