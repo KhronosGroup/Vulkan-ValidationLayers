@@ -150,29 +150,6 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
         }
     }
 
-    if (buffer_device_address_enabled) {
-        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        VmaAllocationCreateInfo alloc_info = {};
-        app_bda_buffer_byte_size = (1                                                 // 1 QWORD for the number of address ranges
-                                    + 2 * gpuav_settings.max_buffer_device_addresses  // 2 QWORDS to hold an address range
-                                    ) *
-                                   8;  // 64 bit words
-        buffer_info.size = app_bda_buffer_byte_size;
-        // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
-        // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
-        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-        VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &app_buffer_device_addresses.buffer,
-                                          &app_buffer_device_addresses.allocation, nullptr);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc,
-                               "Unable to allocate device memory for buffer device address data. Device could become unstable.",
-                               true);
-            aborted = true;
-            return;
-        }
-    }
-
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
         LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                    "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
