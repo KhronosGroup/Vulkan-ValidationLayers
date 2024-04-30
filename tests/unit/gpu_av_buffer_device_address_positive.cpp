@@ -1210,8 +1210,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
         cb.EndRenderPass();
         cb.end();
 
-        m_default_queue->submit(cb);
+        m_default_queue->Submit(cb);
     }
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
