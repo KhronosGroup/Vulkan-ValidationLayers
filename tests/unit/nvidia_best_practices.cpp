@@ -549,10 +549,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
 
     CreatePipelineHelper vsPipe(*this, &pipeline_rendering_info);
     vsPipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    vsPipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     vsPipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper vgsPipe(*this, &pipeline_rendering_info);
     vgsPipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo()};
+    vgsPipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     vgsPipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
