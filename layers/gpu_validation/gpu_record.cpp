@@ -175,9 +175,7 @@ void gpuav::Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAlloc
     for (auto &[key, shared_resources] : shared_validation_resources_map) {
         shared_resources->Destroy(*this);
     }
-    if (app_buffer_device_addresses.buffer) {
-        vmaDestroyBuffer(vmaAllocator, app_buffer_device_addresses.buffer, app_buffer_device_addresses.allocation);
-    }
+
     if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders.empty()) {
         std::ofstream file_stream(instrumented_shader_cache_path, std::ofstream::out | std::ofstream::binary);
         if (file_stream) {
