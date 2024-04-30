@@ -1144,3 +1144,74 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
 
     storage_buffer.memory().unmap();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
+    TEST_DESCRIPTION(
+        "Make sure BDA buffer maintained in GPU-AV is correctly read/written to. When this buffer was not maintained per command "
+        "buffer, and a global buffer was used instead, concurrent accesses were not handled correctly.");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        
+        layout(buffer_reference, buffer_reference_align = 16, std430) buffer IntPtr {
+            int i0;
+            int i1;
+        };
+
+        layout(push_constant) uniform Uniforms {
+            IntPtr ptr;    
+        };
+        
+        void main() {
+            ptr.i1 = ptr.i0;
+        }
+    )glsl";
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkPushConstantRange pc;
+    pc.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pc.offset = 0;
+    pc.size = sizeof(VkDeviceAddress);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.pipeline_layout_ci_.pushConstantRangeCount = 1;
+    pipe.pipeline_layout_ci_.pPushConstantRanges = &pc;
+    pipe.CreateGraphicsPipeline();
+
+    const uint32_t storage_buffer_size = 2 * sizeof(int);
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    std::vector<vkt::CommandBuffer> cmd_buffers;
+    std::vector<vkt::Buffer> storage_buffers;
+    for (int i = 0; i < 64; ++i) {
+        auto &cb = cmd_buffers.emplace_back(vkt::CommandBuffer(*m_device, m_commandPool));
+
+        // Create a storage buffer and get its address,
+        // effectively adding it to the BDA table
+        auto &storage_buffer = storage_buffers.emplace_back(vkt::Buffer(
+            *m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info));
+
+        auto storage_buffer_addr = storage_buffer.address();
+
+        // Read and write from storage buffer address
+        cb.begin();
+        cb.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdPushConstants(cb, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(storage_buffer_addr),
+                             &storage_buffer_addr);
+        vk::CmdDraw(cb.handle(), 3, 1, 0, 0);
+        cb.EndRenderPass();
+        cb.end();
+
+        m_default_queue->submit(cb);
+    }
+
+    m_default_queue->wait();
+}
