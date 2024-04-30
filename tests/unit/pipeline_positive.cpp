@@ -185,6 +185,22 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
     pipe.CreateComputePipeline();
 }
 
+TEST_F(PositivePipeline, IgnoredMultisampleState) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5931");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
+    const uint64_t fake_address_32 = 0xCDCDCDCD;
+    void *bad_pointer = sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.gp_ci_.pMultisampleState = reinterpret_cast<const VkPipelineMultisampleStateCreateInfo *>(bad_pointer);
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
     SetTargetApiVersion(VK_API_VERSION_1_1);

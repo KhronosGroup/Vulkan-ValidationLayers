@@ -66,8 +66,8 @@ TEST_F(NegativeDebugPrintf, BasicCompute) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -177,8 +177,8 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 }
@@ -249,8 +249,8 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -275,8 +275,8 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a smaller float value 3.14");
     }
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -343,8 +343,8 @@ TEST_F(NegativeDebugPrintf, Int64) {
     data[0] = 0;
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     data = (VkDeviceAddress *)buffer_in.memory().map();
@@ -352,8 +352,8 @@ TEST_F(NegativeDebugPrintf, Int64) {
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     data = (VkDeviceAddress *)buffer_in.memory().map();
@@ -361,8 +361,8 @@ TEST_F(NegativeDebugPrintf, Int64) {
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -429,8 +429,8 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -539,8 +539,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 }
@@ -609,8 +609,8 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -635,8 +635,8 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a smaller float value 3.14");
     }
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -699,8 +699,8 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     data[0] = 0;
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     data = (VkDeviceAddress *)buffer_in.memory().map();
@@ -708,8 +708,8 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     data = (VkDeviceAddress *)buffer_in.memory().map();
@@ -717,8 +717,8 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -806,8 +806,8 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -942,8 +942,8 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1068,8 +1068,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 
@@ -1100,8 +1100,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[0]);
         }
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -1133,8 +1133,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         for (auto i = 0; i < 3; i++) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[1]);
         }
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 
@@ -1188,8 +1188,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         data[0] = 0;
         buffer_in.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         data = (VkDeviceAddress *)buffer_in.memory().map();
@@ -1197,8 +1197,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         buffer_in.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(
             kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         data = (VkDeviceAddress *)buffer_in.memory().map();
@@ -1206,8 +1206,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         buffer_in.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                              "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-        m_default_queue->submit(*m_commandBuffer, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1285,8 +1285,8 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1337,8 +1337,8 @@ TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex value is 4");
     }
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment value is 8");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1450,7 +1450,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_VertexFragmentMultiEntrypoint) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex value is 4");
     }
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment value is 8");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }

@@ -1123,7 +1123,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     // never record m_commandBuffer
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->Submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
@@ -1712,7 +1712,7 @@ TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
 
     m_commandBuffer->end();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(VkLayerTest, ExtensionXmlDependsLogic) {

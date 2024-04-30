@@ -415,9 +415,9 @@ VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
     }
 }
 
-void Device::wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
+void Device::Wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
 
-VkResult Device::wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
+VkResult Device::Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
     const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);
     VkResult err =
         vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
@@ -432,7 +432,7 @@ void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &wri
                              copies.data());
 }
 
-VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
+VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds) {
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 0;
@@ -443,28 +443,30 @@ VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fen
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
 
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
-    if (expect_success) {
-        EXPECT_EQ(VK_SUCCESS, result);
-    }
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, VK_NULL_HANDLE);
     return result;
 }
 
-VkResult Queue::submit(const CommandBuffer &cmd, const Fence &fence, bool expect_success) {
-    return submit(std::vector<const CommandBuffer *>(1, &cmd), fence, expect_success);
-}
-
-VkResult Queue::submit(const CommandBuffer &cmd, bool expect_success) {
+VkResult Queue::Submit(const CommandBuffer &cmd) {
     Fence fence;
-    return submit(cmd, fence, expect_success);
+    return SubmitWithFence(cmd, fence);
 }
 
-VkResult Queue::submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
+VkResult Queue::SubmitWithFence(const CommandBuffer &cmd, const Fence &fence) {
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd.handle();
+
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
+    return result;
+}
+
+VkResult Queue::Submit2(const vvl::span<const CommandBuffer> &cmds) {
     std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
     for (size_t i = 0; i < cmds.size(); i++) {
         VkCommandBufferSubmitInfo cmd_submit_info = vku::InitStructHelper();
         cmd_submit_info.deviceMask = 0;
-        cmd_submit_info.commandBuffer = cmds[i]->handle();
+        cmd_submit_info.commandBuffer = cmds[i].handle();
         cmd_submit_infos.push_back(cmd_submit_info);
     }
 
@@ -477,19 +479,13 @@ VkResult Queue::submit2(const std::vector<const CommandBuffer *> &cmds, const Fe
     submit_info.commandBufferInfoCount = static_cast<uint32_t>(cmd_submit_infos.size());
     submit_info.pCommandBufferInfos = cmd_submit_infos.data();
 
-    // requires synchronization2 to be enabled
-    VkResult result = vk::QueueSubmit2(handle(), 1, &submit_info, fence.handle());
-    if (expect_success) {
-        EXPECT_EQ(VK_SUCCESS, result);
-    }
+    VkResult result = vk::QueueSubmit2(handle(), 1, &submit_info, VK_NULL_HANDLE);
     return result;
 }
 
-VkResult Queue::submit2(const CommandBuffer &cmd, const Fence &fence, bool expect_success) {
-    return submit2(std::vector<const CommandBuffer *>(1, &cmd), fence, expect_success);
-}
+VkResult Queue::Submit2(const CommandBuffer &cmd) { return Submit2(vvl::make_span(&cmd, 1)); }
 
-VkResult Queue::wait() {
+VkResult Queue::Wait() {
     VkResult result = vk::QueueWaitIdle(handle());
     EXPECT_EQ(VK_SUCCESS, result);
     return result;
@@ -996,8 +992,8 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
     cmd_buf.end();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
-    graphics_queue->submit(cmd_buf);
-    graphics_queue->wait();
+    graphics_queue->Submit(cmd_buf);
+    graphics_queue->Wait();
 }
 
 VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) const {

@@ -73,8 +73,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
@@ -141,8 +141,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
@@ -216,8 +216,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
@@ -289,8 +289,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
@@ -360,8 +360,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -431,8 +431,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -498,8 +498,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     uniform_buffer.memory().unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
@@ -591,8 +591,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     uniform_buffer.memory().unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
@@ -666,8 +666,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     uniform_buffer.memory().unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
@@ -791,8 +791,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
         uniform_buffer.memory().unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to float
@@ -808,8 +808,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
         uniform_buffer.memory().unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to vec3
@@ -886,8 +886,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
         uniform_buffer.memory().unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to float
@@ -903,8 +903,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
         uniform_buffer.memory().unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to vec3
@@ -992,8 +992,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     uniform_buffer.memory().unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote values to all nodes but the last

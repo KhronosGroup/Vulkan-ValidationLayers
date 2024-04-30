@@ -111,7 +111,6 @@ class Validator : public gpu_tracker::Validator {
     bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, chassis::CreateShaderModule& chassis_state);
     bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, chassis::ShaderObject& chassis_state);
     void UpdateInstrumentationBuffer(CommandBuffer* cb_node);
-    void UpdateBDABuffer(const Location& loc);
 
     void UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                              const Location& loc);
@@ -478,6 +477,9 @@ class Validator : public gpu_tracker::Validator {
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const override;
 
+  public:
+    bool IsBufferDeviceAddressEnabled() const { return buffer_device_address_enabled; }
+
   private:
     VkPipeline GetDrawValidationPipeline(VkRenderPass render_pass);
 
@@ -489,9 +491,6 @@ class Validator : public gpu_tracker::Validator {
     VkBool32 shaderInt64 = false;
     std::string instrumented_shader_cache_path{};
     AccelerationStructureBuildValidationState acceleration_structure_validation_state{};
-    DeviceMemoryBlock app_buffer_device_addresses{};
-    size_t app_bda_buffer_byte_size{};
-    uint32_t gpuav_bda_buffer_version = 0;
 
     bool buffer_device_address_enabled = false;
 

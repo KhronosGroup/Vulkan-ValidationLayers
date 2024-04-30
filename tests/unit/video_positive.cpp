@@ -67,9 +67,9 @@ TEST_F(PositiveVideo, MultipleCmdBufs) {
     cb2.EndVideoCoding(context.End());
     cb2.end();
 
-    vkt::Fence fence{};
-    context.Queue().submit({&cb1, &cb2}, fence, true);
-    m_device->wait();
+    std::array cbs = {&cb1, &cb2};
+    context.Queue().Submit(cbs);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, VideoDecodeProfileIndependentResources) {
@@ -168,8 +168,8 @@ TEST_F(PositiveVideo, VideoDecodeH264) {
     cb.DecodeVideo(context.DecodeReferenceFrame(2).AddReferenceFrame(0));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).InvalidateSlot(1).AddResource(-1, 1).AddResource(2, 2));
@@ -178,8 +178,8 @@ TEST_F(PositiveVideo, VideoDecodeH264) {
     cb.DecodeVideo(context.DecodeReferenceFrame(2).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
@@ -216,8 +216,8 @@ TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
     cb.DecodeVideo(context.DecodeReferenceFrame(1).AddReferenceBothFields(0));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().InvalidateSlot(0).AddResource(-1, 0).AddResource(1, 1));
@@ -226,8 +226,8 @@ TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
     cb.DecodeVideo(context.DecodeFrame(1).AddReferenceFrame(0));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
@@ -263,8 +263,8 @@ TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
     cb.DecodeVideo(context.DecodeReferenceFrame(1).AddReferenceTopField(0));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).AddResource(1, 1).AddResource(-1, 2));
@@ -273,8 +273,8 @@ TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
     cb.DecodeVideo(context.DecodeFrame(0).AddReferenceBottomField(2));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, VideoDecodeH265) {
@@ -312,8 +312,8 @@ TEST_F(PositiveVideo, VideoDecodeH265) {
     cb.DecodeVideo(context.DecodeReferenceFrame(2).AddReferenceFrame(0).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).InvalidateSlot(1).AddResource(-1, 1).AddResource(2, 2));
@@ -322,8 +322,8 @@ TEST_F(PositiveVideo, VideoDecodeH265) {
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, VideoDecodeAV1) {
@@ -360,8 +360,8 @@ TEST_F(PositiveVideo, VideoDecodeAV1) {
     cb.DecodeVideo(context.DecodeReferenceFrame(2).AddReferenceFrame(0).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0).InvalidateSlot(1).AddResource(-1, 1).AddResource(2, 2));
@@ -370,8 +370,8 @@ TEST_F(PositiveVideo, VideoDecodeAV1) {
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, DecodeAV1DistinctWithFilmGrain) {
@@ -475,8 +475,8 @@ TEST_F(PositiveVideo, VideoEncodeH264) {
     cb.EncodeVideo(context.EncodeReferenceFrame(2).AddReferenceFrame(0));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 
     cb.begin();
     cb.BeginVideoCoding(
@@ -486,8 +486,8 @@ TEST_F(PositiveVideo, VideoEncodeH264) {
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, VideoEncodeH265) {
@@ -535,8 +535,8 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
     cb.EncodeVideo(context.EncodeReferenceFrame(2).AddReferenceFrame(0).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 
     cb.begin();
     cb.BeginVideoCoding(
@@ -546,8 +546,8 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(1));
     cb.EndVideoCoding(context.End());
     cb.end();
-    context.Queue().submit(cb);
-    m_device->wait();
+    context.Queue().Submit(cb);
+    m_device->Wait();
 }
 
 TEST_F(PositiveVideo, EncodeRateControlH264LayerCount) {

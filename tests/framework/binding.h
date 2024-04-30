@@ -47,6 +47,14 @@ std::vector<Dst> MakeVkHandles(const std::vector<Src *> &v) {
     return handles;
 }
 
+template <class Dst, class Src>
+std::vector<Dst> MakeVkHandles(const vvl::span<Src *> &v) {
+    std::vector<Dst> handles;
+    handles.reserve(v.size());
+    std::transform(v.begin(), v.end(), std::back_inserter(handles), [](const Src *o) { return o->handle(); });
+    return handles;
+}
+
 class PhysicalDevice;
 class Device;
 class Queue;
@@ -262,11 +270,11 @@ class Device : public internal::Handle<VkDevice> {
     VkFormatFeatureFlags2 FormatFeaturesBuffer(VkFormat format) const;
 
     // vkDeviceWaitIdle()
-    void wait() const;
+    void Wait() const;
 
     // vkWaitForFences()
-    VkResult wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout);
-    VkResult wait(const Fence &fence) { return wait(std::vector<const Fence *>(1, &fence), true, (uint64_t)-1); }
+    VkResult Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout);
+    VkResult Wait(const Fence &fence) { return Wait(std::vector<const Fence *>(1, &fence), true, (uint64_t)-1); }
 
     // vkUpdateDescriptorSets()
     void update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &writes, const std::vector<VkCopyDescriptorSet> &copies);
@@ -315,18 +323,17 @@ class Queue : public internal::Handle<VkQueue> {
     explicit Queue(VkQueue queue, uint32_t index) : Handle(queue), family_index(index) {}
 
     // vkQueueSubmit()
-    VkResult submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
-    VkResult submit(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
-    VkResult submit(const CommandBuffer &cmd, bool expect_success = true);
+    VkResult Submit(const vvl::span<CommandBuffer *> &cmds);
+    VkResult Submit(const CommandBuffer &cmd);
+    VkResult SubmitWithFence(const CommandBuffer &cmd, const Fence &fence);
 
     // vkQueueSubmit2()
-    VkResult submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
-    VkResult submit2(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
+    VkResult Submit2(const vvl::span<const CommandBuffer> &cmds);
+    VkResult Submit2(const CommandBuffer &cmd);
 
     // vkQueueWaitIdle()
-    VkResult wait();
+    VkResult Wait();
 
-    uint32_t get_family_index() const { return family_index; }  // DEPRECATED: use family_index directly
     const uint32_t family_index;
 };
 

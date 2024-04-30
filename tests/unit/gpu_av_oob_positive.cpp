@@ -86,20 +86,20 @@ TEST_F(PositiveGpuAVOOB, Basic) {
     uint32_t *data = (uint32_t *)offset_buffer.memory().map();
     *data = 1;
     offset_buffer.memory().unmap();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     data = (uint32_t *)offset_buffer.memory().map();
     *data = 2;
     offset_buffer.memory().unmap();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     data = (uint32_t *)offset_buffer.memory().map();
     *data = 3;
     offset_buffer.memory().unmap();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
@@ -151,8 +151,8 @@ TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
@@ -205,8 +205,8 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVOOB, GPL) {
@@ -282,20 +282,20 @@ TEST_F(PositiveGpuAVOOB, GPL) {
     uint32_t *data = (uint32_t *)offset_buffer.memory().map();
     *data = 1;
     offset_buffer.memory().unmap();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     data = (uint32_t *)offset_buffer.memory().map();
     *data = 2;
     offset_buffer.memory().unmap();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     data = (uint32_t *)offset_buffer.memory().map();
     *data = 3;
     offset_buffer.memory().unmap();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVOOB, VertexFragmentMultiEntrypoint) {
@@ -434,6 +434,6 @@ TEST_F(PositiveGpuAVOOB, VertexFragmentMultiEntrypoint) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }

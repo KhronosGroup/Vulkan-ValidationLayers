@@ -43,7 +43,7 @@ BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<ui
 }
 
 void BarrierQueueFamilyBase::Context::Reset() {
-    layer_test->DeviceObj()->wait();
+    layer_test->DeviceObj()->Wait();
     for (auto &qf : queue_families) {
         vk::ResetCommandPool(layer_test->device(), qf.second.command_pool->handle(), 0);
     }
@@ -144,15 +144,12 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
 
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
-            // the Fence resolves to VK_NULL_HANLE... i.e. no fence
-            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
+            // no wait after submit
+            std::array command_buffers{qf->command_buffer, qf->command_buffer2};
+            qf->queue->Submit(command_buffers);
         } else {
-            if (positive) {  // Check for success on positive tests only
-                qf->queue->submit(*qf->command_buffer);
-            } else {
-                qf->queue->submit(*qf->command_buffer, false);
-            }
-            qf->queue->wait();
+            qf->queue->Submit(*qf->command_buffer);
+            qf->queue->Wait();
         }
     }
 
@@ -200,15 +197,12 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
 
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
-            // the Fence resolves to VK_NULL_HANLE... i.e. no fence
-            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
+            // no wait after submit
+            std::array command_buffers{qf->command_buffer, qf->command_buffer2};
+            qf->queue->Submit(command_buffers);
         } else {
-            if (positive) {  // Check for success on positive tests only
-                qf->queue->submit(*qf->command_buffer);
-            } else {
-                qf->queue->submit(*qf->command_buffer, false);
-            }
-            qf->queue->wait();
+            qf->queue->Submit(*qf->command_buffer);
+            qf->queue->Wait();
         }
     }
 
@@ -227,8 +221,8 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     vk::CmdPipelineBarrier(cb->handle(), src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier,
                            img_barrier);
     cb->end();
-    queue->submit(*cb);
-    queue->wait();
+    queue->Submit(*cb);
+    queue->Wait();
 }
 
 void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer *cb_from, vkt::Queue *queue_to,
@@ -249,8 +243,8 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     dep_info.pImageMemoryBarriers = img_barrier;
     vk::CmdPipelineBarrier2KHR(cb->handle(), &dep_info);
     cb->end();
-    queue->submit(*cb);
-    queue->wait();
+    queue->Submit(*cb);
+    queue->Wait();
 }
 
 void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer *cb_from, vkt::Queue *queue_to,

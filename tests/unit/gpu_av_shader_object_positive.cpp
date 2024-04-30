@@ -107,8 +107,8 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 
     // Should get a warning since shader was instrumented
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-vkCmdDraw-None-08613");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     vert_create_info.pNext = nullptr;
@@ -125,6 +125,6 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 
     // Should not get a warning since shader was not instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }

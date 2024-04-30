@@ -927,11 +927,11 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
             vk::CmdDraw(cb, 0, 0, 0, 0);
             vk::CmdEndRenderPass(cb);
             cb.end();
-            m_default_queue->submit(cb);
+            m_default_queue->Submit(cb);
         }
 
         // Wait for the queue. After this set A should be no longer in use.
-        m_default_queue->wait();
+        m_default_queue->Wait();
 
         // Bind set B to a command buffer and submit the command buffer;
         {
@@ -943,14 +943,14 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
             vk::CmdDraw(cb, 0, 0, 0, 0);
             vk::CmdEndRenderPass(cb);
             cb.end();
-            m_default_queue->submit(cb);
+            m_default_queue->Submit(cb);
         }
 
         // Update set A. It should not cause VU 03047 error.
         vkt::Buffer buffer2(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         update_set(set_A, buffer2);
 
-        m_default_queue->wait();
+        m_default_queue->Wait();
     }
 }
 

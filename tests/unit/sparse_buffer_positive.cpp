@@ -67,7 +67,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
 
     vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
-    sparse_queue->wait();
+    sparse_queue->Wait();
     // Set up complete
 
     m_commandBuffer->begin();
@@ -83,7 +83,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     bind_info.pWaitSemaphores = &semaphore.handle();
     bind_info.pSignalSemaphores = &semaphore2.handle();
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
-    sparse_queue->wait();
+    sparse_queue->Wait();
 
     // Submitting copy command with non overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -96,7 +96,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
@@ -175,7 +175,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
@@ -251,8 +251,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
-    sparse_queue->wait();
+    m_default_queue->Wait();
+    sparse_queue->Wait();
 }
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
@@ -330,8 +330,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
-    sparse_queue->wait();
+    m_default_queue->Wait();
+    sparse_queue->Wait();
 }
 
 TEST_F(PositiveSparseBuffer, BindSparseEmpty) {
@@ -345,5 +345,5 @@ TEST_F(PositiveSparseBuffer, BindSparseEmpty) {
 
     vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vk::QueueBindSparse(sparse_queue->handle(), 0u, nullptr, VK_NULL_HANDLE);
-    sparse_queue->wait();
+    sparse_queue->Wait();
 }

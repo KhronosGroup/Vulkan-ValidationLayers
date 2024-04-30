@@ -43,6 +43,7 @@ def BuildVVL(config, cmake_args, build_tests, mock_android):
     cmake_cmd += f' -D BUILD_TESTS={build_tests}'
     cmake_cmd += f' -D UPDATE_DEPS=ON -D UPDATE_DEPS_DIR={CI_EXTERNAL_DIR}'
     cmake_cmd += ' -D BUILD_WERROR=ON'
+    cmake_cmd += ' -D INSTALL_VVL_TEST_ICD=ON'
 
     if cmake_args:
          cmake_cmd += f' {cmake_args}'
@@ -155,7 +156,9 @@ def Build(args):
         BuildVVL(config = config, cmake_args = args.cmake, build_tests = "ON", mock_android = args.mockAndroid)
         BuildLoader()
         BuildProfileLayer(args.mockAndroid)
-        BuildMockICD(args.mockAndroid)
+        if (args.mockAndroid):
+            # Currently use MockICD from Vulkan-Tools for Mock Android tests
+            BuildMockICD(args.mockAndroid)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
@@ -177,12 +180,17 @@ def RunVVLTests(args):
     # defined by GNUInstallDirs. This makes setting VK_LAYER_PATH and other environment variables trivial/robust.
     if common_ci.IsWindows():
         lvt_env['VK_LAYER_PATH'] = os.path.join(CI_INSTALL_DIR, 'bin')
-        lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'bin\\VkICD_mock_icd.json')
-    else:
+        lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'bin\\VVL_Test_ICD.json')
+    elif args.mockAndroid:
         lvt_env['LD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
         lvt_env['DYLD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
         lvt_env['VK_LAYER_PATH'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/explicit_layer.d')
         lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/icd.d/VkICD_mock_icd.json')
+    else:
+        lvt_env['LD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
+        lvt_env['DYLD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
+        lvt_env['VK_LAYER_PATH'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/explicit_layer.d')
+        lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/icd.d/VVL_Test_ICD.json')
 
     # This enables better stack traces from tools like leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
     lvt_env['VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING'] = '1'

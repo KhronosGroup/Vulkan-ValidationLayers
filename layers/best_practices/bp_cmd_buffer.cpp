@@ -68,6 +68,7 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
     // reset
     cb_state->num_submits = 0;
     cb_state->uses_vertex_buffer = false;
+    cb_state->small_indexed_draw_call_count = 0;
 }
 
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,

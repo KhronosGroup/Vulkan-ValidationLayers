@@ -114,6 +114,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
         return cmd_errors_counts_buffer_.buffer;
     }
 
+    const DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
+
     void ClearCmdErrorsCountsBuffer() const;
 
     void Destroy() final;
@@ -122,6 +124,9 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
   private:
     void AllocateResources();
     void ResetCBState();
+
+    VkDeviceSize GetBdaRangesBufferByteSize() const;
+    [[nodiscard]] bool UpdateBdaRangesBuffer();
 
     Validator &state_;
 
@@ -136,6 +141,9 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     // Buffer storing an error count per validated commands.
     // Used to limit the number of errors a single command can emit.
     DeviceMemoryBlock cmd_errors_counts_buffer_ = {};
+    // Buffer storing a snapshot of buffer device address ranges
+    DeviceMemoryBlock bda_ranges_snapshot_ = {};
+    uint32_t bda_ranges_snapshot_version_ = 0;
 };
 
 class Queue : public gpu_tracker::Queue {

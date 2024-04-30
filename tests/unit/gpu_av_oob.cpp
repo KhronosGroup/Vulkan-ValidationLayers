@@ -83,8 +83,8 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     m_errorMonitor->SetDesiredWarning(
         "Descriptor index 0 access out of bounds. Descriptor size is 4 and highest byte accessed was 19", 3);
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     data = (uint32_t *)uniform_buffer.memory().map();
     *data = 1;
@@ -92,8 +92,8 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     // normally VUID-vkCmdDraw-storageBuffers-06936
     m_errorMonitor->SetDesiredWarning(
         "Descriptor index 0 access out of bounds. Descriptor size is 16 and highest byte accessed was 35", 3);
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -147,8 +147,8 @@ TEST_F(NegativeGpuAVOOB, Basic) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -257,7 +257,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
         m_commandBuffer->EndRenderPass();
     }
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->Submit(*m_commandBuffer);
     vk::DeviceWaitIdle(*m_device);
     m_errorMonitor->VerifyFound();
     DestroyRenderTarget();
@@ -421,8 +421,8 @@ TEST_F(NegativeGpuAVOOB, GPLWrite) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -468,8 +468,8 @@ TEST_F(NegativeGpuAVOOB, GPLRead) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-uniformBuffers-06935", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -519,8 +519,8 @@ TEST_F(NegativeGpuAVOOB, GPLTexelFetch) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-uniformBuffers-06935", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -570,8 +570,8 @@ TEST_F(NegativeGpuAVOOB, GPLImageLoad) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -621,8 +621,8 @@ TEST_F(NegativeGpuAVOOB, GPLImageStore) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -708,8 +708,8 @@ TEST_F(NegativeGpuAVOOB, GPLReadWriteIndependentSets) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);  // write
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-uniformBuffers-06935", 3);  // read
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -792,8 +792,8 @@ TEST_F(NegativeGpuAVOOB, GPLTexelFetchIndependentSets) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-uniformBuffers-06935");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -873,8 +873,8 @@ TEST_F(NegativeGpuAVOOB, GPLImageLoadStoreIndependentSets) {
 
     // one for Load and one for Store
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 2);
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -946,8 +946,8 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -977,8 +977,8 @@ void NegativeGpuAVOOB::ComputeStorageBufferTest(const char *expected_error, cons
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, expected_error);
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1070,8 +1070,8 @@ TEST_F(NegativeGpuAVOOB, TexelFetch) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-uniformBuffers-06935");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1124,8 +1124,8 @@ TEST_F(NegativeGpuAVOOB, ImageLoad) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1172,8 +1172,8 @@ TEST_F(NegativeGpuAVOOB, ImageStore) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1225,8 +1225,8 @@ TEST_F(NegativeGpuAVOOB, Geometry) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-storageBuffers-06936");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1285,8 +1285,8 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationControl) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-storageBuffers-06936");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1343,8 +1343,8 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationEvaluation) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-storageBuffers-06936");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1486,7 +1486,7 @@ TEST_F(NegativeGpuAVOOB, VertexFragmentMultiEntrypoint) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-uniformBuffers-06935", 3);  // vertex
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);  // fragment
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }

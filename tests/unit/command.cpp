@@ -156,13 +156,13 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     m_commandBuffer->end();
 
     // Bypass framework since it does the waits automatically
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 }
@@ -188,12 +188,12 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     submit_info.pCommandBufferInfos = &cb_info;
 
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_errorMonitor->VerifyFound();
 }
@@ -767,7 +767,7 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     m_errorMonitor->SetDesiredError(simultaneous_use_message);
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // Set one time use and now look for one time submit
     duplicates[0] = duplicates[1] = cmd_bufs[1];
@@ -779,7 +779,7 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     m_errorMonitor->SetDesiredError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {

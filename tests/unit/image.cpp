@@ -550,10 +550,10 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->Submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_commandBuffer->reset(0);
     m_commandBuffer->begin();
@@ -564,9 +564,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->Submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     m_commandBuffer->reset(0);
     m_commandBuffer->begin();
@@ -577,9 +577,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      img_dst_transfer.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->Submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // Source image in invalid layout in the middle of CB
     m_commandBuffer->reset(0);
@@ -607,9 +607,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      img_dst_transfer.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->Submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // Destination image in invalid layout in the middle of CB
     m_commandBuffer->reset(0);
@@ -627,9 +627,9 @@ TEST_F(NegativeImage, BlitLayout) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->Submit(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeImage, BlitOffsets) {
@@ -5389,8 +5389,8 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         cmd.end();
 
         m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-        m_default_queue->submit(cmd, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(cmd);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 
@@ -5404,8 +5404,8 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         cmd.end();
 
         m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-        m_default_queue->submit(cmd, false);
-        m_default_queue->wait();
+        m_default_queue->Submit(cmd);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 }
@@ -5448,8 +5448,8 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 

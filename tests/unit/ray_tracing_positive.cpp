@@ -71,8 +71,8 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     blas->BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     m_commandBuffer->begin();
     // Build Top Level Acceleration Structure
@@ -80,8 +80,8 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     tlas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
@@ -227,9 +227,9 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
 
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->Submit(*m_commandBuffer);
 
-    m_device->wait();
+    m_device->Wait();
 
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
@@ -412,14 +412,14 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
     }
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 
     m_commandBuffer->begin();
     vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveRayTracing, BuildAccelerationStructuresDeferredOperation) {
@@ -491,8 +491,8 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
         m_commandBuffer->end();
 
-        m_default_queue->submit(*m_commandBuffer);
-        m_device->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_device->Wait();
     }
 }
 
@@ -561,7 +561,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
-        m_default_queue->submit(cmd_buffer_frame_0, fence_frame_0);
+        m_default_queue->SubmitWithFence(cmd_buffer_frame_0, fence_frame_0);
     }
 
     // Frame 1
@@ -595,7 +595,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
-        m_default_queue->submit(cmd_buffer_frame_1, fence_frame_1);
+        m_default_queue->SubmitWithFence(cmd_buffer_frame_1, fence_frame_1);
     }
 
     // Frame 2
@@ -644,7 +644,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
-        m_default_queue->submit(cmd_buffer_frame_2, fence_frame_2);
+        m_default_queue->SubmitWithFence(cmd_buffer_frame_2, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);
@@ -696,7 +696,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
-        m_default_queue->submit(cmd_buffer_frame_0, fence_frame_0);
+        m_default_queue->SubmitWithFence(cmd_buffer_frame_0, fence_frame_0);
     }
 
     // Frame 1
@@ -718,7 +718,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
-        m_default_queue->submit(cmd_buffer_frame_1, fence_frame_1);
+        m_default_queue->SubmitWithFence(cmd_buffer_frame_1, fence_frame_1);
     }
 
     // Frame 2
@@ -742,7 +742,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
-        m_default_queue->submit(cmd_buffer_frame_2, fence_frame_2);
+        m_default_queue->SubmitWithFence(cmd_buffer_frame_2, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);
@@ -893,8 +893,8 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveRayTracing, GetAccelerationStructureAddressBabBuffer) {

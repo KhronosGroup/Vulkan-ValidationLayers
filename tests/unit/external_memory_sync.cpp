@@ -589,7 +589,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
 
     import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedSemaphore) {
@@ -649,7 +649,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedSemaphore) {
     import_semaphore.export_handle(handle2, export_from_import_handle_type);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedFence) {
@@ -753,7 +753,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreType) {
     import_semaphore.import_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeExternalMemorySync, TemporaryFence) {
@@ -805,13 +805,13 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
     m_errorMonitor->VerifyFound();
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // Signal without reseting
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-fence-00063");
     vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
     m_errorMonitor->VerifyFound();
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeExternalMemorySync, Fence) {
@@ -1030,7 +1030,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     }
 
     // Cleanup
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeExternalMemorySync, Semaphore) {

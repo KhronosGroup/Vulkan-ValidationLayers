@@ -33,16 +33,6 @@ static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkP
     return depth_stencil_attachment;
 }
 
-struct SubpassInfo {
-    bool used;
-    VkImageUsageFlagBits usage;
-    VkImageLayout layout;
-    VkImageAspectFlags aspectMask;
-
-    SubpassInfo()
-        : used(false), usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), aspectMask(VkImageAspectFlags(0)) {}
-};
-
 // Store the DAG.
 struct DAGNode {
     uint32_t pass;

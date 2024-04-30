@@ -303,10 +303,9 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     cb2.EndRendering();
     cb2.end();
 
-    vkt::Fence fence;
-    std::vector<const vkt::CommandBuffer*> cbs = {m_commandBuffer, &cb1, &cb2};
-    m_default_queue->submit(cbs, fence);
-    m_default_queue->wait();
+    std::array cbs = {m_commandBuffer, &cb1, &cb2};
+    m_default_queue->Submit(cbs);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
@@ -600,8 +599,8 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
@@ -657,10 +656,9 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     cb.EndRendering();
     cb.end();
 
-    vkt::Fence fence;
-    std::vector<const vkt::CommandBuffer*> cbs = {m_commandBuffer, &cb};
-    m_default_queue->submit(cbs, fence);
-    m_default_queue->wait();
+    std::array cbs = {m_commandBuffer, &cb};
+    m_default_queue->Submit(cbs);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
@@ -1179,7 +1177,7 @@ TEST_F(PositiveDynamicRendering, BeginRenderingWithRenderPassStriped) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_submit_info;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDynamicRendering, LegacyDithering) {

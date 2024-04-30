@@ -79,8 +79,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     if (features13.dynamicRendering) {
@@ -94,8 +94,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
 
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 
@@ -135,8 +135,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
                                              sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 }
@@ -200,10 +200,9 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimitSubmit2) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    vkt::Fence null_fence;
     // use vkQueueSumit2
-    m_default_queue->submit2(*m_commandBuffer, null_fence);
-    m_default_queue->wait();
+    m_default_queue->Submit2(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -260,8 +259,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                 sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 1;
@@ -276,8 +275,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                 sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
@@ -303,8 +302,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 1;
@@ -320,8 +319,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     if (mesh_shader_enabled) {
         char const *mesh_shader_source = R"glsl(
@@ -359,8 +358,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                              sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099");
@@ -374,8 +373,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                              sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
 }
@@ -442,24 +441,24 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
                                     (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Set y in second draw
     draw_ptr[8] = 0;
     draw_ptr[5] = mesh_shader_props.maxMeshWorkGroupCount[1] + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07327");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Set z in first draw
     draw_ptr[5] = 0;
     draw_ptr[2] = mesh_shader_props.maxMeshWorkGroupCount[2] + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07328");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     draw_ptr[2] = 0;
 
@@ -470,8 +469,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         draw_ptr[0] = (mesh_shader_props.maxMeshWorkGroupTotalCount + 2) / 2;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329");
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         draw_ptr[2] = 0;
@@ -503,24 +502,24 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
     // Set x in second draw
     draw_ptr[4] = mesh_shader_props.maxTaskWorkGroupCount[0] + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     draw_ptr[4] = 0;
 
     // Set y in first draw
     draw_ptr[1] = mesh_shader_props.maxTaskWorkGroupCount[0] + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     draw_ptr[1] = 0;
 
     // Set z in third draw
     draw_ptr[10] = mesh_shader_props.maxTaskWorkGroupCount[0] + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324");
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
     draw_ptr[10] = 0;
 
@@ -531,8 +530,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         draw_ptr[0] = (mesh_shader_props.maxTaskWorkGroupTotalCount + 2) / 2;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07325");
-        m_default_queue->submit(*m_commandBuffer);
-        m_default_queue->wait();
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
         draw_ptr[2] = 0;
@@ -581,8 +580,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     vk::CmdDrawIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     // Now with an offset and indexed draw
@@ -609,8 +608,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
                                sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -685,8 +684,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 4 * sizeof(VkDispatchIndirectCommand));
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Check again in a 2nd submitted command buffer
     m_commandBuffer->reset();
@@ -702,8 +701,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -781,8 +780,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 4 * sizeof(VkDispatchIndirectCommand));
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Check again in a 2nd submitted command buffer
     m_commandBuffer->reset();
@@ -798,7 +797,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
 
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }

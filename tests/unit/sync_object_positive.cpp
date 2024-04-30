@@ -33,7 +33,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
         GTEST_SKIP() << "Required queue not present (non-graphics capable required)";
     }
 
-    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Create an "exclusive" image owned by the graphics queue.
@@ -44,12 +44,12 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     auto image_barrier = image.image_memory_barrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
                                                     image.Layout(), image.Layout(), image_subres);
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    image_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
+    image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
 
     ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb, nullptr, &image_barrier);
 
     // Change layouts while changing ownership
-    image_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
+    image_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
     image_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR;
@@ -76,7 +76,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
         GTEST_SKIP() << "Required queue not present (non-graphics capable required)";
     }
 
-    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->get_family_index(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
@@ -90,11 +90,11 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     ValidOwnershipTransferOp(m_errorMonitor, m_default_queue, m_commandBuffer, &buffer_barrier, nullptr);
 
     // Transfer it to non-gfx
-    buffer_barrier.dstQueueFamilyIndex = no_gfx_queue->get_family_index();
+    buffer_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
     ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb, &buffer_barrier, nullptr);
 
     // Transfer it to gfx
-    buffer_barrier.srcQueueFamilyIndex = no_gfx_queue->get_family_index();
+    buffer_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
     buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR;
@@ -224,7 +224,7 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
     submit_info[2].pSignalSemaphores = nullptr;
     submit_info[2].pWaitDstStageMask = flags;
     vk::QueueSubmit(m_default_queue->handle(), 3, submit_info, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncObject, ResetUnsignaledFence) {
@@ -387,7 +387,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     }
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     vk::FreeCommandBuffers(device(), command_pool.handle(), 2, &command_buffer[0]);
 }
@@ -471,7 +471,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence.handle());
     }
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     vk::FreeCommandBuffers(device(), command_pool.handle(), 2, &command_buffer[0]);
 }
@@ -608,7 +608,7 @@ TEST_F(PositiveSyncObject, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     vk::FreeCommandBuffers(device(), command_pool.handle(), 1, &cb);
 
     // Force device completely idle and clean up resources
-    m_device->wait();
+    m_device->Wait();
 }
 
 TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence) {
@@ -1112,7 +1112,7 @@ TEST_F(PositiveSyncObject, WaitBeforeSignalOnDifferentQueuesSignalLargerThanWait
     if (!m_second_queue) {
         GTEST_SKIP() << "Two queues are needed";
     }
-    vkt::CommandPool second_pool(*m_device, m_second_queue->get_family_index());
+    vkt::CommandPool second_pool(*m_device, m_second_queue->family_index);
     vkt::CommandBuffer second_cb(*m_device, &second_pool);
 
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -1165,7 +1165,7 @@ TEST_F(PositiveSyncObject, WaitBeforeSignalOnDifferentQueuesSignalLargerThanWait
         submit.pSignalSemaphoreInfos = &signal_info;
         vk::QueueSubmit2(*m_second_queue, 1, &submit, VK_NULL_HANDLE);
     }
-    m_device->wait();
+    m_device->Wait();
 }
 
 TEST_F(PositiveSyncObject, LongSemaphoreChain) {
@@ -1270,7 +1270,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     }
 
     // Cleanup
-    m_device->wait();
+    m_device->Wait();
 }
 
 TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
@@ -1351,7 +1351,7 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
 
     vk::QueueSubmit(m_default_queue->handle(), si.size(), si.data(), VK_NULL_HANDLE);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     uint64_t import_value{0}, export_value{0};
 
@@ -1419,7 +1419,7 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     vk::ResetFences(device(), 1, &export_fence.handle());
 
     // Cleanup
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
@@ -1471,7 +1471,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
 #endif
     }
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
@@ -1538,13 +1538,13 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
         // because it's a dummy value. In case we get access to a real POSIX environment on
         // Windows and VK_KHR_external_fence_fd will be provided through regular graphics drivers,
         // then we need to do a proper POSIX clean-up sequence as shown above.
-        m_default_queue->wait();
+        m_default_queue->Wait();
 #endif
 
         m_commandBuffer->reset();
     }
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncObject, BasicSetAndWaitEvent) {
@@ -1561,8 +1561,8 @@ TEST_F(PositiveSyncObject, BasicSetAndWaitEvent) {
     m_commandBuffer->end();
 
     // Also submit to the queue to test submit time validation
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
@@ -1590,8 +1590,8 @@ TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
     m_commandBuffer->end();
 
     // Also submit to the queue to test submit time validation
-    m_default_queue->submit(*m_commandBuffer);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveSyncObject, WaitEventThenSet) {
@@ -1728,13 +1728,13 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     vkt::Buffer buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
-    vkt::CommandPool pool0(*m_device, q0->get_family_index());
+    vkt::CommandPool pool0(*m_device, q0->family_index);
     vkt::CommandBuffer cb0(*m_device, &pool0);
     cb0.begin();
     vk::CmdCopyBuffer(cb0.handle(), buffer_a.handle(), buffer_b.handle(), 1, &region);
     cb0.end();
 
-    vkt::CommandPool pool1(*m_device, q1->get_family_index());
+    vkt::CommandPool pool1(*m_device, q1->family_index);
     vkt::CommandBuffer cb1(*m_device, &pool1);
     cb1.begin();
     vk::CmdCopyBuffer(cb1.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
@@ -1805,7 +1805,7 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     buffer_b.destroy();
     buffer_c.destroy();
 
-    m_device->wait();
+    m_device->Wait();
 }
 
 TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
@@ -1876,7 +1876,7 @@ TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
         vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     }
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 struct FenceSemRaceData {
@@ -2002,7 +2002,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     submit_info.pCommandBuffers = &command_buffer;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence.handle());
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     command_pool.reset();
 }
@@ -2537,7 +2537,7 @@ TEST_F(PositiveSyncObject, SingleSubmitSignalBinarySemaphoreTwoTimes) {
     submits[2].pSignalSemaphoreInfos = &semaphore_info;
 
     vk::QueueSubmit2(*m_default_queue, 3, submits, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncObject, SubmitImportedBinarySemaphoreWithNonZeroValue) {
@@ -2595,5 +2595,5 @@ TEST_F(PositiveSyncObject, SubmitImportedBinarySemaphoreWithNonZeroValue) {
     submits[1].pWaitSemaphoreInfos = &wait_info;
 
     vk::QueueSubmit2(*m_default_queue, 2, submits, VK_NULL_HANDLE);
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }

@@ -71,8 +71,8 @@ TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -125,8 +125,8 @@ TEST_F(NegativeGpuAVRayQuery, TMaxLessThenTmin) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06350");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -176,8 +176,8 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsBothSkip) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06889");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -227,8 +227,8 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsOpaque) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06891");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -282,8 +282,8 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNaN) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -337,8 +337,8 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNonFinite) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -392,8 +392,8 @@ TEST_F(NegativeGpuAVRayQuery, ComputeUseQueryUninit) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -448,8 +448,8 @@ TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninit) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -511,7 +511,7 @@ TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349", gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_default_queue->submit(*m_commandBuffer, false);
-    m_device->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
     m_errorMonitor->VerifyFound();
 }

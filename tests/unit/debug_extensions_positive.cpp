@@ -96,8 +96,8 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer) {
     vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer2) {
@@ -111,15 +111,15 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer2) {
     cb0.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
-    m_default_queue->submit(cb0);
+    m_default_queue->Submit(cb0);
 
     vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
-    m_default_queue->submit(cb1);
+    m_default_queue->Submit(cb1);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
@@ -139,8 +139,9 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
 
-    m_default_queue->submit({&cb0, &cb1}, vkt::Fence{});
-    m_default_queue->wait();
+    std::array cbs = {&cb0, &cb1};
+    m_default_queue->Submit(cbs);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveDebugExtensions, DebugLabelSecondaryCommandBuffer) {

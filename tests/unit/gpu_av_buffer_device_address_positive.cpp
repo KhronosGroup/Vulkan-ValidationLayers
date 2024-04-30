@@ -87,8 +87,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     uniform_buffer_ptr[1] = 4;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
@@ -171,8 +171,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     uniform_buffer_ptr[1] = 4;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
@@ -244,8 +244,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     data[1] = 4;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
@@ -306,8 +306,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     uint8_t *bda_buffer_ptr = (uint8_t *)bda_buffer.memory().map();
     uint32_t output = *((uint32_t *)(bda_buffer_ptr + 32));
@@ -379,8 +379,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
@@ -456,8 +456,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
@@ -522,8 +522,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, UVec3Array) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7462
@@ -591,8 +591,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
@@ -655,8 +655,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     buffer_ptr = static_cast<uint32_t *>(buffer_node_a.memory().map());
     ASSERT_TRUE(*buffer_ptr == 1234);
@@ -774,8 +774,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     data[0] = storage_buffer_addr;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
@@ -848,8 +848,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     data[0] = storage_buffer_addr;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
@@ -929,8 +929,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
 
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote values to all nodes
     for (auto [buffer_i, buffer] : vvl::enumerate(storage_buffers)) {
@@ -1013,8 +1013,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     data[1] = bar_storage_buffer.address();
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     auto *foo_ptr = static_cast<int *>(foo_storage_buffer.memory().map());
@@ -1110,8 +1110,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     data[0] = storage_buffer_addr;
     uniform_buffer.memory().unmap();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
     vertex_buffer_ptr = static_cast<Vertex *>(storage_buffer.memory().map());
@@ -1143,4 +1143,75 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     ASSERT_EQ(vertex_buffer_ptr[2].uv[1], 8.0f);
 
     storage_buffer.memory().unmap();
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
+    TEST_DESCRIPTION(
+        "Make sure BDA buffer maintained in GPU-AV is correctly read/written to. When this buffer was not maintained per command "
+        "buffer, and a global buffer was used instead, concurrent accesses were not handled correctly.");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        
+        layout(buffer_reference, buffer_reference_align = 16, std430) buffer IntPtr {
+            int i0;
+            int i1;
+        };
+
+        layout(push_constant) uniform Uniforms {
+            IntPtr ptr;    
+        };
+        
+        void main() {
+            ptr.i1 = ptr.i0;
+        }
+    )glsl";
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkPushConstantRange pc;
+    pc.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pc.offset = 0;
+    pc.size = sizeof(VkDeviceAddress);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.pipeline_layout_ci_.pushConstantRangeCount = 1;
+    pipe.pipeline_layout_ci_.pPushConstantRanges = &pc;
+    pipe.CreateGraphicsPipeline();
+
+    const uint32_t storage_buffer_size = 2 * sizeof(int);
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    std::vector<vkt::CommandBuffer> cmd_buffers;
+    std::vector<vkt::Buffer> storage_buffers;
+    for (int i = 0; i < 64; ++i) {
+        auto &cb = cmd_buffers.emplace_back(vkt::CommandBuffer(*m_device, m_commandPool));
+
+        // Create a storage buffer and get its address,
+        // effectively adding it to the BDA table
+        auto &storage_buffer = storage_buffers.emplace_back(vkt::Buffer(
+            *m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info));
+
+        auto storage_buffer_addr = storage_buffer.address();
+
+        // Read and write from storage buffer address
+        cb.begin();
+        cb.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdPushConstants(cb, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(storage_buffer_addr),
+                             &storage_buffer_addr);
+        vk::CmdDraw(cb.handle(), 3, 1, 0, 0);
+        cb.EndRenderPass();
+        cb.end();
+
+        m_default_queue->Submit(cb);
+    }
+
+    m_default_queue->Wait();
 }

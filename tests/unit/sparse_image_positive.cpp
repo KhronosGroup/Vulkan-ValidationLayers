@@ -84,7 +84,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     vk::QueueBindSparse(m_default_queue->handle(), 1, &bindSparseInfo, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSparseImage, BindFreeMemory) {
@@ -145,7 +145,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     bind.memory = VK_NULL_HANDLE;
     vk::QueueBindSparse(m_default_queue->handle(), 1, &bindSparseInfo, VK_NULL_HANDLE);
 
-    m_default_queue->wait();
+    m_default_queue->Wait();
 
     // Free the memory, then use the image in a new command buffer
     memory.destroy();
@@ -170,9 +170,9 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vk::CmdClearColorImage(m_commandBuffer->handle(), image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
     m_commandBuffer->end();
-    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->Submit(*m_commandBuffer);
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSparseImage, BindMetadata) {
@@ -249,7 +249,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     vk::QueueBindSparse(m_default_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSparseImage, OpImageSparse) {
@@ -363,5 +363,5 @@ TEST_F(PositiveSparseImage, BindImage) {
 
     vkt::Queue *sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
-    sparse_queue->wait();
+    sparse_queue->Wait();
 }

@@ -271,7 +271,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     m_errorMonitor->VerifyFound();
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
@@ -357,7 +357,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     m_errorMonitor->VerifyFound();
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
@@ -440,8 +440,8 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     m_errorMonitor->VerifyFound();
 
     // Wait for operations to finish before destroying anything
-    m_default_queue->wait();
-    sparse_queue->wait();
+    m_default_queue->Wait();
+    sparse_queue->Wait();
 }
 
 TEST_F(NegativeSparseBuffer, BufferFlagsFeature) {

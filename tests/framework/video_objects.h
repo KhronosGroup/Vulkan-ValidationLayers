@@ -1925,7 +1925,7 @@ class VideoContext {
           device_(device),
           queue_(GetQueue(device, config)),
           cmd_pool_(
-              *device, queue_.get_family_index(),
+              *device, queue_.family_index,
               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | (protected_content ? VK_COMMAND_POOL_CREATE_PROTECTED_BIT : 0)),
           cmd_buffer_(*device, &cmd_pool_, VK_COMMAND_BUFFER_LEVEL_PRIMARY),
           session_(VK_NULL_HANDLE),
@@ -2342,9 +2342,9 @@ class VideoEncodeRateControlTestUtils {
         cb.end();
 
         test_->Monitor().SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254");
-        context_.Queue().submit(cb, false);
+        context_.Queue().Submit(cb);
         test_->Monitor().VerifyFound();
-        test_->DeviceObj()->wait();
+        test_->DeviceObj()->Wait();
     }
 
   private:

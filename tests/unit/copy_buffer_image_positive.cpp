@@ -367,8 +367,8 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     vk::CmdClearColorImage(cb, image.handle(), dst_layout, &clear_color, 1, &src_range);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 
     m_commandBuffer->begin();
 
@@ -397,6 +397,6 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
                            image_barriers);
     m_commandBuffer->end();
 
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
