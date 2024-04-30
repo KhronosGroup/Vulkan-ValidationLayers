@@ -432,58 +432,312 @@ void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &wri
                              copies.data());
 }
 
-VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds) {
-    const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = nullptr;
-    submit_info.pWaitDstStageMask = nullptr;
-    submit_info.commandBufferCount = static_cast<uint32_t>(cmd_handles.size());
-    submit_info.pCommandBuffers = cmd_handles.data();
-    submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = nullptr;
-
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, VK_NULL_HANDLE);
+VkResult Queue::Submit(const CommandBuffer &cmd, const Fence &fence) {
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBuffers = &cmd.handle();
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
     return result;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd) {
-    Fence fence;
-    return SubmitWithFence(cmd, fence);
-}
-
-VkResult Queue::SubmitWithFence(const CommandBuffer &cmd, const Fence &fence) {
+VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds, const Fence &fence) {
+    const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &cmd.handle();
-
+    submit_info.commandBufferCount = static_cast<uint32_t>(cmd_handles.size());
+    submit_info.pCommandBuffers = cmd_handles.data();
     VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
     return result;
 }
 
-VkResult Queue::Submit2(const vvl::span<const CommandBuffer> &cmds) {
-    std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
-    for (size_t i = 0; i < cmds.size(); i++) {
-        VkCommandBufferSubmitInfo cmd_submit_info = vku::InitStructHelper();
-        cmd_submit_info.deviceMask = 0;
-        cmd_submit_info.commandBuffer = cmds[i].handle();
-        cmd_submit_infos.push_back(cmd_submit_info);
-    }
-
-    VkSubmitInfo2 submit_info = vku::InitStructHelper();
-    submit_info.flags = 0;
-    submit_info.waitSemaphoreInfoCount = 0;
-    submit_info.pWaitSemaphoreInfos = nullptr;
-    submit_info.signalSemaphoreInfoCount = 0;
-    submit_info.pSignalSemaphoreInfos = nullptr;
-    submit_info.commandBufferInfoCount = static_cast<uint32_t>(cmd_submit_infos.size());
-    submit_info.pCommandBufferInfos = cmd_submit_infos.data();
-
-    VkResult result = vk::QueueSubmit2(handle(), 1, &submit_info, VK_NULL_HANDLE);
+VkResult Queue::Submit(const CommandBuffer &cmd, WaitT, const Semaphore &wait_semaphore, VkPipelineStageFlags wait_stage_mask,
+                       const Fence &fence) {
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &wait_semaphore.handle();
+    submit.pWaitDstStageMask = &wait_stage_mask;
+    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBuffers = &cmd.handle();
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd) { return Submit2(vvl::make_span(&cmd, 1)); }
+VkResult Queue::Submit(const CommandBuffer &cmd, SignalT, const Semaphore &signal_semaphore, const Fence &fence) {
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBuffers = &cmd.handle();
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &signal_semaphore.handle();
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    return result;
+}
+
+VkResult Queue::Submit(const CommandBuffer &cmd, const Semaphore &wait_semaphore, VkPipelineStageFlags wait_stage_mask,
+                       const Semaphore &signal_semaphore, const Fence &fence) {
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &wait_semaphore.handle();
+    submit.pWaitDstStageMask = &wait_stage_mask;
+    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBuffers = &cmd.handle();
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &signal_semaphore.handle();
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    return result;
+}
+
+VkResult Queue::SubmitWithTimelineSemaphore(const CommandBuffer &cmd, WaitT, const Semaphore &wait_semaphore, uint64_t wait_value,
+                                            VkPipelineStageFlags wait_stage_mask, const Fence &fence) {
+    VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
+    timeline_info.waitSemaphoreValueCount = 1;
+    timeline_info.pWaitSemaphoreValues = &wait_value;
+
+    VkSubmitInfo submit = vku::InitStructHelper(&timeline_info);
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &wait_semaphore.handle();
+    submit.pWaitDstStageMask = &wait_stage_mask;
+    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBuffers = &cmd.handle();
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    return result;
+}
+
+VkResult Queue::SubmitWithTimelineSemaphore(const CommandBuffer &cmd, SignalT, const Semaphore &signal_semaphore,
+                                            uint64_t signal_value, const Fence &fence) {
+    VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &signal_value;
+
+    VkSubmitInfo submit = vku::InitStructHelper(&timeline_info);
+    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBuffers = &cmd.handle();
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &signal_semaphore.handle();
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    return result;
+}
+
+VkResult Queue::SubmitWithTimelineSemaphore(const CommandBuffer &cmd, const Semaphore &wait_semaphore, uint64_t wait_value,
+                                            const Semaphore &signal_semaphore, uint64_t signal_value, const Fence &fence) {
+    VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
+    timeline_info.waitSemaphoreValueCount = 1;
+    timeline_info.pWaitSemaphoreValues = &wait_value;
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &signal_value;
+
+    const VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    VkSubmitInfo submit = vku::InitStructHelper(&timeline_info);
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &wait_semaphore.handle();
+    submit.pWaitDstStageMask = &wait_stage_mask;
+    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBuffers = &cmd.handle();
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &signal_semaphore.handle();
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    return result;
+}
+
+VkResult Queue::Submit2(const CommandBuffer &cmd, const Fence &fence, bool use_khr) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
+
+VkResult Queue::Submit2(const vvl::span<const CommandBuffer> &cmds, const Fence &fence, bool use_khr) {
+    std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
+    cmd_submit_infos.reserve(cmds.size());
+    for (size_t i = 0; i < cmds.size(); i++) {
+        VkCommandBufferSubmitInfo cmd_submit_info = vku::InitStructHelper();
+        cmd_submit_info.commandBuffer = cmds[i].handle();
+        cmd_submit_infos.push_back(cmd_submit_info);
+    }
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.commandBufferInfoCount = static_cast<uint32_t>(cmd_submit_infos.size());
+    submit.pCommandBufferInfos = cmd_submit_infos.data();
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
+
+VkResult Queue::Submit2(const CommandBuffer &cmd, WaitT, const Semaphore &wait_semaphore, VkPipelineStageFlags2 wait_stage_mask,
+                        const Fence &fence, bool use_khr) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphore = wait_semaphore.handle();
+    wait_info.stageMask = wait_stage_mask;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.waitSemaphoreInfoCount = 1;
+    submit.pWaitSemaphoreInfos = &wait_info;
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
+
+VkResult Queue::Submit2(const CommandBuffer &cmd, SignalT, const Semaphore &signal_semaphore,
+                        VkPipelineStageFlags2 signal_stage_mask, const Fence &fence, bool use_khr) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = signal_semaphore.handle();
+    signal_info.stageMask = signal_stage_mask;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
+
+VkResult Queue::Submit2(const CommandBuffer &cmd, const Semaphore &wait_semaphore, VkPipelineStageFlags2 wait_stage_mask,
+                        const Semaphore &signal_semaphore, VkPipelineStageFlags2 signal_stage_mask, const Fence &fence,
+                        bool use_khr) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphore = wait_semaphore.handle();
+    wait_info.stageMask = wait_stage_mask;
+
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = signal_semaphore.handle();
+    signal_info.stageMask = signal_stage_mask;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.waitSemaphoreInfoCount = 1;
+    submit.pWaitSemaphoreInfos = &wait_info;
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
+
+VkResult Queue::Submit2WithTimelineSemaphore(const CommandBuffer &cmd, WaitT tag, const Semaphore &wait_semaphore, uint64_t value,
+                                             VkPipelineStageFlags2 wait_stage_mask, const Fence &fence, bool use_khr) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphore = wait_semaphore.handle();
+    wait_info.value = value;
+    wait_info.stageMask = wait_stage_mask;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.waitSemaphoreInfoCount = 1;
+    submit.pWaitSemaphoreInfos = &wait_info;
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
+
+VkResult Queue::Submit2WithTimelineSemaphore(const CommandBuffer &cmd, SignalT tag, const Semaphore &signal_semaphore,
+                                             uint64_t value, VkPipelineStageFlags2 signal_stage_mask, const Fence &fence,
+                                             bool use_khr) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = signal_semaphore.handle();
+    signal_info.value = value;
+    signal_info.stageMask = signal_stage_mask;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
+
+VkResult Queue::Submit2WithTimelineSemaphore(const CommandBuffer &cmd, const Semaphore &wait_semaphore, uint64_t wait_value,
+                                             const Semaphore &signal_semaphore, uint64_t signal_value, const Fence &fence,
+                                             bool use_khr) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphore = wait_semaphore.handle();
+    wait_info.value = wait_value;
+    wait_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = signal_semaphore.handle();
+    signal_info.value = signal_value;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.waitSemaphoreInfoCount = 1;
+    submit.pWaitSemaphoreInfos = &wait_info;
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+
+    VkResult result;
+    if (use_khr) {
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+    } else {
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    }
+    return result;
+}
 
 VkResult Queue::Wait() {
     VkResult result = vk::QueueWaitIdle(handle());
@@ -594,8 +848,54 @@ VkResult Fence::import_handle(int fd_handle, VkExternalFenceHandleTypeFlagBits h
 
 NON_DISPATCHABLE_HANDLE_DTOR(Semaphore, vk::DestroySemaphore)
 
+Semaphore::Semaphore(const Device &dev, VkSemaphoreType type, uint64_t initial_value) {
+    if (type == VK_SEMAPHORE_TYPE_BINARY) {
+        init(dev, vku::InitStruct<VkSemaphoreCreateInfo>());
+    } else {
+        VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+        semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+        semaphore_type_ci.initialValue = initial_value;
+        VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&semaphore_type_ci);
+        init(dev, semaphore_ci);
+    }
+}
+
 void Semaphore::init(const Device &dev, const VkSemaphoreCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSemaphore, dev, &info);
+}
+
+VkResult Semaphore::Wait(uint64_t value, uint64_t timeout) {
+    VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores = &handle();
+    wait_info.pValues = &value;
+    VkResult result = vk::WaitSemaphores(device(), &wait_info, timeout);
+    return result;
+}
+
+VkResult Semaphore::WaitKHR(uint64_t value, uint64_t timeout) {
+    VkSemaphoreWaitInfoKHR wait_info = vku::InitStructHelper();
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores = &handle();
+    wait_info.pValues = &value;
+    VkResult result = vk::WaitSemaphoresKHR(device(), &wait_info, timeout);
+    return result;
+}
+
+VkResult Semaphore::Signal(uint64_t value) {
+    VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = handle();
+    signal_info.value = value;
+    VkResult result = vk::SignalSemaphore(device(), &signal_info);
+    return result;
+}
+
+VkResult Semaphore::SignalKHR(uint64_t value) {
+    VkSemaphoreSignalInfoKHR signal_info = vku::InitStructHelper();
+    signal_info.semaphore = handle();
+    signal_info.value = value;
+    VkResult result = vk::SignalSemaphoreKHR(device(), &signal_info);
+    return result;
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR

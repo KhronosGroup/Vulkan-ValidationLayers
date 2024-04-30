@@ -438,17 +438,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
                            nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
 
-    constexpr VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &acquire_semaphore.handle();
-    submit_info.pWaitDstStageMask = &stage_mask;
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &submit_semaphore.handle();
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(*m_commandBuffer, acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submit_semaphore);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -585,12 +575,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
         command_buffers[image_index].begin();
         command_buffers[image_index].end();
 
-        VkSubmitInfo submit = vku::InitStructHelper();
-        submit.commandBufferCount = 1;
-        submit.pCommandBuffers = &command_buffers[image_index].handle();
-        submit.signalSemaphoreCount = 1;
-        submit.pSignalSemaphores = &submit_semaphores[image_index].handle();
-        vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+        m_default_queue->Submit(command_buffers[image_index], vkt::signal, submit_semaphores[image_index]);
 
         VkPresentInfoKHR present = vku::InitStructHelper();
         present.waitSemaphoreCount = 1;
@@ -600,7 +585,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
         present.pImageIndices = &image_index;
         vk::QueuePresentKHR(m_default_queue->handle(), &present);
     }
-    vk::QueueWaitIdle(m_default_queue->handle());
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
@@ -628,12 +613,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     command_buffers[image_index].begin();
     command_buffers[image_index].end();
 
-    VkSubmitInfo submit = vku::InitStructHelper();
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &command_buffers[image_index].handle();
-    submit.signalSemaphoreCount = 1;
-    submit.pSignalSemaphores = &submit_semaphores[image_index].handle();
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    m_default_queue->Submit(command_buffers[image_index], vkt::signal, submit_semaphores[image_index]);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -667,8 +647,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
 
     command_buffers[image_index].begin();
     command_buffers[image_index].end();
-
-    vk::QueueWaitIdle(m_default_queue->handle());
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, SwapchainImageLayout) {
@@ -728,17 +707,10 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
     vk::ResetFences(device(), 1, &fence.handle());
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence.handle());
+    m_default_queue->Submit(*m_commandBuffer, fence);
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
@@ -1386,12 +1358,7 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(*m_commandBuffer);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;
@@ -1417,12 +1384,8 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         m_commandBuffer->begin();
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
         vkt::Fence submit_fence(*m_device);
-        vk::QueueSubmit(*m_default_queue, 1, &submit_info, submit_fence);
+        m_default_queue->Submit(*m_commandBuffer, submit_fence);
 
         vk::WaitForFences(device(), 1, &submit_fence.handle(), VK_TRUE, kWaitTimeout);
 
@@ -1432,7 +1395,6 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
 
     // Main performance. Show that we can reset command buffer after waiting on **present** fence
     {
-        constexpr VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
         const vkt::Semaphore acquire_semaphore(*m_device);
         const vkt::Semaphore submit_semaphore(*m_device);
 
@@ -1446,16 +1408,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &present_transition);
         m_commandBuffer->end();
-
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.waitSemaphoreCount = 1;
-        submit_info.pWaitSemaphores = &acquire_semaphore.handle();
-        submit_info.pWaitDstStageMask = &wait_stage_mask;
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &m_commandBuffer->handle();
-        submit_info.signalSemaphoreCount = 1;
-        submit_info.pSignalSemaphores = &submit_semaphore.handle();
-        vk::QueueSubmit(*m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_default_queue->Submit(*m_commandBuffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
 
         vkt::Fence present_fence(*m_device);
         VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();

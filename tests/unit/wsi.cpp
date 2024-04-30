@@ -1463,11 +1463,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     RETURN_IF_SKIP(InitSwapchain());
 
     vkt::Semaphore semaphore(*m_device);
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &semaphore.handle();
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(vkt::no_cmd, vkt::signal, semaphore);
     m_default_queue->Wait();
 
     VkAcquireNextImageInfoKHR acquire_info = vku::InitStructHelper();
@@ -1495,21 +1491,10 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
     RETURN_IF_SKIP(InitSwapchain());
 
     vkt::Semaphore semaphore(*m_device);
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &semaphore.handle();
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(vkt::no_cmd, vkt::signal, semaphore);
 
     // Add a wait, but don't let it finish.
-    submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = nullptr;
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &semaphore.handle();
-    VkPipelineStageFlags waitMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    submit_info.pWaitDstStageMask = &waitMask;
-
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     uint32_t dummy;
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-semaphore-01779");
@@ -2385,18 +2370,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
                            0, nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
 
-    VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &acquire_semaphore.handle();
-    submit_info.pWaitDstStageMask = &stage_mask;
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &submit_semaphore.handle();
-
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(*m_commandBuffer, acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submit_semaphore);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -2924,6 +2898,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
+    all_queue_count_ = true;
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
 
@@ -2944,13 +2919,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
 
     vkt::Queue *other = m_device->QueuesWithGraphicsCapability()[1];
 
-    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkSubmitInfo wait_submit = vku::InitStructHelper();
-    wait_submit.waitSemaphoreCount = 1;
-    wait_submit.pWaitSemaphores = &semaphore.handle();
-    wait_submit.pWaitDstStageMask = &stage_flags;
-
-    vk::QueueSubmit(m_default_queue->handle(), 1, &wait_submit, VK_NULL_HANDLE);
+    m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.pSwapchains = &m_swapchain;
@@ -2992,12 +2961,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     fence.wait(kWaitTimeout);
     SetImageLayoutPresentSrc(images[image_index]);
 
-    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &semaphore.handle();
-    submit_info.pWaitDstStageMask = &stage_flags;
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.pSwapchains = &m_swapchain;
@@ -3058,19 +3022,10 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &image_index);
 
     // Dummy submit that signals semaphore that will be waited by the present. Does not wait on the acquire semaphore.
-    const vkt::Semaphore submit_semaphore(*m_device);
-    constexpr VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     m_commandBuffer->begin();
     m_commandBuffer->end();
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = nullptr;
-    submit_info.pWaitDstStageMask = &stage_mask;
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &submit_semaphore.handle();
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    const vkt::Semaphore submit_semaphore(*m_device);
+    m_default_queue->Submit(*m_commandBuffer, vkt::signal, submit_semaphore);
 
     // Present waits on submit semaphore. Does not wait on the acquire semaphore.
     VkPresentInfoKHR present = vku::InitStructHelper();
