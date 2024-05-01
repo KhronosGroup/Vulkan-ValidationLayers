@@ -235,7 +235,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         layout_createinfo_binding_flags[0].bindingCount = 3;
         layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
         layout_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
-        pool_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        pool_create_flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
         layout_pnext = layout_createinfo_binding_flags;
     }
 

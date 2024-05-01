@@ -605,3 +605,176 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingArray) {
+    TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    char const *fs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
+        layout (set = 0, binding = 1) uniform sampler kSamplers[];
+        layout (set = 1, binding = 0) uniform textureCube kTexturesCube[];
+
+        vec4 textureBindlessCube(uint textureid, uint samplerid) {
+            return texture(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), vec3(0.0));
+        }
+        vec4 textureBindless(uint textureid, uint samplerid) {
+            return texture(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), vec2(0.0));
+        }
+
+        layout (location=0) out vec4 color;
+
+        void main() {
+            color = textureBindlessCube(1, 0);
+            color += textureBindless(0, 0);
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image_2d(*m_device, image_ci);
+    image_2d.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view_2d = image_2d.CreateView();
+
+    image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    image_ci.arrayLayers = 6;
+    vkt::Image image_cube(*m_device, image_ci);
+    image_cube.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view_cube = image_cube.CreateView(VK_IMAGE_VIEW_TYPE_CUBE_ARRAY);
+
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view_2d, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view_cube, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    const VkDescriptorSet sets[2] = {descriptor_set.set_, descriptor_set.set_};
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 2, sets, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}
+
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7932
+TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SampledImageShareBindingBDA) {
+    TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    char const *fs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_buffer_reference : require
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
+        layout (set = 0, binding = 1) uniform sampler kSamplers[];
+        layout (set = 1, binding = 0) uniform textureCube kTexturesCube[];
+
+        vec4 textureBindlessCube(uint textureid, uint samplerid) {
+            return texture(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), vec3(0.0));
+        }
+        vec4 textureBindless(uint textureid, uint samplerid) {
+            return texture(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), vec2(0.0));
+        }
+
+        layout(location=0) out vec4 color;
+
+        layout(std430, buffer_reference) readonly buffer PerFrame {
+            uint texture_cube_id;
+            uint texture_2d_id;
+            uint sampler_id;
+        };
+
+        layout(push_constant) uniform constants {
+            PerFrame perFrame;
+        } pc;
+
+        void main() {
+            color = textureBindlessCube(pc.perFrame.texture_cube_id, pc.perFrame.sampler_id);
+            color += textureBindless(pc.perFrame.texture_2d_id, pc.perFrame.sampler_id);
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer storage_buffer(*m_device, 12, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    uint32_t *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    storage_buffer_ptr[0] = 1;  // texture_cube_id
+    storage_buffer_ptr[1] = 0;  // texture_2d_id
+    storage_buffer_ptr[1] = 0;  // sampler_id
+    storage_buffer.memory().unmap();
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    const std::vector<VkPushConstantRange> pc_ranges = {{VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress)}};
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_}, pc_ranges);
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image_2d(*m_device, image_ci);
+    vkt::ImageView image_view_2d = image_2d.CreateView();
+
+    image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    image_ci.arrayLayers = 6;
+    vkt::Image image_cube(*m_device, image_ci);
+    vkt::ImageView image_view_cube = image_cube.CreateView(VK_IMAGE_VIEW_TYPE_CUBE_ARRAY);
+
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.UpdateDescriptorSets();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view_2d, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view_cube, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    const VkDescriptorSet sets[2] = {descriptor_set.set_, descriptor_set.set_};
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 2, sets, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    VkDeviceAddress storage_buffer_addr = storage_buffer.address();
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                         sizeof(storage_buffer_addr), &storage_buffer_addr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}
