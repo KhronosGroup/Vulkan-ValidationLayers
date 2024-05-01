@@ -68,6 +68,12 @@ enum class CbState {
     InvalidIncomplete,  // fouled before recording was completed
 };
 
+struct AttachmentInfo {
+    vvl::ImageView *image_view;
+
+    AttachmentInfo() : image_view(nullptr) {}
+};
+
 struct SubpassInfo {
     bool used;
     VkImageUsageFlagBits usage;
@@ -360,9 +366,7 @@ class CommandBuffer : public RefcountedStateObject {
     // The RenderPass created from vkCmdBeginRenderPass or vkCmdBeginRendering
     std::shared_ptr<vvl::RenderPass> activeRenderPass;
     // Used for both type of renderPass
-    // TOOD - Tried to get rid of this shared_ptr as it didn't seem to be needed, but would hit "Assertion failed: vector subscript
-    // out of range" on Windows and couldn't figure out where the lifetime of the ImageView pointer went wrong.
-    std::shared_ptr<std::vector<vvl::ImageView *>> active_attachments;
+    std::vector<AttachmentInfo> active_attachments;
     vvl::unordered_set<uint32_t> active_color_attachments_index;
     uint32_t active_render_pass_device_mask;
     bool has_render_pass_striped;

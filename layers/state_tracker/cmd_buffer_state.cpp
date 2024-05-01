@@ -102,16 +102,16 @@ CommandBuffer::CommandBuffer(ValidationStateTracker &dev, VkCommandBuffer handle
 
 // Get the image viewstate for a given framebuffer attachment
 vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) {
-    assert(active_attachments && index != VK_ATTACHMENT_UNUSED && (index < active_attachments->size()));
-    return active_attachments->at(index);
+    assert(!active_attachments.empty() && index != VK_ATTACHMENT_UNUSED && (index < active_attachments.size()));
+    return active_attachments[index].image_view;
 }
 
 // Get the image viewstate for a given framebuffer attachment
 const vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) const {
-    if (!active_attachments || index == VK_ATTACHMENT_UNUSED || (index >= active_attachments->size())) {
+    if (active_attachments.empty() || index == VK_ATTACHMENT_UNUSED || (index >= active_attachments.size())) {
         return nullptr;
     }
-    return active_attachments->at(index);
+    return active_attachments[index].image_view;
 }
 
 void CommandBuffer::AddChild(std::shared_ptr<StateObject> &child_node) {
@@ -172,7 +172,7 @@ void CommandBuffer::ResetCBState() {
 
     active_render_pass_begin_info = vku::safe_VkRenderPassBeginInfo();
     activeRenderPass = nullptr;
-    active_attachments = nullptr;
+    active_attachments.clear();
     active_subpasses.clear();
     active_color_attachments_index.clear();
     has_render_pass_striped = false;
@@ -499,18 +499,17 @@ void CommandBuffer::UpdateSubpassAttachments(const vku::safe_VkSubpassDescriptio
 }
 
 void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
-    auto &attachments = *(active_attachments.get());
     const bool imageless = (activeFramebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
     if (pRenderPassBegin) attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
-    for (uint32_t i = 0; i < attachments.size(); ++i) {
+    for (uint32_t i = 0; i < active_attachments.size(); ++i) {
         if (imageless) {
             if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
-                attachments[i] = dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
+                active_attachments[i].image_view = dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
             }
         } else {
-            attachments[i] = activeFramebuffer->attachments_view_state[i].get();
+            active_attachments[i].image_view = activeFramebuffer->attachments_view_state[i].get();
         }
     }
 }
@@ -548,14 +547,14 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     }
 
     active_subpasses.clear();
-    active_attachments = nullptr;
+    active_attachments.clear();
 
     if (activeFramebuffer) {
         active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
         const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
         UpdateSubpassAttachments(subpass);
 
-        active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);
+        active_attachments.resize(activeFramebuffer->create_info.attachmentCount);
         UpdateAttachmentsView(pRenderPassBegin);
 
         // Connect this framebuffer and its children to this cmdBuffer
@@ -587,7 +586,7 @@ void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
 void CommandBuffer::EndRenderPass(Func command) {
     RecordCmd(command);
     activeRenderPass = nullptr;
-    active_attachments = nullptr;
+    active_attachments.clear();
     active_subpasses.clear();
     active_color_attachments_index.clear();
     SetActiveSubpass(0);
@@ -627,58 +626,49 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     suspendsRenderPassInstance = (pRenderingInfo->flags & VK_RENDERING_SUSPENDING_BIT) > 0;
     hasRenderPassInstance = true;
 
-    active_attachments = nullptr;
+    active_attachments.clear();
     // add 2 for the Depth and Stencil
     // multiple by 2 because every attachment might have a resolve
     // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
-    active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(attachment_count);
-    auto &attachments = *(active_attachments.get());
+    active_attachments.resize(attachment_count);
 
     for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
         active_color_attachments_index.insert(i);
-        auto &colorAttachment = attachments[GetDynamicColorAttachmentImageIndex(i)];
-        auto &colorResolveAttachment = attachments[GetDynamicColorResolveAttachmentImageIndex(i)];
-        colorAttachment = nullptr;
-        colorResolveAttachment = nullptr;
 
         // Default from spec
         rendering_attachments.color_locations[i] = i;
         rendering_attachments.color_indexes[i] = i;
 
         if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-            colorAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
+            active_attachments[GetDynamicColorAttachmentImageIndex(i)].image_view =
+                dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
             if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
                 pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
-                colorResolveAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
+                active_attachments[GetDynamicColorResolveAttachmentImageIndex(i)].image_view =
+                    dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
             }
         }
     }
 
     if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
-        auto &depthAttachment = attachments[GetDynamicDepthAttachmentImageIndex()];
-        auto &depthResolveAttachment = attachments[GetDynamicDepthResolveAttachmentImageIndex()];
-        depthAttachment = nullptr;
-        depthResolveAttachment = nullptr;
-
-        depthAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
+        active_attachments[GetDynamicDepthAttachmentImageIndex()].image_view =
+            dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
         if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
-            depthResolveAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
+            active_attachments[GetDynamicDepthResolveAttachmentImageIndex()].image_view =
+                dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
         }
     }
 
     if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
-        auto &stencilAttachment = attachments[GetDynamicStencilAttachmentImageIndex()];
-        auto &stencilResolveAttachment = attachments[GetDynamicStencilResolveAttachmentImageIndex()];
-        stencilAttachment = nullptr;
-        stencilResolveAttachment = nullptr;
-
-        stencilAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
+        active_attachments[GetDynamicStencilAttachmentImageIndex()].image_view =
+            dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
         if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
-            stencilResolveAttachment = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
+            active_attachments[GetDynamicStencilResolveAttachmentImageIndex()].image_view =
+                dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
         }
     }
 }
@@ -924,15 +914,14 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 if (beginInfo.pInheritanceInfo->framebuffer) {
                     activeFramebuffer = dev_data.Get<vvl::Framebuffer>(beginInfo.pInheritanceInfo->framebuffer);
                     active_subpasses.clear();
-                    active_attachments = nullptr;
+                    active_attachments.clear();
 
                     if (activeFramebuffer) {
                         active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
                         const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
                         UpdateSubpassAttachments(subpass);
 
-                        active_attachments =
-                            std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);
+                        active_attachments.resize(activeFramebuffer->create_info.attachmentCount);
                         UpdateAttachmentsView(nullptr);
 
                         // Connect this framebuffer and its children to this cmdBuffer
