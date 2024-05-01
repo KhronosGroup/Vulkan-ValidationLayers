@@ -20,6 +20,8 @@
 #include "utils/hash_util.h"
 #include <vulkan/layer/vk_layer_settings.hpp>
 
+#include "gpu_validation/gpu_settings.h"
+
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
 // part of the VVL but not the layer utils library.
 #if defined(USE_MIMALLOC) && defined(_WIN64)
@@ -41,7 +43,6 @@ const char *VK_LAYER_VALIDATE_BEST_PRACTICES_IMG = "validate_best_practices_img"
 const char *VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA = "validate_best_practices_nvidia";
 const char *VK_LAYER_VALIDATE_SYNC = "validate_sync";
 const char *VK_LAYER_VALIDATE_GPU_BASED = "validate_gpu_based";
-const char *VK_LAYER_RESERVE_BINDING_SLOT = "reserve_binding_slot";
 
 const char *VK_LAYER_DISABLES = "disables";
 const char *VK_LAYER_STATELESS_PARAM = "stateless_param";
@@ -66,19 +67,33 @@ const char *VK_LAYER_PRINTF_TO_STDOUT = "printf_to_stdout";
 const char *VK_LAYER_PRINTF_VERBOSE = "printf_verbose";
 const char *VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 
+// GPU-AV
+// ---
+const char *VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
 const char *VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS = "gpuav_descriptor_checks";
-const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER = "gpuav_validate_indirect_buffer";
-const char *VK_LAYER_GPUAV_VALIDATE_COPIES = "gpuav_validate_copies";
-const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
-const char *VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
 const char *VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB = "gpuav_warn_on_robust_oob";
+const char *VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
+const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS = "gpuav_max_buffer_device_addresses";
+const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 const char *VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS = "gpuav_cache_instrumented_shaders";
 const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
-const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS = "gpuav_max_buffer_device_addresses";
-const char *VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "debug_validate_instrumented_shaders";
+
+const char *VK_LAYER_GPUAV_BUFFERS_VALIDATION = "gpuav_buffers_validation";
+const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_DRAWS_BUFFERS = "gpuav_indirect_draws_buffers";
+const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_DISPATCHES_BUFFERS = "gpuav_indirect_dispatches_buffers";
+const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_TRACE_RAYS_BUFFERS = "gpuav_indirect_trace_rays_buffers";
+const char *VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES = "gpuav_buffer_copies";
+
+const char *VK_LAYER_GPUAV_RESERVE_BINDING_SLOT = "gpuav_reserve_binding_slot";
+const char *VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
+
+const char *VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "gpuav_debug_validate_instrumented_shaders";
 const char *VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS = "gpuav_debug_dump_instrumented_shaders";
 
 // These were deprecated after the 1.3.280 SDK release
+const char *DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES = "gpuav_validate_copies";
+const char *DEPRECATED_VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER = "gpuav_validate_indirect_buffer";
+const char *DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT = "reserve_binding_slot";
 const char *DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT = "vma_linear_output";
 const char *DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB = "warn_on_robust_oob";
 const char *DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE = "use_instrumented_shader_cache";
@@ -436,21 +451,102 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS, gpuav_settings.validate_descriptors);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION)) {
+        bool shader_instrumentation_enabled;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION, shader_instrumentation_enabled);
+        if (!shader_instrumentation_enabled) {
+            gpuav_settings.DisableShaderInstrumentationAndOptions();
+        } else {
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS,
+                                        gpuav_settings.validate_descriptors);
+            }
+
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
+            } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB)) {
+                vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
+                printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
+                       DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB);
+            }
+
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB, gpuav_settings.validate_bda);
+            }
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS,
+                                        gpuav_settings.max_bda_in_use);
+            }
+
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY, gpuav_settings.validate_ray_query);
+            }
+
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS,
+                                        gpuav_settings.cache_instrumented_shaders);
+            } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE)) {
+                vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE,
+                                        gpuav_settings.cache_instrumented_shaders);
+                printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
+                       DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS);
+            }
+
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS,
+                                        gpuav_settings.select_instrumented_shaders);
+            } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
+                vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS,
+                                        gpuav_settings.select_instrumented_shaders);
+                printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
+                       DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS);
+            }
+
+            // No need to enable shader instrumentation options is no instrumentation is done
+            if (!gpuav_settings.IsShaderInstrumentationEnabled()) {
+                gpuav_settings.DisableShaderInstrumentationAndOptions();
+            }
+        }
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER,
-                                gpuav_settings.validate_indirect_buffer);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFERS_VALIDATION)) {
+        bool buffers_validation_enabled;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFERS_VALIDATION, buffers_validation_enabled);
+        if (!buffers_validation_enabled) {
+            gpuav_settings.SetBufferValidationEnabled(false);
+        } else {
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DRAWS_BUFFERS)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DRAWS_BUFFERS,
+                                        gpuav_settings.validate_indirect_draws_buffers);
+            }
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DISPATCHES_BUFFERS)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DISPATCHES_BUFFERS,
+                                        gpuav_settings.validate_indirect_dispatches_buffers);
+            }
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_TRACE_RAYS_BUFFERS)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_TRACE_RAYS_BUFFERS,
+                                        gpuav_settings.validate_indirect_trace_rays_buffers);
+            }
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES,
+                                        gpuav_settings.validate_buffer_copies);
+            } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES)) {
+                vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES,
+                                        gpuav_settings.validate_buffer_copies);
+                printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
+                       DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES, VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES);
+            }
+        }
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_COPIES)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_COPIES, gpuav_settings.validate_copies);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY, gpuav_settings.validate_ray_query);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_RESERVE_BINDING_SLOT)) {
+        SetValidationSetting(layer_setting_set, settings_data->enables, gpu_validation_reserve_binding_slot,
+                             VK_LAYER_GPUAV_RESERVE_BINDING_SLOT);
+    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT)) {
+        SetValidationSetting(layer_setting_set, settings_data->enables, gpu_validation_reserve_binding_slot,
+                             DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT);
+        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
+               DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT, VK_LAYER_GPUAV_RESERVE_BINDING_SLOT);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT)) {
@@ -459,38 +555,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
         printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n", DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT,
                VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
-    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB)) {
-        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.vma_linear_output);
-        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n", DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB,
-               VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS,
-                                gpuav_settings.cache_instrumented_shaders);
-    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE)) {
-        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE,
-                                gpuav_settings.vma_linear_output);
-        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-               DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS,
-                                gpuav_settings.select_instrumented_shaders);
-    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS, gpuav_settings.vma_linear_output);
-        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-               DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS,
-                                gpuav_settings.max_buffer_device_addresses);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS)) {
@@ -536,9 +600,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             settings_data->enables[gpu_validation] = setting_value == "GPU_BASED_GPU_ASSISTED";
             settings_data->enables[debug_printf_validation] = setting_value == "GPU_BASED_DEBUG_PRINTF";
         }
-
-        SetValidationSetting(layer_setting_set, settings_data->enables, gpu_validation_reserve_binding_slot,
-                             VK_LAYER_RESERVE_BINDING_SLOT);
     }
 
     // Only read the legacy disables flags when used, not their replacement.

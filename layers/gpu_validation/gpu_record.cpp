@@ -44,7 +44,8 @@ void gpuav::Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBuffer
     }
 
     // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
-    if (gpuav_settings.validate_indirect_buffer && chassis_state.modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+    if (gpuav_settings.IsBufferValidationEnabled() &&
+        chassis_state.modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
         chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
 
