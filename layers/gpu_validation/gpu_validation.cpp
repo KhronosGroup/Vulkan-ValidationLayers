@@ -43,9 +43,9 @@
 #include "generated/gpu_pre_copy_buffer_to_image_comp.h"
 
 VkDeviceAddress gpuav::Validator::GetBufferDeviceAddress(VkBuffer buffer, const Location &loc) const {
-    if (!buffer_device_address_enabled) {
+    if (!enabled_features.bufferDeviceAddress) {
         assert(false);
-        ReportSetupProblem(buffer, loc, "Buffer device address feature not enabled, calling GetBufferDeviceAddress is invalid");
+        ReportSetupProblem(buffer, loc, "bufferDeviceAddress feature not enabled, calling GetBufferDeviceAddress is invalid.");
         aborted = true;
         return 0;
     }
@@ -143,13 +143,11 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         module.RunPassBindlessDescriptor();
     }
 
-    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-        shaderInt64 && enabled_features.bufferDeviceAddress) {
+    if (gpuav_settings.validate_bda) {
         module.RunPassBufferDeviceAddress();
     }
 
-    if (enabled_features.rayQuery && gpuav_settings.validate_ray_query) {
+    if (gpuav_settings.validate_ray_query) {
         module.RunPassRayQuery();
     }
 
@@ -505,7 +503,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(
 
         // Buffer device addresses buffer
         VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-        if (buffer_device_address_enabled) {
+        if (bda_validation_possible) {
             bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
             bda_input_desc_buffer_info.buffer = cmd_buffer->GetBdaRangesSnapshot().buffer;
             bda_input_desc_buffer_info.offset = 0;
@@ -643,7 +641,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         return nullptr;
     }
 
-    if (!gpuav_settings.validate_indirect_buffer) {
+    if (!gpuav_settings.validate_indirect_draws_buffers) {
         CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
@@ -926,7 +924,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
         return nullptr;
     }
 
-    if (!gpuav_settings.validate_indirect_buffer) {
+    if (!gpuav_settings.validate_indirect_dispatches_buffers) {
         CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
@@ -1125,7 +1123,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
         return nullptr;
     }
 
-    if (!gpuav_settings.validate_indirect_buffer) {
+    if (!gpuav_settings.validate_indirect_trace_rays_buffers) {
         CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
@@ -1351,7 +1349,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         return nullptr;
     }
 
-    if (!gpuav_settings.validate_copies) {
+    if (!gpuav_settings.validate_buffer_copies) {
         return nullptr;
     }
 

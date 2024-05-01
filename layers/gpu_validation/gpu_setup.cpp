@@ -130,20 +130,37 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
     }
 
     shaderInt64 = supported_features.shaderInt64;
-    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-        !shaderInt64) {
-        LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
-                   "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
+    bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+                                IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+                               shaderInt64 && enabled_features.bufferDeviceAddress);
+    if (!bda_validation_possible) {
+        if (gpuav_settings.validate_bda) {
+            if (!shaderInt64) {
+                LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
+                           "Buffer device address validation option was enabled, but required features shaderInt64 is not enabled. "
+                           "Disabling option.");
+            } else {
+                LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
+                           "Buffer device address validation option was enabled, but required buffer device address extension "
+                           "and/or features are not enabled. Disabling option.");
+            }
+        }
+        gpuav_settings.validate_bda = false;
     }
-    buffer_device_address_enabled = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-                                      IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                                     shaderInt64 && enabled_features.bufferDeviceAddress);
+
+    if (gpuav_settings.validate_ray_query) {
+        if (!enabled_features.rayQuery) {
+            gpuav_settings.validate_ray_query = false;
+            LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
+                       "Ray query validation option was enabled, but required feature rayQuery is not enabled. "
+                       "Disabling option.");
+        }
+    }
 
     // gpu_pre_copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
-    if (gpuav_settings.validate_copies) {
+    if (gpuav_settings.validate_buffer_copies) {
         if (!enabled_features.uniformAndStorageBuffer8BitAccess) {
-            gpuav_settings.validate_copies = false;
+            gpuav_settings.validate_buffer_copies = false;
             LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                        "gpuav_validate_copies option was enabled, but uniformAndStorageBuffer8BitAccess feature is not available. "
                        "Disabling option.");
@@ -164,8 +181,8 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
                    "Buffer Device Address + feature is not available.  No descriptor checking will be attempted");
     }
 
-    if (gpuav_settings.validate_indirect_buffer && (phys_dev_props.limits.maxPushConstantsSize < 4 * sizeof(uint32_t))) {
-        gpuav_settings.validate_indirect_buffer = false;
+    if (gpuav_settings.IsBufferValidationEnabled() && (phys_dev_props.limits.maxPushConstantsSize < 4 * sizeof(uint32_t))) {
+        gpuav_settings.SetBufferValidationEnabled(false);
         LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                    "Device does not support the minimum range of push constants (32 bytes).  No indirect buffer checking will be "
                    "attempted");

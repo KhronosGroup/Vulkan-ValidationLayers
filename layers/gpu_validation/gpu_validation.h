@@ -477,9 +477,6 @@ class Validator : public gpu_tracker::Validator {
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const override;
 
-  public:
-    bool IsBufferDeviceAddressEnabled() const { return buffer_device_address_enabled; }
-
   private:
     VkPipeline GetDrawValidationPipeline(VkRenderPass render_pass);
 
@@ -492,7 +489,7 @@ class Validator : public gpu_tracker::Validator {
     std::string instrumented_shader_cache_path{};
     AccelerationStructureBuildValidationState acceleration_structure_validation_state{};
 
-    bool buffer_device_address_enabled = false;
+    bool bda_validation_possible = false;
 
     std::optional<DescriptorHeap> desc_heap{};  // optional only to defer construction
 };

@@ -184,7 +184,7 @@ void gpuav::CommandBuffer::AllocateResources() {
     }
 
     // BDA snapshot
-    if (gpuav->IsBufferDeviceAddressEnabled()) {
+    if (gpuav->gpuav_settings.validate_bda) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
@@ -296,7 +296,7 @@ bool gpuav::CommandBuffer::UpdateBdaRangesBuffer() {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // By supplying a "date"
-    if (!gpuav->IsBufferDeviceAddressEnabled() || bda_ranges_snapshot_version_ == gpuav->buffer_device_address_ranges_version) {
+    if (!gpuav->gpuav_settings.validate_bda || bda_ranges_snapshot_version_ == gpuav->buffer_device_address_ranges_version) {
         return true;
     }
 
@@ -331,11 +331,11 @@ bool gpuav::CommandBuffer::UpdateBdaRangesBuffer() {
         gpuav->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
     bda_table_ptr[0] = ranges_to_update_count;
 
-    if (total_address_ranges_count > size_t(gpuav->gpuav_settings.max_buffer_device_addresses)) {
+    if (total_address_ranges_count > size_t(gpuav->gpuav_settings.max_bda_in_use)) {
         std::ostringstream problem_string;
         problem_string << "Number of buffer device addresses ranges in use (" << total_address_ranges_count
                        << ") is greater than khronos_validation.gpuav_max_buffer_device_addresses ("
-                       << gpuav->gpuav_settings.max_buffer_device_addresses
+                       << gpuav->gpuav_settings.max_bda_in_use
                        << "). Truncating buffer device address table could result in invalid validation";
         gpuav->ReportSetupProblem(gpuav->device, Location(vvl::Func::vkQueueSubmit), problem_string.str().c_str());
     }
@@ -352,8 +352,8 @@ bool gpuav::CommandBuffer::UpdateBdaRangesBuffer() {
 
 VkDeviceSize gpuav::CommandBuffer::GetBdaRangesBufferByteSize() const {
     auto gpuav = static_cast<Validator *>(&dev_data);
-    return (1                                                        // 1 QWORD for the number of address ranges
-            + 2 * gpuav->gpuav_settings.max_buffer_device_addresses  // 2 QWORDS per address range
+    return (1                                           // 1 QWORD for the number of address ranges
+            + 2 * gpuav->gpuav_settings.max_bda_in_use  // 2 QWORDS per address range
             ) *
            8;
 }
