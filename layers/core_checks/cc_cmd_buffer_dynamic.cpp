@@ -242,19 +242,17 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
     if (!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
-        if (cb_state.active_attachments) {
-            for (uint32_t i = 0; i < cb_state.active_attachments->size(); ++i) {
-                const auto attachment = (*cb_state.active_attachments)[i];
-                if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
-                    const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[i];
-                    VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
-                    if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
-                        skip |= LogError(vuid.color_write_mask_09116, cb_state.Handle(), loc,
-                                         "Render pass attachment %" PRIu32
-                                         " has format VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but the corresponding element of "
-                                         "pColorWriteMasks is %s.",
-                                         i, string_VkColorComponentFlags(color_write_mask).c_str());
-                    }
+        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+            const auto* attachment = cb_state.active_attachments[i].image_view;
+            if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
+                const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[i];
+                VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
+                if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
+                    skip |= LogError(vuid.color_write_mask_09116, cb_state.Handle(), loc,
+                                     "Render pass attachment %" PRIu32
+                                     " has format VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but the corresponding element of "
+                                     "pColorWriteMasks is %s.",
+                                     i, string_VkColorComponentFlags(color_write_mask).c_str());
                 }
             }
         }
@@ -374,8 +372,9 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     if ((pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) || fragment_shader_bound) {
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT] &&
             cb_state.dynamic_state_value.sample_locations_enable) {
-            if (cb_state.active_attachments && cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
-                for (const auto attachment : (*cb_state.active_attachments)) {
+            if (cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
+                for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
+                    const auto* attachment = cb_state.active_attachments[i].image_view;
                     if (attachment && attachment->create_info.subresourceRange.aspectMask &
                                           (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
                         if ((attachment->image_state->create_info.flags &
@@ -548,7 +547,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
                              "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT dynamic state, but "
                              "vkCmdSetColorBlendEnableEXT() was not called.");
         } else {
-            const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments->size());
+            const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments.size());
             for (uint32_t i = 0; i < attachment_count; ++i) {
                 if (!cb_state.dynamic_state_value.color_blend_enabled[i]) {
                     continue;
@@ -567,7 +566,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
                     }
                 }
 
-                const auto attachment = (*cb_state.active_attachments)[i];
+                const auto* attachment = cb_state.active_attachments[i].image_view;
                 if (attachment && ((attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError(
@@ -576,7 +575,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
                         " has an image view format (%s) that doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.\n"
                         "(supported features: %s)",
                         i, string_VkFormat(attachment->create_info.format),
-                        string_VkFormatFeatureFlags2((*cb_state.active_attachments)[i]->format_features).c_str());
+                        string_VkFormatFeatureFlags2(attachment->format_features).c_str());
                     break;
                 }
             }
@@ -847,16 +846,14 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
         if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
             !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
-            if (cb_state.active_attachments) {
-                for (uint32_t i = 0; i < cb_state.active_attachments->size(); ++i) {
-                    const auto attachment = (*cb_state.active_attachments)[i];
-                    if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
-                        skip |= LogError(vuid.rasterization_sampled_07474, cb_state.Handle(), loc,
-                                         "Render pass attachment %" PRIu32
-                                         " samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
-                                         i, string_VkSampleCountFlagBits(attachment->samples),
-                                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
-                    }
+            for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+                const auto* attachment = cb_state.active_attachments[i].image_view;
+                if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
+                    skip |= LogError(vuid.rasterization_sampled_07474, cb_state.Handle(), loc,
+                                     "Render pass attachment %" PRIu32
+                                     " samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
+                                     i, string_VkSampleCountFlagBits(attachment->samples),
+                                     string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
                 }
             }
         }
@@ -1209,34 +1206,30 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, objlist, loc,
                                       vuid.set_rasterizer_discard_enable_08639);
     if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-        if (cb_state.active_attachments) {
-            for (uint32_t i = 0; i < cb_state.active_attachments->size(); ++i) {
-                const auto attachment = (*cb_state.active_attachments)[i];
-                if (attachment && vkuFormatIsColor(attachment->create_info.format) &&
-                    (attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
-                    cb_state.dynamic_state_value.color_blend_enabled[i] == VK_TRUE) {
-                    skip |= LogError(vuid.set_color_blend_enable_08643, cb_state.Handle(), loc,
-                                     "Render pass attachment %" PRIu32
-                                     " has format %s, which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but "
-                                     "pColorBlendEnables[%" PRIu32 "] set with vkCmdSetColorBlendEnableEXT() was VK_TRUE.",
-                                     i, string_VkFormat(attachment->create_info.format), i);
-                }
+        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+            const auto* attachment = cb_state.active_attachments[i].image_view;
+            if (attachment && vkuFormatIsColor(attachment->create_info.format) &&
+                (attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
+                cb_state.dynamic_state_value.color_blend_enabled[i] == VK_TRUE) {
+                skip |= LogError(vuid.set_color_blend_enable_08643, cb_state.Handle(), loc,
+                                 "Render pass attachment %" PRIu32
+                                 " has format %s, which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but "
+                                 "pColorBlendEnables[%" PRIu32 "] set with vkCmdSetColorBlendEnableEXT() was VK_TRUE.",
+                                 i, string_VkFormat(attachment->create_info.format), i);
             }
         }
         if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
             !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
             enabled_features.multisampledRenderToSingleSampled == VK_FALSE &&
             cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
-            if (cb_state.active_attachments) {
-                for (uint32_t i = 0; i < cb_state.active_attachments->size(); ++i) {
-                    const auto attachment = (*cb_state.active_attachments)[i];
-                    if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
-                        skip |= LogError(vuid.set_rasterization_samples_08644, cb_state.Handle(), loc,
-                                         "Render pass attachment %" PRIu32
-                                         " samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
-                                         i, string_VkSampleCountFlagBits(attachment->samples),
-                                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
-                    }
+            for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+                const auto* attachment = cb_state.active_attachments[i].image_view;
+                if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
+                    skip |= LogError(vuid.set_rasterization_samples_08644, cb_state.Handle(), loc,
+                                     "Render pass attachment %" PRIu32
+                                     " samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
+                                     i, string_VkSampleCountFlagBits(attachment->samples),
+                                     string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
                 }
             }
         }
@@ -1541,9 +1534,9 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                                   objlist, loc, vuid.set_coverage_to_color_location_08677);
                     if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV]) {
                         VkFormat format = VK_FORMAT_UNDEFINED;
-                        if (cb_state.dynamic_state_value.coverage_to_color_location < cb_state.active_attachments->size()) {
-                            format = (*cb_state.active_attachments)[cb_state.dynamic_state_value.coverage_to_color_location]
-                                         ->create_info.format;
+                        if (cb_state.dynamic_state_value.coverage_to_color_location < cb_state.active_attachments.size()) {
+                            format = cb_state.active_attachments[cb_state.dynamic_state_value.coverage_to_color_location]
+                                         .image_view->create_info.format;
                         }
                         if (!IsValueIn(format, {VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT, VK_FORMAT_R16_UINT, VK_FORMAT_R16_SINT,
                                                 VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT})) {

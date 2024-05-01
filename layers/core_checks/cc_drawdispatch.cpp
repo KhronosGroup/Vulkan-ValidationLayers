@@ -1841,9 +1841,9 @@ bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, 
                                             const vvl::DrawDispatchVuid &vuid, const Location &loc) const {
     bool skip = false;
     // Verify attachments for unprotected/protected command buffer.
-    if (enabled_features.protectedMemory == VK_TRUE && cb_state.active_attachments) {
-        uint32_t i = 0;
-        for (const auto &view_state : *cb_state.active_attachments.get()) {
+    if (enabled_features.protectedMemory == VK_TRUE) {
+        for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
+            const auto *view_state = cb_state.active_attachments[i].image_view;
             const auto &subpass = cb_state.active_subpasses[i];
             if (subpass.used && view_state && !view_state->Destroyed()) {
                 std::string image_desc = "Image is ";
@@ -1857,7 +1857,6 @@ bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, 
                 skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc, vuid.unprotected_command_buffer_02707,
                                                image_desc.c_str());
             }
-            ++i;
         }
     }
 

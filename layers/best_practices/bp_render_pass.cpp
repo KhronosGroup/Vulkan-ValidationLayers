@@ -396,7 +396,7 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
         if (depth_attachment) {
             const uint32_t attachment_index = depth_attachment->attachment;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                depth_image_view = (*cb_state->active_attachments)[attachment_index];
+                depth_image_view = cb_state->active_attachments[attachment_index].image_view;
             }
         }
         if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
@@ -536,7 +536,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
                         const uint32_t attachment_index = depth_attachment->attachment;
                         if (attachment_index != VK_ATTACHMENT_UNUSED) {
                             load_op.emplace(rp->create_info.pAttachments[attachment_index].loadOp);
-                            depth_image_view = (*cb_state->active_attachments)[attachment_index];
+                            depth_image_view = cb_state->active_attachments[attachment_index].image_view;
                         }
                     }
                 }
