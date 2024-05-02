@@ -286,6 +286,10 @@ void gpuav::Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipe
         if (last_bound.per_set[i].bound_descriptor_set) {
             auto slot = last_bound.pipeline_state->active_slots.find(i);
             if (slot != last_bound.pipeline_state->active_slots.end()) {
+                if (update_index >= descriptor_set_buffers.size()) {
+                    // TODO - Hit crash running with Dota2, this shouldn't happen, need to look into
+                    continue;
+                }
                 descriptor_set_buffers[update_index++].binding_req = slot->second;
             }
         }
