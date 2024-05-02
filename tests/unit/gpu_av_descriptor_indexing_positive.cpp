@@ -778,3 +778,121 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SampledImageShareBindingBDA) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 }
+
+// Run with VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS=0
+// If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
+TEST_F(PositiveGpuAVDescriptorIndexing, Stress) {
+    TEST_DESCRIPTION("Do many indexing into the shader");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    // send index to select in image array
+    uint32_t *data = (uint32_t *)buffer.memory().map();
+    data[0] = 0;  // index
+    buffer.memory().unmap();
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 64, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 0) buffer Data {
+            uint index;
+        } data;
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+
+        vec4 abc(uint index) {
+            return texture(tex[index], vec2(1.0, 1.0));
+        }
+
+        vec4 bar(uint index) {
+           vec4 result = vec4(1.0);
+           result -= texture(tex[index], vec2(0.1, 5.0));
+           result -= texture(tex[index], vec2(0.2, 5.0));
+           result -= texture(tex[index], vec2(0.3, 5.0));
+           result -= texture(tex[index], vec2(0.4, 5.0));
+           result -= texture(tex[index], vec2(0.5, 5.0));
+           result -= texture(tex[index], vec2(0.6, 5.0));
+           result -= texture(tex[index], vec2(0.7, 5.0));
+           result -= texture(tex[index], vec2(0.8, 5.0));
+           result -= texture(tex[index], vec2(0.9, 5.0));
+           result -= abc(index);
+           return result;
+        }
+
+        vec4 foo(uint index) {
+           vec4 result = vec4(0.0);
+           result += texture(tex[index], vec2(0.1, 2.0));
+           result += texture(tex[index], vec2(0.2, 2.0));
+           result += texture(tex[index], vec2(0.3, 2.0));
+           result += texture(tex[index], vec2(0.4, 2.0));
+           result += texture(tex[index], vec2(0.5, 2.0));
+           result += texture(tex[index], vec2(0.6, 2.0));
+           result += texture(tex[index], vec2(0.7, 2.0));
+           result += texture(tex[index], vec2(0.8, 2.0));
+           result += texture(tex[index], vec2(0.9, 2.0));
+           result += abc(index);
+           return result;
+        }
+
+        void main() {
+           vec4 result = vec4(0.0);
+           result += texture(tex[data.index], vec2(0, 0));
+           result += texture(tex[data.index], vec2(0.1, 0));
+           result += texture(tex[data.index], vec2(0.2, 0));
+           result += texture(tex[data.index], vec2(0.3, 0));
+           result += texture(tex[data.index], vec2(0.4, 0));
+           result += texture(tex[data.index], vec2(0.5, 0));
+           result += texture(tex[data.index], vec2(0.6, 0));
+           result += texture(tex[data.index], vec2(0.7, 0));
+           result += texture(tex[data.index], vec2(0.8, 0));
+           result += texture(tex[data.index], vec2(0.9, 0));
+           result += texture(tex[data.index], vec2(0, 0.1));
+
+           result += foo(data.index);
+           result += bar(data.index);
+           result += foo(data.index + 1);
+           result += bar(data.index + 1);
+           result += foo(data.index + 2);
+           result += bar(data.index + 2);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}
