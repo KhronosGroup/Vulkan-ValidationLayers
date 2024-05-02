@@ -355,6 +355,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             extern vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
+            std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo();
+
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName);\n
             ''')
 
@@ -839,7 +841,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
         out.append('''
             // Global list of sType,size identifiers
-            std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+            std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo() {
+    static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+    return custom_stype_info;
+            }
 
             template <typename ValidationObjectType>
             ValidationObjectType* ValidationObject::GetValidationObject() const {
@@ -907,7 +912,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 void* funcptr;
             } function_data;
 
-            extern const vvl::unordered_map<std::string, function_data> name_to_funcptr_map;
+    const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
             ''')
 
         out.append('''
@@ -949,7 +954,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
                     if (context->enabled[i]) {
                         if (list_of_enables.size()) list_of_enables.append(", ");
-                        list_of_enables.append(EnableFlagNameHelper[i]);
+                        list_of_enables.append(GetEnableFlagNameHelper()[i]);
                     }
                 }
                 if (list_of_enables.empty()) {
@@ -958,7 +963,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
                     if (context->disabled[i]) {
                         if (list_of_disables.size()) list_of_disables.append(", ");
-                        list_of_disables.append(DisableFlagNameHelper[i]);
+                        list_of_disables.append(GetDisableFlagNameHelper()[i]);
                     }
                 }
                 if (list_of_disables.empty()) {
@@ -1015,8 +1020,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 if (!ApiParentExtensionEnabled(funcName, &layer_data->device_extensions)) {
                     return nullptr;
                 }
-                const auto& item = name_to_funcptr_map.find(funcName);
-                if (item != name_to_funcptr_map.end()) {
+                const auto& item = GetNameToFuncPtrMap().find(funcName);
+                if (item != GetNameToFuncPtrMap().end()) {
                     if (item->second.function_type != kFuncTypeDev) {
                         Location loc(vvl::Func::vkGetDeviceProcAddr);
                         // Was discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6583
@@ -1034,8 +1039,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             }
 
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* funcName) {
-                const auto& item = name_to_funcptr_map.find(funcName);
-                if (item != name_to_funcptr_map.end()) {
+                const auto& item = GetNameToFuncPtrMap().find(funcName);
+                if (item != GetNameToFuncPtrMap().end()) {
                     return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
                 }
                 auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
@@ -1045,8 +1050,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             }
 
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName) {
-                const auto& item = name_to_funcptr_map.find(funcName);
-                if (item != name_to_funcptr_map.end()) {
+                const auto& item = GetNameToFuncPtrMap().find(funcName);
+                if (item != GetNameToFuncPtrMap().end()) {
                     if (item->second.function_type != kFuncTypePdev) {
                         return nullptr;
                     } else {
@@ -2074,13 +2079,17 @@ class LayerChassisOutputGenerator(BaseGenerator):
 #pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope
 #endif
 // clang-format off
-const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
+
+const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
+    static const vvl::unordered_map<std::string, function_data> name_to_func_ptr_map = {
     {"vk_layerGetPhysicalDeviceProcAddr", {kFuncTypeInst, (void*)GetPhysicalDeviceProcAddr}},
 ''')
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions]:
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    {{"{command.name}", {{{self.getApiFunctionType(command)}, (void*){command.name[2:]}}}}},\n')
         out.extend(guard_helper.add_guard(None))
+        out.append('};\n')
+        out.append(' return name_to_func_ptr_map;\n')
         out.append('};\n')
         out.append('} // namespace vulkan_layer_chassis\n')
         out.append('// clang-format on\n')

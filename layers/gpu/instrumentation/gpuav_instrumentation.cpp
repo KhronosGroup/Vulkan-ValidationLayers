@@ -459,7 +459,7 @@ bool LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string 
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
-    const GpuVuid vuid = GetGpuVuid(loc.function);
+    const GpuVuid &vuid = GetGpuVuid(loc.function);
 
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeBindlessDescriptorBounds: {

@@ -93,6 +93,8 @@ using PipelineStates = std::vector<std::shared_ptr<vvl::Pipeline>>;
 
 extern vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
+std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo();
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName);
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,

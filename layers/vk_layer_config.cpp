@@ -64,7 +64,10 @@ class ConfigFile {
     void ParseFile(const char *filename);
 };
 
-static ConfigFile layer_config;
+ConfigFile &GetLayerConfig() {
+    static ConfigFile layer_config;
+    return layer_config;
+}
 
 #if defined(__ANDROID__)
 static void PropCallback(void *cookie, [[maybe_unused]] const char *name, const char *value, [[maybe_unused]] uint32_t serial) {
@@ -123,9 +126,9 @@ void SetEnvironment(const char *variable, const char *value) {
 #endif
 }
 
-const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
+const char *getLayerOption(const char *option) { return GetLayerConfig().GetOption(option); }
 
-const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }
+const SettingsFileInfo *GetLayerSettingsFileInfo() { return &GetLayerConfig().settings_info; }
 
 // If option is NULL or stdout, return stdout, otherwise try to open option
 // as a filename. If successful, return file handle, otherwise stdout
@@ -151,7 +154,7 @@ FILE *getLayerLogOutput(const char *option, const char *layer_name) {
 // Map option strings to flag enum values
 VkFlags GetLayerOptionFlags(const string &option, vvl::unordered_map<string, VkFlags> const &enum_data, uint32_t option_default) {
     VkDebugReportFlagsEXT flags = option_default;
-    string option_list = layer_config.GetOption(option.c_str());
+    string option_list = GetLayerConfig().GetOption(option.c_str());
 
     while (option_list.length() != 0) {
         // Find length of option string

@@ -27,7 +27,7 @@ struct DeviceExtensions;
 
 namespace sync_vuid_maps {
 
-extern const std::map<VkPipelineStageFlags2KHR, std::string> kFeatureNameMap;
+const std::map<VkPipelineStageFlags2KHR, std::string> &GetFeatureNameMap();
 
 const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 bit, const DeviceExtensions &device_extensions);
 
@@ -48,7 +48,7 @@ enum class QueueError {
     kHostStage,
 };
 
-extern const std::map<QueueError, std::string> kQueueErrorSummary;
+const std::map<QueueError, std::string> &GetQueueErrorSummaryMap();
 
 const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error);
 
