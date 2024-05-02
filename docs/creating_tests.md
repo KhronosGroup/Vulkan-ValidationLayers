@@ -8,7 +8,7 @@ This is an "up-to-speed" document for writing tests to validate the Validation L
 
 The first rule is to make sure you are actually running the tests on the built version of the Validation Layers you want. Set the environment variable `VK_LOADER_DEBUG` to `layer` and check that the output of the tests report that the path of the validation layer matches what is expected.
 
-The tests automatically set `VK_LAYER_PATH` to the validation layer in the build tree. However if you wish to use a different validation layer than the one that was built, or if you wish to use multiple layers in the tests at the same time, you must set `VK_LAYER_PATH` to include each path to the desired layers, including the validation layer.
+The tests automatically set `VK_LAYER_PATH` to the validation layer in the build tree. However if you wish to use a different validation layer than the one that was built, or if you wish to use multiple layers in the tests at the same time, you must set `VK_LAYER_PATH` or `VK_ADD_LAYER_PATH` to include each path to the desired layers, including the validation layer.
 
 Make sure you have the correct `VK_LAYER_PATH` set on Windows or Linux (on Android the layers are baked into the APK so there is nothing to worry about)
 
