@@ -53,7 +53,8 @@ struct RequiredSpirvInfo {
 };
 
 // clang-format off
-static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilities = {
+const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites() {
+    static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirv_capabilities = {
     {spv::CapabilityMatrix, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
     {spv::CapabilityShader, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
     {spv::CapabilityInputAttachment, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
@@ -236,7 +237,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityCoreBuiltinsARM, {0, &DeviceFeatures::shaderCoreBuiltins, nullptr, ""}},
     {spv::CapabilityShaderInvocationReorderNV, {0, nullptr, &DeviceExtensions::vk_nv_ray_tracing_invocation_reorder, ""}},
     // Not found in current SPIR-V Headers
-    //    {spv::CapabilityClusterCullingShadingHUAWEI, {0, &DeviceFeatures::clustercullingShader, nullptr, ""}},
+    // {spv::CapabilityClusterCullingShadingHUAWEI, {0, &DeviceFeatures::clustercullingShader, nullptr, ""}},
     {spv::CapabilityRayTracingPositionFetchKHR, {0, &DeviceFeatures::rayTracingPositionFetch, nullptr, ""}},
     {spv::CapabilityRayQueryPositionFetchKHR, {0, &DeviceFeatures::rayTracingPositionFetch, nullptr, ""}},
     {spv::CapabilityTileImageColorReadAccessEXT, {0, &DeviceFeatures::shaderTileImageColorReadAccess, nullptr, ""}},
@@ -249,12 +250,13 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
     {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
     {spv::CapabilityRawAccessChainsNV, {0, &DeviceFeatures::shaderRawAccessChains, nullptr, ""}},
-    {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},
-};
+    {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},};
+    return spirv_capabilities;};
 // clang-format on
 
-// clang-format off
-static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvExtensions = {
+const std::unordered_multimap<std::string_view, RequiredSpirvInfo> &GetSpirvExtensions() {
+    // clang-format off
+    static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirv_extensions = {
     {"SPV_KHR_variable_pointers", {VK_API_VERSION_1_1, nullptr, nullptr, ""}},
     {"SPV_KHR_variable_pointers", {0, nullptr, &DeviceExtensions::vk_khr_variable_pointers, ""}},
     {"SPV_AMD_shader_explicit_vertex_parameter", {0, nullptr, &DeviceExtensions::vk_amd_shader_explicit_vertex_parameter, ""}},
@@ -356,9 +358,10 @@ static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvE
     {"SPV_KHR_quad_control", {0, nullptr, &DeviceExtensions::vk_khr_shader_quad_control, ""}},
     {"SPV_NV_raw_access_chains", {0, nullptr, &DeviceExtensions::vk_nv_raw_access_chains, ""}},
     {"SPV_EXT_replicated_composites", {0, nullptr, &DeviceExtensions::vk_ext_shader_replicated_composites, ""}},
-    {"SPV_KHR_relaxed_extended_instruction", {0, nullptr, &DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, ""}},
-};
-// clang-format on
+    {"SPV_KHR_relaxed_extended_instruction", {0, nullptr, &DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, ""}},};
+    // clang-format on
+    return spirv_extensions;
+}
 
 static inline const char *string_SpvCapability(uint32_t input_value) {
     switch ((spv::Capability)input_value) {
@@ -1075,7 +1078,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
 
     if (insn.Opcode() == spv::OpCapability) {
         // All capabilities are generated so if it is not in the list it is not supported by Vulkan
-        if (spirvCapabilities.count(insn.Word(1)) == 0) {
+        if (GetSpirvCapabilites().count(insn.Word(1)) == 0) {
             const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08739" : "VUID-VkShaderCreateInfoEXT-pCode-08739";
             skip |= LogError(vuid, device, loc, "SPIR-V has Capability (%s) declared, but this is not supported by Vulkan.",
                              string_SpvCapability(insn.Word(1)));
@@ -1085,7 +1088,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
         // Each capability has one or more requirements to check
         // Only one item has to be satisfied and an error only occurs
         // when all are not satisfied
-        auto caps = spirvCapabilities.equal_range(insn.Word(1));
+        auto caps = GetSpirvCapabilites().equal_range(insn.Word(1));
         bool has_support = false;
         for (auto it = caps.first; (it != caps.second) && (has_support == false); ++it) {
             if (it->second.version) {
@@ -1188,7 +1191,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
         std::string extension_name = insn.GetAsString(1);
 
         if (0 == extension_name.compare(0, spv_prefix.size(), spv_prefix)) {
-            if (spirvExtensions.count(extension_name) == 0) {
+            if (GetSpirvExtensions().count(extension_name) == 0) {
                 const char *vuid =
                     pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08741" : "VUID-VkShaderCreateInfoEXT-pCode-08741";
                 skip |= LogError(vuid, device, loc, "SPIR-V Extension %s was declared, but that is not supported by Vulkan.",
@@ -1209,7 +1212,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
         // Each SPIR-V Extension has one or more requirements to check
         // Only one item has to be satisfied and an error only occurs
         // when all are not satisfied
-        auto ext = spirvExtensions.equal_range(extension_name);
+        auto ext = GetSpirvExtensions().equal_range(extension_name);
         bool has_support = false;
         for (auto it = ext.first; (it != ext.second) && (has_support == false); ++it) {
             if (it->second.version) {

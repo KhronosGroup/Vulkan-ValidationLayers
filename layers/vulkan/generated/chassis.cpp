@@ -34,6 +34,8 @@
 #include "state_tracker/descriptor_sets.h"
 #include "chassis/chassis_modification_state.h"
 
+#include "profiling/profiling.h"
+
 thread_local WriteLockGuard* ValidationObject::record_guard{};
 
 small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
@@ -211,7 +213,10 @@ void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Help
 }
 
 // Global list of sType,size identifiers
-std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo() {
+    static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+    return custom_stype_info;
+}
 
 template <typename ValidationObjectType>
 ValidationObjectType* ValidationObject::GetValidationObject() const {
@@ -279,7 +284,7 @@ typedef struct {
     void* funcptr;
 } function_data;
 
-extern const vvl::unordered_map<std::string, function_data> name_to_funcptr_map;
+const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
 
 // Manually written functions
 
@@ -321,7 +326,7 @@ void OutputLayerStatusInfo(ValidationObject* context) {
     for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
         if (context->enabled[i]) {
             if (list_of_enables.size()) list_of_enables.append(", ");
-            list_of_enables.append(EnableFlagNameHelper[i]);
+            list_of_enables.append(GetEnableFlagNameHelper()[i]);
         }
     }
     if (list_of_enables.empty()) {
@@ -330,7 +335,7 @@ void OutputLayerStatusInfo(ValidationObject* context) {
     for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
         if (context->disabled[i]) {
             if (list_of_disables.size()) list_of_disables.append(", ");
-            list_of_disables.append(DisableFlagNameHelper[i]);
+            list_of_disables.append(GetDisableFlagNameHelper()[i]);
         }
     }
     if (list_of_disables.empty()) {
@@ -387,8 +392,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     if (!ApiParentExtensionEnabled(funcName, &layer_data->device_extensions)) {
         return nullptr;
     }
-    const auto& item = name_to_funcptr_map.find(funcName);
-    if (item != name_to_funcptr_map.end()) {
+    const auto& item = GetNameToFuncPtrMap().find(funcName);
+    if (item != GetNameToFuncPtrMap().end()) {
         if (item->second.function_type != kFuncTypeDev) {
             Location loc(vvl::Func::vkGetDeviceProcAddr);
             // Was discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6583
@@ -406,8 +411,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* funcName) {
-    const auto& item = name_to_funcptr_map.find(funcName);
-    if (item != name_to_funcptr_map.end()) {
+    const auto& item = GetNameToFuncPtrMap().find(funcName);
+    if (item != GetNameToFuncPtrMap().end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
     }
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
@@ -417,8 +422,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName) {
-    const auto& item = name_to_funcptr_map.find(funcName);
-    if (item != name_to_funcptr_map.end()) {
+    const auto& item = GetNameToFuncPtrMap().find(funcName);
+    if (item != GetNameToFuncPtrMap().end()) {
         if (item->second.function_type != kFuncTypePdev) {
             return nullptr;
         } else {
@@ -464,6 +469,12 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                               VkInstance* pInstance) {
+#if TRACY_ENABLE
+    if (!tracy::IsProfilerStarted()) {
+        tracy::StartupProfiler();
+    }
+#endif
+    VVL_ZoneScoped;
     VkLayerInstanceCreateInfo* chain_info = GetChainInfo(pCreateInfo, VK_LAYER_LINK_INFO);
 
     assert(chain_info->u.pLayerInfo);
@@ -593,6 +604,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     dispatch_key key = GetDispatchKey(instance);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
     ActivateInstanceDebugCallbacks(layer_data->debug_report);
@@ -615,8 +627,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         intercept->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     layer_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
 
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
@@ -635,6 +651,13 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     }
 
     FreeLayerDataPtr(key, layer_data_map);
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
+
+#if TRACY_ENABLE
+    if (tracy::IsProfilerStarted()) {
+        tracy::ShutdownProfiler();
+    }
+#endif
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
@@ -979,6 +1002,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
 // This API needs some local stack data for performance reasons and also may modify a parameter
 VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1000,14 +1024,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
 
     // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
     if (chassis_state.skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateShaderModule(device, &chassis_state.instrumented_create_info, pAllocator, pShaderModule);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
     record_obj.result = result;
-
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -1290,6 +1317,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
 }
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                         VkPhysicalDevice* pPhysicalDevices) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDevices, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -1303,16 +1331,22 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFeatures,
@@ -1327,15 +1361,21 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceFeatures(physicalDevice, pFeatures);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                              VkFormatProperties* pFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties,
@@ -1350,17 +1390,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice ph
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                       VkImageType type, VkImageTiling tiling,
                                                                       VkImageUsageFlags usage, VkImageCreateFlags flags,
                                                                       VkImageFormatProperties* pImageFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties,
@@ -1377,18 +1423,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysical
         intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
                                                                        pImageFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags, pImageFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
                                                                         pImageFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceProperties,
@@ -1403,16 +1455,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physical
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceProperties(physicalDevice, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceProperties(physicalDevice, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceProperties(physicalDevice, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                   uint32_t* pQueueFamilyPropertyCount,
                                                                   VkQueueFamilyProperties* pQueueFamilyProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties,
@@ -1429,16 +1487,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevi
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                        pQueueFamilyProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                         pQueueFamilyProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties,
@@ -1453,14 +1517,20 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice ph
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceQueue, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1474,14 +1544,20 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceQueue]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSubmit, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -1495,7 +1571,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchQueueSubmit(queue, submitCount, pSubmits, fence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit]) {
         auto lock = intercept->WriteLock();
@@ -1505,10 +1585,12 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
         }
         intercept->PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueWaitIdle, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -1522,7 +1604,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueWaitIdle(queue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchQueueWaitIdle(queue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueWaitIdle]) {
         auto lock = intercept->WriteLock();
@@ -1532,10 +1618,12 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
         }
         intercept->PostCallRecordQueueWaitIdle(queue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDeviceWaitIdle, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1549,7 +1637,11 @@ VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDeviceWaitIdle(device, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchDeviceWaitIdle(device);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDeviceWaitIdle]) {
         auto lock = intercept->WriteLock();
@@ -1559,11 +1651,13 @@ VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
         }
         intercept->PostCallRecordDeviceWaitIdle(device, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAllocateMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1577,16 +1671,22 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAll
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAllocateMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL FreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFreeMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1600,15 +1700,21 @@ VKAPI_ATTR void VKAPI_CALL FreeMemory(VkDevice device, VkDeviceMemory memory, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordFreeMemory(device, memory, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchFreeMemory(device, memory, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFreeMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFreeMemory(device, memory, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
                                          VkMemoryMapFlags flags, void** ppData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkMapMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1622,16 +1728,22 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory memory,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordMapMemory(device, memory, offset, size, flags, ppData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchMapMemory(device, memory, offset, size, flags, ppData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordMapMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordMapMemory(device, memory, offset, size, flags, ppData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL UnmapMemory(VkDevice device, VkDeviceMemory memory) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUnmapMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1645,15 +1757,21 @@ VKAPI_ATTR void VKAPI_CALL UnmapMemory(VkDevice device, VkDeviceMemory memory) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordUnmapMemory(device, memory, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchUnmapMemory(device, memory);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUnmapMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUnmapMemory(device, memory, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL FlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
                                                        const VkMappedMemoryRange* pMemoryRanges) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFlushMappedMemoryRanges, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1667,17 +1785,23 @@ VKAPI_ATTR VkResult VKAPI_CALL FlushMappedMemoryRanges(VkDevice device, uint32_t
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFlushMappedMemoryRanges]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL InvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
                                                             const VkMappedMemoryRange* pMemoryRanges) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkInvalidateMappedMemoryRanges, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1692,17 +1816,23 @@ VKAPI_ATTR VkResult VKAPI_CALL InvalidateMappedMemoryRanges(VkDevice device, uin
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordInvalidateMappedMemoryRanges]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory,
                                                      VkDeviceSize* pCommittedMemoryInBytes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMemoryCommitment, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1716,15 +1846,21 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceMemoryCommitment(VkDevice device, VkDeviceMe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMemoryCommitment]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
                                                 VkDeviceSize memoryOffset) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindBufferMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1738,16 +1874,22 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory(VkDevice device, VkBuffer buffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindBufferMemory(device, buffer, memory, memoryOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindBufferMemory(device, buffer, memory, memoryOffset);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindBufferMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindBufferMemory(device, buffer, memory, memoryOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindImageMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1761,17 +1903,23 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory(VkDevice device, VkImage image, V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindImageMemory(device, image, memory, memoryOffset);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindImageMemory]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
                                                        VkMemoryRequirements* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1785,14 +1933,20 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferMemoryRequirements(device, buffer, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferMemoryRequirements(device, buffer, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1806,15 +1960,21 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, VkImage i
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageMemoryRequirements(device, image, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageMemoryRequirements(device, image, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageMemoryRequirements(device, image, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
                                                             VkSparseImageMemoryRequirements* pSparseMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSparseMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1831,12 +1991,17 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkI
         intercept->PreCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
                                                                  pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSparseMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
                                                                   pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
@@ -1844,6 +2009,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
                                                                         VkImageUsageFlags usage, VkImageTiling tiling,
                                                                         uint32_t* pPropertyCount,
                                                                         VkSparseImageFormatProperties* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties,
@@ -1860,17 +2026,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
         intercept->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
                                                                              pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling, pPropertyCount,
                                                          pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
                                                                               pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                VkFence fence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueBindSparse, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -1884,7 +2056,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchQueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueBindSparse]) {
         auto lock = intercept->WriteLock();
@@ -1894,11 +2070,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
         }
         intercept->PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateFence, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1912,16 +2090,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateFence(device, pCreateInfo, pAllocator, pFence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateFence]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyFence, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1935,14 +2119,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyFence(VkDevice device, VkFence fence, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyFence(device, fence, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyFence(device, fence, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyFence]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyFence(device, fence, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetFences, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1956,16 +2146,22 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordResetFences(device, fenceCount, pFences, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchResetFences(device, fenceCount, pFences);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetFences]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetFences(device, fenceCount, pFences, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFenceStatus, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1979,7 +2175,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetFenceStatus(device, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetFenceStatus(device, fence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceStatus]) {
         auto lock = intercept->WriteLock();
@@ -1989,11 +2189,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
         }
         intercept->PostCallRecordGetFenceStatus(device, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                              uint64_t timeout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitForFences, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2007,7 +2209,11 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchWaitForFences(device, fenceCount, pFences, waitAll, timeout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitForFences]) {
         auto lock = intercept->WriteLock();
@@ -2017,11 +2223,13 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
         }
         intercept->PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSemaphore, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2035,16 +2243,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphor
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSemaphore]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySemaphore, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2058,15 +2272,21 @@ VKAPI_ATTR void VKAPI_CALL DestroySemaphore(VkDevice device, VkSemaphore semapho
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroySemaphore(device, semaphore, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroySemaphore(device, semaphore, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySemaphore]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySemaphore(device, semaphore, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkEvent* pEvent) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2080,16 +2300,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateEvent(device, pCreateInfo, pAllocator, pEvent);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2103,14 +2329,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyEvent(VkDevice device, VkEvent event, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyEvent(device, event, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyEvent(device, event, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyEvent(device, event, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetEventStatus, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2124,7 +2356,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetEventStatus(device, event, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetEventStatus(device, event);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetEventStatus]) {
         auto lock = intercept->WriteLock();
@@ -2134,10 +2370,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
         }
         intercept->PostCallRecordGetEventStatus(device, event, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2151,16 +2389,22 @@ VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetEvent(device, event, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetEvent(device, event);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetEvent(device, event, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetEvent(VkDevice device, VkEvent event) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2174,17 +2418,23 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetEvent(VkDevice device, VkEvent event) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordResetEvent(device, event, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchResetEvent(device, event);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetEvent(device, event, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateQueryPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2198,16 +2448,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyQueryPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2221,15 +2477,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyQueryPool(VkDevice device, VkQueryPool queryPo
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyQueryPool(device, queryPool, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyQueryPool(device, queryPool, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyQueryPool(device, queryPool, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetQueryPoolResults, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2245,7 +2507,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
         intercept->PreCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags,
                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueryPoolResults]) {
         auto lock = intercept->WriteLock();
@@ -2256,10 +2522,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
         intercept->PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags,
                                                      record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyBuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2273,15 +2541,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyBuffer(VkDevice device, VkBuffer buffer, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyBuffer(device, buffer, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyBuffer(device, buffer, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyBuffer(device, buffer, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateBufferView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2295,16 +2569,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferV
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateBufferView(device, pCreateInfo, pAllocator, pView);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateBufferView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyBufferView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2318,15 +2598,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferView(VkDevice device, VkBufferView buffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyBufferView(device, bufferView, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyBufferView(device, bufferView, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyBufferView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyBufferView(device, bufferView, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkImage* pImage) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2340,16 +2626,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateImage(device, pCreateInfo, pAllocator, pImage);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2363,15 +2655,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyImage(VkDevice device, VkImage image, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyImage(device, image, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyImage(device, image, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                                      VkSubresourceLayout* pLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2385,15 +2683,21 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout(VkDevice device, VkImage im
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageSubresourceLayout(device, image, pSubresource, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageSubresourceLayout(device, image, pSubresource, pLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSubresourceLayout(device, image, pSubresource, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkImageView* pView) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateImageView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2407,16 +2711,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageVie
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateImageView(device, pCreateInfo, pAllocator, pView);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateImageView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyImageView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2430,15 +2740,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyImageView(VkDevice device, VkImageView imageVi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyImageView(device, imageView, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyImageView(device, imageView, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyImageView]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyImageView(device, imageView, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                                const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2452,15 +2768,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyShaderModule(VkDevice device, VkShaderModule s
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyShaderModule(device, shaderModule, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyShaderModule(device, shaderModule, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyShaderModule]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyShaderModule(device, shaderModule, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePipelineCache, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2474,17 +2796,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineCache(VkDevice device, const VkPipe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePipelineCache]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache,
                                                 const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPipelineCache, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2498,15 +2826,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipelineCache(VkDevice device, VkPipelineCache
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyPipelineCache(device, pipelineCache, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyPipelineCache(device, pipelineCache, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPipelineCache]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPipelineCache(device, pipelineCache, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize,
                                                     void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineCacheData, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2520,17 +2854,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineCacheData(VkDevice device, VkPipelineC
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPipelineCacheData(device, pipelineCache, pDataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineCacheData]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL MergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                    const VkPipelineCache* pSrcCaches) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkMergePipelineCaches, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2544,16 +2884,22 @@ VKAPI_ATTR VkResult VKAPI_CALL MergePipelineCaches(VkDevice device, VkPipelineCa
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordMergePipelineCaches]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPipeline, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2567,15 +2913,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipeline(VkDevice device, VkPipeline pipeline,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyPipeline(device, pipeline, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyPipeline(device, pipeline, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPipeline]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPipeline(device, pipeline, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
                                                  const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPipelineLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2589,15 +2941,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipelineLayout(VkDevice device, VkPipelineLayo
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyPipelineLayout(device, pipelineLayout, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyPipelineLayout(device, pipelineLayout, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPipelineLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPipelineLayout(device, pipelineLayout, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSampler, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2611,16 +2969,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCre
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateSampler(device, pCreateInfo, pAllocator, pSampler);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSampler]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySampler, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2634,16 +2998,22 @@ VKAPI_ATTR void VKAPI_CALL DestroySampler(VkDevice device, VkSampler sampler, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroySampler(device, sampler, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroySampler(device, sampler, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySampler]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySampler(device, sampler, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkDescriptorSetLayout* pSetLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorSetLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2657,17 +3027,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorSetLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                       const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorSetLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2681,15 +3057,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorSetLayout(VkDevice device, VkDescrip
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorSetLayout]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2703,17 +3085,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                  const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2727,15 +3115,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPo
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyDescriptorPool(device, descriptorPool, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyDescriptorPool(device, descriptorPool, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorPool(device, descriptorPool, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                    VkDescriptorPoolResetFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetDescriptorPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2749,17 +3143,23 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptor
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordResetDescriptorPool(device, descriptorPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchResetDescriptorPool(device, descriptorPool, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetDescriptorPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetDescriptorPool(device, descriptorPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                                   const VkDescriptorSet* pDescriptorSets) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFreeDescriptorSets, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2774,18 +3174,24 @@ VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorP
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFreeDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                                 const VkCopyDescriptorSet* pDescriptorCopies) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateDescriptorSets, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2801,16 +3207,22 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descri
         intercept->PreCallRecordUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                      pDescriptorCopies, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                       pDescriptorCopies, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateFramebuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2824,16 +3236,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFrameb
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateFramebuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyFramebuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2847,15 +3265,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyFramebuffer(VkDevice device, VkFramebuffer fra
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyFramebuffer(device, framebuffer, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyFramebuffer(device, framebuffer, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyFramebuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyFramebuffer(device, framebuffer, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRenderPass, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2869,16 +3293,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyRenderPass, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2892,14 +3322,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyRenderPass(VkDevice device, VkRenderPass rende
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyRenderPass(device, renderPass, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRenderAreaGranularity, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2913,15 +3349,21 @@ VKAPI_ATTR void VKAPI_CALL GetRenderAreaGranularity(VkDevice device, VkRenderPas
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetRenderAreaGranularity(device, renderPass, pGranularity, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetRenderAreaGranularity(device, renderPass, pGranularity);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRenderAreaGranularity]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRenderAreaGranularity(device, renderPass, pGranularity, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2935,16 +3377,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkComman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2958,7 +3406,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyCommandPool(device, commandPool, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyCommandPool(device, commandPool, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCommandPool(device, commandPool, pAllocator, record_obj);
@@ -2974,9 +3426,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
             }
         }
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -2990,17 +3444,23 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordResetCommandPool(device, commandPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchResetCommandPool(device, commandPool, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetCommandPool(device, commandPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                       VkCommandBuffer* pCommandBuffers) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAllocateCommandBuffers, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -3014,7 +3474,11 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAllocateCommandBuffers]) {
         auto lock = intercept->WriteLock();
@@ -3027,11 +3491,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
             secondary_cb_map.emplace(pCommandBuffers[cb_index], pAllocateInfo->commandPool);
         }
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                               const VkCommandBuffer* pCommandBuffers) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFreeCommandBuffers, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -3045,7 +3511,11 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordFreeCommandBuffers]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers, record_obj);
@@ -3057,9 +3527,11 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
             secondary_cb_map.erase(pCommandBuffers[cb_index]);
         }
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEndCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3073,16 +3545,22 @@ VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordEndCommandBuffer(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchEndCommandBuffer(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordEndCommandBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEndCommandBuffer(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3096,17 +3574,23 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordResetCommandBuffer(commandBuffer, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchResetCommandBuffer(commandBuffer, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetCommandBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetCommandBuffer(commandBuffer, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                            VkPipeline pipeline) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindPipeline, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3120,15 +3604,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindPipeline]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                           const VkViewport* pViewports) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewport, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3142,15 +3632,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewport]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                          const VkRect2D* pScissors) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetScissor, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3164,14 +3660,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetScissor]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineWidth, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3185,15 +3687,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetLineWidth(commandBuffer, lineWidth, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetLineWidth(commandBuffer, lineWidth);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineWidth]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineWidth(commandBuffer, lineWidth, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                            float depthBiasSlopeFactor) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBias, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3209,15 +3717,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float 
         intercept->PreCallRecordCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor,
                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBias]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor,
                                                  record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetBlendConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3231,14 +3745,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetBlendConstants(commandBuffer, blendConstants, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetBlendConstants(commandBuffer, blendConstants);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetBlendConstants]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetBlendConstants(commandBuffer, blendConstants, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBounds, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3252,15 +3772,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, floa
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBounds]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                     uint32_t compareMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilCompareMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3274,14 +3800,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilCompareMask]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilWriteMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3295,14 +3827,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilWriteMask]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilReference, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3316,17 +3854,23 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetStencilReference(commandBuffer, faceMask, reference, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetStencilReference(commandBuffer, faceMask, reference);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilReference]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilReference(commandBuffer, faceMask, reference, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                  VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                                  const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
                                                  const uint32_t* pDynamicOffsets) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorSets, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3343,17 +3887,23 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, 
         intercept->PreCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
                                                       pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets,
                                   dynamicOffsetCount, pDynamicOffsets);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorSets]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
                                                        pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                               VkIndexType indexType) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3367,15 +3917,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindIndexBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                 const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindVertexBuffers, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3390,15 +3946,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, u
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindVertexBuffers]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                    uint32_t firstVertex, uint32_t firstInstance) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDraw, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3412,15 +3974,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t verte
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDraw]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                           uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexed, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3436,16 +4004,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_
         intercept->PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexed]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
                                            uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3459,15 +4033,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirect]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                   uint32_t drawCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3481,15 +4061,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirect]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                        uint32_t groupCountZ) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatch, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3503,14 +4089,20 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatch(VkCommandBuffer commandBuffer, uint32_t g
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatch]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3524,15 +4116,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(VkCommandBuffer commandBuffer, Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDispatchIndirect(commandBuffer, buffer, offset);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchIndirect]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                          uint32_t regionCount, const VkBufferCopy* pRegions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3546,16 +4144,22 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                         const VkImageCopy* pRegions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3571,17 +4175,23 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage(VkCommandBuffer commandBuffer, VkImage s
         intercept->PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                              pRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                               pRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                         const VkImageBlit* pRegions, VkFilter filter) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBlitImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3597,17 +4207,23 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage(VkCommandBuffer commandBuffer, VkImage s
         intercept->PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                              pRegions, filter, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBlitImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                               pRegions, filter, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                 VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkBufferImageCopy* pRegions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBufferToImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3623,16 +4239,22 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage(VkCommandBuffer commandBuffer, V
         intercept->PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                                      record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBufferToImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                                       record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImageToBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3648,16 +4270,22 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, V
         intercept->PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
                                                      record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImageToBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
                                                       record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                            VkDeviceSize dataSize, const void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdUpdateBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3671,15 +4299,21 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdUpdateBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                          VkDeviceSize size, uint32_t data) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdFillBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3693,16 +4327,22 @@ VKAPI_ATTR void VKAPI_CALL CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdFillBuffer]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                               const VkClearColorValue* pColor, uint32_t rangeCount,
                                               const VkImageSubresourceRange* pRanges) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdClearColorImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3717,16 +4357,22 @@ VKAPI_ATTR void VKAPI_CALL CmdClearColorImage(VkCommandBuffer commandBuffer, VkI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdClearColorImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                      const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                      const VkImageSubresourceRange* pRanges) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdClearDepthStencilImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3742,17 +4388,23 @@ VKAPI_ATTR void VKAPI_CALL CmdClearDepthStencilImage(VkCommandBuffer commandBuff
         intercept->PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdClearDepthStencilImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                const VkClearAttachment* pAttachments, uint32_t rectCount,
                                                const VkClearRect* pRects) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdClearAttachments, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3767,16 +4419,22 @@ VKAPI_ATTR void VKAPI_CALL CmdClearAttachments(VkCommandBuffer commandBuffer, ui
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdClearAttachments]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageResolve* pRegions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResolveImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3792,15 +4450,21 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage(VkCommandBuffer commandBuffer, VkImag
         intercept->PreCallRecordCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                                 pRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResolveImage]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                                  pRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3814,14 +4478,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent ev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetEvent(commandBuffer, event, stageMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3835,11 +4505,16 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdResetEvent(commandBuffer, event, stageMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetEvent]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -3847,6 +4522,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWaitEvents, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3864,14 +4540,19 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
                                               pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                               imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWaitEvents]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
                                                pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
@@ -3879,6 +4560,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkP
                                               uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPipelineBarrier, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3896,18 +4578,24 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkP
                                                    pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                    imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
                                bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPipelineBarrier]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                                                     pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                     imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                          VkQueryControlFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3921,14 +4609,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryP
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginQuery(commandBuffer, queryPool, query, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginQuery(commandBuffer, queryPool, query, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginQuery]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginQuery(commandBuffer, queryPool, query, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3942,15 +4636,21 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPoo
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndQuery(commandBuffer, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndQuery(commandBuffer, queryPool, query);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndQuery]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndQuery(commandBuffer, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                              uint32_t queryCount) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetQueryPool, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3964,15 +4664,21 @@ VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                              VkQueryPool queryPool, uint32_t query) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteTimestamp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -3986,16 +4692,22 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteTimestamp]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                    uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                    VkDeviceSize stride, VkQueryResultFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyQueryPoolResults, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4011,16 +4723,22 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer
         intercept->PreCallRecordCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
                                                         stride, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyQueryPoolResults]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
                                                          stride, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                             uint32_t offset, uint32_t size, const void* pValues) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4034,15 +4752,21 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushConstants]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                               VkSubpassContents contents) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4056,14 +4780,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdNextSubpass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4077,14 +4807,20 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdNextSubpass(commandBuffer, contents);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdNextSubpass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4098,15 +4834,21 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndRenderPass(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndRenderPass(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderPass]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderPass(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                               const VkCommandBuffer* pCommandBuffers) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdExecuteCommands, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4120,15 +4862,21 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdExecuteCommands]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
                                                  const VkBindBufferMemoryInfo* pBindInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindBufferMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4142,16 +4890,22 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2(VkDevice device, uint32_t bindI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindBufferMemory2(device, bindInfoCount, pBindInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindBufferMemory2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindImageMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4165,18 +4919,24 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2(VkDevice device, uint32_t bindIn
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindImageMemory2(device, bindInfoCount, pBindInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindImageMemory2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeatures(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
                                                             uint32_t remoteDeviceIndex,
                                                             VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeatures, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4193,15 +4953,21 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeatures(VkDevice device, uin
         intercept->PreCallRecordGetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
                                                                  pPeerMemoryFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex, pPeerMemoryFeatures);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupPeerMemoryFeatures]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
                                                                   pPeerMemoryFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDeviceMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4215,15 +4981,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint3
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDeviceMask(commandBuffer, deviceMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDeviceMask(commandBuffer, deviceMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDeviceMask]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDeviceMask(commandBuffer, deviceMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                            uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchBase, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4239,16 +5011,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBase(VkCommandBuffer commandBuffer, uint32
         intercept->PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
                                                 groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchBase]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
                                                  groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                              VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceGroups, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -4264,18 +5042,24 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
         intercept->PreCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                               record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                        VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageMemoryRequirements2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4289,15 +5073,21 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
                                                         VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferMemoryRequirements2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4312,16 +5102,22 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
                                                              uint32_t* pSparseMemoryRequirementCount,
                                                              VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSparseMemoryRequirements2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4338,15 +5134,21 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, co
         intercept->PreCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
                                                                   pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSparseMemoryRequirements2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
                                                                    pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFeatures2,
@@ -4361,14 +5163,20 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceProperties2,
@@ -4383,15 +5191,21 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physica
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceProperties2(physicalDevice, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceProperties2(physicalDevice, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                               VkFormatProperties2* pFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2,
@@ -4406,16 +5220,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                        const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                        VkImageFormatProperties2* pImageFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2,
@@ -4432,19 +5252,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysica
         intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                         record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                    uint32_t* pQueueFamilyPropertyCount,
                                                                    VkQueueFamilyProperties2* pQueueFamilyProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2,
@@ -4461,16 +5287,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDev
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                         pQueueFamilyProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                          pQueueFamilyProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
                                                               VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2,
@@ -4485,17 +5317,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice p
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                          const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
                                                                          uint32_t* pPropertyCount,
                                                                          VkSparseImageFormatProperties2* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2,
@@ -4512,15 +5350,21 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysi
         intercept->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
                                                                               pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
                                                                                pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL TrimCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkTrimCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4534,14 +5378,20 @@ VKAPI_ATTR void VKAPI_CALL TrimCommandPool(VkDevice device, VkCommandPool comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordTrimCommandPool(device, commandPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchTrimCommandPool(device, commandPool, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordTrimCommandPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordTrimCommandPool(device, commandPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceQueue2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4555,16 +5405,22 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceQueue2(VkDevice device, const VkDeviceQueueI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceQueue2(device, pQueueInfo, pQueue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceQueue2(device, pQueueInfo, pQueue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceQueue2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceQueue2(device, pQueueInfo, pQueue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkSamplerYcbcrConversion* pYcbcrConversion) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSamplerYcbcrConversion, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4580,17 +5436,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversion(VkDevice device, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSamplerYcbcrConversion]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                          const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySamplerYcbcrConversion, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4605,17 +5467,23 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversion(VkDevice device, VkSamp
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySamplerYcbcrConversion]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
                                                               const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
                                                               VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorUpdateTemplate, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4632,18 +5500,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
         intercept->PreCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
                                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorUpdateTemplate]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                            const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorUpdateTemplate, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4658,15 +5532,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplate(VkDevice device, VkDe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorUpdateTemplate]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                            VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateDescriptorSetWithTemplate, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4682,17 +5562,23 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateDescriptorSetWithTemplate]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData,
                                                                  record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferProperties(VkPhysicalDevice physicalDevice,
                                                                      const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
                                                                      VkExternalBufferProperties* pExternalBufferProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferProperties,
@@ -4709,17 +5595,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferProperties(VkPhysicalD
         intercept->PreCallRecordGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
                                                                           pExternalBufferProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
                                                                            pExternalBufferProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFenceProperties(VkPhysicalDevice physicalDevice,
                                                                     const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
                                                                     VkExternalFenceProperties* pExternalFenceProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalFenceProperties,
@@ -4736,17 +5628,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFenceProperties(VkPhysicalDe
         intercept->PreCallRecordGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo,
                                                                          pExternalFenceProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo,
                                                                           pExternalFenceProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphoreProperties(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphoreProperties,
@@ -4763,16 +5661,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphoreProperties(
         intercept->PreCallRecordGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                              pExternalSemaphoreProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                               pExternalSemaphoreProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                          VkDescriptorSetLayoutSupport* pSupport) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutSupport, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4787,16 +5691,22 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupport(VkDevice device, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutSupport]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                 uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4812,17 +5722,23 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount(VkCommandBuffer commandBuffer, V
         intercept->PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                      stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                       stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                        uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCount,
@@ -4839,16 +5755,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount(VkCommandBuffer commandBu
         intercept->PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                             maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirectCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                              maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRenderPass2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4862,17 +5784,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2(VkDevice device, const VkRender
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateRenderPass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                const VkSubpassBeginInfo* pSubpassBeginInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4886,15 +5814,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2(VkCommandBuffer commandBuffer, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderPass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                            const VkSubpassEndInfo* pSubpassEndInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdNextSubpass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4908,14 +5842,20 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2(VkCommandBuffer commandBuffer, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdNextSubpass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -4929,14 +5869,20 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2(VkCommandBuffer commandBuffer, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderPass2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL ResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetQueryPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4950,14 +5896,20 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPool(VkDevice device, VkQueryPool queryPool
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordResetQueryPool(device, queryPool, firstQuery, queryCount, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchResetQueryPool(device, queryPool, firstQuery, queryCount);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetQueryPool]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetQueryPool(device, queryPool, firstQuery, queryCount, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreCounterValue, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4971,7 +5923,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemap
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSemaphoreCounterValue(device, semaphore, pValue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValue]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
@@ -4981,10 +5937,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemap
         }
         intercept->PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitSemaphores, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -4998,7 +5956,11 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphore
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchWaitSemaphores(device, pWaitInfo, timeout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitSemaphores]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
@@ -5008,10 +5970,12 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphore
         }
         intercept->PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSignalSemaphore, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5025,16 +5989,22 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphore(VkDevice device, const VkSemaphor
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSignalSemaphore(device, pSignalInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSignalSemaphore]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5048,16 +6018,22 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddress(VkDevice device, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkDeviceAddress result = DispatchGetBufferDeviceAddress(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddress]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferOpaqueCaptureAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5072,16 +6048,22 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddress(VkDevice device, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferOpaqueCaptureAddress(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     uint64_t result = DispatchGetBufferOpaqueCaptureAddress(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferOpaqueCaptureAddress]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferOpaqueCaptureAddress(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
                                                                    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5096,17 +6078,23 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddress(VkDevice devi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     uint64_t result = DispatchGetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMemoryOpaqueCaptureAddress]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePrivateDataSlot, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5120,17 +6108,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlot(VkDevice device, const VkPr
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePrivateDataSlot]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
                                                   const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPrivateDataSlot, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5144,15 +6138,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlot(VkDevice device, VkPrivateData
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyPrivateDataSlot(device, privateDataSlot, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPrivateDataSlot]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPrivateDataSlot(device, privateDataSlot, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                               VkPrivateDataSlot privateDataSlot, uint64_t data) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetPrivateData, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5166,17 +6166,23 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateData(VkDevice device, VkObjectType obje
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetPrivateData]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                           VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPrivateData, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5190,14 +6196,20 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateData(VkDevice device, VkObjectType objectTy
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPrivateData]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5211,14 +6223,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent e
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetEvent2(commandBuffer, event, pDependencyInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetEvent2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5232,15 +6250,21 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdResetEvent2(commandBuffer, event, stageMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetEvent2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                           const VkDependencyInfo* pDependencyInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWaitEvents2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5254,14 +6278,20 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWaitEvents2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPipelineBarrier2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5275,15 +6305,21 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2(VkCommandBuffer commandBuffer, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPipelineBarrier2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                               uint32_t query) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteTimestamp2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5297,14 +6333,20 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkP
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteTimestamp2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSubmit2, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -5318,7 +6360,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchQueueSubmit2(queue, submitCount, pSubmits, fence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2]) {
         auto lock = intercept->WriteLock();
@@ -5328,10 +6374,12 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount,
         }
         intercept->PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5345,14 +6393,20 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2(VkCommandBuffer commandBuffer, const V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBuffer2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5366,15 +6420,21 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2(VkCommandBuffer commandBuffer, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyImage2(commandBuffer, pCopyImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                                  const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBufferToImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5388,15 +6448,21 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBufferToImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                  const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImageToBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5410,14 +6476,20 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImageToBuffer2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBlitImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5431,14 +6503,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2(VkCommandBuffer commandBuffer, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBlitImage2(commandBuffer, pBlitImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBlitImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResolveImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5452,14 +6530,20 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2(VkCommandBuffer commandBuffer, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdResolveImage2(commandBuffer, pResolveImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResolveImage2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5473,14 +6557,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRendering(VkCommandBuffer commandBuffer, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginRendering(commandBuffer, pRenderingInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRendering]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5494,14 +6584,20 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRendering(VkCommandBuffer commandBuffer) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndRendering(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndRendering(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRendering]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRendering(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCullMode, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5515,14 +6611,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullM
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCullMode(commandBuffer, cullMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCullMode(commandBuffer, cullMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCullMode]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCullMode(commandBuffer, cullMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFrontFace, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5536,14 +6638,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFron
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetFrontFace(commandBuffer, frontFace, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetFrontFace(commandBuffer, frontFace);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFrontFace]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFrontFace(commandBuffer, frontFace, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveTopology, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5557,15 +6665,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPrimitiveTopology(commandBuffer, primitiveTopology, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveTopology]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveTopology(commandBuffer, primitiveTopology, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                    const VkViewport* pViewports) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5579,14 +6693,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCount(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWithCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetScissorWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5600,16 +6720,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCount(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetScissorWithCount]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                  const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                  const VkDeviceSize* pStrides) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindVertexBuffers2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5625,15 +6751,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, 
         intercept->PreCallRecordCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
                                                       pStrides, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindVertexBuffers2]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
                                                        pStrides, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5647,14 +6779,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthTestEnable(commandBuffer, depthTestEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthTestEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthWriteEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5668,14 +6806,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnable(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthWriteEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthCompareOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5689,14 +6833,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthCompareOp(commandBuffer, depthCompareOp);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthCompareOp]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBoundsTestEnable,
@@ -5711,14 +6861,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnable(VkCommandBuffer commandBu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBoundsTestEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5732,15 +6888,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnable(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetStencilTestEnable(commandBuffer, stencilTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilTestEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilTestEnable(commandBuffer, stencilTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                            VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5755,14 +6917,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOp(VkCommandBuffer commandBuffer, VkSten
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilOp]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizerDiscardEnable,
@@ -5778,14 +6946,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnable(VkCommandBuffer command
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizerDiscardEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBiasEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -5799,14 +6973,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBiasEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveRestartEnable,
@@ -5822,15 +7002,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnable(VkCommandBuffer commandB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveRestartEnable]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
                                                              VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceBufferMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5845,15 +7031,21 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirements(VkDevice device, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceBufferMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                             VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5868,16 +7060,22 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirements(VkDevice device, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                                   uint32_t* pSparseMemoryRequirementCount,
                                                                   VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -5895,16 +7093,22 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirements(VkDevice devic
         intercept->PreCallRecordGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
                                                                        pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSparseMemoryRequirements]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
                                                                         pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -5918,15 +7122,21 @@ VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR s
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroySurfaceKHR(instance, surface, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroySurfaceKHR(instance, surface, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySurfaceKHR(instance, surface, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                   VkSurfaceKHR surface, VkBool32* pSupported) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceSupportKHR,
@@ -5943,18 +7153,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
         intercept->PreCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                        VkSurfaceCapabilitiesKHR* pSurfaceCapabilities) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR,
@@ -5970,18 +7186,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysica
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                   uint32_t* pSurfaceFormatCount,
                                                                   VkSurfaceFormatKHR* pSurfaceFormats) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormatsKHR,
@@ -5998,19 +7220,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
         intercept->PreCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                        uint32_t* pPresentModeCount,
                                                                        VkPresentModeKHR* pPresentModes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR,
@@ -6027,18 +7255,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
         intercept->PreCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
                                                                         record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
                                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSwapchainKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6052,7 +7286,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSwapchainKHR]) {
         auto lock = intercept->WriteLock();
@@ -6062,10 +7300,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
         }
         intercept->PostCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySwapchainKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6079,15 +7319,21 @@ VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroySwapchainKHR(device, swapchain, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySwapchainKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySwapchainKHR(device, swapchain, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                      VkImage* pSwapchainImages) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainImagesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6102,17 +7348,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainImagesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                    VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireNextImageKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6126,7 +7378,11 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireNextImageKHR]) {
         auto lock = intercept->WriteLock();
@@ -6136,10 +7392,12 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
         }
         intercept->PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueuePresentKHR, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -6153,7 +7411,12 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchQueuePresentKHR(queue, pPresentInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCFrameMark;
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
         auto lock = intercept->WriteLock();
@@ -6163,11 +7426,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
         }
         intercept->PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
 GetDeviceGroupPresentCapabilitiesKHR(VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupPresentCapabilitiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6183,18 +7448,24 @@ GetDeviceGroupPresentCapabilitiesKHR(VkDevice device, VkDeviceGroupPresentCapabi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupPresentCapabilitiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
                                                                     VkDeviceGroupPresentModeFlagsKHR* pModes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6210,18 +7481,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModesKHR(VkDevice dev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupSurfacePresentModesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                      uint32_t* pRectCount, VkRect2D* pRects) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDevicePresentRectanglesKHR,
@@ -6237,17 +7514,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDevicePresentRectanglesKHR(VkPhysicalD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                                     uint32_t* pImageIndex) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireNextImage2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6261,7 +7544,11 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcq
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireNextImage2KHR]) {
         auto lock = intercept->WriteLock();
@@ -6271,11 +7558,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcq
         }
         intercept->PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                      VkDisplayPropertiesKHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayPropertiesKHR,
@@ -6291,17 +7580,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                           VkDisplayPlanePropertiesKHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR,
@@ -6317,18 +7612,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties,
                                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                    uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayPlaneSupportedDisplaysKHR,
@@ -6345,18 +7646,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
         intercept->PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays,
                                                                      record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                            uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayModePropertiesKHR,
@@ -6372,18 +7679,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                     const VkDisplayModeCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDisplayModeKHR, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6397,17 +7710,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayModeKHR(VkPhysicalDevice physicalDev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
                                                               uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayPlaneCapabilitiesKHR,
@@ -6423,17 +7742,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDisplayPlaneSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -6447,18 +7772,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                          const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                          const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSharedSwapchainsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6474,7 +7805,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
         intercept->PreCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains,
                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSharedSwapchainsKHR]) {
         auto lock = intercept->WriteLock();
@@ -6485,12 +7820,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
         intercept->PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains,
                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateXlibSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -6504,18 +7841,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t queueFamilyIndex, Display* dpy,
                                                                            VisualID visualID) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceXlibPresentationSupportKHR,
@@ -6532,12 +7875,17 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
         intercept->PreCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID,
                                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkBool32 result = DispatchGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID,
                                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -6545,6 +7893,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
 #ifdef VK_USE_PLATFORM_XCB_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateXcbSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -6558,18 +7907,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, xcb_connection_t* connection,
                                                                           xcb_visualid_t visual_id) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceXcbPresentationSupportKHR,
@@ -6586,12 +7941,17 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
         intercept->PreCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id,
                                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkBool32 result = DispatchGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id,
                                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -6599,6 +7959,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateWaylandSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -6612,18 +7973,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t queueFamilyIndex,
                                                                               struct wl_display* display) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceWaylandPresentationSupportKHR,
@@ -6640,12 +8007,17 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
         intercept->PreCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display,
                                                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkBool32 result = DispatchGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display,
                                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -6653,6 +8025,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateAndroidSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -6666,12 +8039,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -6679,6 +8057,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateWin32SurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -6692,17 +8071,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t queueFamilyIndex) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceWin32PresentationSupportKHR,
@@ -6717,11 +8102,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkBool32 result = DispatchGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -6729,6 +8119,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                      const VkVideoProfileInfoKHR* pVideoProfile,
                                                                      VkVideoCapabilitiesKHR* pCapabilities) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceVideoCapabilitiesKHR,
@@ -6744,12 +8135,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -6757,6 +8153,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysi
                                                                          const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo,
                                                                          uint32_t* pVideoFormatPropertyCount,
                                                                          VkVideoFormatPropertiesKHR* pVideoFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceVideoFormatPropertiesKHR,
@@ -6773,19 +8170,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysi
         intercept->PreCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
             physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount,
                                                                         pVideoFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
             physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateVideoSessionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6799,17 +8202,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionKHR(VkDevice device, const VkVi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateVideoSessionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                   const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyVideoSessionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6823,16 +8232,22 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionKHR(VkDevice device, VkVideoSessio
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyVideoSessionKHR(device, videoSession, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyVideoSessionKHR(device, videoSession, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyVideoSessionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyVideoSessionKHR(device, videoSession, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                                     uint32_t* pMemoryRequirementsCount,
                                                                     VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetVideoSessionMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6850,8 +8265,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetVideoSessionMemoryRequirementsKHR(VkDevice dev
         intercept->PreCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount,
                                                                      pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetVideoSessionMemoryRequirementsKHR]) {
@@ -6859,12 +8278,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetVideoSessionMemoryRequirementsKHR(VkDevice dev
         intercept->PostCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount,
                                                                       pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                          uint32_t bindSessionMemoryInfoCount,
                                                          const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindVideoSessionMemoryKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6880,13 +8301,18 @@ VKAPI_ATTR VkResult VKAPI_CALL BindVideoSessionMemoryKHR(VkDevice device, VkVide
         intercept->PreCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos,
                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindVideoSessionMemoryKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount,
                                                            pBindSessionMemoryInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -6894,6 +8320,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionParametersKHR(VkDevice device,
                                                                const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator,
                                                                VkVideoSessionParametersKHR* pVideoSessionParameters) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6910,18 +8337,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionParametersKHR(VkDevice device,
         intercept->PreCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters,
                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters,
                                                                  record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL UpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
                                                                const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6936,17 +8369,23 @@ VKAPI_ATTR VkResult VKAPI_CALL UpdateVideoSessionParametersKHR(VkDevice device, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
                                                             const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -6961,14 +8400,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionParametersKHR(VkDevice device, VkV
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyVideoSessionParametersKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -6982,14 +8427,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7003,15 +8454,21 @@ VKAPI_ATTR void VKAPI_CALL CmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
                                                     const VkVideoCodingControlInfoKHR* pCodingControlInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdControlVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7025,14 +8482,20 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdControlVideoCodingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7046,14 +8509,20 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDecodeVideoKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7067,14 +8536,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7088,14 +8563,20 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndRenderingKHR(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndRenderingKHR(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderingKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderingKHR(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFeatures2KHR,
@@ -7110,15 +8591,21 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2KHR(VkPhysicalDevice physicalDevice,
                                                            VkPhysicalDeviceProperties2* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceProperties2KHR,
@@ -7133,15 +8620,21 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2KHR(VkPhysicalDevice phys
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                  VkFormatProperties2* pFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2KHR,
@@ -7157,16 +8650,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                           const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                           VkImageFormatProperties2* pImageFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2KHR,
@@ -7183,19 +8682,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhys
         intercept->PreCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo,
                                                                             pImageFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                       uint32_t* pQueueFamilyPropertyCount,
                                                                       VkQueueFamilyProperties2* pQueueFamilyProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2KHR,
@@ -7212,16 +8717,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                            pQueueFamilyProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                             pQueueFamilyProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                  VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2KHR,
@@ -7236,16 +8747,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
     VkSparseImageFormatProperties2* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2KHR,
@@ -7262,17 +8779,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
         intercept->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
                                                                                  pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
                                                                                   pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
                                                                uint32_t remoteDeviceIndex,
                                                                VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeaturesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7289,16 +8812,22 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, 
         intercept->PreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
                                                                     pPeerMemoryFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceGroupPeerMemoryFeaturesKHR(device, heapIndex, localDeviceIndex, remoteDeviceIndex, pPeerMemoryFeatures);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
                                                                      pPeerMemoryFeatures, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDeviceMaskKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7312,16 +8841,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, ui
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDeviceMaskKHR(commandBuffer, deviceMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDeviceMaskKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDeviceMaskKHR(commandBuffer, deviceMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                               uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
                                               uint32_t groupCountZ) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchBaseKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7337,15 +8872,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uin
         intercept->PreCallRecordCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
                                                    groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchBaseKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
                                                     groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL TrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkTrimCommandPoolKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7359,15 +8900,21 @@ VKAPI_ATTR void VKAPI_CALL TrimCommandPoolKHR(VkDevice device, VkCommandPool com
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordTrimCommandPoolKHR(device, commandPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchTrimCommandPoolKHR(device, commandPool, flags);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordTrimCommandPoolKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordTrimCommandPoolKHR(device, commandPool, flags, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                                 VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceGroupsKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -7383,19 +8930,25 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(VkInstance insta
         intercept->PreCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
                                                                  pPhysicalDeviceGroupProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
                                                                   pPhysicalDeviceGroupProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
     VkExternalBufferProperties* pExternalBufferProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferPropertiesKHR,
@@ -7412,17 +8965,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
         intercept->PreCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
                                                                              pExternalBufferProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
                                                                               pExternalBufferProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                        HANDLE* pHandle) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7436,18 +8995,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleKHR(VkDevice device, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                  HANDLE handle,
                                                                  VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryWin32HandlePropertiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7464,18 +9029,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device
         intercept->PreCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties,
                                                                   record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryWin32HandlePropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7489,17 +9060,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdKHR(VkDevice device, const VkMemoryGet
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryFdKHR(device, pGetFdInfo, pFd);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
                                                         VkMemoryFdPropertiesKHR* pMemoryFdProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryFdPropertiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7513,18 +9090,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdPropertiesKHR(VkDevice device, VkExter
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryFdPropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphorePropertiesKHR,
@@ -7541,17 +9124,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
         intercept->PreCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
                                                                                 pExternalSemaphoreProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
                                                                                  pExternalSemaphoreProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL
 ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportSemaphoreWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7566,18 +9155,24 @@ ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32Handl
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportSemaphoreWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
                                                           const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                           HANDLE* pHandle) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7591,17 +9186,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportSemaphoreFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7615,16 +9216,22 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImp
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportSemaphoreFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7638,18 +9245,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreFdKHR(VkDevice device, const VkSemaph
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSemaphoreFdKHR(device, pGetFdInfo, pFd);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                    VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                    const VkWriteDescriptorSet* pDescriptorWrites) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7665,17 +9278,23 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer
         intercept->PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                         pDescriptorWrites, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSetKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                          pDescriptorWrites, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                VkPipelineLayout layout, uint32_t set, const void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplateKHR,
@@ -7693,19 +9312,25 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
         intercept->PreCallRecordCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSetWithTemplateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
                                                                      record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device,
                                                                  const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                                  const VkAllocationCallbacks* pAllocator,
                                                                  VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorUpdateTemplateKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7722,18 +9347,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
         intercept->PreCallRecordCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
                                                                   record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorUpdateTemplateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                               const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorUpdateTemplateKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7749,16 +9380,22 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device, V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDescriptorUpdateTemplateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                               VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                               const void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateDescriptorSetWithTemplateKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7775,16 +9412,22 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
         intercept->PreCallRecordUpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchUpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUpdateDescriptorSetWithTemplateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRenderPass2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7798,17 +9441,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(VkDevice device, const VkRen
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                   const VkSubpassBeginInfo* pSubpassBeginInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7822,15 +9471,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                               const VkSubpassEndInfo* pSubpassEndInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdNextSubpass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7844,14 +9499,20 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdNextSubpass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7865,14 +9526,20 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndRenderPass2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainStatusKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7886,7 +9553,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(VkDevice device, VkSwapchai
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSwapchainStatusKHR(device, swapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSwapchainStatusKHR(device, swapchain);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainStatusKHR]) {
         auto lock = intercept->WriteLock();
@@ -7896,12 +9567,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(VkDevice device, VkSwapchai
         }
         intercept->PostCallRecordGetSwapchainStatusKHR(device, swapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                        const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
                                                                        VkExternalFenceProperties* pExternalFenceProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalFencePropertiesKHR,
@@ -7918,17 +9591,23 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysica
         intercept->PreCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
                                                                             pExternalFenceProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
                                                                              pExternalFenceProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(VkDevice device,
                                                          const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportFenceWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7942,17 +9621,23 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportFenceWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                       HANDLE* pHandle) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFenceWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7966,17 +9651,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkF
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceWin32HandleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportFenceFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -7990,16 +9681,22 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportF
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchImportFenceFdKHR(device, pImportFenceFdInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportFenceFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFenceFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8013,18 +9710,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFenceGetFd
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetFenceFdKHR(device, pGetFdInfo, pFd);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceFdKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
     VkPerformanceCounterDescriptionKHR* pCounterDescriptions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR,
@@ -8041,19 +9744,25 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQuer
         intercept->PreCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
             physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
         physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
             physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
     VkPhysicalDevice physicalDevice, const VkQueryPoolPerformanceCreateInfoKHR* pPerformanceQueryCreateInfo, uint32_t* pNumPasses) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR,
@@ -8070,15 +9779,21 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
         intercept->PreCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo,
                                                                                       pNumPasses, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo, pNumPasses);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo,
                                                                                        pNumPasses, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireProfilingLockKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8092,16 +9807,22 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireProfilingLockKHR(VkDevice device, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquireProfilingLockKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquireProfilingLockKHR(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireProfilingLockKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireProfilingLockKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL ReleaseProfilingLockKHR(VkDevice device) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseProfilingLockKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8115,16 +9836,22 @@ VKAPI_ATTR void VKAPI_CALL ReleaseProfilingLockKHR(VkDevice device) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordReleaseProfilingLockKHR(device, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchReleaseProfilingLockKHR(device);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseProfilingLockKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseProfilingLockKHR(device, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                         VkSurfaceCapabilities2KHR* pSurfaceCapabilities) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2KHR,
@@ -8141,13 +9868,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysic
         intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
                                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
                                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -8155,6 +9887,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
                                                                    const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                    uint32_t* pSurfaceFormatCount,
                                                                    VkSurfaceFormat2KHR* pSurfaceFormats) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormats2KHR,
@@ -8171,19 +9904,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
         intercept->PreCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
                                                                     pSurfaceFormats, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
                                                                      pSurfaceFormats, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                       VkDisplayProperties2KHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayProperties2KHR,
@@ -8199,18 +9938,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysical
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t* pPropertyCount,
                                                                            VkDisplayPlaneProperties2KHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR,
@@ -8227,18 +9972,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
         intercept->PreCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties,
                                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties,
                                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                             uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayModeProperties2KHR,
@@ -8254,18 +10005,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                                VkDisplayPlaneCapabilities2KHR* pCapabilities) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayPlaneCapabilities2KHR,
@@ -8281,17 +10038,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                           VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageMemoryRequirements2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8306,15 +10069,21 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
                                                            VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferMemoryRequirements2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8329,16 +10098,22 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(VkDevice device, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
                                                                 uint32_t* pSparseMemoryRequirementCount,
                                                                 VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSparseMemoryRequirements2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8356,19 +10131,25 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
         intercept->PreCallRecordGetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                      pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSparseMemoryRequirements2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                       pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversionKHR(VkDevice device,
                                                                const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator,
                                                                VkSamplerYcbcrConversion* pYcbcrConversion) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSamplerYcbcrConversionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8384,17 +10165,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversionKHR(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSamplerYcbcrConversionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                             const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySamplerYcbcrConversionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8409,15 +10196,21 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversionKHR(VkDevice device, VkS
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySamplerYcbcrConversionKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                                     const VkBindBufferMemoryInfo* pBindInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindBufferMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8431,17 +10224,23 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(VkDevice device, uint32_t bi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindBufferMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                                    const VkBindImageMemoryInfo* pBindInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindImageMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8455,17 +10254,23 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bin
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindImageMemory2KHR(device, bindInfoCount, pBindInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindImageMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupportKHR(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                             VkDescriptorSetLayoutSupport* pSupport) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutSupportKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8480,16 +10285,22 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupportKHR(VkDevice device, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutSupportKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                    uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCountKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -8505,17 +10316,23 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer
         intercept->PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                         stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectCountKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                          maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                           uint32_t maxDrawCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCountKHR,
@@ -8533,15 +10350,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer comman
         intercept->PreCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirectCountKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                 maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreCounterValueKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8555,7 +10378,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSemaphoreCounterValueKHR(device, semaphore, pValue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValueKHR]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
@@ -8565,10 +10392,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSe
         }
         intercept->PostCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitSemaphoresKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8582,7 +10411,11 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaph
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchWaitSemaphoresKHR(device, pWaitInfo, timeout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitSemaphoresKHR]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
@@ -8592,10 +10425,12 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaph
         }
         intercept->PostCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSignalSemaphoreKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8609,18 +10444,24 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(VkDevice device, const VkSemap
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSignalSemaphoreKHR(device, pSignalInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSignalSemaphoreKHR(device, pSignalInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSignalSemaphoreKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSignalSemaphoreKHR(device, pSignalInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
 GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount,
                                          VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFragmentShadingRatesKHR,
@@ -8637,19 +10478,25 @@ GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32
         intercept->PreCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
                                                                          pFragmentShadingRates, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount, pFragmentShadingRates);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
                                                                           pFragmentShadingRates, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                                         const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFragmentShadingRateKHR,
@@ -8665,15 +10512,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(VkCommandBuffer commandB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFragmentShadingRateKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                                  const VkRenderingAttachmentLocationInfoKHR* pLocationInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRenderingAttachmentLocationsKHR,
@@ -8690,16 +10543,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRenderingAttachmentLocationsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRenderingInputAttachmentIndicesKHR,
@@ -8717,15 +10576,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRenderingInputAttachmentIndicesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitForPresentKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8739,7 +10604,11 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchWaitForPresentKHR(device, swapchain, presentId, timeout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitForPresentKHR]) {
         auto lock = intercept->WriteLock();
@@ -8749,10 +10618,12 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR
         }
         intercept->PostCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8766,16 +10637,22 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferDeviceAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkDeviceAddress result = DispatchGetBufferDeviceAddressKHR(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddressKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferDeviceAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferOpaqueCaptureAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8790,16 +10667,22 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferOpaqueCaptureAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     uint64_t result = DispatchGetBufferOpaqueCaptureAddressKHR(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferOpaqueCaptureAddressKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferOpaqueCaptureAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device,
                                                                       const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8815,17 +10698,23 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice d
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     uint64_t result = DispatchGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDeferredOperationKHR(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                                           VkDeferredOperationKHR* pDeferredOperation) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDeferredOperationKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8839,17 +10728,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDeferredOperationKHR(VkDevice device, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateDeferredOperationKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                        const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDeferredOperationKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8863,14 +10758,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyDeferredOperationKHR(VkDevice device, VkDeferr
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyDeferredOperationKHR(device, operation, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyDeferredOperationKHR(device, operation, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyDeferredOperationKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDeferredOperationKHR(device, operation, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR uint32_t VKAPI_CALL GetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferredOperationKHR operation) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeferredOperationMaxConcurrencyKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8886,16 +10787,22 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetDeferredOperationMaxConcurrencyKHR(VkDevice de
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeferredOperationMaxConcurrencyKHR(device, operation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     uint32_t result = DispatchGetDeferredOperationMaxConcurrencyKHR(device, operation);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeferredOperationMaxConcurrencyKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeferredOperationMaxConcurrencyKHR(device, operation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDeferredOperationResultKHR(VkDevice device, VkDeferredOperationKHR operation) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeferredOperationResultKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8910,16 +10817,22 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeferredOperationResultKHR(VkDevice device, Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeferredOperationResultKHR(device, operation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDeferredOperationResultKHR(device, operation);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeferredOperationResultKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeferredOperationResultKHR(device, operation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DeferredOperationJoinKHR(VkDevice device, VkDeferredOperationKHR operation) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDeferredOperationJoinKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8933,18 +10846,24 @@ VKAPI_ATTR VkResult VKAPI_CALL DeferredOperationJoinKHR(VkDevice device, VkDefer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDeferredOperationJoinKHR(device, operation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchDeferredOperationJoinKHR(device, operation);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDeferredOperationJoinKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDeferredOperationJoinKHR(device, operation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                                   uint32_t* pExecutableCount,
                                                                   VkPipelineExecutablePropertiesKHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineExecutablePropertiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8961,13 +10880,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(VkDevice devic
         intercept->PreCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineExecutablePropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -8975,6 +10899,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableStatisticsKHR(VkDevice devic
                                                                   const VkPipelineExecutableInfoKHR* pExecutableInfo,
                                                                   uint32_t* pStatisticCount,
                                                                   VkPipelineExecutableStatisticKHR* pStatistics) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineExecutableStatisticsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -8991,19 +10916,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableStatisticsKHR(VkDevice devic
         intercept->PreCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineExecutableStatisticsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineExecutableInternalRepresentationsKHR,
@@ -9022,8 +10953,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
         intercept->PreCallRecordGetPipelineExecutableInternalRepresentationsKHR(
             device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount,
                                                                               pInternalRepresentations);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineExecutableInternalRepresentationsKHR]) {
@@ -9031,10 +10966,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
         intercept->PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
             device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkMapMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9048,16 +10985,22 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapI
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchMapMemory2KHR(device, pMemoryMapInfo, ppData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordMapMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUnmapMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9071,18 +11014,24 @@ VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkMemoryUn
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchUnmapMemory2KHR(device, pMemoryUnmapInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUnmapMemory2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR,
@@ -9099,20 +11048,26 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
         intercept->PreCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
                                                                                       pQualityLevelProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo, pQualityLevelProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
                                                                                        pQualityLevelProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
 GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
                                     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetEncodedVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9129,8 +11084,12 @@ GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionP
         intercept->PreCallRecordGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize,
                                                                     pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetEncodedVideoSessionParametersKHR]) {
@@ -9138,10 +11097,12 @@ GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionP
         intercept->PostCallRecordGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize,
                                                                      pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEncodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9155,14 +11116,20 @@ VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEncodeVideoKHR(commandBuffer, pEncodeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEncodeVideoKHR(commandBuffer, pEncodeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEncodeVideoKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEncodeVideoKHR(commandBuffer, pEncodeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9176,14 +11143,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEven
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetEvent2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9197,15 +11170,21 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEv
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdResetEvent2KHR(commandBuffer, event, stageMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResetEvent2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                              const VkDependencyInfo* pDependencyInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWaitEvents2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9219,14 +11198,20 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWaitEvents2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPipelineBarrier2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9240,15 +11225,21 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPipelineBarrier2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                                  uint32_t query) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteTimestamp2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9262,14 +11253,20 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteTimestamp2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSubmit2KHR, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -9283,7 +11280,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchQueueSubmit2KHR(queue, submitCount, pSubmits, fence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2KHR]) {
         auto lock = intercept->WriteLock();
@@ -9293,11 +11294,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
         }
         intercept->PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
                                                     VkDeviceSize dstOffset, uint32_t marker) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteBufferMarker2AMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9311,15 +11314,21 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteBufferMarker2AMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                      VkCheckpointData2NV* pCheckpointData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetQueueCheckpointData2NV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -9333,14 +11342,20 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pC
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueueCheckpointData2NV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9354,14 +11369,20 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBuffer2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9375,15 +11396,21 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                     const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBufferToImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9397,15 +11424,21 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyBufferToImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                     const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImageToBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9419,14 +11452,20 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyImageToBuffer2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBlitImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9440,14 +11479,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBlitImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResolveImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9461,14 +11506,20 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(VkCommandBuffer commandBuffer, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdResolveImage2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9482,15 +11533,21 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysIndirect2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
                                                                 VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceBufferMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9506,16 +11563,22 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceBufferMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                                VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9530,17 +11593,23 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(VkDevice device, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                                      uint32_t* pSparseMemoryRequirementCount,
                                                                      VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirementsKHR,
@@ -9559,17 +11628,23 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(VkDevice de
         intercept->PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                           pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSparseMemoryRequirementsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                            pSparseMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                   VkDeviceSize size, VkIndexType indexType) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9583,15 +11658,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindIndexBuffer2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfoKHR* pRenderingAreaInfo,
                                                           VkExtent2D* pGranularity) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRenderingAreaGranularityKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9606,15 +11687,21 @@ VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(VkDevice device, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRenderingAreaGranularityKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR* pInfo,
                                                               VkSubresourceLayout2KHR* pLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageSubresourceLayoutKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9629,15 +11716,21 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice device, c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSubresourceLayoutKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                          VkSubresourceLayout2KHR* pLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9652,16 +11745,22 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImag
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                uint32_t* pPropertyCount,
                                                                                VkCooperativeMatrixPropertiesKHR* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR,
@@ -9678,18 +11777,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(V
         intercept->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
                                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
                                                                                  record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                 uint16_t lineStipplePattern) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineStippleKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9703,16 +11808,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, u
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineStippleKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t* pTimeDomainCount,
                                                                             VkTimeDomainKHR* pTimeDomains) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR,
@@ -9729,19 +11840,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPh
         intercept->PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                               record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                           const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                           uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetCalibratedTimestampsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -9757,18 +11874,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsKHR(VkDevice device, uint3
         intercept->PreCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetCalibratedTimestampsKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                      const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorSets2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9782,14 +11905,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorSets2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushConstants2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9803,15 +11932,21 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(VkCommandBuffer commandBuffer, c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPushConstants2KHR(commandBuffer, pPushConstantsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPushConstants2KHR(commandBuffer, pPushConstantsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushConstants2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushConstants2KHR(commandBuffer, pPushConstantsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                     const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSet2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9825,15 +11960,21 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSet2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2KHR(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate2KHR,
@@ -9851,17 +11992,23 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2KHR(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSetWithTemplate2KHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo,
                                                                       record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDescriptorBufferOffsets2EXT,
@@ -9878,15 +12025,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsets2EXT(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDescriptorBufferOffsets2EXT(commandBuffer, pSetDescriptorBufferOffsetsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDescriptorBufferOffsets2EXT(commandBuffer, pSetDescriptorBufferOffsetsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDescriptorBufferOffsets2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDescriptorBufferOffsets2EXT(commandBuffer, pSetDescriptorBufferOffsetsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplers2EXT,
@@ -9905,19 +12058,25 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
         intercept->PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(commandBuffer,
                                                                             pBindDescriptorBufferEmbeddedSamplersInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindDescriptorBufferEmbeddedSamplers2EXT(commandBuffer, pBindDescriptorBufferEmbeddedSamplersInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(commandBuffer,
                                                                              pBindDescriptorBufferEmbeddedSamplersInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkDebugReportCallbackEXT* pCallback) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDebugReportCallbackEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -9931,18 +12090,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
     LayerCreateReportCallback(layer_data->debug_report, false, pCreateInfo, pCallback);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
                                                          const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDebugReportCallbackEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -9956,17 +12121,23 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
     LayerDestroyCallback(layer_data->debug_report, callback);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
                                                  VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location,
                                                  int32_t messageCode, const char* pLayerPrefix, const char* pMessage) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDebugReportMessageEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -9982,15 +12153,21 @@ VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugRep
         intercept->PreCallRecordDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix,
                                                       pMessage, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix, pMessage);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix,
                                                        pMessage, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDebugMarkerSetObjectTagEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10004,16 +12181,22 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchDebugMarkerSetObjectTagEXT(device, pTagInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDebugMarkerSetObjectTagEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDebugMarkerSetObjectNameEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10027,17 +12210,23 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
     layer_data->debug_report->SetMarkerObjectName(pNameInfo);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchDebugMarkerSetObjectNameEXT(device, pNameInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDebugMarkerSetObjectNameEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDebugMarkerBeginEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10051,14 +12240,20 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDebugMarkerBeginEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDebugMarkerEndEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10072,14 +12267,20 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDebugMarkerEndEXT(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDebugMarkerEndEXT(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDebugMarkerEndEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDebugMarkerEndEXT(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDebugMarkerInsertEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10093,16 +12294,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDebugMarkerInsertEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                               uint32_t bindingCount, const VkBuffer* pBuffers,
                                                               const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindTransformFeedbackBuffersEXT,
@@ -10120,17 +12327,23 @@ VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer co
         intercept->PreCallRecordCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets,
                                                                    pSizes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindTransformFeedbackBuffersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets,
                                                                     pSizes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                         uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
                                                         const VkDeviceSize* pCounterBufferOffsets) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginTransformFeedbackEXT,
@@ -10148,18 +12361,24 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedbackEXT(VkCommandBuffer commandB
         intercept->PreCallRecordCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
                                                              pCounterBufferOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
                                          pCounterBufferOffsets);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginTransformFeedbackEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount,
                                                               pCounterBuffers, pCounterBufferOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                       uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
                                                       const VkDeviceSize* pCounterBufferOffsets) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndTransformFeedbackEXT,
@@ -10176,17 +12395,23 @@ VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuf
         intercept->PreCallRecordCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
                                                            pCounterBufferOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
                                        pCounterBufferOffsets);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndTransformFeedbackEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers,
                                                             pCounterBufferOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                    VkQueryControlFlags flags, uint32_t index) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10200,15 +12425,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginQueryIndexedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                  uint32_t index) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10222,17 +12453,23 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndQueryIndexedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                        uint32_t firstInstance, VkBuffer counterBuffer,
                                                        VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                        uint32_t vertexStride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectByteCountEXT,
@@ -10249,17 +12486,23 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBu
         intercept->PreCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
                                                             counterBufferOffset, counterOffset, vertexStride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset,
                                         counterOffset, vertexStride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectByteCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
                                                              counterBufferOffset, counterOffset, vertexStride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCuModuleNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10273,17 +12516,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuModuleNVX(VkDevice device, const VkCuModu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCuModuleNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCuFunctionNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10297,16 +12546,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(VkDevice device, const VkCuFu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCuFunctionNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCuModuleNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10320,15 +12575,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuModuleNVX(VkDevice device, VkCuModuleNVX mod
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyCuModuleNVX(device, module, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyCuModuleNVX(device, module, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCuModuleNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCuModuleNVX(device, module, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function,
                                                 const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCuFunctionNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10342,14 +12603,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyCuFunctionNVX(device, function, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyCuFunctionNVX(device, function, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCuFunctionNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCuFunctionNVX(device, function, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCuLaunchKernelNVX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10363,14 +12630,20 @@ VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCuLaunchKernelNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageViewHandleNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10384,16 +12657,22 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, const VkIm
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageViewHandleNVX(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     uint32_t result = DispatchGetImageViewHandleNVX(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageViewHandleNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageViewHandleNVX(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, VkImageView imageView,
                                                       VkImageViewAddressPropertiesNVX* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageViewAddressNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10407,18 +12686,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, VkImageVi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageViewAddressNVX(device, imageView, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetImageViewAddressNVX(device, imageView, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageViewAddressNVX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageViewAddressNVX(device, imageView, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                    uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCountAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10434,17 +12719,23 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer
         intercept->PreCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                         stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectCountAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                          maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                           uint32_t maxDrawCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCountAMD,
@@ -10462,16 +12753,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(VkCommandBuffer comman
         intercept->PreCallRecordCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirectCountAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                 maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetShaderInfoAMD(VkDevice device, VkPipeline pipeline, VkShaderStageFlagBits shaderStage,
                                                 VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderInfoAMD, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10485,12 +12782,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderInfoAMD(VkDevice device, VkPipeline pipe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderInfoAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -10498,6 +12800,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderInfoAMD(VkDevice device, VkPipeline pipe
 VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance instance,
                                                                 const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
                                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateStreamDescriptorSurfaceGGP, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -10511,12 +12814,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -10525,6 +12833,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
     VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType,
     VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalImageFormatPropertiesNV,
@@ -10541,20 +12850,26 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
         intercept->PreCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
             physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceExternalImageFormatPropertiesNV(physicalDevice, format, type, tiling, usage, flags,
                                                                                externalHandleType, pExternalImageFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
             physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory,
                                                       VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryWin32HandleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10568,12 +12883,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(VkDevice device, VkDeviceM
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryWin32HandleNV(device, memory, handleType, pHandle);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryWin32HandleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -10581,6 +12901,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(VkDevice device, VkDeviceM
 #ifdef VK_USE_PLATFORM_VI_NN
 VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateViSurfaceNN, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -10594,18 +12915,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkVi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_VI_NN
 VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                            const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginConditionalRenderingEXT,
@@ -10621,14 +12948,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer comma
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginConditionalRenderingEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndConditionalRenderingEXT,
@@ -10644,15 +12977,21 @@ VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(VkCommandBuffer command
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndConditionalRenderingEXT(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndConditionalRenderingEXT(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndConditionalRenderingEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndConditionalRenderingEXT(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                     const VkViewportWScalingNV* pViewportWScalings) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWScalingNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10668,15 +13007,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingNV(VkCommandBuffer commandBuffe
         intercept->PreCallRecordCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings,
                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWScalingNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings,
                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10690,17 +13035,23 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordReleaseDisplayEXT(physicalDevice, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchReleaseDisplayEXT(physicalDevice, display);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseDisplayEXT(physicalDevice, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireXlibDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10714,17 +13065,23 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquireXlibDisplayEXT(physicalDevice, dpy, display);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                         VkDisplayKHR* pDisplay) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRandROutputDisplayEXT,
@@ -10739,18 +13096,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physica
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                         VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2EXT,
@@ -10766,18 +13129,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities,
                                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DisplayPowerControlEXT(VkDevice device, VkDisplayKHR display,
                                                       const VkDisplayPowerInfoEXT* pDisplayPowerInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDisplayPowerControlEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10791,17 +13160,23 @@ VKAPI_ATTR VkResult VKAPI_CALL DisplayPowerControlEXT(VkDevice device, VkDisplay
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchDisplayPowerControlEXT(device, display, pDisplayPowerInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDisplayPowerControlEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL RegisterDeviceEventEXT(VkDevice device, const VkDeviceEventInfoEXT* pDeviceEventInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkRegisterDeviceEventEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10815,18 +13190,24 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDeviceEventEXT(VkDevice device, const VkD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordRegisterDeviceEventEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL RegisterDisplayEventEXT(VkDevice device, VkDisplayKHR display,
                                                        const VkDisplayEventInfoEXT* pDisplayEventInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkRegisterDisplayEventEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10841,17 +13222,23 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDisplayEventEXT(VkDevice device, VkDispla
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordRegisterDisplayEventEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                       VkSurfaceCounterFlagBitsEXT counter, uint64_t* pCounterValue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainCounterEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10865,7 +13252,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(VkDevice device, VkSwapcha
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainCounterEXT]) {
         auto lock = intercept->WriteLock();
@@ -10875,11 +13266,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(VkDevice device, VkSwapcha
         }
         intercept->PostCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
                                                              VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRefreshCycleDurationGOOGLE, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10894,7 +13287,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(VkDevice device, Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRefreshCycleDurationGOOGLE]) {
         auto lock = intercept->WriteLock();
@@ -10904,12 +13301,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(VkDevice device, Vk
         }
         intercept->PostCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
                                                                uint32_t* pPresentationTimingCount,
                                                                VkPastPresentationTimingGOOGLE* pPresentationTimings) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPastPresentationTimingGOOGLE, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -10926,7 +13325,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(VkDevice device, 
         intercept->PreCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings,
                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPastPresentationTimingGOOGLE]) {
         auto lock = intercept->WriteLock();
@@ -10937,11 +13340,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(VkDevice device, 
         intercept->PostCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings,
                                                                  record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                      uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDiscardRectangleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10957,15 +13362,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuff
         intercept->PreCallRecordCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount,
                                                           pDiscardRectangles, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount, pDiscardRectangles);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount,
                                                            pDiscardRectangles, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDiscardRectangleEnableEXT,
@@ -10981,15 +13392,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEnableEXT(VkCommandBuffer comma
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer,
                                                          VkDiscardRectangleModeEXT discardRectangleMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDiscardRectangleModeEXT,
@@ -11005,15 +13422,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleModeEXT(VkCommandBuffer command
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL SetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
                                              const VkHdrMetadataEXT* pMetadata) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetHdrMetadataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11027,16 +13450,22 @@ VKAPI_ATTR void VKAPI_CALL SetHdrMetadataEXT(VkDevice device, uint32_t swapchain
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetHdrMetadataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_IOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateIOSSurfaceMVK, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -11050,12 +13479,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -11063,6 +13497,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateMacOSSurfaceMVK, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -11076,17 +13511,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetDebugUtilsObjectNameEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11100,17 +13541,23 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
     layer_data->debug_report->SetUtilsObjectName(pNameInfo);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetDebugUtilsObjectNameEXT(device, pNameInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDebugUtilsObjectNameEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetDebugUtilsObjectTagEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11124,16 +13571,22 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetDebugUtilsObjectTagEXT(device, pTagInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDebugUtilsObjectTagEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueBeginDebugUtilsLabelEXT, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -11148,15 +13601,21 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
     layer_data->debug_report->BeginQueueDebugUtilsLabel(queue, pLabelInfo);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueEndDebugUtilsLabelEXT, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -11170,15 +13629,21 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueEndDebugUtilsLabelEXT(queue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchQueueEndDebugUtilsLabelEXT(queue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
     layer_data->debug_report->EndQueueDebugUtilsLabel(queue);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueEndDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueEndDebugUtilsLabelEXT(queue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueInsertDebugUtilsLabelEXT, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -11193,15 +13658,21 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
     layer_data->debug_report->InsertQueueDebugUtilsLabel(queue, pLabelInfo);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginDebugUtilsLabelEXT,
@@ -11216,14 +13687,20 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -11237,14 +13714,20 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdEndDebugUtilsLabelEXT(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdEndDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdInsertDebugUtilsLabelEXT,
@@ -11259,17 +13742,23 @@ VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
                                                             const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkDebugUtilsMessengerEXT* pMessenger) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDebugUtilsMessengerEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -11283,18 +13772,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
     LayerCreateMessengerCallback(layer_data->debug_report, false, pCreateInfo, pMessenger);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                          const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDebugUtilsMessengerEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -11308,17 +13803,23 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
     LayerDestroyCallback(layer_data->debug_report, messenger);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                       VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSubmitDebugUtilsMessageEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -11333,16 +13834,22 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                          VkAndroidHardwareBufferPropertiesANDROID* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAndroidHardwareBufferPropertiesANDROID,
@@ -11359,19 +13866,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAndroidHardwareBufferPropertiesANDROID]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                                      struct AHardwareBuffer** pBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryAndroidHardwareBufferANDROID, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11387,13 +13900,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice de
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryAndroidHardwareBufferANDROID]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -11403,6 +13921,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device
                                                                  uint32_t createInfoCount,
                                                                  const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
                                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateExecutionGraphPipelinesAMDX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11419,19 +13938,25 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device
         intercept->PreCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                   pPipelines, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateExecutionGraphPipelinesAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                    pPipelines, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                         VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetExecutionGraphPipelineScratchSizeAMDX,
@@ -11448,19 +13973,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(VkDevice
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetExecutionGraphPipelineScratchSizeAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                                       const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                                       uint32_t* pNodeIndex) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetExecutionGraphPipelineNodeIndexAMDX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11477,17 +14008,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice d
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetExecutionGraphPipelineNodeIndexAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX,
@@ -11503,16 +14040,22 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer c
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdInitializeGraphScratchMemoryAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchGraphAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -11526,15 +14069,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                         const VkDispatchGraphCountInfoAMDX* pCountInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchGraphIndirectAMDX,
@@ -11550,15 +14099,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                              VkDeviceAddress countInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchGraphIndirectCountAMDX,
@@ -11574,16 +14129,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectCountAMDX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                     const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetSampleLocationsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -11597,15 +14158,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetSampleLocationsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice, VkSampleCountFlagBits samples,
                                                                      VkMultisamplePropertiesEXT* pMultisampleProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMultisamplePropertiesEXT,
@@ -11622,16 +14189,22 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalD
         intercept->PreCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties,
                                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties,
                                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
                                                                       VkImageDrmFormatModifierPropertiesEXT* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageDrmFormatModifierPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11647,18 +14220,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageDrmFormatModifierPropertiesEXT(VkDevice d
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageDrmFormatModifierPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                      VkImageLayout imageLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindShadingRateImageNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -11672,16 +14251,22 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer commandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindShadingRateImageNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                               uint32_t viewportCount,
                                                               const VkShadingRatePaletteNV* pShadingRatePalettes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportShadingRatePaletteNV,
@@ -11699,17 +14284,23 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer co
         intercept->PreCallRecordCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount,
                                                                    pShadingRatePalettes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportShadingRatePaletteNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount,
                                                                     pShadingRatePalettes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
                                                      uint32_t customSampleOrderCount,
                                                      const VkCoarseSampleOrderCustomNV* pCustomSampleOrders) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoarseSampleOrderNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -11725,18 +14316,24 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuff
         intercept->PreCallRecordCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount,
                                                           pCustomSampleOrders, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount, pCustomSampleOrders);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoarseSampleOrderNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount,
                                                            pCustomSampleOrders, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureNV(VkDevice device,
                                                              const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator,
                                                              VkAccelerationStructureNV* pAccelerationStructure) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateAccelerationStructureNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11752,17 +14349,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureNV(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                           const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyAccelerationStructureNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11777,15 +14380,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureNV(VkDevice device, VkAcc
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyAccelerationStructureNV(device, accelerationStructure, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureMemoryRequirementsNV,
@@ -11803,16 +14412,22 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsNV(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                                  const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindAccelerationStructureMemoryNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11827,12 +14442,17 @@ VKAPI_ATTR VkResult VKAPI_CALL BindAccelerationStructureMemoryNV(VkDevice device
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindAccelerationStructureMemoryNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -11841,6 +14461,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(VkCommandBuffer comma
                                                            VkDeviceSize instanceOffset, VkBool32 update,
                                                            VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                            VkBuffer scratch, VkDeviceSize scratchOffset) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructureNV,
@@ -11858,17 +14479,23 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(VkCommandBuffer comma
         intercept->PreCallRecordCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst,
                                                                 src, scratch, scratchOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch,
                                             scratchOffset);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst,
                                                                  src, scratch, scratchOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
                                                           VkAccelerationStructureNV src, VkCopyAccelerationStructureModeKHR mode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyAccelerationStructureNV,
@@ -11884,11 +14511,16 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureNV(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyAccelerationStructureNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
@@ -11898,6 +14530,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffe
                                           VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                           VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                           uint32_t width, uint32_t height, uint32_t depth) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -11919,10 +14552,14 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffe
                                                callableShaderBindingTableBuffer, callableShaderBindingOffset,
                                                callableShaderBindingStride, width, height, depth, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset, missShaderBindingTableBuffer,
                            missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset,
                            hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset,
                            callableShaderBindingStride, width, height, depth);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset,
@@ -11931,10 +14568,12 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffe
                                                 callableShaderBindingTableBuffer, callableShaderBindingOffset,
                                                 callableShaderBindingStride, width, height, depth, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                                   uint32_t groupCount, size_t dataSize, void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11951,18 +14590,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesKHR(VkDevice devic
         intercept->PreCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingShaderGroupHandlesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData,
                                                                     record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesNV(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                                  uint32_t groupCount, size_t dataSize, void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -11979,18 +14624,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesNV(VkDevice device
         intercept->PreCallRecordGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData,
                                                                   record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingShaderGroupHandlesNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                                 size_t dataSize, void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureHandleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12006,12 +14657,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureHandleNV(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureHandleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -12020,6 +14676,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(VkCommandB
                                                                       const VkAccelerationStructureNV* pAccelerationStructures,
                                                                       VkQueryType queryType, VkQueryPool queryPool,
                                                                       uint32_t firstQuery) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV,
@@ -12038,17 +14695,23 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(VkCommandB
         intercept->PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteAccelerationStructuresPropertiesNV(commandBuffer, accelerationStructureCount, pAccelerationStructures,
                                                        queryType, queryPool, firstQuery);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteAccelerationStructuresPropertiesNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteAccelerationStructuresPropertiesNV(
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCompileDeferredNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12062,18 +14725,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CompileDeferredNV(VkDevice device, VkPipeline pip
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCompileDeferredNV(device, pipeline, shader, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCompileDeferredNV(device, pipeline, shader);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCompileDeferredNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCompileDeferredNV(device, pipeline, shader, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                  const void* pHostPointer,
                                                                  VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryHostPointerPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12090,18 +14759,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryHostPointerPropertiesEXT(VkDevice device
         intercept->PreCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties,
                                                                   record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryHostPointerPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties,
                                                                    record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                    VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteBufferMarkerAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -12116,16 +14791,22 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteBufferMarkerAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                             uint32_t* pTimeDomainCount,
                                                                             VkTimeDomainKHR* pTimeDomains) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
@@ -12142,19 +14823,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPh
         intercept->PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                               record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
                                                           const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                           uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetCalibratedTimestampsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12170,17 +14857,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(VkDevice device, uint3
         intercept->PreCallRecordGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetCalibratedTimestampsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -12194,15 +14887,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uin
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       uint32_t drawCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectNV,
@@ -12217,16 +14916,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                            uint32_t maxDrawCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountNV,
@@ -12244,17 +14949,23 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comma
         intercept->PreCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                 maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCountNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                  maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                           uint32_t exclusiveScissorCount,
                                                           const VkBool32* pExclusiveScissorEnables) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetExclusiveScissorEnableNV,
@@ -12272,16 +14983,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorEnableNV(VkCommandBuffer comman
         intercept->PreCallRecordCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
                                                                pExclusiveScissorEnables, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetExclusiveScissorEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
                                                                 pExclusiveScissorEnables, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                     uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetExclusiveScissorNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -12297,15 +15014,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffe
         intercept->PreCallRecordCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
                                                          pExclusiveScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetExclusiveScissorNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
                                                           pExclusiveScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCheckpointNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -12319,15 +15042,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(VkCommandBuffer commandBuffer, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCheckpointNV(commandBuffer, pCheckpointMarker, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCheckpointNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCheckpointNV(commandBuffer, pCheckpointMarker, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                     VkCheckpointDataNV* pCheckpointData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetQueueCheckpointDataNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -12341,15 +15070,21 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCh
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueueCheckpointDataNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
                                                              const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkInitializePerformanceApiINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12364,16 +15099,22 @@ VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchInitializePerformanceApiINTEL(device, pInitializeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordInitializePerformanceApiINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL UninitializePerformanceApiINTEL(VkDevice device) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUninitializePerformanceApiINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12388,15 +15129,21 @@ VKAPI_ATTR void VKAPI_CALL UninitializePerformanceApiINTEL(VkDevice device) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordUninitializePerformanceApiINTEL(device, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchUninitializePerformanceApiINTEL(device);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUninitializePerformanceApiINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordUninitializePerformanceApiINTEL(device, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer,
                                                             const VkPerformanceMarkerInfoINTEL* pMarkerInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPerformanceMarkerINTEL,
@@ -12412,17 +15159,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceMarkerINTEL(VkCommandBuffer comm
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPerformanceMarkerINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer commandBuffer,
                                                                   const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPerformanceStreamMarkerINTEL,
@@ -12438,17 +15191,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceStreamMarkerINTEL(VkCommandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPerformanceStreamMarkerINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
                                                               const VkPerformanceOverrideInfoINTEL* pOverrideInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPerformanceOverrideINTEL,
@@ -12464,18 +15223,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceOverrideINTEL(VkCommandBuffer co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPerformanceOverrideINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquirePerformanceConfigurationINTEL(VkDevice device,
                                                                     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
                                                                     VkPerformanceConfigurationINTEL* pConfiguration) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquirePerformanceConfigurationINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12491,18 +15256,24 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquirePerformanceConfigurationINTEL(VkDevice dev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordAcquirePerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ReleasePerformanceConfigurationINTEL(VkDevice device,
                                                                     VkPerformanceConfigurationINTEL configuration) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleasePerformanceConfigurationINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12518,17 +15289,23 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleasePerformanceConfigurationINTEL(VkDevice dev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordReleasePerformanceConfigurationINTEL(device, configuration, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchReleasePerformanceConfigurationINTEL(device, configuration);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordReleasePerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleasePerformanceConfigurationINTEL(device, configuration, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSetPerformanceConfigurationINTEL, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -12544,18 +15321,24 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSetPerformanceConfigurationINTEL(VkQueue que
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueSetPerformanceConfigurationINTEL(queue, configuration, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchQueueSetPerformanceConfigurationINTEL(queue, configuration);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSetPerformanceConfigurationINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueSetPerformanceConfigurationINTEL(queue, configuration, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPerformanceParameterINTEL(VkDevice device, VkPerformanceParameterTypeINTEL parameter,
                                                             VkPerformanceValueINTEL* pValue) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPerformanceParameterINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12570,16 +15353,22 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPerformanceParameterINTEL(VkDevice device, VkP
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPerformanceParameterINTEL(device, parameter, pValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPerformanceParameterINTEL(device, parameter, pValue);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPerformanceParameterINTEL]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPerformanceParameterINTEL(device, parameter, pValue, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL SetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLocalDimmingAMD, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12593,17 +15382,23 @@ VKAPI_ATTR void VKAPI_CALL SetLocalDimmingAMD(VkDevice device, VkSwapchainKHR sw
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetLocalDimmingAMD(device, swapChain, localDimmingEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchSetLocalDimmingAMD(device, swapChain, localDimmingEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLocalDimmingAMD]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetLocalDimmingAMD(device, swapChain, localDimmingEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance,
                                                              const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateImagePipeSurfaceFUCHSIA, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -12617,12 +15412,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -12630,6 +15430,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateMetalSurfaceEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -12643,17 +15444,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddressEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12667,18 +15474,24 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferDeviceAddressEXT(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkDeviceAddress result = DispatchGetBufferDeviceAddressEXT(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddressEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferDeviceAddressEXT(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(VkPhysicalDevice physicalDevice,
                                                                               uint32_t* pPropertyCount,
                                                                               VkCooperativeMatrixPropertiesNV* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesNV,
@@ -12695,18 +15508,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(Vk
         intercept->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice physicalDevice, uint32_t* pCombinationCount, VkFramebufferMixedSamplesCombinationNV* pCombinations) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV,
@@ -12723,14 +15542,19 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamples
         intercept->PreCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount,
                                                                                                 pCombinations, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount, pCombinations);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount,
                                                                                                  pCombinations, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -12739,6 +15563,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                         uint32_t* pPresentModeCount,
                                                                         VkPresentModeKHR* pPresentModes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModes2EXT,
@@ -12755,18 +15580,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
         intercept->PreCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
                                                                          pPresentModes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount, pPresentModes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
                                                                           pPresentModes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireFullScreenExclusiveModeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12781,16 +15612,22 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquireFullScreenExclusiveModeEXT(device, swapchain);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireFullScreenExclusiveModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseFullScreenExclusiveModeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12805,18 +15642,24 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(VkDevice device
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchReleaseFullScreenExclusiveModeEXT(device, swapchain);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseFullScreenExclusiveModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                      const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                      VkDeviceGroupPresentModeFlagsKHR* pModes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModes2EXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12832,19 +15675,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice de
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceGroupSurfacePresentModes2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateHeadlessSurfaceEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -12858,17 +15707,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                 uint16_t lineStipplePattern) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineStippleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -12882,14 +15737,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(VkCommandBuffer commandBuffer, u
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineStippleEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetQueryPoolEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -12903,14 +15764,20 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(VkDevice device, VkQueryPool queryP
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordResetQueryPoolEXT(device, queryPool, firstQuery, queryCount, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordResetQueryPoolEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordResetQueryPoolEXT(device, queryPool, firstQuery, queryCount, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCullModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -12924,14 +15791,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCullModeEXT(commandBuffer, cullMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCullModeEXT(commandBuffer, cullMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCullModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCullModeEXT(commandBuffer, cullMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFrontFaceEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -12945,14 +15818,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkF
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetFrontFaceEXT(commandBuffer, frontFace, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetFrontFaceEXT(commandBuffer, frontFace);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFrontFaceEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFrontFaceEXT(commandBuffer, frontFace, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveTopologyEXT,
@@ -12967,15 +15846,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveTopologyEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                       const VkViewport* pViewports) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWithCountEXT,
@@ -12990,15 +15875,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCountEXT(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWithCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                      const VkRect2D* pScissors) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetScissorWithCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13012,16 +15903,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCountEXT(VkCommandBuffer commandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetScissorWithCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                     const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                     const VkDeviceSize* pSizes, const VkDeviceSize* pStrides) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindVertexBuffers2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13037,15 +15934,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffe
         intercept->PreCallRecordCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
                                                          pStrides, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindVertexBuffers2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
                                                           pStrides, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13059,14 +15962,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthTestEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13080,14 +15989,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthWriteEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthCompareOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13101,14 +16016,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthCompareOpEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBoundsTestEnableEXT,
@@ -13124,14 +16045,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBoundsTestEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilTestEnableEXT,
@@ -13146,15 +16073,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnableEXT(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilTestEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                               VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13169,14 +16102,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkS
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetStencilOpEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMemoryToImageEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13190,16 +16129,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCop
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToImageEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyImageToMemoryEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13213,16 +16158,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCop
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyImageToMemoryEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyImageToImageEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13236,17 +16187,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(VkDevice device, const VkCopy
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyImageToImageEXT(device, pCopyImageToImageInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyImageToImageEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                         const VkHostImageLayoutTransitionInfoEXT* pTransitions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkTransitionImageLayoutEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13260,17 +16217,23 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(VkDevice device, uint32_
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchTransitionImageLayoutEXT(device, transitionCount, pTransitions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordTransitionImageLayoutEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                          VkSubresourceLayout2KHR* pLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout2EXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13285,14 +16248,20 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImag
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseSwapchainImagesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13306,18 +16275,24 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(VkDevice device, const 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchReleaseSwapchainImagesEXT(device, pReleaseInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseSwapchainImagesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
                                                                     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
                                                                     VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetGeneratedCommandsMemoryRequirementsNV,
@@ -13334,16 +16309,22 @@ VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(VkDevice dev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetGeneratedCommandsMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
                                                             const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPreprocessGeneratedCommandsNV,
@@ -13359,15 +16340,21 @@ VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsNV(VkCommandBuffer comm
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdPreprocessGeneratedCommandsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                                          const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdExecuteGeneratedCommandsNV,
@@ -13384,15 +16371,21 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsNV(VkCommandBuffer command
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdExecuteGeneratedCommandsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                         VkPipeline pipeline, uint32_t groupIndex) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindPipelineShaderGroupNV,
@@ -13409,17 +16402,23 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipelineShaderGroupNV(VkCommandBuffer commandB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindPipelineShaderGroupNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutNV(VkDevice device,
                                                               const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
                                                               VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateIndirectCommandsLayoutNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13436,18 +16435,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutNV(VkDevice device,
         intercept->PreCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
                                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateIndirectCommandsLayoutNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
                                                            const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyIndirectCommandsLayoutNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13462,14 +16467,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(VkDevice device, VkIn
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyIndirectCommandsLayoutNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBias2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13483,14 +16494,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBias2EXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireDrmDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -13504,17 +16521,23 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(VkPhysicalDevice physicalDev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquireDrmDisplayEXT(physicalDevice, drmFd, display);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
                                                 VkDisplayKHR* display) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDrmDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -13528,18 +16551,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(VkPhysicalDevice physicalDevice,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator,
                                                         VkPrivateDataSlot* pPrivateDataSlot) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePrivateDataSlotEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13553,17 +16582,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(VkDevice device, const V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePrivateDataSlotEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot,
                                                      const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPrivateDataSlotEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13577,15 +16612,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlotEXT(VkDevice device, VkPrivateD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPrivateDataSlotEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                                  VkPrivateDataSlot privateDataSlot, uint64_t data) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetPrivateDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13599,17 +16640,23 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateDataEXT(VkDevice device, VkObjectType o
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetPrivateDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                              VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPrivateDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13623,15 +16670,21 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(VkDevice device, VkObjectType objec
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPrivateDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCudaModuleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13645,16 +16698,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(VkDevice device, const VkCudaM
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCudaModuleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetCudaModuleCacheNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13668,17 +16727,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCudaModuleCacheNV(VkDevice device, VkCudaModul
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetCudaModuleCacheNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCudaFunctionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13692,16 +16757,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaFunctionNV(VkDevice device, const VkCud
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateCudaFunctionNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCudaModuleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13715,15 +16786,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV m
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyCudaModuleNV(device, module, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyCudaModuleNV(device, module, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCudaModuleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCudaModuleNV(device, module, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
                                                  const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCudaFunctionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13737,14 +16814,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyCudaFunctionNV(VkDevice device, VkCudaFunction
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyCudaFunctionNV(device, function, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyCudaFunctionNV(device, function, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyCudaFunctionNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyCudaFunctionNV(device, function, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCudaLaunchKernelNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13758,15 +16841,21 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCudaLaunchKernelNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkExportMetalObjectsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13780,16 +16869,22 @@ VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalO
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchExportMetalObjectsEXT(device, pMetalObjectsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordExportMetalObjectsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                          VkDeviceSize* pLayoutSizeInBytes) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutSizeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13804,15 +16899,21 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDesc
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutSizeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescriptorSetLayout layout, uint32_t binding,
                                                                   VkDeviceSize* pOffset) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutBindingOffsetEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13828,16 +16929,22 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutBindingOffsetEXT(VkDevice devic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutBindingOffsetEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
                                             void* pDescriptor) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13851,15 +16958,21 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorEXT(VkDevice device, const VkDescriptorG
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                        const VkDescriptorBufferBindingInfoEXT* pBindingInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorBuffersEXT,
@@ -13874,16 +16987,22 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorBuffersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                             VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                             const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDescriptorBufferOffsetsEXT,
@@ -13901,18 +17020,24 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer comm
         intercept->PreCallRecordCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
                                                                  pBufferIndices, pOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pBufferIndices,
                                              pOffsets);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDescriptorBufferOffsetsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
                                                                   pBufferIndices, pOffsets, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
                                                                       VkPipelineBindPoint pipelineBindPoint,
                                                                       VkPipelineLayout layout, uint32_t set) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT,
@@ -13931,18 +17056,24 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandB
         intercept->PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set,
                                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set,
                                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                        const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
                                                                        void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferOpaqueCaptureDescriptorDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13958,19 +17089,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                       const VkImageCaptureDescriptorDataInfoEXT* pInfo,
                                                                       void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageOpaqueCaptureDescriptorDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -13986,19 +17123,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDescriptorDataEXT(VkDevice d
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                           const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
                                                                           void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageViewOpaqueCaptureDescriptorDataEXT,
@@ -14015,19 +17158,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageViewOpaqueCaptureDescriptorDataEXT(VkDevi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                         const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
                                                                         void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSamplerOpaqueCaptureDescriptorDataEXT,
@@ -14044,18 +17193,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
     VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT,
@@ -14072,18 +17227,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureOpaqueCaptureDescriptorDa
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(VkCommandBuffer commandBuffer, VkFragmentShadingRateNV shadingRate,
                                                            const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFragmentShadingRateEnumNV,
@@ -14099,15 +17260,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(VkCommandBuffer comma
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
                                                      VkDeviceFaultInfoEXT* pFaultInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceFaultInfoEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14121,17 +17288,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFa
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceFaultInfoEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireWinrtDisplayNV, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14145,7 +17318,11 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchAcquireWinrtDisplayNV(physicalDevice, display);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
@@ -14155,11 +17332,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
         }
         intercept->PostCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId,
                                                  VkDisplayKHR* pDisplay) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetWinrtDisplayNV, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14173,7 +17352,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
@@ -14183,6 +17366,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
         }
         intercept->PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -14190,6 +17374,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDirectFBSurfaceEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -14203,17 +17388,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
                                                                                uint32_t queueFamilyIndex, IDirectFB* dfb) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDirectFBPresentationSupportEXT,
@@ -14229,11 +17420,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkBool32 result = DispatchGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -14242,6 +17438,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, u
                                                 const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                                 uint32_t vertexAttributeDescriptionCount,
                                                 const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetVertexInputEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14258,19 +17455,25 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, u
         intercept->PreCallRecordCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions,
                                                      vertexAttributeDescriptionCount, pVertexAttributeDescriptions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions,
                                  vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetVertexInputEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions,
                                                       vertexAttributeDescriptionCount, pVertexAttributeDescriptions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(VkDevice device,
                                                             const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                             zx_handle_t* pZirconHandle) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryZirconHandleFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14285,18 +17488,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
 GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
                                        VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryZirconHandlePropertiesFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14314,8 +17523,12 @@ GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTy
         intercept->PreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle,
                                                                        pMemoryZirconHandleProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle, pMemoryZirconHandleProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA]) {
@@ -14323,11 +17536,13 @@ GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTy
         intercept->PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle,
                                                                         pMemoryZirconHandleProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportSemaphoreZirconHandleFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14342,18 +17557,24 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportSemaphoreZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                                zx_handle_t* pZirconHandle) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreZirconHandleFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14368,12 +17589,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreZirconHandleFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -14381,6 +17607,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(VkDevice device,
                                                              const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator,
                                                              VkBufferCollectionFUCHSIA* pCollection) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateBufferCollectionFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14395,17 +17622,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateBufferCollectionFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetBufferCollectionImageConstraintsFUCHSIA,
@@ -14423,18 +17656,24 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordSetBufferCollectionImageConstraintsFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetBufferCollectionBufferConstraintsFUCHSIA,
@@ -14452,7 +17691,11 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA]) {
@@ -14460,11 +17703,13 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
         intercept->PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo,
                                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                           const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyBufferCollectionFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14479,15 +17724,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(VkDevice device, VkBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyBufferCollectionFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyBufferCollectionFUCHSIA(device, collection, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                     VkBufferCollectionPropertiesFUCHSIA* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferCollectionPropertiesFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14503,19 +17754,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(VkDevice dev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetBufferCollectionPropertiesFUCHSIA]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_FUCHSIA
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass,
                                                                              VkExtent2D* pMaxWorkgroupSize) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
@@ -14533,17 +17790,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSubpassShadingHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14557,15 +17820,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSubpassShadingHUAWEI(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSubpassShadingHUAWEI(commandBuffer);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSubpassShadingHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSubpassShadingHUAWEI(commandBuffer, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                        VkImageLayout imageLayout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindInvocationMaskHUAWEI,
@@ -14580,16 +17849,22 @@ VKAPI_ATTR void VKAPI_CALL CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindInvocationMaskHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(VkDevice device,
                                                         const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                                         VkRemoteAddressNV* pAddress) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryRemoteAddressNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14603,17 +17878,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryRemoteAddressNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
                                                         VkBaseOutStructure* pPipelineProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelinePropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14627,16 +17908,22 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(VkDevice device, const V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelinePropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPatchControlPointsEXT,
@@ -14651,14 +17938,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(VkCommandBuffer commandBu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPatchControlPointsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizerDiscardEnableEXT,
@@ -14674,14 +17967,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer comm
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizerDiscardEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBiasEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14695,14 +17994,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBiasEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLogicOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14716,14 +18021,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLog
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetLogicOpEXT(commandBuffer, logicOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetLogicOpEXT(commandBuffer, logicOp);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLogicOpEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLogicOpEXT(commandBuffer, logicOp, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveRestartEnableEXT,
@@ -14739,16 +18050,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(VkCommandBuffer comma
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPrimitiveRestartEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateScreenSurfaceQNX, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
@@ -14762,18 +18079,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
                                                                              uint32_t queueFamilyIndex,
                                                                              struct _screen_window* window) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceScreenPresentationSupportQNX,
@@ -14789,18 +18112,24 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkP
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkBool32 result = DispatchGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window,
                                                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                      const VkBool32* pColorWriteEnables) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14814,15 +18143,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorWriteEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
                                            uint32_t instanceCount, uint32_t firstInstance, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMultiEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14838,17 +18173,23 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32
         intercept->PreCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride,
                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMultiEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride,
                                                  record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                   const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
                                                   uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMultiIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14864,16 +18205,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer,
         intercept->PreCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
                                                        pVertexOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMultiIndexedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
                                                         pVertexOffset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14887,16 +18234,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(VkDevice device, const VkMicrom
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14910,15 +18263,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyMicromapEXT(VkDevice device, VkMicromapEXT mic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyMicromapEXT(device, micromap, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyMicromapEXT(device, micromap, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyMicromapEXT(device, micromap, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                 const VkMicromapBuildInfoEXT* pInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildMicromapsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14932,15 +18291,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, u
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildMicromapsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
                                                  const VkMicromapBuildInfoEXT* pInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBuildMicromapsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14954,17 +18319,23 @@ VKAPI_ATTR VkResult VKAPI_CALL BuildMicromapsEXT(VkDevice device, VkDeferredOper
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBuildMicromapsEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                const VkCopyMicromapInfoEXT* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -14978,17 +18349,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapEXT(VkDevice device, VkDeferredOperat
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyMicromapEXT(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyMicromapEXT(device, deferredOperation, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMicromapEXT(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                        const VkCopyMicromapToMemoryInfoEXT* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMicromapToMemoryEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15002,17 +18379,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapToMemoryEXT(VkDevice device, VkDeferr
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyMicromapToMemoryEXT(device, deferredOperation, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMicromapToMemoryEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                        const VkCopyMemoryToMicromapInfoEXT* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMemoryToMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15026,17 +18409,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToMicromapEXT(VkDevice device, VkDeferr
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyMemoryToMicromapEXT(device, deferredOperation, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL WriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
                                                            VkQueryType queryType, size_t dataSize, void* pData, size_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWriteMicromapsPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15052,17 +18441,23 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteMicromapsPropertiesEXT(VkDevice device, uint
         intercept->PreCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride,
                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWriteMicromapsPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride,
                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMicromapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15076,14 +18471,20 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyMicromapEXT(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyMicromapEXT(commandBuffer, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMicromapEXT(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapToMemoryInfoEXT* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMicromapToMemoryEXT,
@@ -15098,14 +18499,20 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMicromapToMemoryEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMemoryToMicromapInfoEXT* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToMicromapEXT,
@@ -15120,16 +18527,22 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToMicromapEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount,
                                                           const VkMicromapEXT* pMicromaps, VkQueryType queryType,
                                                           VkQueryPool queryPool, uint32_t firstQuery) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteMicromapsPropertiesEXT,
@@ -15147,16 +18560,22 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteMicromapsPropertiesEXT(VkCommandBuffer comman
         intercept->PreCallRecordCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool,
                                                                firstQuery, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool, firstQuery);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteMicromapsPropertiesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool,
                                                                 firstQuery, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceMicromapCompatibilityEXT(VkDevice device, const VkMicromapVersionInfoEXT* pVersionInfo,
                                                              VkAccelerationStructureCompatibilityKHR* pCompatibility) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMicromapCompatibilityEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15171,16 +18590,22 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceMicromapCompatibilityEXT(VkDevice device, co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMicromapCompatibilityEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
                                                     const VkMicromapBuildInfoEXT* pBuildInfo,
                                                     VkMicromapBuildSizesInfoEXT* pSizeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMicromapBuildSizesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15194,15 +18619,21 @@ VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(VkDevice device, VkAccelerat
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMicromapBuildSizesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                                 uint32_t groupCountZ) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawClusterHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15216,14 +18647,20 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, u
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawClusterHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawClusterIndirectHUAWEI,
@@ -15239,14 +18676,20 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawClusterIndirectHUAWEI]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetDeviceMemoryPriorityEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15260,16 +18703,22 @@ VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceM
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchSetDeviceMemoryPriorityEXT(device, memory, priority);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDeviceMemoryPriorityEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetDeviceMemoryPriorityEXT(device, memory, priority, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
                                                                       const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
                                                                       VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutHostMappingInfoVALVE,
@@ -15287,15 +18736,21 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice d
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetHostMappingVALVE, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15310,15 +18765,21 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(VkDevice device, VkD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDescriptorSetHostMappingVALVE]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
                                                    uint32_t copyCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15332,17 +18793,23 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryIndirectNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
                                                           uint32_t copyCount, uint32_t stride, VkImage dstImage,
                                                           VkImageLayout dstImageLayout,
                                                           const VkImageSubresourceLayers* pImageSubresources) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToImageIndirectNV,
@@ -15360,17 +18827,23 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectNV(VkCommandBuffer comman
         intercept->PreCallRecordCmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
                                                                dstImageLayout, pImageSubresources, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout,
                                            pImageSubresources);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToImageIndirectNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
                                                                 dstImageLayout, pImageSubresources, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount,
                                                  const VkDecompressMemoryRegionNV* pDecompressMemoryRegions) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecompressMemoryNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15385,16 +18858,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryNV(VkCommandBuffer commandBuffer, 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDecompressMemoryNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(VkCommandBuffer commandBuffer,
                                                               VkDeviceAddress indirectCommandsAddress,
                                                               VkDeviceAddress indirectCommandsCountAddress, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecompressMemoryIndirectCountNV,
@@ -15412,16 +18891,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(VkCommandBuffer co
         intercept->PreCallRecordCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress,
                                                                    indirectCommandsCountAddress, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress, indirectCommandsCountAddress, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDecompressMemoryIndirectCountNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress,
                                                                     indirectCommandsCountAddress, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkComputePipelineCreateInfo* pCreateInfo,
                                                                    VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineIndirectMemoryRequirementsNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15438,16 +18923,22 @@ VKAPI_ATTR void VKAPI_CALL GetPipelineIndirectMemoryRequirementsNV(VkDevice devi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineIndirectMemoryRequirementsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                              VkPipeline pipeline) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdUpdatePipelineIndirectBufferNV,
@@ -15463,15 +18954,21 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer com
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdUpdatePipelineIndirectBufferNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(VkDevice device,
                                                                          const VkPipelineIndirectDeviceAddressInfoNV* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineIndirectDeviceAddressNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15486,16 +18983,22 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(VkDevic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetPipelineIndirectDeviceAddressNV(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkDeviceAddress result = DispatchGetPipelineIndirectDeviceAddressNV(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.device_address = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineIndirectDeviceAddressNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPipelineIndirectDeviceAddressNV(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthClampEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15509,14 +19012,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthClampEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPolygonModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15530,15 +19039,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, V
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetPolygonModeEXT(commandBuffer, polygonMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetPolygonModeEXT(commandBuffer, polygonMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetPolygonModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetPolygonModeEXT(commandBuffer, polygonMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer,
                                                          VkSampleCountFlagBits rasterizationSamples) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizationSamplesEXT,
@@ -15554,15 +19069,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationSamplesEXT(VkCommandBuffer command
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizationSamplesEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,
                                                const VkSampleMask* pSampleMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetSampleMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15576,14 +19097,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetSampleMaskEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetAlphaToCoverageEnableEXT,
@@ -15599,14 +19126,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetAlphaToCoverageEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetAlphaToOneEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15620,14 +19153,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetAlphaToOneEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLogicOpEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15641,15 +19180,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLogicOpEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                      uint32_t attachmentCount, const VkBool32* pColorBlendEnables) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorBlendEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15665,17 +19210,23 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEnableEXT(VkCommandBuffer commandBuff
         intercept->PreCallRecordCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables,
                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorBlendEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables,
                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                        uint32_t attachmentCount,
                                                        const VkColorBlendEquationEXT* pColorBlendEquations) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorBlendEquationEXT,
@@ -15692,16 +19243,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEquationEXT(VkCommandBuffer commandBu
         intercept->PreCallRecordCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations,
                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorBlendEquationEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations,
                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                    uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorWriteMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15717,16 +19274,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer
         intercept->PreCallRecordCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks,
                                                         record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorWriteMaskEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks,
                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
                                                              VkTessellationDomainOrigin domainOrigin) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetTessellationDomainOriginEXT,
@@ -15742,14 +19305,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(VkCommandBuffer com
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetTessellationDomainOriginEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizationStreamEXT,
@@ -15765,15 +19334,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(VkCommandBuffer commandB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRasterizationStreamEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetConservativeRasterizationModeEXT(
     VkCommandBuffer commandBuffer, VkConservativeRasterizationModeEXT conservativeRasterizationMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetConservativeRasterizationModeEXT,
@@ -15791,16 +19366,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetConservativeRasterizationModeEXT(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetConservativeRasterizationModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBuffer commandBuffer,
                                                                      float extraPrimitiveOverestimationSize) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT,
@@ -15819,16 +19400,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBu
         intercept->PreCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize,
                                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize,
                                                                            record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthClipEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15842,14 +19429,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffe
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthClipEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetSampleLocationsEnableEXT,
@@ -15865,16 +19458,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEnableEXT(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetSampleLocationsEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                        uint32_t attachmentCount,
                                                        const VkColorBlendAdvancedEXT* pColorBlendAdvanced) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorBlendAdvancedEXT,
@@ -15891,16 +19490,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBu
         intercept->PreCallRecordCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced,
                                                             record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetColorBlendAdvancedEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced,
                                                              record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer,
                                                         VkProvokingVertexModeEXT provokingVertexMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetProvokingVertexModeEXT,
@@ -15916,15 +19521,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetProvokingVertexModeEXT(VkCommandBuffer commandB
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetProvokingVertexModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer,
                                                           VkLineRasterizationModeEXT lineRasterizationMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineRasterizationModeEXT,
@@ -15940,14 +19551,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineRasterizationModeEXT(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineRasterizationModeEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineStippleEnableEXT,
@@ -15962,14 +19579,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuf
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetLineStippleEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT,
@@ -15985,14 +19608,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer co
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthClipNegativeOneToOneEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWScalingEnableNV,
@@ -16008,15 +19637,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingEnableNV(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportWScalingEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                    const VkViewportSwizzleNV* pViewportSwizzles) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportSwizzleNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -16031,15 +19666,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetViewportSwizzleNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles,
                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageToColorEnableNV,
@@ -16055,14 +19696,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorEnableNV(VkCommandBuffer command
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageToColorEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageToColorLocationNV,
@@ -16078,15 +19725,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorLocationNV(VkCommandBuffer comma
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageToColorLocationNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer,
                                                           VkCoverageModulationModeNV coverageModulationMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageModulationModeNV,
@@ -16102,15 +19755,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationModeNV(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageModulationModeNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer,
                                                                  VkBool32 coverageModulationTableEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageModulationTableEnableNV,
@@ -16128,16 +19787,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableEnableNV(VkCommandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageModulationTableEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount,
                                                            const float* pCoverageModulationTable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageModulationTableNV,
@@ -16155,15 +19820,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableNV(VkCommandBuffer comma
         intercept->PreCallRecordCmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount,
                                                                 pCoverageModulationTable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount, pCoverageModulationTable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageModulationTableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount,
                                                                  pCoverageModulationTable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetShadingRateImageEnableNV,
@@ -16179,15 +19850,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetShadingRateImageEnableNV(VkCommandBuffer comman
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetShadingRateImageEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuffer,
                                                                     VkBool32 representativeFragmentTestEnable) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV,
@@ -16206,17 +19883,23 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuf
         intercept->PreCallRecordCmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable,
                                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRepresentativeFragmentTestEnableNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable,
                                                                           record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer,
                                                          VkCoverageReductionModeNV coverageReductionMode) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageReductionModeNV,
@@ -16232,15 +19915,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(VkCommandBuffer command
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetCoverageReductionModeNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                         VkShaderModuleIdentifierEXT* pIdentifier) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderModuleIdentifierEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16255,15 +19944,21 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(VkDevice device, VkShade
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderModuleIdentifierEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                                   VkShaderModuleIdentifierEXT* pIdentifier) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderModuleCreateInfoIdentifierEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16279,17 +19974,23 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(VkDevice devic
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderModuleCreateInfoIdentifierEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
     VkPhysicalDevice physicalDevice, const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceOpticalFlowImageFormatsNV,
@@ -16306,20 +20007,26 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
         intercept->PreCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo,
                                                                            pFormatCount, pImageFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount,
                                                                          pImageFormatProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo,
                                                                             pFormatCount, pImageFormatProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlowSessionCreateInfoNV* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkOpticalFlowSessionNV* pSession) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateOpticalFlowSessionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16333,17 +20040,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateOpticalFlowSessionNV(VkDevice device, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateOpticalFlowSessionNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV session,
                                                        const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyOpticalFlowSessionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16357,16 +20070,22 @@ VKAPI_ATTR void VKAPI_CALL DestroyOpticalFlowSessionNV(VkDevice device, VkOptica
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyOpticalFlowSessionNV(device, session, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyOpticalFlowSessionNV(device, session, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyOpticalFlowSessionNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyOpticalFlowSessionNV(device, session, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSessionNV session,
                                                              VkOpticalFlowSessionBindingPointNV bindingPoint, VkImageView view,
                                                              VkImageLayout layout) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindOpticalFlowSessionImageNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16381,17 +20100,23 @@ VKAPI_ATTR VkResult VKAPI_CALL BindOpticalFlowSessionImageNV(VkDevice device, Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBindOpticalFlowSessionImageNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
                                                    const VkOpticalFlowExecuteInfoNV* pExecuteInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdOpticalFlowExecuteNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -16405,14 +20130,20 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdOpticalFlowExecuteNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyShaderEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16426,14 +20157,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyShaderEXT(VkDevice device, VkShaderEXT shader,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyShaderEXT(device, shader, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyShaderEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderBinaryDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16447,17 +20184,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderBinaryDataEXT(VkDevice device, VkShaderE
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetShaderBinaryDataEXT(device, shader, pDataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderBinaryDataEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
                                              const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindShadersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -16471,15 +20214,21 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindShadersEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer,
                                                                 uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFramebufferTilePropertiesQCOM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16495,17 +20244,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFramebufferTilePropertiesQCOM(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFramebufferTilePropertiesQCOM]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
                                                                      VkTilePropertiesQCOM* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDynamicRenderingTilePropertiesQCOM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16521,18 +20276,24 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDevice de
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDynamicRenderingTilePropertiesQCOM]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                      const VkLatencySleepModeInfoNV* pSleepModeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLatencySleepModeNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16546,16 +20307,22 @@ VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchai
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchSetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLatencySleepModeNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkLatencySleepNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16569,17 +20336,23 @@ VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR sw
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordLatencySleepNV(device, swapchain, pSleepInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchLatencySleepNV(device, swapchain, pSleepInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordLatencySleepNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordLatencySleepNV(device, swapchain, pSleepInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
                                               const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLatencyMarkerNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16593,15 +20366,21 @@ VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR sw
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetLatencyMarkerNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordSetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                                VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetLatencyTimingsNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16615,14 +20394,20 @@ VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR s
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetLatencyTimingsNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueNotifyOutOfBandNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
@@ -16636,14 +20421,20 @@ VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBa
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueNotifyOutOfBandNV(queue, pQueueTypeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchQueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueNotifyOutOfBandNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueNotifyOutOfBandNV(queue, pQueueTypeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT,
@@ -16660,17 +20451,23 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                             VkScreenBufferPropertiesQNX* pProperties) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetScreenBufferPropertiesQNX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16685,12 +20482,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchGetScreenBufferPropertiesQNX(device, buffer, pProperties);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetScreenBufferPropertiesQNX]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -16699,6 +20501,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
                                                               VkAccelerationStructureKHR* pAccelerationStructure) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16714,18 +20517,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure,
                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                            const VkAllocationCallbacks* pAllocator) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16740,16 +20549,22 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(VkDevice device, VkAc
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR,
@@ -16766,11 +20581,16 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildAccelerationStructuresKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
@@ -16778,6 +20598,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(VkCommandBu
                                                                      const VkDeviceAddress* pIndirectDeviceAddresses,
                                                                      const uint32_t* pIndirectStrides,
                                                                      const uint32_t* const* ppMaxPrimitiveCounts) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructuresIndirectKHR,
@@ -16796,20 +20617,26 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(VkCommandBu
         intercept->PreCallRecordCmdBuildAccelerationStructuresIndirectKHR(
             commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides,
                                                       ppMaxPrimitiveCounts);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBuildAccelerationStructuresIndirectKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(
             commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
 BuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
                                const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBuildAccelerationStructuresKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16826,18 +20653,24 @@ BuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredO
         intercept->PreCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos,
                                                                record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordBuildAccelerationStructuresKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos,
                                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                             const VkCopyAccelerationStructureInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16852,17 +20685,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureKHR(VkDevice device, VkD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyAccelerationStructureKHR(device, deferredOperation, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyAccelerationStructureToMemoryKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16878,18 +20717,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureToMemoryKHR(VkDevice dev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCopyAccelerationStructureToMemoryKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMemoryToAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -16905,13 +20750,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToAccelerationStructureKHR(VkDevice dev
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -16919,6 +20769,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteAccelerationStructuresPropertiesKHR(VkDevice
                                                                         const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                         VkQueryType queryType, size_t dataSize, void* pData,
                                                                         size_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWriteAccelerationStructuresPropertiesKHR,
@@ -16937,8 +20788,12 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteAccelerationStructuresPropertiesKHR(VkDevice
         intercept->PreCallRecordWriteAccelerationStructuresPropertiesKHR(
             device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result = DispatchWriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures,
                                                                        queryType, dataSize, pData, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordWriteAccelerationStructuresPropertiesKHR]) {
@@ -16946,11 +20801,13 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteAccelerationStructuresPropertiesKHR(VkDevice
         intercept->PostCallRecordWriteAccelerationStructuresPropertiesKHR(
             device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                            const VkCopyAccelerationStructureInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyAccelerationStructureKHR,
@@ -16966,15 +20823,21 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureKHR(VkCommandBuffer comma
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyAccelerationStructureKHR(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyAccelerationStructureKHR(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                                                                    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyAccelerationStructureToMemoryKHR,
@@ -16991,16 +20854,22 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyAccelerationStructureToMemoryKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToAccelerationStructureKHR,
@@ -17017,16 +20886,22 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuff
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToAccelerationStructureKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL
 GetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureDeviceAddressKHR,
@@ -17043,13 +20918,18 @@ GetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationSt
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetAccelerationStructureDeviceAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkDeviceAddress result = DispatchGetAccelerationStructureDeviceAddressKHR(device, pInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.device_address = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureDeviceAddressKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetAccelerationStructureDeviceAddressKHR(device, pInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -17058,6 +20938,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(VkCommand
                                                                        const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                        VkQueryType queryType, VkQueryPool queryPool,
                                                                        uint32_t firstQuery) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR,
@@ -17076,19 +20957,25 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(VkCommand
         intercept->PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures,
                                                         queryType, queryPool, firstQuery);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteAccelerationStructuresPropertiesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceAccelerationStructureCompatibilityKHR(VkDevice device,
                                                                           const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
                                                                           VkAccelerationStructureCompatibilityKHR* pCompatibility) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceAccelerationStructureCompatibilityKHR,
@@ -17106,18 +20993,24 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceAccelerationStructureCompatibilityKHR(VkDevi
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceAccelerationStructureCompatibilityKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
                                                                  const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
                                                                  const uint32_t* pMaxPrimitiveCounts,
                                                                  VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureBuildSizesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -17135,13 +21028,18 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(VkDevice device
         intercept->PreCallRecordGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo,
                                                                       record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetAccelerationStructureBuildSizesKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts,
                                                                        pSizeInfo, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(VkCommandBuffer commandBuffer,
@@ -17150,6 +21048,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                            const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                            const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
                                            uint32_t height, uint32_t depth) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17167,19 +21066,25 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth,
                                                 record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
                             pCallableShaderBindingTable, width, height, depth);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                  pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth,
                                                  record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline,
                                                                                uint32_t firstGroup, uint32_t groupCount,
                                                                                size_t dataSize, void* pData) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingCaptureReplayShaderGroupHandlesKHR,
@@ -17198,8 +21103,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(V
         intercept->PreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize,
                                                                                 pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkResult result =
         DispatchGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     record_obj.result = result;
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR]) {
@@ -17207,6 +21116,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(V
         intercept->PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize,
                                                                                  pData, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
@@ -17216,6 +21126,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer
                                                    const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                    const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                    VkDeviceAddress indirectDeviceAddress) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17233,18 +21144,24 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer
                                                         pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress,
                                                         record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
                                     pCallableShaderBindingTable, indirectDeviceAddress);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysIndirectKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                          pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress,
                                                          record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR VkDeviceSize VKAPI_CALL GetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,
                                                                         VkShaderGroupShaderKHR groupShader) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingShaderGroupStackSizeKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -17260,16 +21177,22 @@ VKAPI_ATTR VkDeviceSize VKAPI_CALL GetRayTracingShaderGroupStackSizeKHR(VkDevice
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     VkDeviceSize result = DispatchGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetRayTracingShaderGroupStackSizeKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR,
@@ -17286,16 +21209,22 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer 
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRayTracingPipelineStackSizeKHR]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                                uint32_t groupCountZ) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17309,15 +21238,21 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, ui
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        uint32_t drawCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectEXT,
@@ -17332,16 +21267,22 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBu
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                             uint32_t maxDrawCount, uint32_t stride) {
+    VVL_TracyCZone(tracy_zone_precall, true);
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountEXT,
@@ -17359,12 +21300,17 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer comm
         intercept->PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                  maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_precall);
+    VVL_TracyCZone(tracy_zone_dispatch, true);
     DispatchCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    VVL_TracyCZoneEnd(tracy_zone_dispatch);
+    VVL_TracyCZone(tracy_zone_postcall, true);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCountEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                   maxDrawCount, stride, record_obj);
     }
+    VVL_TracyCZoneEnd(tracy_zone_postcall);
 }
 
 // Map of intercepted ApiName to its associated function data
@@ -17372,7 +21318,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer comm
 #pragma warning(suppress : 6262)  // VS analysis: this uses more than 16 kiB, which is fine here at global scope
 #endif
 // clang-format off
-const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
+
+const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
+    static const vvl::unordered_map<std::string, function_data> name_to_func_ptr_map = {
     {"vk_layerGetPhysicalDeviceProcAddr", {kFuncTypeInst, (void*)GetPhysicalDeviceProcAddr}},
     {"vkCreateInstance", {kFuncTypeInst, (void*)CreateInstance}},
     {"vkDestroyInstance", {kFuncTypeInst, (void*)DestroyInstance}},
@@ -18103,6 +22051,8 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdDrawMeshTasksEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksEXT}},
     {"vkCmdDrawMeshTasksIndirectEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectEXT}},
     {"vkCmdDrawMeshTasksIndirectCountEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectCountEXT}},
+};
+ return name_to_func_ptr_map;
 };
 } // namespace vulkan_layer_chassis
 // clang-format on

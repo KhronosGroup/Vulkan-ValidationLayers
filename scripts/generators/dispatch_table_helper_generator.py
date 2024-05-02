@@ -110,16 +110,22 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None))
         out.append('\n')
 
-        out.append('const vvl::unordered_map<std::string, std::string> api_promoted_map {\n')
+        out.append('const auto &GetApiPromotedMap() {\n')
+        out.append('    static const vvl::unordered_map<std::string, std::string> api_promoted_map {\n')
         for command in [x for x in self.vk.commands.values() if x.version and x.device]:
             out.append(f'    {{ "{command.name}", {{ "{command.version.name}" }} }},\n')
-        out.append('};\n')
+        out.append('    };\n')
+        out.append('    return api_promoted_map;\n')
+        out.append('}\n')
 
-        out.append('const vvl::unordered_map<std::string, small_vector<vvl::Extension, 2, size_t>> api_extension_map {\n')
+        out.append('const auto &GetApiExtensionMap() {\n')
+        out.append('    static const vvl::unordered_map<std::string, small_vector<vvl::Extension, 2, size_t>> api_extension_map {\n')
         for command in [x for x in self.vk.commands.values() if x.extensions and x.device]:
             extensions = ', '.join(f'vvl::Extension::_{x.name}' for x in command.extensions)
             out.append(f'    {{ "{command.name}", {{ {extensions} }} }},\n')
-        out.append('};\n')
+        out.append('    };\n')
+        out.append('    return api_extension_map;\n')
+        out.append('}\n')
 
         out.append('''
             // Using the above code-generated map of APINames-to-parent extension names, this function will:
@@ -127,16 +133,16 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             //   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
             //   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
             bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info) {
-                auto promoted_api = api_promoted_map.find(api_name);
-                if (promoted_api != api_promoted_map.end()) {
+                auto promoted_api = GetApiPromotedMap().find(api_name);
+                if (promoted_api != GetApiPromotedMap().end()) {
                     auto info = GetDeviceVersionMap(promoted_api->second.c_str());
                     assert(info.state);
                     return (device_extension_info->*(info.state) == kEnabledByCreateinfo);
                 }
 
-                auto has_ext = api_extension_map.find(api_name);
+                auto has_ext = GetApiExtensionMap().find(api_name);
                 // Is this API part of an extension or feature group?
-                if (has_ext != api_extension_map.end()) {
+                if (has_ext != GetApiExtensionMap().end()) {
                     // Was the extension for this API enabled in the CreateDevice call?
                     for (const auto& extension : has_ext->second) {
                         auto info = device_extension_info->GetInfo(extension);

@@ -24,8 +24,6 @@
 #include "generated/chassis.h"
 #include "generated/device_features.h"
 
-extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
-
 class StatelessValidation : public ValidationObject {
     using Func = vvl::Func;
     using Struct = vvl::Struct;

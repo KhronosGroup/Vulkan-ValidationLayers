@@ -351,6 +351,7 @@ target_sources(vvl PRIVATE
     utils/shader_utils.h
     layer_options.cpp
     layer_options.h
+    profiling/profiling.h
 )
 get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
@@ -416,6 +417,26 @@ target_link_libraries(vvl PRIVATE
     gpu_av_spirv
     VkLayer_utils
 )
+
+if (VVL_ENABLE_TRACY)
+    # Rely on FetchContent to get Tracy, it is simple
+    # update_deps.py is too chaotic. Quite ok since Tracy is intended as a dev tool
+    include(FetchContent)
+    FetchContent_Declare(
+        tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG v0.11.0
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE)
+
+    FetchContent_MakeAvailable(tracy)
+
+    target_sources(vvl PRIVATE 
+        profiling/profiling.h
+        profiling/profiling.cpp
+    )
+    target_link_libraries(vvl PRIVATE TracyClient)
+endif()
 
 target_include_directories(vvl SYSTEM PRIVATE external)
 

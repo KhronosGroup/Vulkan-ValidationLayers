@@ -355,6 +355,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             extern vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
+            std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo();
+
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName);\n
             ''')
 
@@ -745,6 +747,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include "state_tracker/descriptor_sets.h"
             #include "chassis/chassis_modification_state.h"
 
+            #include "profiling/profiling.h"
+
             thread_local WriteLockGuard* ValidationObject::record_guard{};
 
             small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
@@ -839,7 +843,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
         out.append('''
             // Global list of sType,size identifiers
-            std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+            std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo() {
+    static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+    return custom_stype_info;
+            }
 
             template <typename ValidationObjectType>
             ValidationObjectType* ValidationObject::GetValidationObject() const {
@@ -907,7 +914,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 void* funcptr;
             } function_data;
 
-            extern const vvl::unordered_map<std::string, function_data> name_to_funcptr_map;
+    const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
             ''')
 
         out.append('''
@@ -949,7 +956,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
                     if (context->enabled[i]) {
                         if (list_of_enables.size()) list_of_enables.append(", ");
-                        list_of_enables.append(EnableFlagNameHelper[i]);
+                        list_of_enables.append(GetEnableFlagNameHelper()[i]);
                     }
                 }
                 if (list_of_enables.empty()) {
@@ -958,7 +965,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
                     if (context->disabled[i]) {
                         if (list_of_disables.size()) list_of_disables.append(", ");
-                        list_of_disables.append(DisableFlagNameHelper[i]);
+                        list_of_disables.append(GetDisableFlagNameHelper()[i]);
                     }
                 }
                 if (list_of_disables.empty()) {
@@ -1015,8 +1022,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 if (!ApiParentExtensionEnabled(funcName, &layer_data->device_extensions)) {
                     return nullptr;
                 }
-                const auto& item = name_to_funcptr_map.find(funcName);
-                if (item != name_to_funcptr_map.end()) {
+                const auto& item = GetNameToFuncPtrMap().find(funcName);
+                if (item != GetNameToFuncPtrMap().end()) {
                     if (item->second.function_type != kFuncTypeDev) {
                         Location loc(vvl::Func::vkGetDeviceProcAddr);
                         // Was discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6583
@@ -1034,8 +1041,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             }
 
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* funcName) {
-                const auto& item = name_to_funcptr_map.find(funcName);
-                if (item != name_to_funcptr_map.end()) {
+                const auto& item = GetNameToFuncPtrMap().find(funcName);
+                if (item != GetNameToFuncPtrMap().end()) {
                     return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
                 }
                 auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
@@ -1045,8 +1052,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             }
 
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName) {
-                const auto& item = name_to_funcptr_map.find(funcName);
-                if (item != name_to_funcptr_map.end()) {
+                const auto& item = GetNameToFuncPtrMap().find(funcName);
+                if (item != GetNameToFuncPtrMap().end()) {
                     if (item->second.function_type != kFuncTypePdev) {
                         return nullptr;
                     } else {
@@ -1092,6 +1099,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                         VkInstance* pInstance) {
+#if TRACY_ENABLE
+                if (!tracy::IsProfilerStarted()) {
+                    tracy::StartupProfiler();
+                }
+#endif
+                VVL_ZoneScoped;
                 VkLayerInstanceCreateInfo* chain_info = GetChainInfo(pCreateInfo, VK_LAYER_LINK_INFO);
 
                 assert(chain_info->u.pLayerInfo);
@@ -1221,6 +1234,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             }
 
             VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
+                VVL_TracyCZone(tracy_zone_precall, true);
                 dispatch_key key = GetDispatchKey(instance);
                 auto layer_data = GetLayerDataPtr(key, layer_data_map);
                 ActivateInstanceDebugCallbacks(layer_data->debug_report);
@@ -1243,8 +1257,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     intercept->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
                 }
 
+                VVL_TracyCZoneEnd(tracy_zone_precall);
+                VVL_TracyCZone(tracy_zone_dispatch, true);
                 layer_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
-
+                VVL_TracyCZoneEnd(tracy_zone_dispatch);
+                
+                VVL_TracyCZone(tracy_zone_postcall, true);
                 for (ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->WriteLock();
                     intercept->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
@@ -1263,6 +1281,13 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }
 
                 FreeLayerDataPtr(key, layer_data_map);
+                VVL_TracyCZoneEnd(tracy_zone_postcall);
+                
+#if TRACY_ENABLE
+                if (tracy::IsProfilerStarted()) {
+                    tracy::ShutdownProfiler();
+                }
+#endif
             }
 
             VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
@@ -1599,6 +1624,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             // This API needs some local stack data for performance reasons and also may modify a parameter
             VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) {
+                VVL_TracyCZone(tracy_zone_precall, true);                                                                
                 auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
                 bool skip = false;
                 ErrorObject error_obj(vvl::Func::vkCreateShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1620,14 +1646,17 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
                 // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
                 if (chassis_state.skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
+                VVL_TracyCZoneEnd(tracy_zone_precall);
+                VVL_TracyCZone(tracy_zone_dispatch, true);
                 VkResult result = DispatchCreateShaderModule(device, &chassis_state.instrumented_create_info, pAllocator, pShaderModule);
+                VVL_TracyCZoneEnd(tracy_zone_dispatch);
                 record_obj.result = result;
-
+                VVL_TracyCZone(tracy_zone_postcall, true);
                 for (ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->WriteLock();
                     intercept->PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
                 }
+                VVL_TracyCZoneEnd(tracy_zone_postcall);
                 return result;
             }
 
@@ -1919,6 +1948,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             paramsList = ', '.join([param.name for param in command.params])
 
             # Setup common to call wrappers. First parameter is always dispatchable
+            out.append('VVL_TracyCZone(tracy_zone_precall, true);')
             out.append(f'auto layer_data = GetLayerDataPtr(GetDispatchKey({command.params[0].name}), layer_data_map);\n')
 
             # Declare result variable, if any.
@@ -1961,6 +1991,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             }}\n''')
 
             # Insert pre-dispatch debug utils function call
+            out.append('VVL_TracyCZoneEnd(tracy_zone_precall);')
             pre_dispatch_debug_utils_functions = {
                 'vkDebugMarkerSetObjectNameEXT' : 'layer_data->debug_report->SetMarkerObjectName(pNameInfo);',
                 'vkSetDebugUtilsObjectNameEXT' : 'layer_data->debug_report->SetUtilsObjectName(pNameInfo);',
@@ -1971,9 +2002,13 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 out.append(f'    {pre_dispatch_debug_utils_functions[command.name]}\n')
 
             # Output dispatch (down-chain) function call
+            out.append('VVL_TracyCZone(tracy_zone_dispatch, true);\n')
             assignResult = f'{command.returnType} result = ' if (command.returnType != 'void') else ''
             out.append(f'    {assignResult}{command.name.replace("vk", "Dispatch")}({paramsList});\n')
+            out.append('VVL_TracyCZoneEnd(tracy_zone_dispatch);\n')
 
+            if command.name == 'vkQueuePresentKHR':
+                out.append('VVL_TracyCFrameMark;\n')
 
             # Insert post-dispatch debug utils function call
             post_dispatch_debug_utils_functions = {
@@ -1986,6 +2021,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             if command.name in post_dispatch_debug_utils_functions:
                 out.append(f'    {post_dispatch_debug_utils_functions[command.name]}\n')
 
+            out.append('VVL_TracyCZone(tracy_zone_postcall, true);')
             if command.returnType == 'VkResult':
                 out.append('record_obj.result = result;\n')
             elif command.returnType == 'VkDeviceAddress':
@@ -2061,6 +2097,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 ''')
 
             # Return result variable, if any.
+            out.append('VVL_TracyCZoneEnd(tracy_zone_postcall);')
             if command.returnType != 'void':
                 out.append('    return result;\n')
             out.append('}\n')
@@ -2074,13 +2111,17 @@ class LayerChassisOutputGenerator(BaseGenerator):
 #pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope
 #endif
 // clang-format off
-const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
+
+const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
+    static const vvl::unordered_map<std::string, function_data> name_to_func_ptr_map = {
     {"vk_layerGetPhysicalDeviceProcAddr", {kFuncTypeInst, (void*)GetPhysicalDeviceProcAddr}},
 ''')
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions]:
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    {{"{command.name}", {{{self.getApiFunctionType(command)}, (void*){command.name[2:]}}}}},\n')
         out.extend(guard_helper.add_guard(None))
+        out.append('};\n')
+        out.append(' return name_to_func_ptr_map;\n')
         out.append('};\n')
         out.append('} // namespace vulkan_layer_chassis\n')
         out.append('// clang-format on\n')
