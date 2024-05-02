@@ -966,8 +966,7 @@ TEST_F(PositiveDynamicState, RasterizationSamplesDynamicRendering) {
     m_commandBuffer->end();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7327
-TEST_F(PositiveDynamicState, DISABLED_RasterizationSamples) {
+TEST_F(PositiveDynamicState, RasterizationSamples) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
     RETURN_IF_SKIP(Init());

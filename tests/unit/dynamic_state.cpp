@@ -5620,8 +5620,7 @@ TEST_F(NegativeDynamicState, SetColorBlendWriteMaskArrayLength) {
     m_commandBuffer->end();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7327
-TEST_F(NegativeDynamicState, DISABLED_RasterizationSamplesDynamicRendering) {
+TEST_F(NegativeDynamicState, RasterizationSamplesDynamicRendering) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
