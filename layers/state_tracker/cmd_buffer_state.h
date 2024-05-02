@@ -68,10 +68,36 @@ enum class CbState {
     InvalidIncomplete,  // fouled before recording was completed
 };
 
-struct AttachmentInfo {
-    vvl::ImageView *image_view;
+enum class AttachmentSource {
+    Empty = 0,
+    RenderPass,
+    DynamicRendering,
+    Inheritance,  // secondary command buffer VkCommandBufferInheritanceInfo
+};
 
-    AttachmentInfo() : image_view(nullptr) {}
+struct AttachmentInfo {
+    enum class Type {
+        Empty = 0,
+        Input,
+        Color,
+        ColorResolve,
+        DepthStencil,
+        // Dynamic rendering split DepthStencil up
+        Depth,
+        DepthResolve,
+        Stencil,
+        StencilResolve,
+    };
+
+    vvl::ImageView *image_view;
+    Type type;
+
+    AttachmentInfo() : image_view(nullptr), type(Type::Empty) {}
+
+    bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
+    bool IsInput() const { return type == Type::Input; }
+
+    std::string Describe(AttachmentSource source, uint32_t index) const;
 };
 
 struct SubpassInfo {
@@ -366,6 +392,7 @@ class CommandBuffer : public RefcountedStateObject {
     // The RenderPass created from vkCmdBeginRenderPass or vkCmdBeginRendering
     std::shared_ptr<vvl::RenderPass> activeRenderPass;
     // Used for both type of renderPass
+    AttachmentSource attachment_source;
     std::vector<AttachmentInfo> active_attachments;
     vvl::unordered_set<uint32_t> active_color_attachments_index;
     uint32_t active_render_pass_device_mask;
@@ -546,7 +573,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     void BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
     void NextSubpass(Func command, VkSubpassContents contents);
-    void UpdateSubpassAttachments(const vku::safe_VkSubpassDescription2 &subpass);
+    void UpdateSubpassAttachments();
     void EndRenderPass(Func command);
 
     void BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo);

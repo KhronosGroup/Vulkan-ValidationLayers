@@ -1088,7 +1088,6 @@ TEST_F(NegativeAndroidExternalResolve, DrawDynamicRasterizationSamples) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-09363");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09365");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizationSamples-07474");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizationSamples-07474");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 

@@ -847,13 +847,16 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
             !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
             for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
-                const auto* attachment = cb_state.active_attachments[i].image_view;
-                if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
-                    skip |= LogError(vuid.rasterization_sampled_07474, cb_state.Handle(), loc,
-                                     "Render pass attachment %" PRIu32
-                                     " samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
-                                     i, string_VkSampleCountFlagBits(attachment->samples),
-                                     string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
+                const AttachmentInfo& attachment_info = cb_state.active_attachments[i];
+                const auto* attachment = attachment_info.image_view;
+                if (attachment && !attachment_info.IsInput() && !attachment_info.IsResolve() &&
+                    cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
+                    skip |=
+                        LogError(vuid.rasterization_sampled_07474, cb_state.Handle(), loc,
+                                 "%s attachment samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
+                                 attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                                 string_VkSampleCountFlagBits(attachment->samples),
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
                 }
             }
         }
