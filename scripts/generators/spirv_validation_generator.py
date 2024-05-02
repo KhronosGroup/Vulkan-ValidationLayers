@@ -186,26 +186,34 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
         #
         # Build the struct with all the requirments for the spirv capabilities
+        out.append('const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites() {\n')
         out.append('// clang-format off\n')
-        out.append('static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilities = {\n')
+        out.append('    static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirv_capabilities = {')
         for spirv in [x for x in self.vk.spirv if x.capability]:
             for enable in [x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]:
                 if spirv.name not in self.capabilityList:
-                    out.append('    // Not found in current SPIR-V Headers\n    //')
-                out.append(f'    {{spv::Capability{spirv.name}, {self.createMapValue(spirv.name, enable, False)}}},\n')
-        out.append('};\n')
+                    out.append('\n        // Not found in current SPIR-V Headers\n        // ')
+                else:
+                    out.append('\n        ')
+                out.append(f'{{spv::Capability{spirv.name}, {self.createMapValue(spirv.name, enable, False)}}},')
+        out.append('\n    };\n')
         out.append('// clang-format on\n')
+        out.append('    return spirv_capabilities;\n')
+        out.append('};\n')
         out.append('\n')
 
         #
         # Build the struct with all the requirments for the spirv extensions
+        out.append('const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExtensions() {\n')
         out.append('// clang-format off\n')
-        out.append('static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvExtensions = {\n')
+        out.append('    static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirv_extensions = {')
         for spirv in [x for x in self.vk.spirv if x.extension]:
             for enable in spirv.enable:
-                out.append(f'    {{"{spirv.name}", {self.createMapValue(spirv.name, enable, True)}}},\n')
-        out.append('};\n')
+                out.append(f'\n        {{"{spirv.name}", {self.createMapValue(spirv.name, enable, True)}}},')
+        out.append('\n    };\n')
         out.append('// clang-format on\n')
+        out.append('    return spirv_extensions;\n')
+        out.append('}\n')
         out.append('\n')
 
         #
@@ -308,7 +316,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
 
                 if (insn.Opcode() == spv::OpCapability) {
                     // All capabilities are generated so if it is not in the list it is not supported by Vulkan
-                    if (spirvCapabilities.count(insn.Word(1)) == 0) {
+                    if (GetSpirvCapabilites().count(insn.Word(1)) == 0) {
                         const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08739" : "VUID-VkShaderCreateInfoEXT-pCode-08739";
                         skip |= LogError(vuid, device, loc,
                             "SPIR-V has Capability (%s) declared, but this is not supported by Vulkan.", string_SpvCapability(insn.Word(1)));
@@ -318,7 +326,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                     // Each capability has one or more requirements to check
                     // Only one item has to be satisfied and an error only occurs
                     // when all are not satisfied
-                    auto caps = spirvCapabilities.equal_range(insn.Word(1));
+                    auto caps = GetSpirvCapabilites().equal_range(insn.Word(1));
                     bool has_support = false;
                     for (auto it = caps.first; (it != caps.second) && (has_support == false); ++it) {
                         if (it->second.version) {
@@ -385,7 +393,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                 std::string extension_name = insn.GetAsString(1);
 
                 if (0 == extension_name.compare(0, spv_prefix.size(), spv_prefix)) {
-                    if (spirvExtensions.count(extension_name) == 0) {
+                    if (GetSpirvExtensions().count(extension_name) == 0) {
                         const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08741" : "VUID-VkShaderCreateInfoEXT-pCode-08741";
                         skip |= LogError(vuid, device,loc,
                             "SPIR-V Extension %s was declared, but that is not supported by Vulkan.", extension_name.c_str());
@@ -403,7 +411,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                 // Each SPIR-V Extension has one or more requirements to check
                 // Only one item has to be satisfied and an error only occurs
                 // when all are not satisfied
-                auto ext = spirvExtensions.equal_range(extension_name);
+                auto ext = GetSpirvExtensions().equal_range(extension_name);
                 bool has_support = false;
                 for (auto it = ext.first; (it != ext.second) && (has_support == false); ++it) {
                     if (it->second.version) {

@@ -18,6 +18,8 @@
 
 #include "stateless/stateless_validation.h"
 
+#include "generated/chassis.h"
+
 bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc,
                                                                const uint32_t promoted_version) const {
     bool skip = false;
@@ -250,7 +252,7 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
             "header, in which case the use of %s is undefined and may not work correctly with validation enabled";
 
         const Location pNext_loc = loc.dot(Field::pNext);
-        if ((allowed_type_count == 0) && (custom_stype_info.empty())) {
+        if ((allowed_type_count == 0) && (GetCustomStypeInfo().empty())) {
             std::string message = "must be NULL. ";
             message += disclaimer;
             skip |= LogError(pnext_vuid, device, pNext_loc, message.c_str(), header_version, pNext_loc.Fields().c_str());
@@ -273,7 +275,7 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
 
                     // Search custom stype list -- if sType found, skip this entirely
                     bool custom = false;
-                    for (const auto &item : custom_stype_info) {
+                    for (const auto &item : GetCustomStypeInfo()) {
                         if (item.first == current->sType) {
                             custom = true;
                             break;

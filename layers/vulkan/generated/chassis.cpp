@@ -211,7 +211,10 @@ void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Help
 }
 
 // Global list of sType,size identifiers
-std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo() {
+    static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+    return custom_stype_info;
+}
 
 template <typename ValidationObjectType>
 ValidationObjectType* ValidationObject::GetValidationObject() const {
@@ -279,7 +282,7 @@ typedef struct {
     void* funcptr;
 } function_data;
 
-extern const vvl::unordered_map<std::string, function_data> name_to_funcptr_map;
+const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
 
 // Manually written functions
 
@@ -321,7 +324,7 @@ void OutputLayerStatusInfo(ValidationObject* context) {
     for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
         if (context->enabled[i]) {
             if (list_of_enables.size()) list_of_enables.append(", ");
-            list_of_enables.append(EnableFlagNameHelper[i]);
+            list_of_enables.append(GetEnableFlagNameHelper()[i]);
         }
     }
     if (list_of_enables.empty()) {
@@ -330,7 +333,7 @@ void OutputLayerStatusInfo(ValidationObject* context) {
     for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
         if (context->disabled[i]) {
             if (list_of_disables.size()) list_of_disables.append(", ");
-            list_of_disables.append(DisableFlagNameHelper[i]);
+            list_of_disables.append(GetDisableFlagNameHelper()[i]);
         }
     }
     if (list_of_disables.empty()) {
@@ -387,8 +390,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     if (!ApiParentExtensionEnabled(funcName, &layer_data->device_extensions)) {
         return nullptr;
     }
-    const auto& item = name_to_funcptr_map.find(funcName);
-    if (item != name_to_funcptr_map.end()) {
+    const auto& item = GetNameToFuncPtrMap().find(funcName);
+    if (item != GetNameToFuncPtrMap().end()) {
         if (item->second.function_type != kFuncTypeDev) {
             Location loc(vvl::Func::vkGetDeviceProcAddr);
             // Was discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6583
@@ -406,8 +409,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* funcName) {
-    const auto& item = name_to_funcptr_map.find(funcName);
-    if (item != name_to_funcptr_map.end()) {
+    const auto& item = GetNameToFuncPtrMap().find(funcName);
+    if (item != GetNameToFuncPtrMap().end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
     }
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
@@ -417,8 +420,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName) {
-    const auto& item = name_to_funcptr_map.find(funcName);
-    if (item != name_to_funcptr_map.end()) {
+    const auto& item = GetNameToFuncPtrMap().find(funcName);
+    if (item != GetNameToFuncPtrMap().end()) {
         if (item->second.function_type != kFuncTypePdev) {
             return nullptr;
         } else {
@@ -17372,7 +17375,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer comm
 #pragma warning(suppress : 6262)  // VS analysis: this uses more than 16 kiB, which is fine here at global scope
 #endif
 // clang-format off
-const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
+
+const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
+    static const vvl::unordered_map<std::string, function_data> name_to_func_ptr_map = {
     {"vk_layerGetPhysicalDeviceProcAddr", {kFuncTypeInst, (void*)GetPhysicalDeviceProcAddr}},
     {"vkCreateInstance", {kFuncTypeInst, (void*)CreateInstance}},
     {"vkDestroyInstance", {kFuncTypeInst, (void*)DestroyInstance}},
@@ -18103,6 +18108,8 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdDrawMeshTasksEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksEXT}},
     {"vkCmdDrawMeshTasksIndirectEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectEXT}},
     {"vkCmdDrawMeshTasksIndirectCountEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectCountEXT}},
+};
+ return name_to_func_ptr_map;
 };
 } // namespace vulkan_layer_chassis
 // clang-format on

@@ -25,10 +25,15 @@ struct VendorSpecificInfo {
     std::string name;
 };
 
-const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {{kBPVendorArm, {vendor_specific_arm, "Arm"}},
-                                                                    {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
-                                                                    {kBPVendorIMG, {vendor_specific_img, "IMG"}},
-                                                                    {kBPVendorNVIDIA, {vendor_specific_nvidia, "NVIDIA"}}};
+const auto& GetVendorInfo() {
+    static const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {
+        {kBPVendorArm, {vendor_specific_arm, "Arm"}},
+        {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
+        {kBPVendorIMG, {vendor_specific_img, "IMG"}},
+        {kBPVendorNVIDIA, {vendor_specific_nvidia, "NVIDIA"}}};
+
+    return kVendorInfo;
+}
 
 ReadLockGuard BestPractices::ReadLock() const {
     if (fine_grained_locking) {
@@ -58,7 +63,7 @@ bp_state::CommandBuffer::CommandBuffer(BestPractices& bp, VkCommandBuffer handle
     : vvl::CommandBuffer(bp, handle, pCreateInfo, pool) {}
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
-    for (const auto& vendor : kVendorInfo) {
+    for (const auto& vendor : GetVendorInfo()) {
         if (vendors & vendor.first && enabled[vendor.second.vendor_id]) {
             return true;
         }
@@ -77,7 +82,7 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
 
         vendor_tag << "[";
         bool first_vendor = true;
-        for (const auto& vendor : kVendorInfo) {
+        for (const auto& vendor : GetVendorInfo()) {
             if (vendors & vendor.first) {
                 if (!first_vendor) {
                     vendor_tag << ", ";

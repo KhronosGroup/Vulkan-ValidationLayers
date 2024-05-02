@@ -83,6 +83,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
             using Func = vvl::Func;
             ''')
         out.append('// clang-format off\n')
+        out.append('const auto &GetCommandValidationTable() {\n')
         out.append('static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {\n')
         for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             out.append(f'{{Func::{command.name}, {{\n')
@@ -142,6 +143,8 @@ class CommandValidationOutputGenerator(BaseGenerator):
 
             out.append('}},\n')
         out.append('};\n')
+        out.append('return kCommandValidationTable;\n')
+        out.append('}\n')
         out.append('// clang-format on\n')
 
         #
@@ -154,8 +157,8 @@ class CommandValidationOutputGenerator(BaseGenerator):
             bool CoreChecks::ValidateCmd(const vvl::CommandBuffer& cb_state, const Location& loc) const {
                 bool skip = false;
 
-                auto info_it = kCommandValidationTable.find(loc.function);
-                if (info_it == kCommandValidationTable.end()) {
+                auto info_it = GetCommandValidationTable().find(loc.function);
+                if (info_it == GetCommandValidationTable().end()) {
                     assert(false);
                 }
                 const auto& info = info_it->second;
