@@ -271,21 +271,12 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
 )
 
 # setup framework/config.h using framework/config.h.in as a source
-file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/config$<CONFIG>.h" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/framework/config.h.in")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/config_$<CONFIG>.h" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/framework/config.h.in")
 
-# copy config$<CONFIG>.h to the build directory
-add_custom_command(
-    PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} "-E" "copy_if_different" "${CMAKE_CURRENT_BINARY_DIR}/config$<CONFIG>.h" "${CMAKE_CURRENT_BINARY_DIR}/config.h"
-    VERBATIM
-    DEPENDS  "${CMAKE_CURRENT_BINARY_DIR}/config$<CONFIG>.h"
-    OUTPUT   "${CMAKE_CURRENT_BINARY_DIR}/config.h"
-    COMMENT  "creating config.h file ({event: PRE_BUILD}, {filename: config.h })"
-    )
-add_custom_target (generate_framework_config DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/config.h")
-add_dependencies (generate_framework_config vk_layer_validation_tests)
+# Since config_$<CONFIG>.h differs per build, set a compiler definition that files can use to include it
+target_compile_definitions(vk_layer_validation_tests PRIVATE CONFIG_HEADER_FILE="config_$<CONFIG>.h")
 
-target_sources(vk_layer_validation_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+target_sources(vk_layer_validation_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config_$<CONFIG>.h)
 target_include_directories(vk_layer_validation_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # More details in tests/android/mock/README.md
