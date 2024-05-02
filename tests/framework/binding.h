@@ -92,7 +92,6 @@ class Handle {
     bool initialized() const noexcept { return (handle_ != T{}); }
 
     operator T() const noexcept { return handle(); }
-    operator bool() const noexcept { return initialized(); }
 
   protected:
     typedef T handle_type;
