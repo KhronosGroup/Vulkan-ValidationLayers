@@ -1802,28 +1802,37 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
                         FormatHandle(dst_layout->Handle()).c_str(), dst_layout->GetBindingCount());
     }
 
-    const auto &dest = *dst_set.GetBinding(update.dstBinding);
-    if (0 == dest.count) {
+    const auto *dest = dst_set.GetBinding(update.dstBinding);
+    if (!dest) {
+        // Spec: "Bindings that are not specified have a descriptorCount and stageFlags of zero"
+        // If we can't find the binding, it means it was not in the layout and is same of having a zero descriptorCount
+        skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", objlist, dst_binding_loc,
+                         "(%" PRIu32
+                         ") was never set in any VkDescriptorSetLayoutBinding::binding for %s, therefore the descriptorCount value "
+                         "is considered zero.",
+                         update.dstBinding, FormatHandle(dst_layout->Handle()).c_str());
+        return skip;  // the rest of checks assume a valid DescriptorBinding state
+    } else if (dest->count == 0) {
         skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", objlist, dst_binding_loc,
                          "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.", update.dstBinding,
                          FormatHandle(dst_layout->Handle()).c_str());
     }
 
     const auto *used_handle = dst_set.InUse();
-    if (used_handle && !(dest.IsBindless())) {
+    if (used_handle && !(dest->IsBindless())) {
         skip |= LogError("VUID-vkUpdateDescriptorSets-None-03047", objlist, dst_binding_loc,
                          "(%" PRIu32 ") was created with %s, but %s is in use by %s.", update.dstBinding,
-                         string_VkDescriptorBindingFlags(dest.binding_flags).c_str(), FormatHandle(update.dstSet).c_str(),
+                         string_VkDescriptorBindingFlags(dest->binding_flags).c_str(), FormatHandle(update.dstSet).c_str(),
                          FormatHandle(*used_handle).c_str());
     }
     // We know that binding is valid, verify update and do update on each descriptor
-    if ((dest.type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) && (dest.type != update.descriptorType)) {
+    if ((dest->type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) && (dest->type != update.descriptorType)) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00319", objlist, write_loc.dot(Field::descriptorType),
                          "(%s) is different from pBinding[%" PRIu32 "].descriptorType (%s) of %s.",
-                         string_VkDescriptorType(update.descriptorType), update.dstBinding, string_VkDescriptorType(dest.type),
+                         string_VkDescriptorType(update.descriptorType), update.dstBinding, string_VkDescriptorType(dest->type),
                          dst_set.StringifySetAndLayout().c_str());
     }
-    if (dest.type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+    if (dest->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
         if ((update.dstArrayElement % 4) != 0) {
             skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02219", objlist, dst_binding_loc,
                              "(%" PRIu32 ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, but dstArrayElement is %" PRIu32
@@ -1905,7 +1914,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
         return skip;  // consistency will likley be wrong if already bad
     }
 
-    if (dest.IsVariableCount()) {
+    if (dest->IsVariableCount()) {
         if ((update.dstArrayElement + update.descriptorCount) > dst_set.GetVariableDescriptorCount()) {
             skip |= LogError("VUID-VkWriteDescriptorSet-dstArrayElement-00321", objlist, write_loc.dot(Field::dstArrayElement),
                              "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") is larger than (%" PRIu32 ") for dstBinding (%" PRIu32
@@ -1922,7 +1931,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
     // Update is within bounds and consistent so last step is to validate update contents
     skip |= VerifyWriteUpdateContents(dst_set, update, start_idx, write_loc, push);
 
-    if (dest.type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+    if (dest->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         // Check if the new descriptor descriptor type is in the list of allowed mutable types for this binding
         if (!dst_set.Layout().IsTypeMutable(update.descriptorType, update.dstBinding)) {
             skip |= LogError("VUID-VkWriteDescriptorSet-dstSet-04611", objlist, dst_binding_loc,
