@@ -154,7 +154,12 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         if ((out_vec.x == 0u) && (out_vec.y == 0u)) {
             break;
         }
-        out_data.data[state_index] = 1;
+
+        // The index has been accessed, write out for post processing
+        //
+        // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
+        // ex - desc_sets[0].out_data == desc_sets[1].out_data
+        out_data.data[state_index] = kDescriptorSetWrittenMask | desc_set;
     } while (false);
 
     if (0u != error) {

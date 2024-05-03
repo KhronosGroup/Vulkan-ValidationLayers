@@ -444,7 +444,8 @@ std::shared_ptr<gpuav::DescriptorSet::State> gpuav::DescriptorSet::GetOutputStat
     return next_state;
 }
 
-std::map<uint32_t, std::vector<uint32_t>> gpuav::DescriptorSet::State::UsedDescriptors(const gpuav::DescriptorSet &set) const {
+std::map<uint32_t, std::vector<uint32_t>> gpuav::DescriptorSet::State::UsedDescriptors(const gpuav::DescriptorSet &set,
+                                                                                       uint32_t shader_set) const {
     std::map<uint32_t, std::vector<uint32_t>> used_descs;
     if (!allocation) {
         return used_descs;
@@ -463,7 +464,7 @@ std::map<uint32_t, std::vector<uint32_t>> gpuav::DescriptorSet::State::UsedDescr
         uint32_t start = layout_data[binding + 1].state_start;
         for (uint32_t i = 0; i < count; i++) {
             uint32_t pos = start + i;
-            if (data[pos]) {
+            if (data[pos] == shader_set) {
                 auto map_result = used_descs.emplace(binding, std::vector<uint32_t>());
                 map_result.first->second.emplace_back(i);
             }
