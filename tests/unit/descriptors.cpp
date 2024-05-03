@@ -2056,20 +2056,30 @@ TEST_F(NegativeDescriptors, DSUpdateIndex) {
 }
 
 TEST_F(NegativeDescriptors, DSUpdateEmptyBinding) {
-    // Create layout w/ empty binding and attempt to update it
-
+    TEST_DESCRIPTION("Create layout w/ empty binding and attempt to update it");
     RETURN_IF_SKIP(Init());
-
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 0 /* !! */, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
-
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // descriptor_write.descriptorCount = 1, Lie here to avoid parameter_validation error
     // This is the wrong type, but empty binding error will be flagged first
     descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
 
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00316");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, UpdateIndexSmaller) {
+    TEST_DESCRIPTION("Only have a binding 2, but try updating binding 1");
+    RETURN_IF_SKIP(Init());
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00316");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
