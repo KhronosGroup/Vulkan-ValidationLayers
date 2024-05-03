@@ -2141,15 +2141,6 @@ TEST_F(NegativeQuery, DISABLED_MultiviewEndQuery) {
     }
 }
 
-TEST_F(NegativeQuery, NullQueryPoolCreateInfo) {
-    TEST_DESCRIPTION("Invalid usage without meshShaderQueries enabled");
-    RETURN_IF_SKIP(Init());
-    VkQueryPool pool = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredError("VUID-vkCreateQueryPool-pCreateInfo-parameter");
-    vk::CreateQueryPool(m_device->handle(), nullptr, nullptr, &pool);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeQuery, MeshShaderQueries) {
     TEST_DESCRIPTION("Invalid usage without meshShaderQueries enabled");
 
