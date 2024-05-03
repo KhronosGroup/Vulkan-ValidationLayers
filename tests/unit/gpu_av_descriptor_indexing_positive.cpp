@@ -682,7 +682,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingArray) {
 }
 
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7932
-TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SampledImageShareBindingBDA) {
+TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
@@ -691,9 +691,9 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SampledImageShareBindingBDA) {
         #version 460
         #extension GL_EXT_buffer_reference : require
         #extension GL_EXT_nonuniform_qualifier : require
-        layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
-        layout (set = 0, binding = 1) uniform sampler kSamplers[];
-        layout (set = 1, binding = 0) uniform textureCube kTexturesCube[];
+        layout (set = 0, binding = 4) uniform texture2D kTextures2D[];
+        layout (set = 0, binding = 5) uniform sampler kSamplers[];
+        layout (set = 1, binding = 4) uniform textureCube kTexturesCube[];
 
         vec4 textureBindlessCube(uint textureid, uint samplerid) {
             return texture(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), vec3(0.0));
@@ -727,13 +727,13 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SampledImageShareBindingBDA) {
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer storage_buffer(*m_device, 12, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
     uint32_t *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
-    storage_buffer_ptr[0] = 1;  // texture_cube_id
-    storage_buffer_ptr[1] = 0;  // texture_2d_id
-    storage_buffer_ptr[1] = 0;  // sampler_id
+    storage_buffer_ptr[0] = 8;  // texture_cube_id
+    storage_buffer_ptr[1] = 7;  // texture_2d_id
+    storage_buffer_ptr[2] = 0;  // sampler_id
     storage_buffer.memory().unmap();
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set(m_device, {{4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 16, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {5, VK_DESCRIPTOR_TYPE_SAMPLER, 16, VK_SHADER_STAGE_ALL, nullptr}});
     const std::vector<VkPushConstantRange> pc_ranges = {{VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress)}};
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_}, pc_ranges);
 
@@ -741,20 +741,24 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SampledImageShareBindingBDA) {
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image_2d(*m_device, image_ci);
+    image_2d.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view_2d = image_2d.CreateView();
 
     image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     image_ci.arrayLayers = 6;
     vkt::Image image_cube(*m_device, image_ci);
+    image_cube.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view_cube = image_cube.CreateView(VK_IMAGE_VIEW_TYPE_CUBE_ARRAY);
 
-    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorImageInfo(5, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
 
-    descriptor_set.WriteDescriptorImageInfo(0, image_view_2d, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    descriptor_set.WriteDescriptorImageInfo(4, image_view_2d, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, image_view_cube, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(4, image_view_2d, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 7);
+    descriptor_set.WriteDescriptorImageInfo(4, image_view_cube, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 8);
     descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);

@@ -43,7 +43,7 @@ class DescriptorSet : public vvl::DescriptorSet {
         VkBuffer buffer{VK_NULL_HANDLE};
         VkDeviceAddress device_addr{0};
 
-        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const DescriptorSet &set) const;
+        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const DescriptorSet &set, uint32_t shader_set) const;
     };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;

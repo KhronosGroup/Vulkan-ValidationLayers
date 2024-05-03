@@ -513,13 +513,16 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
             for (uint32_t i = 0;  i < di_info.descriptor_set_buffers.size(); i++) {
                 auto &set = di_info.descriptor_set_buffers[i];
                 if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
+                    // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
+                    // validating the 2nd instance of it
                     continue;
                 }
                 validated_desc_sets.emplace(set.state->VkHandle());
                 assert(set.output_state);
 
                 vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
-                auto used_descs = set.output_state->UsedDescriptors(*set.state);
+                const uint32_t shader_set = gpuav::glsl::kDescriptorSetWrittenMask | i;
+                auto used_descs = set.output_state->UsedDescriptors(*set.state, shader_set);
                 // For each used binding ...
                 for (const auto &u : used_descs) {
                     auto iter = set.binding_req.find(u.first);

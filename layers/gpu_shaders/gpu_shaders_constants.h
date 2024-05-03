@@ -120,6 +120,10 @@ const int kDebugInputBuffAddrPtrOffset = 1;
 // not a valid buffer, the length associated with the 0x0 address is zero.
 const int kDebugInputBuffAddrLengthOffset = 0;
 
+// We use "0" as an initialization value, but the set could be "0" in SPIR-V
+// This mask lets know the descriptor was written to while saving the set value used.
+const uint kDescriptorSetWrittenMask = 1u << 31;
+
 #ifdef __cplusplus
 }  // namespace glsl
 }  // namespace gpuav
