@@ -857,14 +857,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePipelineLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    chassis::CreatePipelineLayout chassis_state{};
-    chassis_state.modified_create_info = *pCreateInfo;
-
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreatePipelineLayout]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    chassis::CreatePipelineLayout chassis_state{};
+    chassis_state.modified_create_info = *pCreateInfo;
 
     RecordObject record_obj(vvl::Func::vkCreatePipelineLayout);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -889,14 +889,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    chassis::CreateShaderModule chassis_state{};
-    chassis_state.instrumented_create_info = *pCreateInfo;
-
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    chassis::CreateShaderModule chassis_state{};
+    chassis_state.instrumented_create_info = *pCreateInfo;
 
     RecordObject record_obj(vvl::Func::vkCreateShaderModule);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -997,14 +997,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateBuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    chassis::CreateBuffer chassis_state{};
-    chassis_state.modified_create_info = *pCreateInfo;
-
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    chassis::CreateBuffer chassis_state{};
+    chassis_state.modified_create_info = *pCreateInfo;
 
     RecordObject record_obj(vvl::Func::vkCreateBuffer);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
