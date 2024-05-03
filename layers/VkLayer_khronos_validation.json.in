@@ -1449,6 +1449,27 @@
                     "default": []
                 },
                 {
+                    "key": "message_format",
+                    "label": "Message Format",
+                    "description": "Specifies how error messages are reported",
+                    "type": "GROUP",
+                    "expanded": true,
+                    "settings": [
+                        {
+                            "key": "message_format_display_application_name",
+                            "label": "Display Application Name",
+                            "description": "Useful when running multiple instances to know which instance the message is from.","type": "BOOL",
+                            "default": false,
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
+                        }
+                    ]
+                },
+                {
                     "key": "disables",
                     "label": "Disables",
                     "description": "Specify areas of validation to be disabled",

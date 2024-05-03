@@ -135,6 +135,12 @@ khronos_validation.enables =
 # performance in multithreaded applications.
 khronos_validation.fine_grained_locking = true
 
+# Display Application Name
+# =====================
+# <LayerIdentifier>.message_format_display_application_name
+# Useful when running multiple instances to know which instance the message is from
+#khronos_validation.message_format_display_application_name = false
+
 # Best Practices
 # =====================
 # Enable best practices layer

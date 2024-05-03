@@ -187,6 +187,10 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
     oss << "Self ";
 #endif
 
+    if (message_format_settings.display_application_name && !message_format_settings.application_name.empty()) {
+        oss << "[AppName: " << message_format_settings.application_name << "] ";
+    }
+
     if (msg_flags & kErrorBit) {
         oss << "Validation Error: ";
     } else if (msg_flags & kWarningBit) {
