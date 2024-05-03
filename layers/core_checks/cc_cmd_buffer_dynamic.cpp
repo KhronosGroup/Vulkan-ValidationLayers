@@ -309,7 +309,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
                     if ((attribute_type & var_numeric_type) == 0) {
                         skip |= LogError(vuid.vertex_input_08734, vert_spirv_state->handle(), loc,
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "].location (%" PRIu32
-                                         ") with format %s but the vertex shader input is numberic type %s",
+                                         ") with format %s but the vertex shader input is numeric type %s",
                                          i, description.location, string_VkFormat(description.format),
                                          vert_spirv_state->DescribeType(var_base_type_id).c_str());
 
