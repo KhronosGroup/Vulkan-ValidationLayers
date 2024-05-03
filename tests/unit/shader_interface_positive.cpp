@@ -1303,26 +1303,81 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
-        #version 450
-        layout(location = 0, component = 1) out float[2] x;
-        layout(location = 1, component = 0) out int y;
-        layout(location = 1, component = 2) out int z;
-        void main() {}
-    )glsl";
+    // GLSL use to allow alias location of different types
+    // https://github.com/KhronosGroup/glslang/pull/3438
+    //
+    // layout(location = 0, component = 1) out float[2] x;
+    // layout(location = 1, component = 0) out int y;
+    // layout(location = 1, component = 2) out int z;
+    char const *vsSource = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %x %y %z
+               OpDecorate %x Component 1
+               OpDecorate %x Location 0
+               OpDecorate %y Component 0
+               OpDecorate %y Location 1
+               OpDecorate %z Component 2
+               OpDecorate %z Location 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+          %x = OpVariable %_ptr_Output__arr_float_uint_2 Output
+        %int = OpTypeInt 32 1
+%_ptr_Output_int = OpTypePointer Output %int
+          %y = OpVariable %_ptr_Output_int Output
+          %z = OpVariable %_ptr_Output_int Output
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location = 0, component = 1) in float x1;
-        layout(location = 1, component = 0) flat in int y;
-        layout(location = 1, component = 1) in float x2;
-        layout(location = 1, component = 2) flat in int z;
-        layout(location=0) out float color;
-        void main(){}
-    )glsl";
+    // layout(location = 0, component = 1) in float x1;
+    // layout(location = 1, component = 0) flat in int y;
+    // layout(location = 1, component = 1) in float x2;
+    // layout(location = 1, component = 2) flat in int z;
+    // layout(location=0) out float color;
+    char const *fsSource = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %x1 %y %x2 %z %color
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %x1 Component 1
+               OpDecorate %x1 Location 0
+               OpDecorate %y Flat
+               OpDecorate %y Component 0
+               OpDecorate %y Location 1
+               OpDecorate %x2 Component 1
+               OpDecorate %x2 Location 1
+               OpDecorate %z Flat
+               OpDecorate %z Component 2
+               OpDecorate %z Location 1
+               OpDecorate %color Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Input_float = OpTypePointer Input %float
+         %x1 = OpVariable %_ptr_Input_float Input
+        %int = OpTypeInt 32 1
+%_ptr_Input_int = OpTypePointer Input %int
+          %y = OpVariable %_ptr_Input_int Input
+         %x2 = OpVariable %_ptr_Input_float Input
+          %z = OpVariable %_ptr_Input_int Input
+%_ptr_Output_float = OpTypePointer Output %float
+      %color = OpVariable %_ptr_Output_float Output
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
