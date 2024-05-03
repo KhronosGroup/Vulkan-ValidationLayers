@@ -21,6 +21,7 @@
 #include <vulkan/layer/vk_layer_settings.hpp>
 
 #include "gpu_validation/gpu_settings.h"
+#include "error_message/logging.h"
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
 // part of the VVL but not the layer utils library.
@@ -89,6 +90,9 @@ const char *VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
 
 const char *VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "gpuav_debug_validate_instrumented_shaders";
 const char *VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS = "gpuav_debug_dump_instrumented_shaders";
+
+// Message Formatting
+const char *VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_display_application_name";
 
 // These were deprecated after the 1.3.280 SDK release
 const char *DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES = "gpuav_validate_copies";
@@ -570,6 +574,16 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (gpuav_settings.debug_validate_instrumented_shaders || gpuav_settings.debug_dump_instrumented_shaders) {
         // When debugging instrumented shaders, if it is cached, it will never get to the InstrumentShader() call
         gpuav_settings.cache_instrumented_shaders = false;
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME,
+                                settings_data->message_format_settings->display_application_name);
+    }
+    // Grab application name here while we have access to it and know if to save it or not
+    if (settings_data->message_format_settings->display_application_name) {
+        settings_data->message_format_settings->application_name =
+            settings_data->create_info->pApplicationInfo ? settings_data->create_info->pApplicationInfo->pApplicationName : "";
     }
 
     const auto *validation_features_ext = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(settings_data->create_info);

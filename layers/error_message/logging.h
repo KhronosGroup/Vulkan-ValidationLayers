@@ -179,6 +179,11 @@ class TypedHandleWrapper {
 
 struct Location;
 
+struct MessageFormatSettings {
+    bool display_application_name = false;
+    std::string application_name;
+};
+
 class DebugReport {
   public:
     std::vector<VkLayerDbgFunctionState> debug_callback_list;
@@ -191,6 +196,7 @@ class DebugReport {
     const void *instance_pnext_chain{};
     bool force_default_log_callback{false};
     uint32_t device_created = 0;
+    MessageFormatSettings message_format_settings;
 
     void SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
     void SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo);

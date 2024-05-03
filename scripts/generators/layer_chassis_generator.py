@@ -1097,6 +1097,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                                                                 local_disables,
                                                                 debug_report->filter_message_ids,
                                                                 &debug_report->duplicate_message_limit,
+                                                                &debug_report->message_format_settings,
                                                                 &lock_setting,
                                                                 &local_gpuav_settings,
                                                                 &local_printf_settings};

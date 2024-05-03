@@ -2060,3 +2060,41 @@ TEST_F(VkLayerTest, GetDeviceProcAddrInstance) {
     m_errorMonitor->VerifyFound();
 }
 #endif
+
+// TODO - Can reproduce locally when setting VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME
+// but need to unset variable and make sure works on Android before having CI run this
+TEST_F(VkLayerTest, DISABLED_DisplayApplicationName) {
+    TEST_DESCRIPTION("Test message_format_display_application_name");
+    const char *name_0 = "first instance";
+    app_info_.pApplicationName = name_0;
+    RETURN_IF_SKIP(Init());
+
+    const char *name_1 = "second instance";
+    app_info_.pApplicationName = name_1;
+    const auto instance_create_info = GetInstanceCreateInfo();
+    VkInstance instance2;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2));
+
+    uint32_t gpu_count = 0;
+    vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
+    std::vector<VkPhysicalDevice> physical_devices(gpu_count);
+    vk::EnumeratePhysicalDevices(instance2, &gpu_count, physical_devices.data());
+    VkPhysicalDevice instance2_physical_device = physical_devices[0];
+    // scope so device is destroyed before instance
+    {
+        vkt::Device device2(instance2_physical_device, m_device_extension_names);
+
+        // VUID-vkCreateImage-pCreateInfo-parameter
+        VkImage image;
+
+        m_errorMonitor->SetDesiredError("AppName: first instance");
+        vk::CreateImage(device(), nullptr, nullptr, &image);
+        m_errorMonitor->VerifyFound();
+
+        // TODO - The second instance is not hooked up to the callback so will crash in corecheck or the driver
+        m_errorMonitor->SetDesiredError("AppName: second instance");
+        vk::CreateImage(device2.handle(), nullptr, nullptr, &image);
+        m_errorMonitor->VerifyFound();
+    }
+    ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance2, nullptr));
+}

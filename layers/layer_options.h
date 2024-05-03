@@ -90,6 +90,7 @@ using CHECK_ENABLED = std::array<bool, kMaxEnableFlags>;
 
 struct GpuAVSettings;
 struct DebugPrintfSettings;
+struct MessageFormatSettings;
 struct ConfigAndEnvSettings {
     const char *layer_description;
     const VkInstanceCreateInfo *create_info;
@@ -97,6 +98,7 @@ struct ConfigAndEnvSettings {
     CHECK_DISABLED &disables;
     vvl::unordered_set<uint32_t> &message_filter_list;
     uint32_t *duplicate_message_limit;
+    MessageFormatSettings *message_format_settings;
     bool *fine_grained_locking;
     GpuAVSettings *gpuav_settings;
     DebugPrintfSettings *printf_settings;
