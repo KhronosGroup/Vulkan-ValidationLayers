@@ -131,6 +131,10 @@
                         {
                             "key": "validate_best_practices",
                             "value": false
+                        },
+                        {
+                            "key": "report_flags",
+                            "value": ["error"]
                         }
                     ]
                 },
@@ -199,6 +203,10 @@
                         {
                             "key": "validate_best_practices",
                             "value": false
+                        },
+                        {
+                            "key": "report_flags",
+                            "value": ["error"]
                         }
                     ]
                 },
@@ -268,6 +276,10 @@
                         {
                             "key": "validate_best_practices",
                             "value": true
+                        },
+                        {
+                            "key": "report_flags",
+                            "value": ["error", "warn", "perf"]
                         }
                     ]
                 },
@@ -341,6 +353,10 @@
                         {
                             "key": "validate_best_practices",
                             "value": false
+                        },
+                        {
+                            "key": "report_flags",
+                            "value": ["error"]
                         }
                     ]
                 },
@@ -412,6 +428,10 @@
                         {
                             "key": "validate_best_practices",
                             "value": false
+                        },
+                        {
+                            "key": "report_flags",
+                            "value": ["error"]
                         }
                     ]
                 },
@@ -479,6 +499,10 @@
                         {
                             "key": "validate_best_practices",
                             "value": false
+                        },
+                        {
+                            "key": "report_flags",
+                            "value": ["error"]
                         }
                     ]
                 }
