@@ -1676,7 +1676,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     RETURN_IF_SKIP(Init());
 
     // HOST stage as source
-    vkt::Buffer buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
     buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
     buffer_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;

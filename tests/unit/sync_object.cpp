@@ -1358,7 +1358,7 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    vkt::Buffer buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.buffer = buffer.handle();
     barrier.size = VK_WHOLE_SIZE;
@@ -1444,7 +1444,7 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStageSync1) {
     if (m_device->phy().queue_properties_.size() < 2) {
         GTEST_SKIP() << "Two queue families are required";
     }
-    vkt::Buffer buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkBufferMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcQueueFamilyIndex = 0;
