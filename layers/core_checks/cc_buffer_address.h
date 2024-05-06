@@ -127,7 +127,7 @@ class BufferAddressValidation {
     }
 
     static std::string ValidateMemoryBoundToBufferErrorMsgHeader() {
-        return "The following buffers are not bound to memory or it has been freed:\n";
+        return "The following buffers are not bound to memory or it has been freed:";
     }
 
   public:
@@ -192,7 +192,7 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker, vv
         error_msg_beginning += "(";
         error_msg_beginning += address_string;
         error_msg_beginning +=
-            ") has no buffer associated to it such that valid usage passes. "
+            ") has no buffer(s) associated to it such that valid usage passes. "
             "At least one buffer associated to this device address must be valid. ";
     }
 
@@ -221,9 +221,12 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker, vv
                 if (error_msg.empty()) {
                     error_msg += error_msg_beginning;
                     error_msg += error_msg_header_suffix_func();
+                    error_msg += '\n';
                 }
-                const auto invalid_buffer_index = error_objlist.size() - 1;
-                error_msg += "\nObject " + std::to_string(invalid_buffer_index) + ": " + buffer_error;
+
+                error_msg += checker.FormatHandle(buffer->Handle());
+                error_msg += ": ";
+                error_msg += buffer_error;
             }
         }
     }
