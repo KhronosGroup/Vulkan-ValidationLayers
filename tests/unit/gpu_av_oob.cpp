@@ -24,13 +24,8 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
-    VkPhysicalDevicePipelineRobustnessFeaturesEXT pipeline_robustness_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
-    features2.features.robustBufferAccess = VK_FALSE;
-    if (!pipeline_robustness_features.pipelineRobustness) {
-        GTEST_SKIP() << "pipelineRobustness feature not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::pipelineRobustness);
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
@@ -161,15 +156,12 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     }
     RETURN_IF_SKIP(InitGpuAvFramework());
 
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    dynamic_rendering_features.dynamicRendering = VK_TRUE;
-    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
-    shader_object_features.shaderObject = VK_TRUE;
-    VkPhysicalDeviceFeatures2 features = vku::InitStructHelper();  // Make sure robust buffer access is not enabled
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
     if (shader_objects) {
-        features.pNext = &shader_object_features;
+        AddRequiredFeature(vkt::Feature::dynamicRendering);
+        AddRequiredFeature(vkt::Feature::shaderObject);
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features));
+    RETURN_IF_SKIP(InitState());
     if (shader_objects) {
         InitDynamicRenderTarget();
     } else {
