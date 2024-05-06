@@ -520,7 +520,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
                     void *alloc_info_pnext = nullptr) {
         init(dev, info, mem_props, alloc_info_pnext);
     }
-    explicit Buffer(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VkMemoryPropertyFlags mem_props = 0,
+    explicit Buffer(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_props = 0,
                     void *alloc_info_pnext = nullptr) {
         init(dev, size, usage, mem_props, alloc_info_pnext);
     }
@@ -546,9 +546,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     // vkCreateBuffer()
     void init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
               void *alloc_info_pnext = nullptr);
-    void init(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-              VkMemoryPropertyFlags mem_props = 0, void *alloc_info_pnext = nullptr,
-              const std::vector<uint32_t> &queue_families = {}) {
+    void init(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_props = 0,
+              void *alloc_info_pnext = nullptr, const std::vector<uint32_t> &queue_families = {}) {
         init(dev, create_info(size, usage, &queue_families), mem_props, alloc_info_pnext);
     }
     void init_no_mem(const Device &dev, const VkBufferCreateInfo &info);

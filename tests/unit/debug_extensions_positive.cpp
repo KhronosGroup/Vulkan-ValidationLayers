@@ -36,7 +36,7 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectBuffer) {
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
-    vkt::Buffer buffer(*m_device, 64);
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     const char* object_name = "buffer_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();

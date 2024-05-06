@@ -253,7 +253,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
 
-    vkt::Buffer buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
     buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -318,7 +318,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
 
-    vkt::Buffer buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
     buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
