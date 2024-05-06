@@ -1635,8 +1635,19 @@ DescriptorSet::~DescriptorSet() noexcept { destroy(); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(CommandPool, vk::DestroyCommandPool)
 
-void CommandPool::init(const Device &dev, const VkCommandPoolCreateInfo &info) {
+void CommandPool::Init(const Device &dev, const VkCommandPoolCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateCommandPool, dev, &info);
+}
+
+void CommandPool::Init(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
+    VkCommandPoolCreateInfo pool_ci = vku::InitStructHelper();
+    pool_ci.flags = flags;
+    pool_ci.queueFamilyIndex = queue_family_index;
+    Init(dev, pool_ci);
+}
+
+CommandPool::CommandPool(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
+    Init(dev, queue_family_index, flags);
 }
 
 void CommandBuffer::destroy() noexcept {
