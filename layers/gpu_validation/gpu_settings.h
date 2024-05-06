@@ -16,7 +16,10 @@
  * limitations under the License.
  */
 #pragma once
+// Default values for those settings should match layers/VkLayer_khronos_validation.json.in
+
 struct GpuAVSettings {
+    bool shader_instrumentation_enabled = true;
     bool validate_descriptors = true;
     bool warn_on_robust_oob = true;
     bool validate_bda = true;
@@ -25,6 +28,7 @@ struct GpuAVSettings {
     bool cache_instrumented_shaders = true;
     bool select_instrumented_shaders = false;
 
+    bool buffers_validation_enabled = true;
     bool validate_indirect_draws_buffers = true;
     bool validate_indirect_dispatches_buffers = true;
     bool validate_indirect_trace_rays_buffers = true;
