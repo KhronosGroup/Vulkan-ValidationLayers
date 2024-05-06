@@ -511,7 +511,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         for (auto &di_info : di_input_buffer_list) {
             Location draw_loc(vvl::Func::vkCmdDraw);
             // For each descriptor set ...
-            for (uint32_t i = 0;  i < di_info.descriptor_set_buffers.size(); i++) {
+            for (uint32_t i = 0; i < di_info.descriptor_set_buffers.size(); i++) {
                 auto &set = di_info.descriptor_set_buffers[i];
                 if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
                     // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
@@ -522,18 +522,19 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
                 assert(set.output_state);
 
                 vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
-                const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
-                auto used_descs = set.output_state->UsedDescriptors(*set.state, shader_set);
+                const uint32_t shader_set = gpuav::glsl::kDescriptorSetWrittenMask | i;
+                auto used_descriptors_per_accessed_bindings = set.output_state->UsedDescriptorsPerBindings(*set.state, shader_set);
                 // For each used binding ...
-                for (const auto &u : used_descs) {
-                    auto iter = set.binding_req.find(u.first);
+                for (const auto &used_desc : used_descriptors_per_accessed_bindings) {
+                    const uint32_t used_desc_binding = used_desc.first;
                     vvl::DescriptorBindingInfo binding_info;
-                    binding_info.first = u.first;
-                    while (iter != set.binding_req.end() && iter->first == u.first) {
-                        binding_info.second.emplace_back(iter->second);
-                        ++iter;
+                    binding_info.binding = used_desc_binding;
+                    for (auto binding_reqs_iter = set.binding_req.find(used_desc_binding);
+                         binding_reqs_iter != set.binding_req.end() && binding_reqs_iter->first == used_desc_binding;
+                         ++binding_reqs_iter) {
+                        binding_info.descriptor_reqs.emplace_back(binding_reqs_iter->second);
                     }
-                    context.ValidateBinding(binding_info, u.second);
+                    context.ValidateBinding(binding_info, used_desc.second);
                 }
             }
         }

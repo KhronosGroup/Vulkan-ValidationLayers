@@ -835,8 +835,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t
             continue;
         }
         vvl::DescriptorBindingInfo binding_info;
-        binding_info.first = binding_pair.first;
-        binding_info.second.emplace_back(binding_pair.second);
+        binding_info.binding = binding_pair.first;
+        binding_info.descriptor_reqs.emplace_back(binding_pair.second);
 
         result |= desc_val.ValidateBinding(binding_info, *binding);
     }

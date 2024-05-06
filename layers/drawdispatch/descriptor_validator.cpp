@@ -40,10 +40,11 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
 
         if (!binding.updated[index]) {
             auto set = descriptor_set.Handle();
-            return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.",
-                            FormatHandle(set).c_str(), binding_info.first, index);
+            return dev_state.LogError(
+                vuids.descriptor_buffer_bit_set_08114, set, loc,
+                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                ") is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.",
+                FormatHandle(set).c_str(), binding_info.binding, index);
         }
         skip |= ValidateDescriptor(binding_info, index, binding.type, descriptor);
     }
@@ -90,10 +91,11 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
 
         if (!binding.updated[index]) {
             auto set = descriptor_set.Handle();
-            return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.",
-                            FormatHandle(set).c_str(), binding_info.first, index);
+            return dev_state.LogError(
+                vuids.descriptor_buffer_bit_set_08114, set, loc,
+                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                ") is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.",
+                FormatHandle(set).c_str(), binding_info.binding, index);
         }
         skip |= ValidateDescriptor(binding_info, index, binding.type, descriptor);
     }
@@ -102,7 +104,7 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
 
 bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info, const std::vector<uint32_t> &indices) {
     using DescriptorClass = vvl::DescriptorClass;
-    auto &binding = *descriptor_set.GetBinding(binding_info.first);
+    auto &binding = *descriptor_set.GetBinding(binding_info.binding);
     bool skip = false;
     switch (binding.descriptor_class) {
         case DescriptorClass::InlineUniform:
@@ -152,9 +154,9 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     if ((!buffer_node && !dev_state.enabled_features.nullDescriptor) || (buffer_node && buffer_node->Destroyed())) {
         auto set = descriptor_set.Handle();
         return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                        "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                        ") is using buffer %s that is invalid or has been destroyed.",
-                        FormatHandle(set).c_str(), binding_info.first, index, FormatHandle(buffer).c_str());
+                                  "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                  ") is using buffer %s that is invalid or has been destroyed.",
+                                  FormatHandle(set).c_str(), binding_info.binding, index, FormatHandle(buffer).c_str());
     }
 
     if (buffer == VK_NULL_HANDLE) {
@@ -166,7 +168,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
                                       "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                       ") is using buffer %s that references invalid memory %s.",
-                                      FormatHandle(set).c_str(), binding_info.first, index, FormatHandle(buffer).c_str(),
+                                      FormatHandle(set).c_str(), binding_info.binding, index, FormatHandle(buffer).c_str(),
                                       FormatHandle(binding->Handle()).c_str());
         }
     }
@@ -176,7 +178,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             return true;
         }
         bool is_written_to = false;
-        for (const auto &req : binding_info.second) {
+        for (const auto &req : binding_info.descriptor_reqs) {
             if (req.variable->is_written_to) {
                 is_written_to = true;
                 break;
@@ -254,13 +256,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     std::vector<const vvl::Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
     const vvl::ImageView *image_view_state = image_descriptor.GetImageViewState();
-    const auto binding = binding_info.first;
+    const auto binding = binding_info.binding;
 
     if (image_descriptor.GetClass() == vvl::DescriptorClass::ImageSampler) {
         sampler_states.emplace_back(
             static_cast<const vvl::ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
     } else {
-        for (const auto &req : binding_info.second) {
+        for (const auto &req : binding_info.descriptor_reqs) {
             if (!req.variable || req.variable->samplers_used_by_image.size() <= index) {
                 continue;
             }
@@ -292,7 +294,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         return false;
     }
     const auto &image_view_ci = image_view_state->create_info;
-    const auto *variable = FindMatchingImageVar(binding_info.second, image_view_ci);
+    const auto *variable = FindMatchingImageVar(binding_info.descriptor_reqs, image_view_ci);
     if (variable == nullptr) {
         return false;
     }
@@ -1003,7 +1005,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                     const vvl::TexelDescriptor &texel_descriptor) const {
     const VkBufferView buffer_view = texel_descriptor.GetBufferView();
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
-    const auto binding = binding_info.first;
+    const auto binding = binding_info.binding;
     if ((!buffer_view_state && !dev_state.enabled_features.nullDescriptor) || (buffer_view_state && buffer_view_state->Destroyed())) {
         auto set = descriptor_set.Handle();
         return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
@@ -1015,7 +1017,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     if (buffer_view == VK_NULL_HANDLE) {
         return false;
     }
-    const auto *variable = FindMatchingTexelVar(binding_info.second);
+    const auto *variable = FindMatchingTexelVar(binding_info.descriptor_reqs);
     if (!variable) {
         return false;
     }
@@ -1153,7 +1155,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                     VkDescriptorType descriptor_type,
                                     const vvl::AccelerationStructureDescriptor &descriptor) const {
     // Verify that acceleration structures are valid
-    const auto binding = binding_info.first;
+    const auto binding = binding_info.binding;
     if (descriptor.is_khr()) {
         auto acc = descriptor.GetAccelerationStructure();
         auto acc_node = descriptor.GetAccelerationStructureStateKHR();
@@ -1210,18 +1212,18 @@ bool vvl::DescriptorValidator::ValidateSamplerDescriptor(const DescriptorBinding
     if (!sampler_state || sampler_state->Destroyed()) {
         auto set = descriptor_set.Handle();
         return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                        "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                        ") is using sampler %s that is invalid or has been destroyed.",
-                        FormatHandle(set).c_str(), binding_info.first, index, FormatHandle(sampler).c_str());
+                                  "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                  ") is using sampler %s that is invalid or has been destroyed.",
+                                  FormatHandle(set).c_str(), binding_info.binding, index, FormatHandle(sampler).c_str());
     } else {
         if (sampler_state->samplerConversion && !is_immutable) {
             auto set = descriptor_set.Handle();
             return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") sampler (%s) contains a YCBCR conversion (%s), but the sampler is not an "
-                            "immutable sampler.",
-                            FormatHandle(set).c_str(), binding_info.first, index, FormatHandle(sampler).c_str(),
-                            FormatHandle(sampler_state->samplerConversion).c_str());
+                                      "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                      ") sampler (%s) contains a YCBCR conversion (%s), but the sampler is not an "
+                                      "immutable sampler.",
+                                      FormatHandle(set).c_str(), binding_info.binding, index, FormatHandle(sampler).c_str(),
+                                      FormatHandle(sampler_state->samplerConversion).c_str());
         }
     }
     return false;

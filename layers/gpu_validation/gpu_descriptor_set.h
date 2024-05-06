@@ -39,11 +39,11 @@ class DescriptorSet : public vvl::DescriptorSet {
         VkDescriptorSet set{VK_NULL_HANDLE};
         uint32_t version{0};
         VmaAllocator allocator{nullptr};
-        VmaAllocation allocation{nullptr};
-        VkBuffer buffer{VK_NULL_HANDLE};
+        VmaAllocation gpu_records_allocation{nullptr};
+        VkBuffer gpu_records{VK_NULL_HANDLE};
         VkDeviceAddress device_addr{0};
 
-        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const DescriptorSet &set, uint32_t shader_set) const;
+        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptorsPerBindings(const DescriptorSet &set, uint32_t shader_set) const;
     };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;

@@ -35,7 +35,10 @@ class CommandBuffer;
 class Sampler;
 class DescriptorSet;
 
-using DescriptorBindingInfo = std::pair<uint32_t, std::vector<DescriptorRequirement>>;
+struct DescriptorBindingInfo {
+    uint32_t binding;
+    std::vector<DescriptorRequirement> descriptor_reqs;
+};
 
 class DescriptorValidator {
  public:
