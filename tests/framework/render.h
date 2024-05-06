@@ -195,8 +195,10 @@ class VkRenderFramework : public VkTestFramework {
 
     uint32_t m_gpu_index;
     vkt::Device *m_device;
-    vkt::CommandPool *m_commandPool;
-    vkt::CommandBuffer *m_commandBuffer;
+    vkt::CommandPool *m_commandPool;  // DEPRECATED: use m_command_pool
+    vkt::CommandPool m_command_pool;
+    vkt::CommandBuffer *m_commandBuffer;  // DEPRECATED: use m_command_buffer
+    vkt::CommandBuffer m_command_buffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
 
     // WSI items
@@ -224,6 +226,9 @@ class VkRenderFramework : public VkTestFramework {
     // It is null if implementation provides the only queue. Capabilities should be checked if necessary (m_second_queue_caps).
     vkt::Queue *m_second_queue = nullptr;
     VkQueueFlags m_second_queue_caps = 0;
+
+    vkt::CommandPool m_second_command_pool;  // associated with a queue family of the second command queue
+    vkt::CommandBuffer m_second_command_buffer;
 
     // Requested extensions to enable at device creation time
     std::vector<const char *> m_required_extensions;

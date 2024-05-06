@@ -1013,22 +1013,11 @@ class CommandPool : public internal::NonDispHandle<VkCommandPool> {
     void destroy() noexcept;
 
     explicit CommandPool() : NonDispHandle() {}
-    explicit CommandPool(const Device &dev, const VkCommandPoolCreateInfo &info) { init(dev, info); }
-    explicit CommandPool(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0) {
-        init(dev, CommandPool::create_info(queue_family_index, flags));
-    }
-
-    void init(const Device &dev, const VkCommandPoolCreateInfo &info);
-
-    static VkCommandPoolCreateInfo create_info(uint32_t queue_family_index, VkCommandPoolCreateFlags flags);
+    explicit CommandPool(const Device &dev, const VkCommandPoolCreateInfo &info) { Init(dev, info); }
+    explicit CommandPool(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
+    void Init(const Device &dev, const VkCommandPoolCreateInfo &info);
+    void Init(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
 };
-
-inline VkCommandPoolCreateInfo CommandPool::create_info(uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
-    VkCommandPoolCreateInfo info = vku::InitStructHelper();
-    info.queueFamilyIndex = queue_family_index;
-    info.flags = flags;
-    return info;
-}
 
 class CommandBuffer : public internal::Handle<VkCommandBuffer> {
   public:

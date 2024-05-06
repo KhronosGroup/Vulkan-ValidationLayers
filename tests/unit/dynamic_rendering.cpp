@@ -659,8 +659,8 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
         m_commandBuffer->end();
 
         {
-            delete m_commandBuffer;
-            m_commandBuffer = new vkt::CommandBuffer(*m_device, m_commandPool);
+            m_command_buffer.destroy();
+            m_command_buffer.Init(*m_device, &m_command_pool);
 
             std::unique_ptr<vkt::CommandBuffer> secondary_cmd_buffer(
                 new vkt::CommandBuffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY));
@@ -740,8 +740,8 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
 
     clear_cmd_test(true);
 
-    delete m_commandBuffer;
-    m_commandBuffer = new vkt::CommandBuffer(*m_device, m_commandPool);
+    m_command_buffer.destroy();
+    m_command_buffer.Init(*m_device, &m_command_pool);
     clear_cmd_test(false);
 }
 

@@ -64,7 +64,7 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
     first_to_second = {0, half_size, half_size};
     second_to_first = {half_size, 0, half_size};
 
-    pool.init(*device, vkt::CommandPool::create_info(q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    pool.Init(*device, q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     h_cba = InitFromPool(cba);
     h_cbb = InitFromPool(cbb);
