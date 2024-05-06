@@ -2865,7 +2865,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
                [&address_info]() {
                    const sparse_container::range<VkDeviceAddress> address_range{address_info->address,
                                                                                 address_info->address + address_info->range};
-                   return "The following buffers do not contain address range " + string_range_hex(address_range) + ":\n";
+                   return "The following buffers do not contain address range " + string_range_hex(address_range) + ":";
                }}}}};
 
         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, address_loc.dot(Field::address),
