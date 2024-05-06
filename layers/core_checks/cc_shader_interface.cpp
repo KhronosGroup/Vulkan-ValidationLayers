@@ -670,6 +670,12 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
         if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
             continue;  // not an output interface
         }
+
+        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923
+        // Need to redo logic to handle array of outputs
+        if (variable->array_size > 1) {
+            return false;
+        }
         // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
         // This means all Locations in slots will be the same
         location_map[variable->interface_slots[0].Location()].output = variable;
