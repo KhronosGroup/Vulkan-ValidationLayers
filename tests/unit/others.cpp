@@ -712,7 +712,7 @@ TEST_F(VkLayerTest, UnrecognizedValueOutOfRange) {
 TEST_F(VkLayerTest, UnrecognizedValueBadMask) {
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredError("contains flag bits that are not recognized members of");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-usage-parameter");
     // Specify an invalid VkFlags bitmask value
     // Expected to trigger an error with StatelessValidation::ValidateFlags
     VkImageFormatProperties image_format_properties;
@@ -724,7 +724,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadMask) {
 TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredError("contains flag bits that are not recognized members of");
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
     // Specify an invalid VkFlags array entry
     // Expected to trigger an error with StatelessValidation::ValidateFlagsArray
     vkt::Semaphore semaphore(*m_device);
@@ -753,7 +753,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
 
     // Not VK_TRUE or VK_FALSE
     sampler_info.anisotropyEnable = 3;
-    CreateSamplerTest(*this, &sampler_info, "is neither VK_TRUE nor VK_FALSE");
+    CreateSamplerTest(*this, &sampler_info, "UNASSIGNED-GeneralParameterError-UnrecognizedBool32");
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueMaxEnum) {
