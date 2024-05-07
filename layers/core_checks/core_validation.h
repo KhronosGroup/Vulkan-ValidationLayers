@@ -230,12 +230,9 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* vuid, const Location& create_info_loc) const;
-    bool CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
-                               const std::vector<SubpassLayout>& dependent_subpasses, const std::vector<DAGNode>& subpass_to_node,
-                               const Location& attachment_loc, bool& skip) const;
-    bool CheckPreserved(const VkRenderPass renderpass, const VkRenderPassCreateInfo2* pCreateInfo, const int index,
-                        const uint32_t attachment, const std::vector<DAGNode>& subpass_to_node, int depth,
-                        const Location& attachment_loc, bool& skip) const;
+    bool ValidateDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
+                                  const std::vector<SubpassLayout>& dependent_subpasses,
+                                  const std::vector<DAGNode>& subpass_to_node, const Location& attachment_loc) const;
     bool ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                  const ErrorObject& error_obj) const;
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,

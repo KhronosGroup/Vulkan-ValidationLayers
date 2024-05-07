@@ -1262,3 +1262,56 @@ TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSubpass, SubpassDependency) {
+    TEST_DESCRIPTION("Create 2 subpasses that have no dependency between them");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkAttachmentReference attach_ref = {};
+    attach_ref.attachment = 0;
+    attach_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass0 = {};
+    subpass0.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass0.colorAttachmentCount = 1;
+    subpass0.pColorAttachments = &attach_ref;
+
+    VkSubpassDescription subpass1 = {};
+    subpass1.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass1.colorAttachmentCount = 1;
+    subpass1.pColorAttachments = &attach_ref;
+
+    VkSubpassDescription subpasses[2] = {subpass0, subpass1};
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkAttachmentDescription attach_desc2[] = {attach_desc};
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.subpassCount = 2;
+    rpci.pSubpasses = subpasses;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = attach_desc2;
+
+    vkt::RenderPass render_pass(*m_device, rpci);
+
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-Subpass-dependency");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-Subpass-dependency");
+    m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
