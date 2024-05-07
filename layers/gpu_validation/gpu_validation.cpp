@@ -616,7 +616,7 @@ bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Lo
     if (result == VK_SUCCESS) {
         memset(output_buffer_ptr, 0, output_buffer_byte_size);
         if (gpuav_settings.validate_descriptors) {
-            output_buffer_ptr[spvtools::kDebugOutputFlagsOffset] = spvtools::kInstBufferOOBEnable;
+            output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
         }
         vmaUnmapMemory(vmaAllocator, output_mem.allocation);
     } else {
@@ -749,8 +749,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
             draw_resources->indirect_buffer_size = bufsize;
 
             assert(phys_dev_props.limits.maxDrawIndirectCount > 0);
-            push_constants[0] =
-                (is_mesh_call) ? gpuav::glsl::kPreDrawSelectMeshCountBuffer : gpuav::glsl::kPreDrawSelectCountBuffer;
+            push_constants[0] = (is_mesh_call) ? glsl::kPreDrawSelectMeshCountBuffer : glsl::kPreDrawSelectCountBuffer;
             push_constants[1] = phys_dev_props.limits.maxDrawIndirectCount;
             push_constants[2] = max_count;
             push_constants[3] = static_cast<uint32_t>((count_buffer_offset / sizeof(uint32_t)));
@@ -774,7 +773,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
             phys_dev_props.limits.maxPushConstantsSize >= PreDrawResources::push_constant_words * sizeof(uint32_t)) {
             if (!is_count_call) {
                 // Select was set in count check for count call
-                push_constants[0] = gpuav::glsl::kPreDrawSelectMeshNoCount;
+                push_constants[0] = glsl::kPreDrawSelectMeshNoCount;
             }
             const VkShaderStageFlags stages = pipeline_state->create_info_shaders;
             push_constants[4] = static_cast<uint32_t>(indirect_offset / sizeof(uint32_t));
