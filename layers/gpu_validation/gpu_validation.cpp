@@ -42,7 +42,9 @@
 #include "generated/gpu_inst_shader_hash.h"
 #include "generated/gpu_pre_copy_buffer_to_image_comp.h"
 
-VkDeviceAddress gpuav::Validator::GetBufferDeviceAddress(VkBuffer buffer, const Location &loc) const {
+namespace gpuav {
+
+VkDeviceAddress Validator::GetBufferDeviceAddress(VkBuffer buffer, const Location &loc) const {
     if (!enabled_features.bufferDeviceAddress) {
         assert(false);
         ReportSetupProblem(buffer, loc, "bufferDeviceAddress feature not enabled, calling GetBufferDeviceAddress is invalid.");
@@ -64,7 +66,7 @@ VkDeviceAddress gpuav::Validator::GetBufferDeviceAddress(VkBuffer buffer, const 
     return 0;
 }
 
-bool gpuav::Validator::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
+bool Validator::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
     // If no features are enabled, descriptor indexing is not being used actually
     bool result =
         enabled_features.descriptorIndexing || enabled_features.shaderInputAttachmentArrayDynamicIndexing ||
@@ -101,8 +103,8 @@ static bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRe
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
-                                        const uint32_t unique_shader_id, const Location &loc) {
+bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
+                                 const uint32_t unique_shader_id, const Location &loc) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
 
@@ -136,7 +138,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
 
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
-    gpuav::spirv::Module module(binaries[0], unique_shader_id, desc_set_bind_index);
+    spirv::Module module(binaries[0], unique_shader_id, desc_set_bind_index);
 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.validate_descriptors) {
@@ -203,7 +205,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
     return true;
 }
 
-bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, chassis::CreateShaderModule &chassis_state) {
+bool Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, chassis::CreateShaderModule &chassis_state) {
     auto it = instrumented_shaders.find(shader_hash);
     if (it != instrumented_shaders.end()) {
         chassis_state.instrumented_create_info.codeSize = it->second.first * sizeof(uint32_t);
@@ -215,8 +217,7 @@ bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, ch
     return false;
 }
 
-bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t index, uint32_t shader_hash,
-                                                        chassis::ShaderObject &chassis_state) {
+bool Validator::CheckForCachedInstrumentedShader(uint32_t index, uint32_t shader_hash, chassis::ShaderObject &chassis_state) {
     auto it = instrumented_shaders.find(shader_hash);
     if (it != instrumented_shaders.end()) {
         chassis_state.instrumented_create_info[index].codeSize = it->second.first * sizeof(uint32_t);
@@ -227,7 +228,7 @@ bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t index, uint32_t
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-void gpuav::Validator::UpdateInstrumentationBuffer(CommandBuffer *cb_node) {
+void Validator::UpdateInstrumentationBuffer(CommandBuffer *cb_node) {
     for (auto &cmd_info : cb_node->di_input_buffer_list) {
         glsl::BindlessStateBuffer *bindless_state{nullptr};
         [[maybe_unused]] VkResult result;
@@ -250,8 +251,8 @@ void gpuav::Validator::UpdateInstrumentationBuffer(CommandBuffer *cb_node) {
     }
 }
 
-void gpuav::Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                           VkPipeline pipeline, const Location &loc) {
+void Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
+                                    const Location &loc) {
     if (aborted) return;
     if (!gpuav_settings.validate_descriptors) return;
 
@@ -294,8 +295,7 @@ void gpuav::Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipe
     }
 }
 
-void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                              const Location &loc) {
+void Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, const Location &loc) {
     if (aborted) return;
     auto cb_node = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_node) {
@@ -372,9 +372,9 @@ void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkP
     }
 }
 
-void gpuav::Validator::BindDiagnosticCallsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
-                                                        VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
-                                                        uint32_t cmd_index, uint32_t resource_index) {
+void Validator::BindDiagnosticCallsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
+                                                 VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
+                                                 uint32_t cmd_index, uint32_t resource_index) {
     assert(cmd_index < cst::indices_count);
     assert(resource_index < cst::indices_count);
     std::array<uint32_t, 2> dynamic_offsets = {
@@ -386,9 +386,9 @@ void gpuav::Validator::BindDiagnosticCallsCommonDescSet(const LockedSharedPtr<Co
 
 // Common resource allocations functions
 
-gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(
-    const LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard> &cmd_buffer, VkPipelineBindPoint bind_point, const Location &loc,
-    const CmdIndirectState *indirect_state /*= nullptr*/) {
+CommandResources Validator::AllocateActionCommandResources(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer,
+                                                           VkPipelineBindPoint bind_point, const Location &loc,
+                                                           const CmdIndirectState *indirect_state /*= nullptr*/) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         assert(false);
@@ -584,9 +584,9 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(
     return cmd_resources;
 }
 
-gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
-                                                                         const Location &loc,
-                                                                         const CmdIndirectState *indirect_state /*= nullptr*/) {
+CommandResources Validator::AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
+                                                           const Location &loc,
+                                                           const CmdIndirectState *indirect_state /*= nullptr*/) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
@@ -596,7 +596,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(VkComma
     return AllocateActionCommandResources(cb_node, bind_point, loc, indirect_state);
 }
 
-bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location &loc) {
+bool Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location &loc) {
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = output_buffer_byte_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -631,7 +631,7 @@ bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Lo
 
 // Draw validation resources
 
-std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndirectValidationResources(
+std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationResources(
     const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
@@ -823,14 +823,15 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     return draw_resources;
 }
 
-gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirectValidationResources(
-    VkDescriptorSetLayout error_output_desc_set, bool use_shader_objects, const Location &loc) {
+PreDrawResources::SharedResources *Validator::GetSharedDrawIndirectValidationResources(VkDescriptorSetLayout error_output_desc_set,
+                                                                                       bool use_shader_objects,
+                                                                                       const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreDrawResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
-        return reinterpret_cast<gpuav::PreDrawResources::SharedResources *>(shared_resources->second.get());
+        return reinterpret_cast<PreDrawResources::SharedResources *>(shared_resources->second.get());
     }
 
-    auto shared_resources = std::make_unique<gpuav::PreDrawResources::SharedResources>();
+    auto shared_resources = std::make_unique<PreDrawResources::SharedResources>();
 
     VkResult result;
 
@@ -901,21 +902,23 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
 
     assert(elt.second);
 
-    return reinterpret_cast<gpuav::PreDrawResources::SharedResources *>(elt.first->second.get());
+    return reinterpret_cast<PreDrawResources::SharedResources *>(elt.first->second.get());
 }
 
-gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirectValidationResources() {
+PreDrawResources::SharedResources *Validator::GetSharedDrawIndirectValidationResources() {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreDrawResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
-        return reinterpret_cast<gpuav::PreDrawResources::SharedResources *>(shared_resources->second.get());
+        return reinterpret_cast<PreDrawResources::SharedResources *>(shared_resources->second.get());
     }
     return nullptr;
 }
 
 // Dispatch validation resources
 
-std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIndirectValidationResources(
-    const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset) {
+std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidationResources(const Location &loc,
+                                                                                            VkCommandBuffer cmd_buffer,
+                                                                                            VkBuffer indirect_buffer,
+                                                                                            VkDeviceSize indirect_offset) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
@@ -944,7 +947,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
         PreDispatchResources::SharedResources *shared_resources = GetSharedDispatchIndirectValidationResources(
             cb_node->GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
         if (!shared_resources) {
-            return std::make_unique<gpuav::PreDispatchResources>();
+            return std::make_unique<PreDispatchResources>();
         }
 
         dispatch_resources->indirect_buffer = indirect_buffer;
@@ -1012,14 +1015,14 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
     return dispatch_resources;
 }
 
-gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatchIndirectValidationResources(
+PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValidationResources(
     VkDescriptorSetLayout error_output_desc_set, bool use_shader_objects, const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreDispatchResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
-        return reinterpret_cast<gpuav::PreDispatchResources::SharedResources *>(shared_resources->second.get());
+        return reinterpret_cast<PreDispatchResources::SharedResources *>(shared_resources->second.get());
     }
 
-    auto shared_resources = std::make_unique<gpuav::PreDispatchResources::SharedResources>();
+    auto shared_resources = std::make_unique<PreDispatchResources::SharedResources>();
 
     VkResult result = VK_SUCCESS;
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
@@ -1108,13 +1111,14 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
 
     assert(elt.second);
 
-    return reinterpret_cast<gpuav::PreDispatchResources::SharedResources *>(elt.first->second.get());
+    return reinterpret_cast<PreDispatchResources::SharedResources *>(elt.first->second.get());
 }
 
 // Trace rays validation resources
 
-std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysValidationResources(
-    const Location &loc, VkCommandBuffer cmd_buffer, VkDeviceAddress indirect_data_address) {
+std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResources(const Location &loc,
+                                                                                     VkCommandBuffer cmd_buffer,
+                                                                                     VkDeviceAddress indirect_data_address) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
@@ -1187,14 +1191,14 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
     return trace_rays_resources;
 }
 
-gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceRaysValidationResources(
+PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationResources(
     VkDescriptorSetLayout error_output_desc_layout, const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreTraceRaysResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
-        return reinterpret_cast<gpuav::PreTraceRaysResources::SharedResources *>(shared_resources->second.get());
+        return reinterpret_cast<PreTraceRaysResources::SharedResources *>(shared_resources->second.get());
     }
 
-    auto shared_resources = std::make_unique<gpuav::PreTraceRaysResources::SharedResources>();
+    auto shared_resources = std::make_unique<PreTraceRaysResources::SharedResources>();
 
     VkResult result = VK_SUCCESS;
 
@@ -1337,12 +1341,12 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
 
     assert(elt.second);
 
-    return reinterpret_cast<gpuav::PreTraceRaysResources::SharedResources *>(elt.first->second.get());
+    return reinterpret_cast<PreTraceRaysResources::SharedResources *>(elt.first->second.get());
 }
 
 // Copy buffer to image validation resources
 
-std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBufferToImageValidationResources(
+std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidationResources(
     const Location &loc, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
     if (aborted) {
         return nullptr;
@@ -1377,7 +1381,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         return nullptr;
     }
 
-    gpuav::PreCopyBufferToImageResources::SharedResources *shared_resources =
+    PreCopyBufferToImageResources::SharedResources *shared_resources =
         GetSharedCopyBufferToImageValidationResources(cb_node->GetValidationCmdCommonDescriptorSetLayout(), loc);
     if (!shared_resources) {
         return nullptr;
@@ -1557,14 +1561,14 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
     return copy_buffer_to_img_resources;
 }
 
-gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetSharedCopyBufferToImageValidationResources(
+PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferToImageValidationResources(
     VkDescriptorSetLayout error_output_set_layout, const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreCopyBufferToImageResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
-        return reinterpret_cast<gpuav::PreCopyBufferToImageResources::SharedResources *>(shared_resources->second.get());
+        return reinterpret_cast<PreCopyBufferToImageResources::SharedResources *>(shared_resources->second.get());
     }
 
-    auto shared_resources = std::make_unique<gpuav::PreCopyBufferToImageResources::SharedResources>();
+    auto shared_resources = std::make_unique<PreCopyBufferToImageResources::SharedResources>();
 
     VkResult result = VK_SUCCESS;
     const std::vector<VkDescriptorSetLayoutBinding> bindings = {
@@ -1647,13 +1651,13 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
 
     assert(elt.second);
 
-    return reinterpret_cast<gpuav::PreCopyBufferToImageResources::SharedResources *>(elt.first->second.get());
+    return reinterpret_cast<PreCopyBufferToImageResources::SharedResources *>(elt.first->second.get());
 }
 
 // This function will add the returned VkPipeline handle to another object incharge of destroying it. Caller does NOT have to
 // destroy it
-VkPipeline gpuav::Validator::GetDrawValidationPipeline(PreDrawResources::SharedResources &shared_draw_resources,
-                                                       VkRenderPass render_pass, const Location &loc) {
+VkPipeline Validator::GetDrawValidationPipeline(PreDrawResources::SharedResources &shared_draw_resources, VkRenderPass render_pass,
+                                                const Location &loc) {
     VkPipeline validation_pipeline = VK_NULL_HANDLE;
     // NOTE: for dynamic rendering, render_pass will be VK_NULL_HANDLE but we'll use that as a map
     // key anyways;
@@ -1698,8 +1702,8 @@ VkPipeline gpuav::Validator::GetDrawValidationPipeline(PreDrawResources::SharedR
     return validation_pipeline;
 }
 
-void gpuav::Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
-                                             const Location &loc) {
+void Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
+                                      const Location &loc) {
     if (aborted) return;
     if (!command_resources) return;
 
@@ -1712,3 +1716,5 @@ void gpuav::Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer, s
 
     cb_node->per_command_resources.emplace_back(std::move(command_resources));
 }
+
+}  // namespace gpuav

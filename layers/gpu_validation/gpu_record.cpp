@@ -33,9 +33,11 @@
 // Generated shaders
 #include "generated/gpu_inst_shader_hash.h"
 
-void gpuav::Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                 const RecordObject &record_obj, chassis::CreateBuffer &chassis_state) {
+namespace gpuav {
+
+void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                          const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                          const RecordObject &record_obj, chassis::CreateBuffer &chassis_state) {
     // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
     // acceleration structure build validation will find and replace invalid acceleration structure
     // handles inside of a compute shader.
@@ -52,9 +54,8 @@ void gpuav::Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBuffer
     BaseClass::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, chassis_state);
 }
 
-void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                                 VkPhysicalDeviceProperties *device_props,
-                                                                 const RecordObject &record_obj) {
+void Validator::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties *device_props,
+                                                          const RecordObject &record_obj) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
     if (enabled[gpu_validation_reserve_binding_slot] && device_props->limits.maxBoundDescriptorSets > 0) {
         if (device_props->limits.maxBoundDescriptorSets > 1) {
@@ -68,9 +69,9 @@ void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevic
     BaseClass::PostCallRecordGetPhysicalDeviceProperties(physicalDevice, device_props, record_obj);
 }
 
-void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                                  VkPhysicalDeviceProperties2 *device_props2,
-                                                                  const RecordObject &record_obj) {
+void Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                           VkPhysicalDeviceProperties2 *device_props2,
+                                                           const RecordObject &record_obj) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
     if (enabled[gpu_validation_reserve_binding_slot] && device_props2->properties.limits.maxBoundDescriptorSets > 0) {
         if (device_props2->properties.limits.maxBoundDescriptorSets > 1) {
@@ -95,8 +96,8 @@ void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevi
     BaseClass::PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, device_props2, record_obj);
 }
 
-void gpuav::Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
-                                                      const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
+                                               const RecordObject &record_obj) {
     PreDrawResources::SharedResources *shared_resources = GetSharedDrawIndirectValidationResources();
     if (shared_resources) {
         auto pipeline = shared_resources->renderpass_to_pipeline.pop(renderPass);
@@ -108,9 +109,9 @@ void gpuav::Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderP
 }
 
 // Create the instrumented shader data to provide to the driver.
-void gpuav::Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                       const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
+void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
     BaseClass::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
     if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
     uint32_t shader_id;
@@ -136,10 +137,9 @@ void gpuav::Validator::PreCallRecordCreateShaderModule(VkDevice device, const Vk
     }
 }
 
-void gpuav::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                     const VkShaderCreateInfoEXT *pCreateInfos,
-                                                     const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                     const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
+void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
+                                              const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                              const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                              chassis_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
@@ -169,10 +169,9 @@ void gpuav::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t c
 }
 
 // Clean up device-related resources
-void gpuav::Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
-                                                  const RecordObject &record_obj) {
+void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
+                                           const RecordObject &record_obj) {
     desc_heap.reset();
-    acceleration_structure_validation_state.Destroy(device, vmaAllocator);
     for (auto &[key, shared_resources] : shared_validation_resources_map) {
         shared_resources->Destroy(*this);
     }
@@ -198,8 +197,8 @@ void gpuav::Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAlloc
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 }
 
-void gpuav::Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       const VkSubpassContents contents) {
+void Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                const VkSubpassContents contents) {
     if (!pRenderPassBegin) {
         return;
     }
@@ -211,90 +210,86 @@ void gpuav::Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBu
     }
 }
 
-void gpuav::Validator::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       VkSubpassContents contents, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                VkSubpassContents contents, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
     RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, contents);
 }
 
-void gpuav::Validator::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
-                                                           const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                           const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                           const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                    const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
     PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
 }
 
-void gpuav::Validator::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
-                                                        const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                        const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                        const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                 const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
-void gpuav::Validator::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
+void Validator::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     if (cb_state) {
         TransitionFinalSubpassLayouts(*cb_state);
     }
 }
 
-void gpuav::Validator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
     RecordCmdEndRenderPassLayouts(commandBuffer);
     BaseClass::PostCallRecordCmdEndRenderPass(commandBuffer, record_obj);
 }
 
-void gpuav::Validator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                          const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
+                                                   const RecordObject &record_obj) {
     PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
 }
 
-void gpuav::Validator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                       const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
+                                                const RecordObject &record_obj) {
     RecordCmdEndRenderPassLayouts(commandBuffer);
     BaseClass::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
 }
 
-void gpuav::Validator::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+void Validator::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     TransitionSubpassLayouts(*cb_state, *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
 }
 
-void gpuav::Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                                    const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
+                                             const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
     RecordCmdNextSubpassLayouts(commandBuffer, contents);
 }
 
-void gpuav::Validator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                        const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                 const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
     PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
 }
 
-void gpuav::Validator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                     const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                              const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
-void gpuav::Validator::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                     VkPipeline pipeline, const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                              VkPipeline pipeline, const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
     UpdateBoundPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj.location);
 }
 
-void gpuav::Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                           VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                           const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                           const uint32_t *pDynamicOffsets, const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                    VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                    const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                    const uint32_t *pDynamicOffsets, const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
                                                    pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, record_obj);
     UpdateBoundDescriptors(commandBuffer, pipelineBindPoint, record_obj.location);
 }
-void gpuav::Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                               const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
-                                                               const RecordObject &record_obj) {
+void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                        const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                        const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo, record_obj);
 
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
@@ -308,18 +303,18 @@ void gpuav::Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer c
     }
 }
 
-void gpuav::Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                            VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                            const VkWriteDescriptorSet *pDescriptorWrites,
-                                                            const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                     const VkWriteDescriptorSet *pDescriptorWrites,
+                                                     const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                     pDescriptorWrites, record_obj);
     UpdateBoundDescriptors(commandBuffer, pipelineBindPoint, record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                             const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
-                                                             const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                      const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                      const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo, record_obj);
 
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
@@ -333,22 +328,22 @@ void gpuav::Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer com
     }
 }
 
-void gpuav::Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                                const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
-                                                                const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                         const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
+                                                         const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
     gpuav_settings.validate_descriptors = false;
 }
 
-void gpuav::Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
-                                                                               VkPipelineBindPoint pipelineBindPoint,
-                                                                               VkPipelineLayout layout, uint32_t set,
-                                                                               const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                        VkPipelineBindPoint pipelineBindPoint,
+                                                                        VkPipelineLayout layout, uint32_t set,
+                                                                        const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set, record_obj);
     gpuav_settings.validate_descriptors = false;
 }
 
-void gpuav::Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
     const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(commandBuffer, pBindDescriptorBufferEmbeddedSamplersInfo,
@@ -356,8 +351,8 @@ void gpuav::Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     gpuav_settings.validate_descriptors = false;
 }
 
-void gpuav::Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                            uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
+                                     uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
 
     CommandResources cmd_resources =
@@ -366,9 +361,9 @@ void gpuav::Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint3
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                    const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
-                                                    uint32_t firstInstance, uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                             const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount, uint32_t firstInstance,
+                                             uint32_t stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride,
                                             record_obj);
     for (uint32_t i = 0; i < drawCount; i++) {
@@ -379,9 +374,9 @@ void gpuav::Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffe
     }
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                                   uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                                   const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+                                            uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
+                                            const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
                                            record_obj);
     CommandResources cmd_resources =
@@ -390,10 +385,10 @@ void gpuav::Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                           const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
-                                                           uint32_t firstInstance, uint32_t stride, const int32_t *pVertexOffset,
-                                                           const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                    const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
+                                                    uint32_t firstInstance, uint32_t stride, const int32_t *pVertexOffset,
+                                                    const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
                                                    pVertexOffset, record_obj);
     for (uint32_t i = 0; i < drawCount; i++) {
@@ -404,8 +399,8 @@ void gpuav::Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer comma
     }
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                    uint32_t count, uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                             uint32_t stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, count, stride, record_obj);
 
     auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location, commandBuffer, buffer, offset, count,
@@ -413,8 +408,8 @@ void gpuav::Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffe
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                           uint32_t count, uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    uint32_t count, uint32_t stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride, record_obj);
 
     auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location, commandBuffer, buffer, offset, count,
@@ -422,17 +417,16 @@ void gpuav::Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer comma
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                            uint32_t maxDrawCount, uint32_t stride,
-                                                            const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                     uint32_t stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                       record_obj);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                         uint32_t maxDrawCount, uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                  uint32_t stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                  stride, record_obj);
 
@@ -441,10 +435,10 @@ void gpuav::Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer command
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
-                                                                uint32_t firstInstance, VkBuffer counterBuffer,
-                                                                VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                                uint32_t vertexStride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                         uint32_t firstInstance, VkBuffer counterBuffer,
+                                                         VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                         uint32_t vertexStride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
                                                         counterBufferOffset, counterOffset, vertexStride, record_obj);
     CommandResources cmd_resources =
@@ -453,18 +447,17 @@ void gpuav::Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer 
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                   VkDeviceSize offset, VkBuffer countBuffer,
-                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                   uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                            uint32_t maxDrawCount, uint32_t stride,
+                                                            const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                              record_obj);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                                uint32_t maxDrawCount, uint32_t stride,
-                                                                const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                         uint32_t maxDrawCount, uint32_t stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                         stride, record_obj);
 
@@ -473,8 +466,8 @@ void gpuav::Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer 
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
-                                                       const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+                                                const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     CommandResources cmd_resources =
         AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -482,19 +475,18 @@ void gpuav::Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBu
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                               uint32_t drawCount, uint32_t stride,
-                                                               const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                        uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location, commandBuffer, buffer, offset, drawCount,
                                                                      VK_NULL_HANDLE, 0, stride);
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                    VkDeviceSize offset, VkBuffer countBuffer,
-                                                                    VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                    uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                             uint32_t maxDrawCount, uint32_t stride,
+                                                             const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                             maxDrawCount, stride, record_obj);
     auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location, commandBuffer, buffer, offset,
@@ -502,8 +494,8 @@ void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuf
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                                        uint32_t groupCountZ, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                                 uint32_t groupCountZ, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     CommandResources cmd_resources =
         AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -511,19 +503,18 @@ void gpuav::Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandB
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                                uint32_t drawCount, uint32_t stride,
-                                                                const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                         uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location, commandBuffer, buffer, offset, drawCount,
                                                                      VK_NULL_HANDLE, 0, stride);
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                     VkDeviceSize offset, VkBuffer countBuffer,
-                                                                     VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                     uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                              uint32_t maxDrawCount, uint32_t stride,
+                                                              const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                              maxDrawCount, stride, record_obj);
     auto draw_resources = AllocatePreDrawIndirectValidationResources(record_obj.location, commandBuffer, buffer, offset,
@@ -531,8 +522,8 @@ void gpuav::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBu
     StoreCommandResources(commandBuffer, std::move(draw_resources), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
-                                                const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
+                                         const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDispatch(commandBuffer, x, y, z, record_obj);
     CommandResources cmd_resources =
         AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
@@ -540,17 +531,17 @@ void gpuav::Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, u
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset, record_obj);
 
     auto dispatch_info = AllocatePreDispatchIndirectValidationResources(record_obj.location, commandBuffer, buffer, offset);
     StoreCommandResources(commandBuffer, std::move(dispatch_info), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                    uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                    uint32_t groupCountZ, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                             uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                             const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
                                             groupCountZ, record_obj);
 
@@ -560,21 +551,20 @@ void gpuav::Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffe
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                       uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                       uint32_t groupCountZ, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                uint32_t groupCountZ, const RecordObject &record_obj) {
     PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
                                  record_obj);
 }
 
-void gpuav::Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                                   VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                                   VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                                   VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                                   VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                                   VkDeviceSize callableShaderBindingOffset,
-                                                   VkDeviceSize callableShaderBindingStride, uint32_t width, uint32_t height,
-                                                   uint32_t depth, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                            VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                            VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                            VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                            VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                            VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                            uint32_t width, uint32_t height, uint32_t depth, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset,
                                            missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride,
                                            hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride,
@@ -587,13 +577,12 @@ void gpuav::Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                                    const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                                    const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                                    const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                    uint32_t width, uint32_t height, uint32_t depth,
-                                                    const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                             const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                             uint32_t height, uint32_t depth, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                             pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth, record_obj);
 
@@ -603,12 +592,12 @@ void gpuav::Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffe
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                            const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                                            const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                                            const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                            const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                            VkDeviceAddress indirectDeviceAddress, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                     const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                     const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                     const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                     const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                     VkDeviceAddress indirectDeviceAddress, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                     pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress,
                                                     record_obj);
@@ -617,8 +606,8 @@ void gpuav::Validator::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer comm
     StoreCommandResources(commandBuffer, std::move(trace_rays_info), record_obj.location);
 }
 
-void gpuav::Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
-                                                             const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
+                                                      const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, record_obj);
 
     CommandResources cmd_resources =
@@ -626,3 +615,5 @@ void gpuav::Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer com
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
+
+}  // namespace gpuav

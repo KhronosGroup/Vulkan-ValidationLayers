@@ -487,7 +487,6 @@ class Validator : public gpu_tracker::Validator {
 
     VkBool32 shaderInt64 = false;
     std::string instrumented_shader_cache_path{};
-    AccelerationStructureBuildValidationState acceleration_structure_validation_state{};
 
     bool bda_validation_possible = false;
 
