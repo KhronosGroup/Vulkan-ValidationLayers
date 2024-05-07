@@ -31,18 +31,18 @@
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
                                           const VulkanTypedHandle &typed_handle, const Location &loc, const char *vuid) const {
-    bool result = false;
+    bool skip = false;
     if (!mem_state) {
         const char *type_name = string_VulkanObjectType(typed_handle.type);
-        result |=
+        skip |=
             LogError(vuid, objlist, loc, "(%s) is used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      FormatHandle(typed_handle).c_str(), type_name + 2);
     } else if (mem_state->Destroyed()) {
-        result |= LogError(vuid, objlist, loc,
-                           "(%s) is used, but bound memory was freed. Memory must not be freed prior to this operation.",
-                           FormatHandle(typed_handle).c_str());
+        skip |= LogError(vuid, objlist, loc,
+                         "(%s) is used, but bound memory was freed. Memory must not be freed prior to this operation.",
+                         FormatHandle(typed_handle).c_str());
     }
-    return result;
+    return skip;
 }
 
 bool CoreChecks::VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
@@ -2381,10 +2381,10 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice 
 
 bool CoreChecks::ValidateMemoryIsBoundToBuffer(LogObjectList objlist, const vvl::Buffer &buffer_state, const Location &buffer_loc,
                                                const char *vuid) const {
-    bool result = false;
+    bool skip = false;
     if (!buffer_state.sparse) {
         objlist.add(buffer_state.Handle());
-        result |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), buffer_loc, vuid);
+        skip |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), buffer_loc, vuid);
     }
-    return result;
+    return skip;
 }

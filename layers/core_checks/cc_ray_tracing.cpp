@@ -608,15 +608,10 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         BufferAddressValidation<3> buffer_address_validator = {{{
             {pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803",
                        "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03803"),
-             [this, info_loc, cmd_buffer](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
-                 if (!out_error_msg) {
-                     return !buffer_state->sparse && buffer_state->IsMemoryBound();
-                 } else {
-                     return ValidateMemoryIsBoundToBuffer(cmd_buffer, *buffer_state,
-                                                          info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
-                                                          "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803");
-                 }
-             }},
+             [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
+                 return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
+             },
+             []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }},
 
             {pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
                        "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03674"),
