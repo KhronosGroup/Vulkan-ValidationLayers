@@ -40,45 +40,47 @@
 #include "generated/gpu_pre_trace_rays_rgen.h"
 #include "generated/gpu_inst_shader_hash.h"
 
-std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *pCreateInfo) {
+namespace gpuav {
+
+std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *pCreateInfo) {
     return std::make_shared<Buffer>(*this, handle, pCreateInfo, *desc_heap);
 }
 
-std::shared_ptr<vvl::BufferView> gpuav::Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
-                                                                         const VkBufferViewCreateInfo *ci,
-                                                                         VkFormatFeatureFlags2KHR buf_ff) {
+std::shared_ptr<vvl::BufferView> Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
+                                                                  const VkBufferViewCreateInfo *ci,
+                                                                  VkFormatFeatureFlags2KHR buf_ff) {
     return std::make_shared<BufferView>(bf, bv, ci, buf_ff, *desc_heap);
 }
 
-std::shared_ptr<vvl::ImageView> gpuav::Validator::CreateImageViewState(
-    const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
-    const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
+std::shared_ptr<vvl::ImageView> Validator::CreateImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv,
+                                                                const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+                                                                const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<ImageView>(image_state, iv, ci, ff, cubic_props, *desc_heap);
 }
 
-std::shared_ptr<vvl::Sampler> gpuav::Validator::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
+std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
     return std::make_shared<Sampler>(s, ci, *desc_heap);
 }
 
-std::shared_ptr<vvl::DescriptorSet> gpuav::Validator::CreateDescriptorSet(
-    VkDescriptorSet set, vvl::DescriptorPool *pool, const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
-    uint32_t variable_count) {
+std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet set, vvl::DescriptorPool *pool,
+                                                                   const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
+                                                                   uint32_t variable_count) {
     return std::static_pointer_cast<vvl::DescriptorSet>(std::make_shared<DescriptorSet>(set, pool, layout, variable_count, this));
 }
 
-std::shared_ptr<vvl::CommandBuffer> gpuav::Validator::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                           const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                           const vvl::CommandPool *pool) {
+std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
+                                                                    const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                    const vvl::CommandPool *pool) {
     return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, pCreateInfo, pool));
 }
 
-std::shared_ptr<vvl::Queue> gpuav::Validator::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-                                                          const VkQueueFamilyProperties &queueFamilyProperties) {
+std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+                                                   const VkQueueFamilyProperties &queueFamilyProperties) {
     return std::static_pointer_cast<vvl::Queue>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
 }
 
 // Perform initializations that can be done at Create Device time.
-void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
     // would be messier without.
     // TODO: Find a good way to do this hooklessly.
@@ -292,7 +294,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
     }
 }
 
-void gpuav::PreDrawResources::SharedResources::Destroy(gpuav::Validator &validator) {
+void PreDrawResources::SharedResources::Destroy(Validator &validator) {
     if (shader_module != VK_NULL_HANDLE) {
         DispatchDestroyShaderModule(validator.device, shader_module, nullptr);
         shader_module = VK_NULL_HANDLE;
@@ -316,7 +318,7 @@ void gpuav::PreDrawResources::SharedResources::Destroy(gpuav::Validator &validat
     }
 }
 
-void gpuav::PreDispatchResources::SharedResources::Destroy(gpuav::Validator &validator) {
+void PreDispatchResources::SharedResources::Destroy(Validator &validator) {
     if (ds_layout != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
         ds_layout = VK_NULL_HANDLE;
@@ -335,7 +337,7 @@ void gpuav::PreDispatchResources::SharedResources::Destroy(gpuav::Validator &val
     }
 }
 
-void gpuav::PreTraceRaysResources::SharedResources::Destroy(gpuav::Validator &validator) {
+void PreTraceRaysResources::SharedResources::Destroy(Validator &validator) {
     if (ds_layout != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
         ds_layout = VK_NULL_HANDLE;
@@ -360,7 +362,7 @@ void gpuav::PreTraceRaysResources::SharedResources::Destroy(gpuav::Validator &va
     }
 }
 
-void gpuav::PreCopyBufferToImageResources::SharedResources::Destroy(gpuav::Validator &validator) {
+void PreCopyBufferToImageResources::SharedResources::Destroy(Validator &validator) {
     if (ds_layout != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
         ds_layout = VK_NULL_HANDLE;
@@ -379,27 +381,7 @@ void gpuav::PreCopyBufferToImageResources::SharedResources::Destroy(gpuav::Valid
     }
 }
 
-void gpuav::AccelerationStructureBuildValidationState::Destroy(VkDevice device, VmaAllocator &vmaAllocator) {
-    if (pipeline != VK_NULL_HANDLE) {
-        DispatchDestroyPipeline(device, pipeline, nullptr);
-        pipeline = VK_NULL_HANDLE;
-    }
-    if (pipeline_layout != VK_NULL_HANDLE) {
-        DispatchDestroyPipelineLayout(device, pipeline_layout, nullptr);
-        pipeline_layout = VK_NULL_HANDLE;
-    }
-    if (replacement_as != VK_NULL_HANDLE) {
-        DispatchDestroyAccelerationStructureNV(device, replacement_as, nullptr);
-        replacement_as = VK_NULL_HANDLE;
-    }
-    if (replacement_as_allocation != VK_NULL_HANDLE) {
-        vmaFreeMemory(vmaAllocator, replacement_as_allocation);
-        replacement_as_allocation = VK_NULL_HANDLE;
-    }
-    initialized = false;
-}
-
-void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point) {
+void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point) {
     pipeline_bind_point = bind_point;
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
 
@@ -440,7 +422,7 @@ void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipe
     }
 }
 
-void gpuav::RestorablePipelineState::Restore(VkCommandBuffer command_buffer) const {
+void RestorablePipelineState::Restore(VkCommandBuffer command_buffer) const {
     if (pipeline != VK_NULL_HANDLE) {
         DispatchCmdBindPipeline(command_buffer, pipeline_bind_point, pipeline);
         if (!descriptor_sets.empty()) {
@@ -477,7 +459,7 @@ void gpuav::RestorablePipelineState::Restore(VkCommandBuffer command_buffer) con
     }
 }
 
-void gpuav::CommandResources::Destroy(gpuav::Validator &validator) {
+void CommandResources::Destroy(Validator &validator) {
     if (instrumentation_desc_set != VK_NULL_HANDLE) {
         validator.desc_set_manager->PutBackDescriptorSet(instrumentation_desc_pool, instrumentation_desc_set);
         instrumentation_desc_set = VK_NULL_HANDLE;
@@ -485,7 +467,7 @@ void gpuav::CommandResources::Destroy(gpuav::Validator &validator) {
     }
 }
 
-void gpuav::PreDrawResources::Destroy(gpuav::Validator &validator) {
+void PreDrawResources::Destroy(Validator &validator) {
     if (buffer_desc_set != VK_NULL_HANDLE) {
         validator.desc_set_manager->PutBackDescriptorSet(desc_pool, buffer_desc_set);
         buffer_desc_set = VK_NULL_HANDLE;
@@ -495,7 +477,7 @@ void gpuav::PreDrawResources::Destroy(gpuav::Validator &validator) {
     CommandResources::Destroy(validator);
 }
 
-void gpuav::PreDispatchResources::Destroy(gpuav::Validator &validator) {
+void PreDispatchResources::Destroy(Validator &validator) {
     if (indirect_buffer_desc_set != VK_NULL_HANDLE) {
         validator.desc_set_manager->PutBackDescriptorSet(desc_pool, indirect_buffer_desc_set);
         indirect_buffer_desc_set = VK_NULL_HANDLE;
@@ -505,9 +487,9 @@ void gpuav::PreDispatchResources::Destroy(gpuav::Validator &validator) {
     CommandResources::Destroy(validator);
 }
 
-void gpuav::PreTraceRaysResources::Destroy(gpuav::Validator &validator) { CommandResources::Destroy(validator); }
+void PreTraceRaysResources::Destroy(Validator &validator) { CommandResources::Destroy(validator); }
 
-void gpuav::PreCopyBufferToImageResources::Destroy(gpuav::Validator &validator) {
+void PreCopyBufferToImageResources::Destroy(Validator &validator) {
     if (desc_set != VK_NULL_HANDLE) {
         validator.desc_set_manager->PutBackDescriptorSet(desc_pool, desc_set);
         desc_set = VK_NULL_HANDLE;
@@ -522,3 +504,5 @@ void gpuav::PreCopyBufferToImageResources::Destroy(gpuav::Validator &validator) 
 
     CommandResources::Destroy(validator);
 }
+
+}  // namespace gpuav

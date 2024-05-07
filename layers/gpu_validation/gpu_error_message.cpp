@@ -28,7 +28,8 @@
 
 // Generate the stage-specific part of the message.
 static void GenerateStageMessage(const uint32_t *error_record, std::string &msg) {
-    using namespace gpuav::glsl;
+    using namespace gpuav;
+    using namespace glsl;
     std::ostringstream strm;
     switch (error_record[kHeaderStageIdOffset]) {
         case kHeaderStageIdMultiEntryPoint: {
@@ -369,10 +370,10 @@ void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructi
     source_msg = source_stream.str();
 }
 
-bool gpuav::Validator::LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string &out_error_msg,
-                                                        std::string &out_vuid_msg, const CommandResources &cmd_resources,
-                                                        const std::vector<DescSetState> &descriptor_sets,
-                                                        bool &out_oob_access) const {
+namespace gpuav {
+bool Validator::LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string &out_error_msg,
+                                                 std::string &out_vuid_msg, const CommandResources &cmd_resources,
+                                                 const std::vector<DescSetState> &descriptor_sets, bool &out_oob_access) const {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -459,8 +460,8 @@ bool gpuav::Validator::LogMessageInstBindlessDescriptor(const uint32_t *error_re
     return error_found;
 }
 
-bool gpuav::Validator::LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string &out_error_msg,
-                                                         std::string &out_vuid_msg, bool &out_oob_access) const {
+bool Validator::LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string &out_error_msg,
+                                                  std::string &out_vuid_msg, bool &out_oob_access) const {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -481,8 +482,7 @@ bool gpuav::Validator::LogMessageInstBufferDeviceAddress(const uint32_t *error_r
     return error_found;
 }
 
-bool gpuav::Validator::LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error_msg,
-                                              std::string &out_vuid_msg) const {
+bool Validator::LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg) const {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -554,9 +554,9 @@ bool gpuav::Validator::LogMessageInstRayQuery(const uint32_t *error_record, std:
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-bool gpuav::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources &cmd_resources,
-                                                 uint32_t operation_index, uint32_t *const error_record,
-                                                 const std::vector<DescSetState> &descriptor_sets, const Location &loc) {
+bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources &cmd_resources,
+                                          uint32_t operation_index, uint32_t *const error_record,
+                                          const std::vector<DescSetState> &descriptor_sets, const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have
     // been written by the shader instrumentation, if there was enough room in the buffer we provided.
     // The number of words actually written by the shaders is determined by the size of the buffer
@@ -628,9 +628,9 @@ bool gpuav::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQ
     return error_found;
 }
 
-bool gpuav::CommandResources::LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                                   uint32_t *output_buffer_begin, const uint32_t operation_index,
-                                                   const LogObjectList &objlist) {
+bool CommandResources::LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+                                            uint32_t *output_buffer_begin, const uint32_t operation_index,
+                                            const LogObjectList &objlist) {
     const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
     const Location loc(command);
     bool error_logged =
@@ -643,8 +643,8 @@ bool gpuav::CommandResources::LogValidationMessage(Validator &validator, VkQueue
     return error_logged;
 }
 
-bool gpuav::PreDrawResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                         const uint32_t operation_index, const LogObjectList &objlist) {
+bool PreDrawResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
+                                                  const uint32_t operation_index, const LogObjectList &objlist) {
     using namespace glsl;
     bool error_logged = false;
     if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDraw) {
@@ -750,8 +750,8 @@ bool gpuav::PreDrawResources::LogCustomValidationMessage(Validator &validator, c
     return error_logged;
 }
 
-bool gpuav::PreDispatchResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                             const uint32_t operation_index, const LogObjectList &objlist) {
+bool PreDispatchResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
+                                                      const uint32_t operation_index, const LogObjectList &objlist) {
     using namespace glsl;
     bool error_logged = false;
     if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
@@ -793,8 +793,8 @@ bool gpuav::PreDispatchResources::LogCustomValidationMessage(Validator &validato
     return error_logged;
 }
 
-bool gpuav::PreTraceRaysResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                              const uint32_t operation_index, const LogObjectList &objlist) {
+bool PreTraceRaysResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
+                                                       const uint32_t operation_index, const LogObjectList &objlist) {
     using namespace glsl;
 
     const Location loc(command);
@@ -846,9 +846,8 @@ bool gpuav::PreTraceRaysResources::LogCustomValidationMessage(Validator &validat
     return error_logged;
 }
 
-bool gpuav::PreCopyBufferToImageResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                                      const uint32_t operation_index,
-                                                                      const LogObjectList &objlist) {
+bool PreCopyBufferToImageResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
+                                                               const uint32_t operation_index, const LogObjectList &objlist) {
     using namespace glsl;
     bool error_logged = false;
     if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuCopyBufferToImage) {
@@ -873,6 +872,7 @@ bool gpuav::PreCopyBufferToImageResources::LogCustomValidationMessage(Validator 
     }
     return error_logged;
 }
+}  // namespace gpuav
 
 void gpu_tracker::Validator::ReportSetupProblem(LogObjectList objlist, const Location &loc, const char *const specific_message,
                                                 bool vma_fail) const {

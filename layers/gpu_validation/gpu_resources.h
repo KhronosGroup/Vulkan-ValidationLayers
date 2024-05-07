@@ -36,20 +36,6 @@ struct DeviceMemoryBlock {
     bool IsNull() { return buffer == VK_NULL_HANDLE; }
 };
 
-struct AccelerationStructureBuildValidationState {
-    // some resources can be used each time so only to need to create once
-    bool initialized = false;
-
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-
-    VkAccelerationStructureNV replacement_as = VK_NULL_HANDLE;
-    VmaAllocation replacement_as_allocation = VK_NULL_HANDLE;
-    uint64_t replacement_as_handle = 0;
-
-    void Destroy(VkDevice device, VmaAllocator &vmaAllocator);
-};
-
 // Every recorded action command needs the validation resources listed in this function
 // If adding validation for a new command reveals the need to allocate specific resources for it, create a new class that derives
 // from this one
