@@ -374,10 +374,6 @@ bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, vvl::
                                                       const char *flags_zero_vuid) const {
     bool skip = false;
 
-    if ((value & ~all_flags) != 0) {
-        skip |= LogError(vuid, device, loc, "contains flag bits that are not recognized members of %s.", String(flag_bitmask));
-    }
-
     const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
     const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
     if (required && value == 0) {
@@ -418,6 +414,12 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
                                         const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+
+    if ((value & ~all_flags) != 0) {
+        skip |= LogError(vuid, device, loc, "contains flag bits (0x%" PRIx32 ") which are not recognized members of %s.", value,
+                         String(flag_bitmask));
+    }
+
     if (!skip && value != 0) {
         vvl::Extensions required = IsValidFlagValue(flag_bitmask, value, device_extensions);
         if (!required.empty() && device != VK_NULL_HANDLE) {
@@ -448,6 +450,12 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
                                         const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags64>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+
+    if ((value & ~all_flags) != 0) {
+        skip |= LogError(vuid, device, loc, "contains flag bits (0x%" PRIx64 ") which are not recognized members of %s.", value,
+                         String(flag_bitmask));
+    }
+
     if (!skip && value != 0) {
         vvl::Extensions required = IsValidFlag64Value(flag_bitmask, value, device_extensions);
         if (!required.empty() && device != VK_NULL_HANDLE) {
