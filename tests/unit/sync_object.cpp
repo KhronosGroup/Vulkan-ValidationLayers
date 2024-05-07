@@ -711,7 +711,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-06461");
 
     vkt::CommandPool command_pool(*m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer bad_command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer bad_command_buffer(*m_device, command_pool);
 
     bad_command_buffer.begin();
     // Set two bits that should both be supported as a bonus positive check
@@ -1147,7 +1147,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-03849");
 
     vkt::CommandPool command_pool(*m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer bad_command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer bad_command_buffer(*m_device, command_pool);
 
     bad_command_buffer.begin();
     buf_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -3206,8 +3206,8 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
 TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
     RETURN_IF_SKIP(Init());
 
-    vkt::CommandBuffer commandBuffer1(*m_device, m_commandPool);
-    vkt::CommandBuffer commandBuffer2(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer1(*m_device, m_command_pool);
+    vkt::CommandBuffer commandBuffer2(*m_device, m_command_pool);
     vkt::Event event(*m_device);
 
     commandBuffer1.begin();
@@ -3227,8 +3227,8 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
 TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
     RETURN_IF_SKIP(Init());
 
-    vkt::CommandBuffer commandBuffer1(*m_device, m_commandPool);
-    vkt::CommandBuffer commandBuffer2(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer1(*m_device, m_command_pool);
+    vkt::CommandBuffer commandBuffer2(*m_device, m_command_pool);
     vkt::Event event(*m_device);
 
     commandBuffer1.begin();
@@ -3258,13 +3258,13 @@ TEST_F(NegativeSyncObject, DetectInterQueueEventUsage) {
     }
     const vkt::Event event(*m_device);
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     vk::CmdSetEvent(cb1, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     cb1.end();
 
     vkt::CommandPool pool2(*m_device, m_second_queue->family_index);
-    vkt::CommandBuffer cb2(*m_device, &pool2);
+    vkt::CommandBuffer cb2(*m_device, pool2);
     cb2.begin();
     vk::CmdWaitEvents(cb2, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr,
                       0, nullptr, 0, nullptr);
@@ -3301,13 +3301,13 @@ TEST_F(NegativeSyncObject, DetectInterQueueEventUsage2) {
 
     const vkt::Event event(*m_device);
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     vk::CmdSetEvent2(cb1, event, &dependency_info);
     cb1.end();
 
     vkt::CommandPool pool2(*m_device, m_second_queue->family_index);
-    vkt::CommandBuffer cb2(*m_device, &pool2);
+    vkt::CommandBuffer cb2(*m_device, pool2);
     cb2.begin();
     vk::CmdWaitEvents2(cb2, 1, &event.handle(), &dependency_info);
     cb2.end();
@@ -3326,7 +3326,7 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     // TODO: the test works according to description but that's not what VUID describes
     const char *queue_forward_progress_message = "VUID-vkQueueSubmit-pCommandBuffers-00065";
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     cb1.end();
 
@@ -3359,7 +3359,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::CommandPool commandPool(*m_device, only_transfer_queueFamilyIndex.value());
-    vkt::CommandBuffer commandBuffer(*m_device, &commandPool);
+    vkt::CommandBuffer commandBuffer(*m_device, commandPool);
 
     commandBuffer.begin();
 

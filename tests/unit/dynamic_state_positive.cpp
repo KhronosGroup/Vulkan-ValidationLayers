@@ -374,7 +374,7 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     CreatePipelineHelper pipe_no_dynamic(*this);
     pipe_no_dynamic.CreateGraphicsPipeline();
 
-    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
     command_buffer.begin();
     vk::CmdSetPrimitiveRestartEnableEXT(command_buffer.handle(), VK_TRUE);
     command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -844,8 +844,8 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.CreateGraphicsPipeline();
 
-    vkt::CommandBuffer cmd_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    vkt::CommandBuffer set_state(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer cmd_buffer(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer set_state(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     const VkViewport viewports[2] = {{0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}};
     const VkRect2D scissors[2] = {{{0, 0}, {100u, 100u}}, {{0, 0}, {100u, 100u}}};

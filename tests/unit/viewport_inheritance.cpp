@@ -420,7 +420,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_commandPool->handle();
+    VkCommandPool pool = m_command_pool.handle();
 
     VkCommandBuffer subpass_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 1, test_data.kViewportDepthOnlyArray);
     test_data.BindGraphicsPipeline(subpass_cmd, true, 1);
@@ -653,7 +653,7 @@ TEST_F(NegativeViewportInheritance, MissingFeature) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_commandPool->handle();
+    VkCommandPool pool = m_command_pool.handle();
 
     test_data.MakeBeginSubpassCommandBuffer(pool, 0, nullptr);
 
@@ -683,7 +683,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_commandPool->handle();
+    VkCommandPool pool = m_command_pool.handle();
 
     // Test using viewport/scissor with count state without providing it to be inherited.
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
@@ -913,7 +913,7 @@ TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_commandPool->handle();
+    VkCommandPool pool = m_command_pool.handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783");
     test_data.MakeBeginSubpassCommandBuffer(pool, 2, test_data.kViewportArray);
@@ -945,7 +945,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     InitRenderTarget();
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer secondary(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {

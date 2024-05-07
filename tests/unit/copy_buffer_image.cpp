@@ -2335,7 +2335,7 @@ TEST_F(NegativeCopyBufferImage, DepthStencilImageCopyNoGraphicsQueueFlags) {
     vkt::CommandPool command_pool(*m_device, no_gfx.value());
 
     // Setup command buffer on pool
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-07739");
@@ -2376,7 +2376,7 @@ TEST_F(NegativeCopyBufferImage, ImageTransferQueueFlags) {
     vkt::CommandPool command_pool(*m_device, transfer_qfi.value());
 
     // Setup command buffer on pool
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-dstImage-07975");
@@ -3082,7 +3082,7 @@ TEST_F(NegativeCopyBufferImage, MinImageTransferGranularity) {
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vkt::Image dst_image(*m_device, image_create_info, vkt::set_layout);
 
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     VkImageCopy copyRegion;

@@ -1961,7 +1961,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
     // 1st Command Buffer
     // ---
 
-    vkt::CommandBuffer cb_1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb_1(*m_device, m_command_pool);
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -2069,7 +2069,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
     // 2nd Command Buffer
     // ---
 
-    vkt::CommandBuffer cb_2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb_2(*m_device, m_command_pool);
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
     vkt::Buffer buffer0_cb_2(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);

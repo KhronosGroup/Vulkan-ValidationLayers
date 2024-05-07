@@ -267,7 +267,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
 
     for (vkt::Queue *queue : queues) {
         vkt::CommandPool compute_pool(*m_device, queue->family_index);
-        vkt::CommandBuffer cmd_buffer(*m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+        vkt::CommandBuffer cmd_buffer(*m_device, compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
         cmd_buffer.begin();
 

@@ -204,7 +204,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     clearAttachment.clearValue.color.float32[3] = 1.0f;
     clearAttachment.colorAttachment = 0;
 
-    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin(&beginInfo);
     vk::CmdClearAttachments(secondary.handle(), 1u, &clearAttachment, 1u, &clearRect);
     secondary.end();

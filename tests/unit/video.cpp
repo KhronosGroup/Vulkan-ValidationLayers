@@ -3044,7 +3044,7 @@ TEST_F(NegativeVideo, BeginCodingUnsupportedCodecOp) {
     context.CreateAndBindSessionMemory();
 
     vkt::CommandPool pool(*m_device, queue_family_index);
-    vkt::CommandBuffer cb(*m_device, &pool);
+    vkt::CommandBuffer cb(*m_device, pool);
 
     cb.begin();
 
@@ -9828,7 +9828,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryIncompatibleQueueFamily) {
     context.CreateStatusQueryPool();
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb(*m_device, &cmd_pool);
+    vkt::CommandBuffer cb(*m_device, cmd_pool);
 
     cb.begin();
 
@@ -10094,7 +10094,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryIncompatibleQueueFamily) {
     context.CreateStatusQueryPool();
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb(*m_device, &cmd_pool);
+    vkt::CommandBuffer cb(*m_device, cmd_pool);
 
     cb.begin();
 
@@ -12095,7 +12095,7 @@ TEST_F(NegativeVideo, BeginQueryIncompatibleQueueFamily) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb(*m_device, &cmd_pool);
+    vkt::CommandBuffer cb(*m_device, cmd_pool);
 
     cb.begin();
 

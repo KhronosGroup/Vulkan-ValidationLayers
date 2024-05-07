@@ -925,7 +925,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
-    vkt::CommandBuffer cb(*m_device, m_commandPool);
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.begin();
     vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
     vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
@@ -951,7 +951,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
-    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.begin();
     vk::CmdPipelineBarrier2(cb2, &dep_info);
     cb2.end();
@@ -990,14 +990,14 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
     vkt::Semaphore semaphore(*m_device);
 
     // Submit 1: Clear image (WRITE access)
-    vkt::CommandBuffer cb(*m_device, m_commandPool);
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.begin();
     vk::CmdClearColorImage(cb, image, VK_IMAGE_LAYOUT_GENERAL, &m_clear_color, 1, &layout_transition.subresourceRange);
     cb.end();
     m_default_queue->Submit2(cb, vkt::signal, semaphore);
 
     // Submit 2: Transition layout (WRITE access)
-    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.begin();
     vk::CmdPipelineBarrier2(cb2, &dep_info);
     cb2.end();
@@ -1033,7 +1033,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
-    vkt::CommandBuffer cb(*m_device, m_commandPool);
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.begin();
     vk::CmdPipelineBarrier2(cb, &dep_info);
     cb.end();
@@ -1058,7 +1058,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
-    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.begin();
     vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
     vk::CmdBindDescriptorSets(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
@@ -1267,7 +1267,7 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
 
     // Submit 0: perform image layout transition on Graphics queue.
     // Image barrier synchronizes with COPY-WRITE access from Submit 2.
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
@@ -1289,7 +1289,7 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     transfer_queue->Submit2(vkt::no_cmd, vkt::wait, semaphore);
 
     // Submit 2: copy to image on Graphics queue. No synchronization is needed because of COPY+WRITE barrier from Submit 0.
-    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.begin();
     vk::CmdCopyBufferToImage(cb2, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     cb2.end();
@@ -1395,12 +1395,12 @@ TEST_F(PositiveSyncVal, ThreadedSubmitAndFenceWait) {
         thread_fences.emplace_back(*m_device);
     }
 
-    vkt::CommandBuffer cmd(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd(*m_device, m_command_pool);
     cmd.begin();
     vk::CmdCopyBuffer(cmd, src, dst, 1, &copy_info);
     cmd.end();
 
-    vkt::CommandBuffer thread_cmd(*m_device, m_commandPool);
+    vkt::CommandBuffer thread_cmd(*m_device, m_command_pool);
     thread_cmd.begin();
     thread_cmd.end();
 
@@ -1448,7 +1448,7 @@ TEST_F(PositiveSyncVal, ThreadedSubmitAndFenceWaitAndPresent) {
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     {
-        vkt::CommandBuffer cmd(*m_device, m_commandPool);
+        vkt::CommandBuffer cmd(*m_device, m_command_pool);
         cmd.begin();
         for (VkImage image : swapchain_images) {
             VkImageMemoryBarrier transition = vku::InitStructHelper();

@@ -94,13 +94,13 @@ TEST_F(PositiveObjectLifetime, FreeCommandBuffersNull) {
 
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
-    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.commandPool = m_command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &command_buffer);
 
     VkCommandBuffer free_command_buffers[2] = {command_buffer, VK_NULL_HANDLE};
-    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 2, &free_command_buffers[0]);
+    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 2, &free_command_buffers[0]);
 }
 
 TEST_F(PositiveObjectLifetime, FreeDescriptorSetsNull) {

@@ -398,7 +398,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
         m_commandBuffer->end();
     }
 
-    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+    vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
 
     {
         VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -692,7 +692,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     pipe.CreateGraphicsPipeline();
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer secondary_cmd_buf(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cmd_buf(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo iinfo = vku::InitStructHelper();
     iinfo.renderPass = m_renderPassBeginInfo.renderPass;

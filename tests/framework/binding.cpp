@@ -1284,7 +1284,7 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
     }
 
     CommandPool pool(*device_, device_->graphics_queue_node_index_);
-    CommandBuffer cmd_buf(*device_, &pool);
+    CommandBuffer cmd_buf(*device_, pool);
 
     /* Build command buffer to set image layout in the driver */
     cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -1672,8 +1672,8 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
     cmd_pool_ = info.commandPool;
 }
 
-void CommandBuffer::Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level) {
-    auto create_info = CommandBuffer::create_info(pool->handle());
+void CommandBuffer::Init(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level) {
+    auto create_info = CommandBuffer::create_info(pool.handle());
     create_info.level = level;
     init(dev, create_info);
 }

@@ -950,7 +950,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    vkt::CommandBuffer cmd_buf(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(*m_device, m_command_pool);
 
     enum TestType {
         kInternal,  // Image layout mismatch is *within* a given command buffer

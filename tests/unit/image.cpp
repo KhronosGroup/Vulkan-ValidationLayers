@@ -5380,7 +5380,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     {  // Verify invalid image layout with CmdDispatch
-        vkt::CommandBuffer cmd(*m_device, m_commandPool);
+        vkt::CommandBuffer cmd(*m_device, m_command_pool);
         cmd.begin();
         vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, nullptr);
@@ -5395,7 +5395,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
     }
 
     {  // Verify invalid image layout with CmdDispatchBaseKHR
-        vkt::CommandBuffer cmd(*m_device, m_commandPool);
+        vkt::CommandBuffer cmd(*m_device, m_command_pool);
         cmd.begin();
         vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, nullptr);

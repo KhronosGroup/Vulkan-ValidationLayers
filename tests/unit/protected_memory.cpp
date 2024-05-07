@@ -495,7 +495,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     protected_pipe.CreateGraphicsPipeline();
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer unprotected_cmdbuf(*m_device, &command_pool);
+    vkt::CommandBuffer unprotected_cmdbuf(*m_device, command_pool);
     unprotected_cmdbuf.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409");
     vk::CmdBindPipeline(unprotected_cmdbuf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe.Handle());
@@ -701,7 +701,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
-    vkt::CommandBuffer protectedCommandBuffer(*m_device, &protectedCommandPool);
+    vkt::CommandBuffer protectedCommandBuffer(*m_device, protectedCommandPool);
 
     // Create actual protected and unprotected buffers
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();

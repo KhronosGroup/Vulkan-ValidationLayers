@@ -256,7 +256,7 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::CommandPool command_pool(*m_second_device, m_device->graphics_queue_node_index_, 0);
-    vkt::CommandBuffer command_buffer(*m_second_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_second_device, command_pool);
 
     command_buffer.begin();
     // one for each the framebuffer and renderpass being different from the CommandBuffer

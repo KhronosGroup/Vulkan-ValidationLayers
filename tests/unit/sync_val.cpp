@@ -122,26 +122,26 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     m_commandBuffer->end();
 
     // Create secondary buffers to use
-    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     vk::CmdCopyBuffer(scb1, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
     secondary_cb1.end();
 
-    vkt::CommandBuffer secondary_cb2(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb2 = secondary_cb2.handle();
     secondary_cb2.begin();
     vk::CmdCopyBuffer(scb2, buffer_a.handle(), buffer_c.handle(), 1, &front2front);
     secondary_cb2.end();
 
-    vkt::CommandBuffer secondary_cb3(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb3(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb3 = secondary_cb3.handle();
     secondary_cb3.begin();
     vk::CmdPipelineBarrier(secondary_cb3.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
                            nullptr, 0, nullptr);
     secondary_cb3.end();
 
-    vkt::CommandBuffer secondary_cb4(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb4(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb4 = secondary_cb4.handle();
     secondary_cb4.begin();
     vk::CmdCopyBuffer(scb4, buffer_b.handle(), buffer_c.handle(), 1, &front2front);
@@ -708,7 +708,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 
     // Test secondary command buffers
     // Create secondary buffers to use
-    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     vk::CmdCopyImage(scb1, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
@@ -2955,7 +2955,7 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
 
     // There should be no hazard for ILT after ILT
     m_commandBuffer->end();
-    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+    vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
     m_commandBuffer->begin();
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                            &preClearBarrier);
@@ -3315,7 +3315,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         m_commandBuffer->EndRenderPass();
         // m_errorMonitor->VerifyFound();
 
-        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+        vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
     }
 
     // add dependencies from subpass 0 to the others, which are necessary but not sufficient
@@ -3406,7 +3406,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         // There is no race, because the NextSubpass calls failed above
         m_commandBuffer->EndRenderPass();
 
-        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+        vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
     }
 
     // try again with correct dependencies to make subpasses:
@@ -3760,7 +3760,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     buffer_barrier_front_waw.offset = front2front.dstOffset;
     buffer_barrier_front_waw.size = front2front.size;
 
-    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     secondary_cb1.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
@@ -4756,7 +4756,7 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     test.End();
 
     // Ensure this would work on one queue (sanity check)
-    vkt::CommandBuffer reset(*test.dev, &test.pool);
+    vkt::CommandBuffer reset(*test.dev, test.pool);
     test.Begin(reset);
     test.ResetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
     test.End();
@@ -4903,8 +4903,8 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     rp_helper.InitFramebuffer();
     rp_helper.InitBeginInfo();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
     auto do_clear = [](vkt::CommandBuffer& cb_obj, CreateRenderPassHelper& rp_helper) {
         VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -5641,7 +5641,7 @@ TEST_F(NegativeSyncVal, DebugRegion_Secondary) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer secondary_cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &label);
@@ -5674,7 +5674,7 @@ TEST_F(NegativeSyncVal, DebugRegion_Secondary2) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer secondary_cb0(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb0(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb0, &label);
@@ -5682,7 +5682,7 @@ TEST_F(NegativeSyncVal, DebugRegion_Secondary2) {
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb0);
     secondary_cb0.end();
 
-    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb1, &label);
@@ -5712,8 +5712,8 @@ TEST_F(NegativeSyncVal, QSDebugRegion) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
     label.pLabelName = "RegionA";
     cb0.begin();
@@ -5751,7 +5751,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion2) {
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "RegionA";
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
@@ -5759,7 +5759,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion2) {
     cb0.end();
     m_default_queue->Submit(cb0);
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
@@ -5783,8 +5783,8 @@ TEST_F(NegativeSyncVal, QSDebugRegion3) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
     vkt::Event event(*m_device);  // events are not used for some specific functionality, only to create additional debug regions
     vkt::Event event2(*m_device);
@@ -5854,14 +5854,14 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
     m_default_queue->Submit(cb0);
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
@@ -5870,7 +5870,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     cb1.end();
     m_default_queue->Submit(cb1);
 
-    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     vk::CmdEndDebugUtilsLabelEXT(cb2);  // RegionA
@@ -5895,13 +5895,13 @@ TEST_F(NegativeSyncVal, QSDebugRegion5) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
@@ -5913,7 +5913,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion5) {
     std::array command_buffers = {&cb0, &cb1};
     m_default_queue->Submit(command_buffers);
 
-    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
@@ -5937,13 +5937,13 @@ TEST_F(NegativeSyncVal, QSDebugRegion6) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
@@ -5961,7 +5961,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion6) {
     submit_infos[1].pCommandBuffers = &cb1.handle();
     vk::QueueSubmit(*m_default_queue, 2, submit_infos, VK_NULL_HANDLE);
 
-    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
@@ -5986,7 +5986,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion7) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
     label.pLabelName = "RegionA";
@@ -5995,7 +5995,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion7) {
     cb0.end();
     m_default_queue->Submit(cb0);
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
@@ -6019,7 +6019,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer secondary_cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &label);
@@ -6027,7 +6027,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
     secondary_cb.end();
 
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
@@ -6036,7 +6036,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     cb0.end();
     m_default_queue->Submit(cb0);
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
@@ -6297,7 +6297,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     region.imageExtent = {64, 64, 1};
 
     // Submit from Graphics queue: perform image layout transition (WRITE access).
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
@@ -6318,7 +6318,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
 
     // Submit from Transfer queue: write image data (racing WRITE access)
     vkt::CommandPool transfer_pool(*m_device, transfer_queue->family_index);
-    vkt::CommandBuffer cb1(*m_device, &transfer_pool);
+    vkt::CommandBuffer cb1(*m_device, transfer_pool);
     cb1.begin();
     vk::CmdCopyBufferToImage(cb1, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     cb1.end();
@@ -6357,7 +6357,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     m_default_queue->Submit2(vkt::no_cmd, vkt::signal, semaphore);
 
     // Submit on Graphics queue: image layout transition (WRITE access).
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
@@ -6378,7 +6378,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
 
     // Submit on Transfer queue: write image data (racing WRITE access)
     vkt::CommandPool transfer_pool(*m_device, transfer_queue->family_index);
-    vkt::CommandBuffer cb2(*m_device, &transfer_pool);
+    vkt::CommandBuffer cb2(*m_device, transfer_pool);
     cb2.begin();
     vk::CmdCopyBufferToImage(cb2, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     cb2.end();
@@ -6433,10 +6433,10 @@ TEST_F(NegativeSyncVal, QSWriteRacingRead) {
     VkBufferCopy region{};
     region.size = size;
 
-    vkt::CommandBuffer gfx_cb(*m_device, &gfx_pool);
-    vkt::CommandBuffer gfx_cb2(*m_device, &gfx_pool);
-    vkt::CommandBuffer compute_cb(*m_device, &compute_pool);
-    vkt::CommandBuffer transfer_cb(*m_device, &transfer_pool);
+    vkt::CommandBuffer gfx_cb(*m_device, gfx_pool);
+    vkt::CommandBuffer gfx_cb2(*m_device, gfx_pool);
+    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
     vkt::Semaphore semaphore(*m_device);
     vkt::Semaphore semaphore2(*m_device);
 

@@ -1202,12 +1202,12 @@ TEST_F(NegativeObjectLifetime, FreeCommandBuffersNull) {
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
-    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 2, nullptr);
+    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 2, nullptr);
     m_errorMonitor->VerifyFound();
 
     VkCommandBuffer invalid_cb = CastToHandle<VkCommandBuffer, uintptr_t>(0xbaadbeef);
     m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
-    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &invalid_cb);
+    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 1, &invalid_cb);
     m_errorMonitor->VerifyFound();
 }
 

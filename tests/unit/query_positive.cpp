@@ -72,7 +72,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 
     VkCommandBuffer command_buffer[2];
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
-    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.commandPool = m_command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, command_buffer);
@@ -108,7 +108,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 
     m_default_queue->Wait();
 
-    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 2, command_buffer);
+    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 2, command_buffer);
 }
 
 TEST_F(PositiveQuery, BasicQuery) {
@@ -245,8 +245,8 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer primary_buffer(*m_device, &command_pool);
-    vkt::CommandBuffer secondary_buffer(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer primary_buffer(*m_device, command_pool);
+    vkt::CommandBuffer secondary_buffer(*m_device, command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), m_device->graphics_queue_node_index_, 1, &queue);
@@ -407,7 +407,7 @@ TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
@@ -494,7 +494,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         m_device->Wait();
     }
 
-    vkt::CommandBuffer cmd_buffer(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer(*m_device, m_command_pool);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
     acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();
@@ -557,7 +557,7 @@ TEST_F(PositiveQuery, ReuseSecondaryWithQueryCommand) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
-    vkt::CommandBuffer secondary_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_buffer(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
     secondary_buffer.end();

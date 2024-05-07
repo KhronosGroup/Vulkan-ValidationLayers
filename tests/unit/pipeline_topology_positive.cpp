@@ -476,7 +476,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
 
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    vkt::CommandBuffer cb(*m_device, m_commandPool);
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.begin();
     cb.BeginRenderPass(m_renderPassBeginInfo);
 

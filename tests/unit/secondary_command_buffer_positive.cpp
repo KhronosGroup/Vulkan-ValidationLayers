@@ -39,7 +39,7 @@ TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer secondary(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
                                            nullptr,
@@ -80,7 +80,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalled) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
@@ -127,7 +127,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalledWithoutFb) {
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
-    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     hinfo.renderPass = renderPass();
@@ -198,7 +198,7 @@ TEST_F(PositiveSecondaryCommandBuffer, CommandPoolDeleteWithReferences) {
     // DestroyCommandPool *implicitly* frees the command buffers allocated from it
     vk::DestroyCommandPool(m_device->handle(), secondary_cmd_pool, NULL);
     // If bookkeeping has been lax, validating the reset will attempt to touch deleted data
-    res = vk::ResetCommandPool(m_device->handle(), m_commandPool->handle(), 0);
+    res = vk::ResetCommandPool(m_device->handle(), m_command_pool.handle(), 0);
     ASSERT_EQ(VK_SUCCESS, res);
 }
 
@@ -208,7 +208,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearColorAttachments) {
     InitRenderTarget();
 
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
-    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.commandPool = m_command_pool.handle();
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     command_buffer_allocate_info.commandBufferCount = 1;
 
@@ -248,7 +248,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     InitRenderTarget();
     // Allocate a secondary and primary cmd buffer
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
-    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.commandPool = m_command_pool.handle();
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     command_buffer_allocate_info.commandBufferCount = 1;
 
@@ -307,16 +307,16 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     submit_info.pCommandBuffers = &primary_command_buffer;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_device->Wait();
-    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &secondary_command_buffer);
-    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &primary_command_buffer);
+    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 1, &secondary_command_buffer);
+    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 1, &primary_command_buffer);
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, EventStageMask) {
     TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
     RETURN_IF_SKIP(Init());
 
-    vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
-    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     vkt::Event event(*m_device);
 
@@ -344,7 +344,7 @@ TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
 
     vkt::Event ev(*m_device);
     VkEvent ev_handle = ev.handle();
-    vkt::CommandBuffer secondary_cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb = secondary_cb.handle();
     secondary_cb.begin();
     vk::CmdSetEvent(scb, ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
@@ -370,8 +370,8 @@ TEST_F(PositiveSecondaryCommandBuffer, Nested) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    vkt::CommandBuffer secondary1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    vkt::CommandBuffer secondary2(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceRenderingInfoKHR cbiri = vku::InitStructHelper();
     cbiri.colorAttachmentCount = 1;

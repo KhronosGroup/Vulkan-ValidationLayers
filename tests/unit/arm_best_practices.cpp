@@ -437,7 +437,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
         pr_pipe.CreateGraphicsPipeline();
 
-        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+        vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
         m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
@@ -965,7 +965,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     render_pass_begin_info.pClearValues = clear_values;
 
     const auto execute_work = [&](const std::function<void(vkt::CommandBuffer & command_buffer)>& work) {
-        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+        vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
         m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         work(*m_commandBuffer);

@@ -44,7 +44,6 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
 VkRenderFramework::VkRenderFramework()
     : instance_(nullptr),
       m_device(nullptr),
-      m_commandPool(nullptr),
       m_commandBuffer(nullptr),
       m_renderPass(VK_NULL_HANDLE),
       m_width(256),   // default window width
@@ -521,7 +520,6 @@ void VkRenderFramework::ShutdownFramework() {
     m_command_buffer.destroy();
     m_commandBuffer = nullptr;
     m_command_pool.destroy();
-    m_commandPool = nullptr;
 
     if (m_second_queue) {
         m_second_command_buffer.destroy();
@@ -714,13 +712,12 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     m_render_target_fmt = GetRenderTargetFormat();
 
     m_command_pool.Init(*m_device, m_device->graphics_queue_node_index_, flags);
-    m_commandPool = &m_command_pool;
-    m_command_buffer.Init(*m_device, &m_command_pool);
+    m_command_buffer.Init(*m_device, m_command_pool);
     m_commandBuffer = &m_command_buffer;
 
     if (m_second_queue) {
         m_second_command_pool.Init(*m_device, m_second_queue->family_index, flags);
-        m_second_command_buffer.Init(*m_device, &m_second_command_pool);
+        m_second_command_buffer.Init(*m_device, m_second_command_pool);
     }
 }
 

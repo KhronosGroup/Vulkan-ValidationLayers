@@ -803,7 +803,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
         layout(set = 0, binding = 0) uniform ufoo {
             bufStruct ptr;
         } ssbo;
-        
+
         layout(buffer_reference, scalar) buffer bufStruct {
             float f;
             vec3 v;
@@ -872,21 +872,21 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     char const *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
-        
+
         layout(buffer_reference) buffer Node;
         layout(buffer_reference, std430) buffer Node {
             vec3 v;
             Node next;
         };
-        
+
         layout(set = 0, binding = 0) uniform foo {
             Node node_0;
             Node node_1;
             Node node_2;
         };
-        
+
         void main() {
-            node_0.next = node_1; 
+            node_0.next = node_1;
             node_1.next = node_2;
 
             node_0.v = vec3(1.0, 2.0, 3.0);
@@ -952,28 +952,28 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     char const *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
-        
+
         layout(buffer_reference, std430) buffer Foo {
             vec3 v;
             int i;
             float f;
         };
-        
+
         layout(buffer_reference, std430) buffer Bar {
             int i;
             float f;
             vec3 v;
         };
-        
+
         layout(set = 0, binding = 0) uniform Buffer {
             Foo foo;
             Bar bar;
         };
-        
+
         void main() {
             bar.i = 42;
             foo.i = bar.i;
-        }   
+        }
     )glsl";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
@@ -1040,7 +1040,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
           float r, g, b;
           vec2 uv;
         };
-        
+
         layout(std430, buffer_reference) readonly buffer VertexBuffer {
           Vertex vertices[];
         };
@@ -1155,16 +1155,16 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
     char const *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
-        
+
         layout(buffer_reference, buffer_reference_align = 16, std430) buffer IntPtr {
             int i0;
             int i1;
         };
 
         layout(push_constant) uniform Uniforms {
-            IntPtr ptr;    
+            IntPtr ptr;
         };
-        
+
         void main() {
             ptr.i1 = ptr.i0;
         }
@@ -1191,7 +1191,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
     std::vector<vkt::CommandBuffer> cmd_buffers;
     std::vector<vkt::Buffer> storage_buffers;
     for (int i = 0; i < 64; ++i) {
-        auto &cb = cmd_buffers.emplace_back(vkt::CommandBuffer(*m_device, m_commandPool));
+        auto &cb = cmd_buffers.emplace_back(vkt::CommandBuffer(*m_device, m_command_pool));
 
         // Create a storage buffer and get its address,
         // effectively adding it to the BDA table

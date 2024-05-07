@@ -1637,7 +1637,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1u, &view.handle());
 
     VkCommandBufferAllocateInfo cbai = vku::InitStructHelper();
-    cbai.commandPool = m_commandPool->handle();
+    cbai.commandPool = m_command_pool.handle();
     cbai.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     cbai.commandBufferCount = 1;
 
@@ -1670,7 +1670,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatibleNoHandle) {
     InitRenderTarget();
 
     VkCommandBufferAllocateInfo cbai = vku::InitStructHelper();
-    cbai.commandPool = m_commandPool->handle();
+    cbai.commandPool = m_command_pool.handle();
     cbai.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     cbai.commandBufferCount = 1;
 
@@ -3837,7 +3837,7 @@ TEST_F(NegativeRenderPass, IncompatibleFramebuffer) {
     cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     cmd_buffer_begin_info.pInheritanceInfo = &inheritance_info;
 
-    vkt::CommandBuffer secondary_cmd_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cmd_buffer(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-00055");
     vk::BeginCommandBuffer(secondary_cmd_buffer.handle(), &cmd_buffer_begin_info);
@@ -4266,7 +4266,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
     m_renderPassBeginInfo.renderArea = {{0, 0}, {stripe_width * stripe_count, stripe_height}};
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer cmd_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer cmd_buffer(*m_device, command_pool);
 
     VkCommandBufferBeginInfo cmd_begin = vku::InitStructHelper();
 

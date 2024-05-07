@@ -78,7 +78,7 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
 }
 
 VkCommandBuffer QSTestContext::InitFromPool(vkt::CommandBuffer& cb_obj) {
-    cb_obj.Init(*dev, &pool);
+    cb_obj.Init(*dev, pool);
     return cb_obj.handle();
 }
 

@@ -47,7 +47,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     }
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer no_gfx_cb(*m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    vkt::CommandBuffer no_gfx_cb(*m_device, no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Create an "exclusive" image owned by the graphics queue.
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -860,7 +860,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    vkt::CommandBuffer cmd_buf(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(*m_device, m_command_pool);
 
     enum TestType {
         kInternal,  // Image layout mismatch is *within* a given command buffer
@@ -1048,7 +1048,7 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 
-    vkt::CommandBuffer cmd_buf(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(*m_device, m_command_pool);
 
     enum TestType {
         kInternal,  // Image layout mismatch is *within* a given command buffer
