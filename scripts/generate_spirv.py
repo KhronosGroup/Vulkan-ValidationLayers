@@ -168,7 +168,7 @@ extern const uint32_t {name}[];
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
 [[maybe_unused]] const uint32_t {name}_size = {len(words)};
-[[maybe_unused]] const uint32_t {name}[{len(words)}] = {{ {literals} }};
+[[maybe_unused]] const uint32_t {name}[{len(words)}] = {{\n{literals}\n}};
 '''
 
     if outdir:
