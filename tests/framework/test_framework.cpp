@@ -210,13 +210,13 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
                 "\t--print-vu\n"
                 "\t\tPrints all VUs - help see what new VU will look like.\n");
             printf(
-                "\t--syncval-enable-core\n"
-                "\t\tEnable both syncval and core validation when running syncval tests.\n"
-                "\t\tBy default only syncval validation is enabled.\n");
+                "\t--syncval-disable-core\n"
+                "\t\tDisable core validation when running syncval tests.\n"
+                "\t\tBy default both CoreChecks and syncval validation is enabled.\n");
             printf(
-                "\t--gpuav-enable-core\n"
-                "\t\tEnable both gpu-av and core validation when running gpu-av tests.\n"
-                "\t\tBy default only gpu-av is enabled.\n");
+                "\t--gpuav-disable-core\n"
+                "\t\tDisable core validation when running gpu-av tests.\n"
+                "\t\tBy default both CoreChecks and gpu-av is enabled.\n");
             printf(
                 "\t--strip-SPV\n"
                 "\t\tStrip SPIR-V debug information (line numbers, names, etc).\n");
