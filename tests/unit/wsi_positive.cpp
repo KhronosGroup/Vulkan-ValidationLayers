@@ -14,7 +14,7 @@
 
 void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer cmd_buf(*m_device, &pool);
+    vkt::CommandBuffer cmd_buf(*m_device, pool);
 
     cmd_buf.begin();
     VkImageMemoryBarrier layout_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -550,7 +550,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
     std::vector<vkt::CommandBuffer> command_buffers;
     std::vector<vkt::Semaphore> submit_semaphores;
     for (size_t i = 0; i < swapchain_images.size(); i++) {
-        command_buffers.emplace_back(*m_device, m_commandPool);
+        command_buffers.emplace_back(*m_device, m_command_pool);
         submit_semaphores.emplace_back(*m_device);
     }
     const vkt::Fence acquire_fence(*m_device);
@@ -601,7 +601,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     std::vector<vkt::CommandBuffer> command_buffers;
     std::vector<vkt::Semaphore> submit_semaphores;
     for (size_t i = 0; i < swapchain_images.size(); i++) {
-        command_buffers.emplace_back(*m_device, m_commandPool);
+        command_buffers.emplace_back(*m_device, m_command_pool);
         submit_semaphores.emplace_back(*m_device);
     }
     const vkt::Fence acquire_fence(*m_device);
@@ -974,7 +974,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     vkt::ImageView image_view(*m_device, ivci);
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle(), 1, 1);
 
-    vkt::CommandBuffer cmdbuff(*m_device, m_commandPool);
+    vkt::CommandBuffer cmdbuff(*m_device, m_command_pool);
     cmdbuff.begin();
     cmdbuff.BeginRenderPass(render_pass.handle(), framebuffer.handle());
 
@@ -1186,7 +1186,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
 
     // Create a protected command buffer/pool to use
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
-    vkt::CommandBuffer protectedCommandBuffer(*m_device, &protectedCommandPool);
+    vkt::CommandBuffer protectedCommandBuffer(*m_device, protectedCommandPool);
 
     protectedCommandBuffer.begin();
     VkRect2D render_area = {{0, 0}, swapchain_create_info.imageExtent};

@@ -87,7 +87,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     vkt::CommandPool ray_tracing_command_pool(*m_device, ray_tracing_queue_family_index,
                                               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer ray_tracing_command_buffer(*m_device, &ray_tracing_command_pool);
+    vkt::CommandBuffer ray_tracing_command_buffer(*m_device, ray_tracing_command_pool);
 
     constexpr std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
 

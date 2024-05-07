@@ -1152,7 +1152,7 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     beginInfo.pInheritanceInfo = &inheritanceInfo;
 
-    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-06002");
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-09240");
     vk::BeginCommandBuffer(secondary.handle(), &beginInfo);

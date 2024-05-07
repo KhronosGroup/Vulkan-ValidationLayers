@@ -1047,8 +1047,8 @@ TEST_F(PositiveGpuAV, CopyBufferToImageTwoSubmit) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::CommandBuffer cb_0(*m_device, m_commandPool);
-    vkt::CommandBuffer cb_1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb_0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_1(*m_device, m_command_pool);
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);

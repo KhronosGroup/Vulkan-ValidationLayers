@@ -1116,7 +1116,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     m_errorMonitor->VerifyFound();
 
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
-    // vkt::CommandBuffer cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    // vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     // m_commandBuffer->begin();
     // vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &cb.handle());
     // m_commandBuffer->end();
@@ -1205,7 +1205,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->SetDesiredError("VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength");
     {
         VkCommandBufferAllocateInfo info = vku::InitStructHelper();
-        info.commandPool = m_commandPool->handle();
+        info.commandPool = m_command_pool.handle();
         info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         info.commandBufferCount = 0;  // invalid
         vk::AllocateCommandBuffers(device(), &info, &unused_command_buffer);
@@ -1225,7 +1225,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-commandBufferCount-arraylength");
-    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 0, &unused_command_buffer);
+    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 0, &unused_command_buffer);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeDescriptorSets-descriptorSetCount-arraylength");
@@ -1240,7 +1240,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     vk::WaitForFences(device(), 0, &fence.handle(), true, 1);
     m_errorMonitor->VerifyFound();
 
-    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength");

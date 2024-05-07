@@ -23,8 +23,8 @@ void BarrierQueueFamilyBase::QueueFamilyObjs::Init(vkt::Device *device, uint32_t
     index = qf_index;
     queue = new vkt::Queue(qf_queue, qf_index);
     command_pool = new vkt::CommandPool(*device, qf_index, cp_flags);
-    command_buffer = new vkt::CommandBuffer(*device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-    command_buffer2 = new vkt::CommandBuffer(*device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    command_buffer = new vkt::CommandBuffer(*device, *command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    command_buffer2 = new vkt::CommandBuffer(*device, *command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 }
 
 BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices) : layer_test(test) {

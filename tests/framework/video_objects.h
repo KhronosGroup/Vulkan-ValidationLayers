@@ -1927,7 +1927,7 @@ class VideoContext {
           cmd_pool_(
               *device, queue_.family_index,
               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | (protected_content ? VK_COMMAND_POOL_CREATE_PROTECTED_BIT : 0)),
-          cmd_buffer_(*device, &cmd_pool_, VK_COMMAND_BUFFER_LEVEL_PRIMARY),
+          cmd_buffer_(*device, cmd_pool_, VK_COMMAND_BUFFER_LEVEL_PRIMARY),
           session_(VK_NULL_HANDLE),
           session_memory_(),
           session_params_(VK_NULL_HANDLE),

@@ -403,7 +403,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
     commandBuffer.begin();
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08971",
@@ -552,7 +552,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
     std::vector<VkBuffer> buffers(m_device->phy().limits_.maxVertexInputBindings + 1ull, buffer.handle());
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
-    vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
     commandBuffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers2-firstBinding-03355");
@@ -797,7 +797,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateEnabledNoMultiview) {
 
     InitRenderTarget();
 
-    vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
     commandBuffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportWithCount-viewportCount-03395");
@@ -845,7 +845,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetRasterizerDiscardEnable-None-08970");
@@ -887,7 +887,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsDisabled) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetPatchControlPointsEXT-None-09422");
@@ -921,7 +921,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpDisabled) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetLogicOpEXT-None-09422");
@@ -966,7 +966,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
             pipe.AddDynamicState(dyn_states[i]);
             pipe.CreateGraphicsPipeline();
 
-            vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+            vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
             command_buffer.begin();
             command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
@@ -1017,7 +1017,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
         pipe.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
         pipe.CreateGraphicsPipeline();
 
-        vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+        vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
         command_buffer.begin();
         command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
@@ -1069,7 +1069,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
         pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
         pipe.CreateGraphicsPipeline();
 
-        vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+        vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
         command_buffer.begin();
         command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
@@ -1275,7 +1275,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState3CmdSetFeatureDisabled) {
     InitRenderTarget();
 
     // Check feature is enable for each set command.
-    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
     command_buffer.begin();
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetTessellationDomainOriginEXT-None-09423");
@@ -2700,7 +2700,7 @@ TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferResetBitmask) {
     m_commandBuffer->end();
 
     // reset command buffer from the pool
-    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+    vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -2759,7 +2759,7 @@ TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferReset) {
     m_commandBuffer->end();
 
     // reset command buffer from the pool
-    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+    vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());

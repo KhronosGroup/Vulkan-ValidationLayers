@@ -382,7 +382,7 @@ TEST_F(NegativeCommand, NoBeginCommandBuffer) {
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
 
     RETURN_IF_SKIP(Init());
-    vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
     // Call EndCommandBuffer() w/o calling BeginCommandBuffer()
     vk::EndCommandBuffer(commandBuffer.handle());
 
@@ -400,7 +400,7 @@ TEST_F(NegativeCommand, CommandBufferReset) {
     RETURN_IF_SKIP(InitState(nullptr, nullptr, 0));
 
     // Calls AllocateCommandBuffers
-    vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
 
     // Force the failure by setting the Renderpass and Framebuffer fields with (fake) data
     VkCommandBufferInheritanceInfo cmd_buf_hinfo = vku::InitStructHelper();
@@ -432,7 +432,7 @@ TEST_F(NegativeCommand, CommandBufferPrimaryFlags) {
     RETURN_IF_SKIP(Init());
 
     // Calls AllocateCommandBuffers
-    vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
+    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
 
     VkCommandBufferBeginInfo cmd_buf_info = vku::InitStructHelper();
     cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -722,7 +722,7 @@ TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
     InitRenderTarget();
 
     // An empty primary command buffer
-    vkt::CommandBuffer cb(*m_device, m_commandPool);
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.begin();
     cb.end();
 
@@ -748,7 +748,7 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     VkCommandBuffer cmd_bufs[2];
     VkCommandBufferAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.commandBufferCount = 2;
-    alloc_info.commandPool = m_commandPool->handle();
+    alloc_info.commandPool = m_command_pool.handle();
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &alloc_info, cmd_bufs);
 
@@ -1655,7 +1655,7 @@ TEST_F(NegativeCommand, CommandQueueFlags) {
     vkt::CommandPool command_pool(*m_device, queueFamilyIndex.value());
 
     // Setup command buffer on pool
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     // Issue a graphics only command
@@ -2680,7 +2680,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     vkt::CommandPool command_pool(*m_device, compute_qfi.value());
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361");
@@ -2707,7 +2707,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     vkt::CommandPool command_pool(*m_device, compute_qfi.value());
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     VkBindDescriptorSetsInfoKHR bind_ds_info = vku::InitStructHelper();
@@ -3578,7 +3578,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
 
     // Create secondary command buffer
     VkCommandBufferAllocateInfo secondary_cmd_buffer_alloc_info = vku::InitStructHelper();
-    secondary_cmd_buffer_alloc_info.commandPool = m_commandPool->handle();
+    secondary_cmd_buffer_alloc_info.commandPool = m_command_pool.handle();
     secondary_cmd_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     secondary_cmd_buffer_alloc_info.commandBufferCount = 1;
 
@@ -3718,7 +3718,7 @@ TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
     }
 
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;

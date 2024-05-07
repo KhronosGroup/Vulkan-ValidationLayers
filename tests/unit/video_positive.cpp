@@ -51,8 +51,8 @@ TEST_F(PositiveVideo, MultipleCmdBufs) {
     context.CreateResources();
 
     vkt::CommandPool cmd_pool(*m_device, config.QueueFamilyIndex(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb1(*m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-    vkt::CommandBuffer cb2(*m_device, &cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    vkt::CommandBuffer cb1(*m_device, cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    vkt::CommandBuffer cb2(*m_device, cmd_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     cb1.begin();
     cb1.BeginVideoCoding(context.Begin());

@@ -235,8 +235,8 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
 
     m_commandBuffer->begin();
 
-    vkt::CommandBuffer secondary_full_clear(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    vkt::CommandBuffer secondary_small_clear(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_full_clear(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_small_clear(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
@@ -838,9 +838,9 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     inherit_info.subpass = 0;
     inherit_info.renderPass = rp.Handle();
 
-    vkt::CommandBuffer secondary_clear(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    vkt::CommandBuffer secondary_draw_masked(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    vkt::CommandBuffer secondary_draw_write(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_clear(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_draw_masked(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_draw_write(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     secondary_clear.begin(&begin_info);
     secondary_draw_masked.begin(&begin_info);
@@ -1838,7 +1838,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::CommandPool graphics_pool(*m_device, graphics_queue->family_index);
 
-    vkt::CommandBuffer graphics_buffer(*m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    vkt::CommandBuffer graphics_buffer(*m_device, graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     VkClearValue cv;
     cv.color = VkClearColorValue{};
@@ -1876,7 +1876,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::CommandPool compute_pool(*m_device, compute_queue->family_index);
 
-    vkt::CommandBuffer compute_buffer(*m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    vkt::CommandBuffer compute_buffer(*m_device, compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Record command buffers without queue transition
 
@@ -2086,7 +2086,7 @@ TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     secondary.begin();
     secondary.end();

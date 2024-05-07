@@ -210,7 +210,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
 
     vkt::Image destImage(*m_device, 100, 100, 1, depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::CommandBuffer cmdbuf(*m_device, m_commandPool);
+    vkt::CommandBuffer cmdbuf(*m_device, m_command_pool);
     cmdbuf.begin();
 
     m_depthStencil->ImageMemoryBarrier(&cmdbuf, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -1403,7 +1403,7 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     m_renderPassBeginInfo.renderArea = {{0, 0}, {stripe_width * stripe_count, stripe_height}};
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer cmd_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer cmd_buffer(*m_device, command_pool);
 
     VkCommandBufferBeginInfo cmd_begin = vku::InitStructHelper();
     cmd_buffer.begin(&cmd_begin);

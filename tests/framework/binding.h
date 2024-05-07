@@ -1026,7 +1026,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     explicit CommandBuffer() : Handle() {}
     explicit CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { init(dev, info); }
-    explicit CommandBuffer(const Device &dev, const CommandPool *pool,
+    explicit CommandBuffer(const Device &dev, const CommandPool &pool,
                            VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         Init(dev, pool, level);
     }
@@ -1039,7 +1039,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     // vkAllocateCommandBuffers()
     void init(const Device &dev, const VkCommandBufferAllocateInfo &info);
-    void Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    void Init(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // vkBeginCommandBuffer()
     void begin(const VkCommandBufferBeginInfo *info);

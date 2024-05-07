@@ -616,7 +616,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
     VkShaderEXT shaderHandle = shader.handle();
 
     vkt::CommandPool command_pool(*m_device, transfer_queue_family_index.value());
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &createInfo.stage, &shaderHandle);
@@ -651,7 +651,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
     VkShaderEXT shaderHandle = shader.handle();
 
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &createInfo.stage, &shaderHandle);
@@ -686,7 +686,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
     VkShaderEXT shaderHandle = shader.handle();
 
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
-    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
     vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &createInfo.stage, &shaderHandle);

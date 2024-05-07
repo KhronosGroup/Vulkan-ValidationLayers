@@ -472,13 +472,13 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer2) {
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "regionA";
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
     m_default_queue->Submit(cb0);
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.begin();
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     vk::CmdEndDebugUtilsLabelEXT(cb1);
@@ -496,13 +496,13 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "regionA";
-    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     vk::CmdEndDebugUtilsLabelEXT(cb0);
     cb0.end();
 
-    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
     label.pLabelName = "regionB";
     cb1.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
@@ -521,7 +521,7 @@ TEST_F(NegativeDebugExtensions, DebugLabelSecondaryCommandBuffer) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    vkt::CommandBuffer cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     cb.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
     vk::CmdEndDebugUtilsLabelEXT(cb);

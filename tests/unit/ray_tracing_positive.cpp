@@ -514,9 +514,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
     alloc_info.allocationSize = 1u << 18;
     vkt::DeviceMemory common_scratch_memory(*m_device, alloc_info);
 
-    vkt::CommandBuffer cmd_buffer_frame_0(*m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_1(*m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_2(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_0(*m_device, m_command_pool);
+    vkt::CommandBuffer cmd_buffer_frame_1(*m_device, m_command_pool);
+    vkt::CommandBuffer cmd_buffer_frame_2(*m_device, m_command_pool);
 
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_0;
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_1;
@@ -664,9 +664,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    vkt::CommandBuffer cmd_buffer_frame_0(*m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_1(*m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_2(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_0(*m_device, m_command_pool);
+    vkt::CommandBuffer cmd_buffer_frame_1(*m_device, m_command_pool);
+    vkt::CommandBuffer cmd_buffer_frame_2(*m_device, m_command_pool);
 
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_0;
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_1;
