@@ -3291,7 +3291,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         m_renderPassBeginInfo.framebuffer = fb.handle();
 
         // Test is intentionally running without dependencies.
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass");
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Subpass-dependency");
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.Handle());
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,

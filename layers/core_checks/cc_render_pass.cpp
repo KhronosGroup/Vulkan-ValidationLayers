@@ -1229,11 +1229,10 @@ static bool FindDependency(const uint32_t index, const uint32_t dependent, const
     return false;
 }
 
-bool CoreChecks::CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
-                                       const std::vector<SubpassLayout> &dependent_subpasses,
-                                       const std::vector<DAGNode> &subpass_to_node, const Location &attachment_loc,
-                                       bool &skip) const {
-    bool result = true;
+bool CoreChecks::ValidateDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
+                                          const std::vector<SubpassLayout> &dependent_subpasses,
+                                          const std::vector<DAGNode> &subpass_to_node, const Location &attachment_loc) const {
+    bool skip = false;
     const bool b_image_layout_read_only = IsImageLayoutReadOnly(layout);
     // Loop through all subpasses that share the same attachment and make sure a dependency exists
     for (uint32_t k = 0; k < dependent_subpasses.size(); ++k) {
@@ -1250,51 +1249,15 @@ bool CoreChecks::CheckDependencyExists(const VkRenderPass renderpass, const uint
             vvl::unordered_set<uint32_t> processed_nodes;
             if (!(FindDependency(subpass, sp.index, subpass_to_node, processed_nodes) ||
                   FindDependency(sp.index, subpass, subpass_to_node, processed_nodes))) {
+                // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/3869
                 skip |=
-                    LogError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", renderpass, attachment_loc,
+                    LogError("UNASSIGNED-CoreValidation-Subpass-dependency", renderpass, attachment_loc,
                              "A dependency between subpasses %d and %d must exist but one is not specified.", subpass, sp.index);
-                result = false;
+                break;  // only print once, or else will print redundant subpass mappings
             }
         }
     }
-    return result;
-}
-
-bool CoreChecks::CheckPreserved(const VkRenderPass renderpass, const VkRenderPassCreateInfo2 *pCreateInfo, const int index,
-                                const uint32_t attachment, const std::vector<DAGNode> &subpass_to_node, int depth,
-                                const Location &attachment_loc, bool &skip) const {
-    const DAGNode &node = subpass_to_node[index];
-    // If this node writes to the attachment return true as next nodes need to preserve the attachment.
-    const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[index];
-    for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-        if (attachment == subpass.pColorAttachments[j].attachment) return true;
-    }
-    for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-        if (attachment == subpass.pInputAttachments[j].attachment) return true;
-    }
-    if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-        if (attachment == subpass.pDepthStencilAttachment->attachment) return true;
-    }
-    bool result = false;
-    // Loop through previous nodes and see if any of them write to the attachment.
-    for (auto elem : node.prev) {
-        result |= CheckPreserved(renderpass, pCreateInfo, elem, attachment, subpass_to_node, depth + 1, attachment_loc, skip);
-    }
-    // If the attachment was written to by a previous node than this node needs to preserve it.
-    if (result && depth > 0) {
-        bool has_preserved = false;
-        for (uint32_t j = 0; j < subpass.preserveAttachmentCount; ++j) {
-            if (subpass.pPreserveAttachments[j] == attachment) {
-                has_preserved = true;
-                break;
-            }
-        }
-        if (!has_preserved) {
-            skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", renderpass, attachment_loc,
-                             "Attachment %d is used by a later subpass and must be preserved in subpass %d.", attachment, index);
-        }
-    }
-    return result;
+    return skip;
 }
 
 template <class T>
@@ -2269,11 +2232,10 @@ bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state,
             }
         }
     }
+
     // Find for each attachment the subpasses that use them.
-    vvl::unordered_set<uint32_t> attachment_indices;
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
-        attachment_indices.clear();
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             uint32_t attachment = subpass.pInputAttachments[j].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
@@ -2291,7 +2253,6 @@ bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state,
             for (auto overlapping_attachment : attachments[attachment].overlapping) {
                 attachments[overlapping_attachment].outputs.emplace_back(sp);
             }
-            attachment_indices.insert(attachment);
         }
         if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
             uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
@@ -2300,15 +2261,9 @@ bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state,
             for (auto overlapping_attachment : attachments[attachment].overlapping) {
                 attachments[overlapping_attachment].outputs.emplace_back(sp);
             }
-
-            if (attachment_indices.count(attachment)) {
-                skip |= LogError(
-                    "UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", render_pass_state.Handle(), error_obj.location,
-                    "Cannot use same attachment (%" PRIu32 ") as both color and depth output in same subpass (%" PRIu32 ").",
-                    attachment, i);
-            }
         }
     }
+
     // If there is a dependency needed make sure one exists
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
         const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, i);
@@ -2318,37 +2273,26 @@ bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state,
             uint32_t attachment = subpass.pInputAttachments[j].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
             const Location attachment_loc = subpass_loc.dot(Field::pInputAttachments, j);
-            CheckDependencyExists(render_pass_state.VkHandle(), i, subpass.pInputAttachments[j].layout,
-                                  attachments[attachment].outputs, subpass_to_node, attachment_loc, skip);
+            skip |= ValidateDependencyExists(render_pass_state.VkHandle(), i, subpass.pInputAttachments[j].layout,
+                                             attachments[attachment].outputs, subpass_to_node, attachment_loc);
         }
         // If the attachment is an output then all subpasses that use the attachment must have a dependency relationship
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
             uint32_t attachment = subpass.pColorAttachments[j].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
             const Location attachment_loc = subpass_loc.dot(Field::pColorAttachments, j);
-            CheckDependencyExists(render_pass_state.VkHandle(), i, subpass.pColorAttachments[j].layout,
-                                  attachments[attachment].outputs, subpass_to_node, attachment_loc, skip);
-            CheckDependencyExists(render_pass_state.VkHandle(), i, subpass.pColorAttachments[j].layout,
-                                  attachments[attachment].inputs, subpass_to_node, attachment_loc, skip);
+            skip |= ValidateDependencyExists(render_pass_state.VkHandle(), i, subpass.pColorAttachments[j].layout,
+                                             attachments[attachment].outputs, subpass_to_node, attachment_loc);
+            skip |= ValidateDependencyExists(render_pass_state.VkHandle(), i, subpass.pColorAttachments[j].layout,
+                                             attachments[attachment].inputs, subpass_to_node, attachment_loc);
         }
         if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
             const uint32_t &attachment = subpass.pDepthStencilAttachment->attachment;
             const Location attachment_loc = subpass_loc.dot(Field::pDepthStencilAttachment);
-            CheckDependencyExists(render_pass_state.VkHandle(), i, subpass.pDepthStencilAttachment->layout,
-                                  attachments[attachment].outputs, subpass_to_node, attachment_loc, skip);
-            CheckDependencyExists(render_pass_state.VkHandle(), i, subpass.pDepthStencilAttachment->layout,
-                                  attachments[attachment].inputs, subpass_to_node, attachment_loc, skip);
-        }
-    }
-    // Loop through implicit dependencies, if this pass reads make sure the attachment is preserved for all passes after it was
-    // written.
-    for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
-        const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, i);
-        const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
-        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            const Location attachment_loc = subpass_loc.dot(Field::pInputAttachments, j);
-            CheckPreserved(render_pass_state.VkHandle(), create_info, i, subpass.pInputAttachments[j].attachment, subpass_to_node,
-                           0, attachment_loc, skip);
+            skip |= ValidateDependencyExists(render_pass_state.VkHandle(), i, subpass.pDepthStencilAttachment->layout,
+                                             attachments[attachment].outputs, subpass_to_node, attachment_loc);
+            skip |= ValidateDependencyExists(render_pass_state.VkHandle(), i, subpass.pDepthStencilAttachment->layout,
+                                             attachments[attachment].inputs, subpass_to_node, attachment_loc);
         }
     }
     return skip;
