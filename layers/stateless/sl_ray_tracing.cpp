@@ -1181,7 +1181,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
     uint64_t total_triangles_count = 0;
     uint64_t total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithBuildRanges(infoCount, pInfos, ppBuildRangeInfos, &total_triangles_count, &total_aabbs_count);
-    ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
+    skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
 
     for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
@@ -1326,7 +1326,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
     uint64_t total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithMaxPrimitivesCount(infoCount, pInfos, ppMaxPrimitiveCounts, &total_triangles_count,
                                                      &total_aabbs_count);
-    ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
+    skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
 
     for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
@@ -1509,7 +1509,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
     uint64_t total_triangles_count = 0;
     uint64_t total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithBuildRanges(infoCount, pInfos, ppBuildRangeInfos, &total_triangles_count, &total_aabbs_count);
-    ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
+    skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
 
     for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
@@ -1608,7 +1608,7 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     uint64_t total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithMaxPrimitivesCount(1, pBuildInfo, &pMaxPrimitiveCounts, &total_triangles_count,
                                                      &total_aabbs_count);
-    ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
+    skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
 
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(*pBuildInfo, error_obj.handle,
                                                               error_obj.location.dot(Field::pBuildInfo, 0));
