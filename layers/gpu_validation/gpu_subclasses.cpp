@@ -21,6 +21,7 @@
 #include "drawdispatch/descriptor_validator.h"
 #include "spirv-tools/instrument.hpp"
 #include "gpu_shaders/gpu_error_header.h"
+#include "gpu_validation/gpu_constants.h"
 
 gpuav::Buffer::Buffer(ValidationStateTracker &dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
                       DescriptorHeap &desc_heap_)
@@ -462,20 +463,20 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         // The number of words actually written by the shaders is determined by the size of the buffer
         // we provide via the descriptor. So, we process only the number of words that can fit in the
         // buffer.
-        const uint32_t total_words = error_output_buffer_ptr[spvtools::kDebugOutputSizeOffset];
+        const uint32_t total_words = error_output_buffer_ptr[cst::stream_output_size_offset];
         // A zero here means that the shader instrumentation didn't write anything.
         if (total_words != 0) {
-            uint32_t *const error_records_start = &error_output_buffer_ptr[spvtools::kDebugOutputDataOffset];
-            assert(gpuav->output_buffer_byte_size > spvtools::kDebugOutputDataOffset);
+            uint32_t *const error_records_start = &error_output_buffer_ptr[cst::stream_output_data_offset];
+            assert(gpuav->output_buffer_byte_size > cst::stream_output_data_offset);
             uint32_t *const error_records_end =
-                error_output_buffer_ptr + (gpuav->output_buffer_byte_size - spvtools::kDebugOutputDataOffset);
+                error_output_buffer_ptr + (gpuav->output_buffer_byte_size - cst::stream_output_data_offset);
 
             uint32_t *error_record = error_records_start;
-            uint32_t record_size = error_record[gpuav::glsl::kHeaderErrorRecordSizeOffset];
+            uint32_t record_size = error_record[glsl::kHeaderErrorRecordSizeOffset];
             assert(record_size == glsl::kErrorRecordSize);
 
             while (record_size > 0 && (error_record + record_size) <= error_records_end) {
-                const uint32_t resource_index = error_record[gpuav::glsl::kHeaderCommandResourceIdOffset];
+                const uint32_t resource_index = error_record[glsl::kHeaderCommandResourceIdOffset];
                 assert(resource_index < per_command_resources.size());
                 auto &cmd_info = per_command_resources[resource_index];
                 const LogObjectList objlist(queue, VkHandle());
@@ -483,15 +484,15 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
                 // Next record
                 error_record += record_size;
-                record_size = error_record[gpuav::glsl::kHeaderErrorRecordSizeOffset];
+                record_size = error_record[glsl::kHeaderErrorRecordSizeOffset];
             }
 
             // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
-            assert(gpuav->output_buffer_byte_size > spvtools::kDebugOutputDataOffset);
-            memset(&error_output_buffer_ptr[spvtools::kDebugOutputDataOffset], 0,
-                   gpuav->output_buffer_byte_size - spvtools::kDebugOutputDataOffset * sizeof(uint32_t));
+            assert(gpuav->output_buffer_byte_size > cst::stream_output_data_offset);
+            memset(&error_output_buffer_ptr[cst::stream_output_data_offset], 0,
+                   gpuav->output_buffer_byte_size - cst::stream_output_data_offset * sizeof(uint32_t));
         }
-        error_output_buffer_ptr[spvtools::kDebugOutputSizeOffset] = 0;
+        error_output_buffer_ptr[cst::stream_output_size_offset] = 0;
         vmaUnmapMemory(gpuav->vmaAllocator, error_output_buffer_.allocation);
     }
 
@@ -521,7 +522,7 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
                 assert(set.output_state);
 
                 vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
-                const uint32_t shader_set = gpuav::glsl::kDescriptorSetWrittenMask | i;
+                const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
                 auto used_descs = set.output_state->UsedDescriptors(*set.state, shader_set);
                 // For each used binding ...
                 for (const auto &u : used_descs) {
