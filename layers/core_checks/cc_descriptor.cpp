@@ -1598,25 +1598,29 @@ bool CoreChecks::ValidateBufferUsage(const vvl::Buffer &buffer_state, VkDescript
 bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info, VkDescriptorType type,
                                       const Location &buffer_info_loc) const {
     bool skip = false;
-    const auto &buffer_state = *Get<vvl::Buffer>(buffer_info.buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_info_loc.dot(Field::buffer),
+    // Invalid handles should be caught by the object tracker, but lets make sure not to crash anyways.
+    const auto buffer_state = Get<vvl::Buffer>(buffer_info.buffer);
+    if (!buffer_state) {
+        return skip;
+    }
+    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
-    skip |= ValidateBufferUsage(buffer_state, type, buffer_info_loc.dot(Field::buffer));
+    skip |= ValidateBufferUsage(*buffer_state, type, buffer_info_loc.dot(Field::buffer));
 
-    if (buffer_info.offset >= buffer_state.create_info.size) {
+    if (buffer_info.offset >= buffer_state->create_info.size) {
         skip |= LogError("VUID-VkDescriptorBufferInfo-offset-00340", buffer_info.buffer, buffer_info_loc.dot(Field::offset),
                          "(%" PRIu64 ") is greater than or equal to buffer size (%" PRIu64 ").", buffer_info.offset,
-                         buffer_state.create_info.size);
+                         buffer_state->create_info.size);
     }
     if (buffer_info.range != VK_WHOLE_SIZE) {
         if (buffer_info.range == 0) {
             skip |= LogError("VUID-VkDescriptorBufferInfo-range-00341", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                              "is not VK_WHOLE_SIZE and is zero.");
         }
-        if (buffer_info.range > (buffer_state.create_info.size - buffer_info.offset)) {
+        if (buffer_info.range > (buffer_state->create_info.size - buffer_info.offset)) {
             skip |= LogError("VUID-VkDescriptorBufferInfo-range-00342", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                              "(%" PRIu64 ") is larger than buffer size (%" PRIu64 ") + offset (%" PRIu64 ").", buffer_info.range,
-                             buffer_state.create_info.size, buffer_info.offset);
+                             buffer_state->create_info.size, buffer_info.offset);
         }
     }
 
@@ -1627,12 +1631,12 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00332", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "(%" PRIu64 ") is greater than maxUniformBufferRange (%" PRIu32 ") for descriptorType %s.",
                          buffer_info.range, max_ub_range, string_VkDescriptorType(type));
-        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.create_info.size - buffer_info.offset) > max_ub_range) {
+        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state->create_info.size - buffer_info.offset) > max_ub_range) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00332", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "is VK_WHOLE_SIZE, but the effective range [size (%" PRIu64 ") - offset (%" PRIu64 ") = %" PRIu64
                          "] is greater than maxUniformBufferRange (%" PRIu32 ") for descriptorType %s.",
-                         buffer_state.create_info.size, buffer_info.offset, buffer_state.create_info.size - buffer_info.offset,
+                         buffer_state->create_info.size, buffer_info.offset, buffer_state->create_info.size - buffer_info.offset,
                          max_ub_range, string_VkDescriptorType(type));
         }
     } else if (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER == type || VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC == type) {
@@ -1642,12 +1646,12 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00333", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
                          buffer_info.range, max_sb_range, string_VkDescriptorType(type));
-        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.create_info.size - buffer_info.offset) > max_sb_range) {
+        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state->create_info.size - buffer_info.offset) > max_sb_range) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00333", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "is VK_WHOLE_SIZE, but the effective range [size (%" PRIu64 ") - offset (%" PRIu64 ") = %" PRIu64
                          "] is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
-                         buffer_state.create_info.size, buffer_info.offset, buffer_state.create_info.size - buffer_info.offset,
+                         buffer_state->create_info.size, buffer_info.offset, buffer_state->create_info.size - buffer_info.offset,
                          max_sb_range, string_VkDescriptorType(type));
         }
     }
