@@ -74,8 +74,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos);
 
-    const QueueSyncState *GetQueueSyncState(VkQueue queue) const;
-    QueueSyncState *GetQueueSyncState(VkQueue queue);
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
     std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }

@@ -28,7 +28,7 @@ bool AcquiredImage::Invalid() const { return vvl::StateObject::Invalid(image); }
 std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::GetPrev(VkSemaphore sem) const {
     std::shared_ptr<Signal> prev_state;
     if (prev_) {
-        prev_state = syncval_state::GetMapped(prev_->signaled_, sem, [&prev_state]() { return prev_state; });
+        prev_state = GetMapped(prev_->signaled_, sem);
     }
     return prev_state;
 }
@@ -64,8 +64,7 @@ bool SignaledSemaphores::Insert(const std::shared_ptr<const vvl::Semaphore>& sem
     std::shared_ptr<Signal> insert_signal;
     if (signal_it == signaled_.end()) {
         if (prev_) {
-            auto prev_sig =
-                syncval_state::GetMapped(prev_->signaled_, sem_state->VkHandle(), []() { return std::shared_ptr<Signal>(); });
+            auto prev_sig = GetMapped(prev_->signaled_, sem_state->VkHandle());
             if (prev_sig) {
                 // The is an invalid signal, as this semaphore is already signaled... copy the prev state (as prev_ is const)
                 insert_signal = std::make_shared<Signal>(*prev_sig);
