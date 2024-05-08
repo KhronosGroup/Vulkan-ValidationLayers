@@ -7675,3 +7675,16 @@ TEST_F(NegativeShaderObject, TessellationPatchSize) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeShaderObject, DispatchBaseFlag) {
+    TEST_DESCRIPTION("Compute dispatch without VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT");
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    const vkt::Shader compShader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl));
+    m_commandBuffer->begin();
+    BindCompShader(compShader);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-baseGroupX-00427");
+    vk::CmdDispatchBase(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
