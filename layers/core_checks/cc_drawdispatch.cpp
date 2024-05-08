@@ -475,14 +475,27 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
 
     if (baseGroupX || baseGroupY || baseGroupZ) {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
-        const auto *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
-        if (pipeline_state && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_DISPATCH_BASE)) {
-            skip |= LogError("VUID-vkCmdDispatchBase-baseGroupX-00427", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
-                             error_obj.location,
-                             "If any of baseGroupX (%" PRIu32 "), baseGroupY (%" PRIu32 "), or baseGroupZ (%" PRIu32
-                             ") are not zero, then the bound compute pipeline "
-                             "must have been created with the VK_PIPELINE_CREATE_DISPATCH_BASE flag",
-                             baseGroupX, baseGroupY, baseGroupZ);
+        const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
+        const auto *pipeline_state = last_bound_state.pipeline_state;
+        if (pipeline_state) {
+            if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_DISPATCH_BASE)) {
+                skip |= LogError("VUID-vkCmdDispatchBase-baseGroupX-00427", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
+                                 error_obj.location,
+                                 "If any of baseGroupX (%" PRIu32 "), baseGroupY (%" PRIu32 "), or baseGroupZ (%" PRIu32
+                                 ") are not zero, then the bound compute pipeline "
+                                 "must have been created with the VK_PIPELINE_CREATE_DISPATCH_BASE flag",
+                                 baseGroupX, baseGroupY, baseGroupZ);
+            }
+        } else {
+            const auto *shader_object = last_bound_state.GetShaderState(ShaderObjectStage::COMPUTE);
+            if (shader_object && ((shader_object->create_info.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) == 0)) {
+                skip |= LogError("VUID-vkCmdDispatchBase-baseGroupX-00427", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
+                                 error_obj.location,
+                                 "If any of baseGroupX (%" PRIu32 "), baseGroupY (%" PRIu32 "), or baseGroupZ (%" PRIu32
+                                 ") are not zero, then the bound compute shader object "
+                                 "must have been created with the VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT flag",
+                                 baseGroupX, baseGroupY, baseGroupZ);
+            }
         }
     }
 
