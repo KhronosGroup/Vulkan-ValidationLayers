@@ -93,7 +93,6 @@ class Validator : public gpu_tracker::Validator {
 
   public:
     Validator() {
-        setup_vuid = "UNASSIGNED-GPU-Assisted-Validation";
         container_type = LayerObjectTypeGpuAssisted;
         desired_features.vertexPipelineStoresAndAtomics = true;
         desired_features.fragmentStoresAndAtomics = true;

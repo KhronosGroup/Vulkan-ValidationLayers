@@ -885,7 +885,6 @@ void gpu_tracker::Validator::ReportSetupProblem(LogObjectList objlist, const Loc
         vmaFreeStatsString(vmaAllocator, stats_string);
     }
 
-    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "Debug PrintF" : "GPU-AV";
-
-    LogError(setup_vuid, objlist, loc, "Setup Error, %s is being disabled. Detail: (%s)", layer_name, logit.c_str());
+    LogError("UNASSIGNED-GPU-Assisted-Validation", objlist, loc, "Setup Error, GPU-AV is being disabled. Detail: (%s)",
+             logit.c_str());
 }

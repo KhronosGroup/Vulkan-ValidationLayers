@@ -200,7 +200,6 @@ class Validator : public ValidationStateTracker {
     bool force_buffer_device_address;
     vvl::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
-    const char *setup_vuid;
     VkPhysicalDeviceFeatures supported_features{};
     VkPhysicalDeviceFeatures desired_features{};
     uint32_t adjusted_max_desc_sets = 0;

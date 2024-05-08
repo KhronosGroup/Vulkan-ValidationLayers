@@ -663,7 +663,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate device memory.");
+        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate device memory.", true);
         return;
     }
 
@@ -745,9 +745,18 @@ void debug_printf::CommandBuffer::ResetCBState() {
     buffer_infos.clear();
 }
 
-// TODO - Remove this function once ReleaseDeviceDispatchObject() is added to GPU-AV as well
-void debug_printf::Validator::ReportSetupProblemPrintF(LogObjectList objlist, const Location &loc,
-                                                       const char *const specific_message, bool vma_fail) const {
-    ReportSetupProblem(objlist, loc, specific_message, vma_fail);
+void debug_printf::Validator::ReportSetupProblem(LogObjectList objlist, const Location &loc, const char *const specific_message,
+                                                 bool vma_fail) const {
+    std::string logit = specific_message;
+    if (vma_fail) {
+        char *stats_string;
+        vmaBuildStatsString(vmaAllocator, &stats_string, false);
+        logit += " VMA statistics = ";
+        logit += stats_string;
+        vmaFreeStatsString(vmaAllocator, stats_string);
+    }
+
+    LogError("UNASSIGNED-DEBUG-PRINTF", objlist, loc, "Setup Error, Debug PrintF is being disabled. Detail: (%s)", logit.c_str());
+
     ReleaseDeviceDispatchObject(this->container_type);
 }

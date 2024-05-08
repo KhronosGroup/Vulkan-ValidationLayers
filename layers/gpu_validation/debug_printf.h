@@ -81,14 +81,13 @@ class Validator : public gpu_tracker::Validator {
   public:
     using BaseClass = gpu_tracker::Validator;
     Validator() {
-        setup_vuid = "UNASSIGNED-DEBUG-PRINTF";
         container_type = LayerObjectTypeDebugPrintf;
         desired_features.vertexPipelineStoresAndAtomics = true;
         desired_features.fragmentStoresAndAtomics = true;
     }
 
-    void ReportSetupProblemPrintF(LogObjectList objlist, const Location& loc, const char* const specific_message,
-                                  bool vma_fail) const;
+    void ReportSetupProblem(LogObjectList objlist, const Location& loc, const char* const specific_message,
+                            bool vma_fail = false) const;
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& instrumented_spirv,
                           uint32_t unique_shader_id, const Location& loc) override;
