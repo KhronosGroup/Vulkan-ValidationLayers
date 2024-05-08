@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cassert>
+#include <cctype>
 #include <cstddef>
 #include <cstring>
 #include <functional>
