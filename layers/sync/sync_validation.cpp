@@ -115,20 +115,12 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
     }
 }
 
-const QueueSyncState *SyncValidator::GetQueueSyncState(VkQueue queue) const {
-    return syncval_state::GetMappedPlainFromShared(queue_sync_states_, queue);
-}
-
-QueueSyncState *SyncValidator::GetQueueSyncState(VkQueue queue) {
-    return syncval_state::GetMappedPlainFromShared(queue_sync_states_, queue);
-}
-
 std::shared_ptr<const QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue queue) const {
-    return syncval_state::GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
+    return GetMapped(queue_sync_states_, queue);
 }
 
 std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue queue) {
-    return syncval_state::GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
+    return GetMapped(queue_sync_states_, queue);
 }
 
 std::shared_ptr<vvl::CommandBuffer> SyncValidator::CreateCmdBufferState(VkCommandBuffer handle,
