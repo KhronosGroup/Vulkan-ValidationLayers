@@ -1415,6 +1415,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->extendedSparseAddressSpace |= enabled->extendedSparseAddressSpace == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT: {
+                const VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT *>(pNext);
+                features->legacyVertexAttributes |= enabled->legacyVertexAttributes == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM: {
                 const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *>(pNext);

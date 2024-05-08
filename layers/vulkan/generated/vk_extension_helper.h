@@ -590,6 +590,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_ray_tracing_invocation_reorder{kNotEnabled};
     ExtEnabled vk_nv_extended_sparse_address_space{kNotEnabled};
     ExtEnabled vk_ext_mutable_descriptor_type{kNotEnabled};
+    ExtEnabled vk_ext_legacy_vertex_attributes{kNotEnabled};
     ExtEnabled vk_arm_shader_core_builtins{kNotEnabled};
     ExtEnabled vk_ext_pipeline_library_group_handles{kNotEnabled};
     ExtEnabled vk_ext_dynamic_rendering_unused_attachments{kNotEnabled};
@@ -1586,6 +1587,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_EXT_mutable_descriptor_type,
              Info(&DeviceExtensions::vk_ext_mutable_descriptor_type,
                   {{{&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_legacy_vertex_attributes,
+             Info(&DeviceExtensions::vk_ext_legacy_vertex_attributes,
+                  {{{&DeviceExtensions::vk_ext_vertex_input_dynamic_state, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_ARM_shader_core_builtins,
              Info(&DeviceExtensions::vk_arm_shader_core_builtins, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -2040,6 +2044,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_ray_tracing_invocation_reorder:
         case vvl::Extension::_VK_NV_extended_sparse_address_space:
         case vvl::Extension::_VK_EXT_mutable_descriptor_type:
+        case vvl::Extension::_VK_EXT_legacy_vertex_attributes:
         case vvl::Extension::_VK_ARM_shader_core_builtins:
         case vvl::Extension::_VK_EXT_pipeline_library_group_handles:
         case vvl::Extension::_VK_EXT_dynamic_rendering_unused_attachments:
