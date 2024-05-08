@@ -375,6 +375,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_NV_ray_tracing_invocation_reorder", vvl::Extension::_VK_NV_ray_tracing_invocation_reorder},
         {"VK_NV_extended_sparse_address_space", vvl::Extension::_VK_NV_extended_sparse_address_space},
         {"VK_EXT_mutable_descriptor_type", vvl::Extension::_VK_EXT_mutable_descriptor_type},
+        {"VK_EXT_legacy_vertex_attributes", vvl::Extension::_VK_EXT_legacy_vertex_attributes},
         {"VK_EXT_layer_settings", vvl::Extension::_VK_EXT_layer_settings},
         {"VK_ARM_shader_core_builtins", vvl::Extension::_VK_ARM_shader_core_builtins},
         {"VK_EXT_pipeline_library_group_handles", vvl::Extension::_VK_EXT_pipeline_library_group_handles},

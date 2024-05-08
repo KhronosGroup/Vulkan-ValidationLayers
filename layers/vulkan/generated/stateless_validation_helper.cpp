@@ -3714,6 +3714,23 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT: {  // Covers
+                                                                                         // VUID-VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_legacy_vertex_attributes)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT, but when creating "
+                                     "VkDevice, the parent extension "
+                                     "(VK_EXT_legacy_vertex_attributes) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT* structure =
+                    (VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::legacyVertexAttributes), structure->legacyVertexAttributes);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM-sType-sType
@@ -4632,14 +4649,29 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
         // VUID-VkPhysicalDeviceExternalFormatResolvePropertiesANDROID-sType-sType
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-            // No Validation code for VkPhysicalDeviceShaderObjectPropertiesEXT structure members  -- Covers
-            // VUID-VkPhysicalDeviceShaderObjectPropertiesEXT-sType-sType
+        // No Validation code for VkPhysicalDeviceShaderObjectPropertiesEXT structure members  -- Covers
+        // VUID-VkPhysicalDeviceShaderObjectPropertiesEXT-sType-sType
 
-            // No Validation code for VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV structure members  -- Covers
-            // VUID-VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV-sType-sType
+        // No Validation code for VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV structure members  -- Covers
+        // VUID-VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV-sType-sType
 
-            // No Validation code for VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV structure members  -- Covers
-            // VUID-VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV-sType-sType
+        // No Validation code for VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV structure members  -- Covers
+        // VUID-VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV-sType-sType
+
+        // Validation code for VkPhysicalDeviceLegacyVertexAttributesPropertiesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_VERTEX_ATTRIBUTES_PROPERTIES_EXT: {  // Covers
+                                                                                           // VUID-VkPhysicalDeviceLegacyVertexAttributesPropertiesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLegacyVertexAttributesPropertiesEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_legacy_vertex_attributes)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_EXT_legacy_vertex_attributes");
+                }
+                VkPhysicalDeviceLegacyVertexAttributesPropertiesEXT* structure =
+                    (VkPhysicalDeviceLegacyVertexAttributesPropertiesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::nativeUnalignedPerformance), structure->nativeUnalignedPerformance);
+            }
+        } break;
 
             // No Validation code for VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM structure members  -- Covers
             // VUID-VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM-sType-sType
@@ -9709,6 +9741,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
@@ -13986,6 +14019,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_VERTEX_ATTRIBUTES_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES,

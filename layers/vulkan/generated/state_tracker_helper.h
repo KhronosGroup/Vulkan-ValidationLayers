@@ -477,6 +477,8 @@ struct DeviceFeatures {
     bool invocationMask;
     // VkPhysicalDeviceLegacyDitheringFeaturesEXT
     bool legacyDithering;
+    // VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT
+    bool legacyVertexAttributes;
     // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bool bresenhamLines;
     // VkPhysicalDeviceLineRasterizationFeaturesKHR

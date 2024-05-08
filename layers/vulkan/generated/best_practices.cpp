@@ -180,6 +180,7 @@ std::string GetSpecialUse(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_legacy_dithering, "glemulation"},
         {vvl::Extension::_VK_ANDROID_external_format_resolve, "glemulation"},
         {vvl::Extension::_VK_EXT_mutable_descriptor_type, "d3demulation"},
+        {vvl::Extension::_VK_EXT_legacy_vertex_attributes, "glemulation"},
     };
 
     auto it = special_use_extensions.find(extension_name);

@@ -472,6 +472,8 @@ enum class Feature {
     invocationMask,
     // VkPhysicalDeviceLegacyDitheringFeaturesEXT
     legacyDithering,
+    // VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT
+    legacyVertexAttributes,
     // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bresenhamLines,
     // VkPhysicalDeviceLineRasterizationFeaturesKHR
