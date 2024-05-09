@@ -91,25 +91,13 @@ bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const vvl::Semaph
 }
 
 std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::Unsignal(VkSemaphore sem) {
-    std::shared_ptr<const Signal> unsignaled;
-    const auto found_it = signaled_.find(sem);
-    if (found_it != signaled_.end()) {
-        // Move the unsignaled singal out from the signaled list, but keep the shared_ptr as the caller needs the contents for
-        // a bit.
-        unsignaled = std::move(found_it->second);
-        if (!prev_) {
-            // No parent, not need to keep the entry
-            // IFF (prev_)  leave the entry in the leaf table as we use it to export unsignal to prev_ during record phase
-            signaled_.erase(found_it);
-        }
-    } else if (prev_) {
-        // We can't unsignal prev_ because it's const * by design.
-        // We put in an empty placeholder
-        signaled_.emplace(sem, std::shared_ptr<Signal>());
-        unsignaled = GetPrev(sem);
-    }
-    // NOTE: No else clause. Because if we didn't find it, and there's no previous, this indicates an error,
-    // but CoreChecks should have reported it
+    assert(signaled_.find(sem) == signaled_.end());
+    assert(prev_ != nullptr);
+
+    // We can't unsignal prev_ because it's const * by design.
+    // We put in an empty placeholder
+    signaled_.emplace(sem, std::shared_ptr<Signal>());
+    std::shared_ptr<const Signal> unsignaled = GetPrev(sem);
 
     // If unsignaled is null, there was a missing pending semaphore, and that's also issue CoreChecks reports
     return unsignaled;
