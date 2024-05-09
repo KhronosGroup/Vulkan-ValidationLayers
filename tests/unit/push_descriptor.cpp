@@ -724,6 +724,24 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
 }
+TEST_F(NegativePushDescriptor, DestoryLayout) {
+    TEST_DESCRIPTION("Attempt to push a push descriptor set with incorrect arguments.");
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write =
+        vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+
+    m_commandBuffer->begin();
+    VkPipelineLayout invalid_layout = CastToHandle<VkPipelineLayout, uintptr_t>(0xbaadbeef);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-layout-parameter");
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, invalid_layout, 1, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+}
 
 TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
     TEST_DESCRIPTION("Attempt to push a push descriptor set buffer with unaligned offset.");

@@ -179,3 +179,34 @@ TEST_F(NegativeTooling, ValidateNVDeviceDiagnosticCheckpoints) {
     vk::CmdSetCheckpointNV(m_commandBuffer->handle(), &data);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeTooling, PrivateDataDestroyHandle) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::privateData);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Private data not supported by MockICD";
+    }
+
+    VkPrivateDataSlot data_slot;
+    VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
+    data_create_info.flags = 0;
+    vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, nullptr, &data_slot);
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    static const uint64_t data_value = 0x70AD;
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+
+    vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
+
+    uint64_t data;
+    m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-privateDataSlot-parameter");
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-privateDataSlot-parameter");
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    m_errorMonitor->VerifyFound();
+}

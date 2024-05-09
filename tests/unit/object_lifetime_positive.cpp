@@ -13,6 +13,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/descriptor_helper.h"
 
 TEST_F(PositiveObjectLifetime, DestroyFreeNullHandles) {
     VkResult err;
@@ -130,4 +131,26 @@ TEST_F(PositiveObjectLifetime, FreeDescriptorSetsNull) {
     // Only set first set, second is still null
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
     vk::FreeDescriptorSets(device(), ds_pool.handle(), 2, descriptor_sets);
+}
+
+TEST_F(PositiveObjectLifetime, DescriptorBufferInfoCopy) {
+    TEST_DESCRIPTION("Destroy a buffer then try to copy it in the descriptor set");
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set_0(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set_1(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    descriptor_set_0.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set_0.UpdateDescriptorSets();
+    buffer.destroy();
+
+    VkCopyDescriptorSet copy_ds_update = vku::InitStructHelper();
+    copy_ds_update.srcSet = descriptor_set_0.set_;
+    copy_ds_update.srcBinding = 0;
+    copy_ds_update.dstSet = descriptor_set_1.set_;
+    copy_ds_update.dstBinding = 0;
+    copy_ds_update.descriptorCount = 1;
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_ds_update);
 }
