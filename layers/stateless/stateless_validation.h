@@ -586,11 +586,12 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo &create_info, const Location &loc) const;
     bool ValidatePipelineRenderingCreateInfo(const VkPipelineRenderingCreateInfo &rendering_struct, const Location &loc) const;
-    bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location create_info_loc) const;
+    bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                        const ErrorObject &error_obj) const;
+    bool ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                       const VkComputePipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -793,6 +794,9 @@ class StatelessValidation : public ValidationObject {
                                                                           const VkAccelerationStructureNV *pAccelerationStructures,
                                                                           VkQueryType queryType, VkQueryPool queryPool,
                                                                           uint32_t firstQuery, const ErrorObject &error_obj) const;
+    bool ValidateCreateRayTracingPipelinesFlagsNV(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
+    bool ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc,
+                                                   const VkPhysicalDeviceRayTracingPipelineFeaturesKHR *raytracing_features) const;
     bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
