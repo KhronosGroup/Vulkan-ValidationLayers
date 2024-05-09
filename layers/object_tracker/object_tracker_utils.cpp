@@ -1090,7 +1090,7 @@ bool ObjectLifetimes::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device,
                              error_obj.location.dot(Field::pTagInfo).dot(Field::object), "is VK_NULL_HANDLE.");
         } else if (!object_map[object_type].contains(pTagInfo->object)) {
             // Need to check for swapchain images as they are not in object_map
-            if (object_type != kVulkanObjectTypeImage && !swapchain_image_map.contains(pTagInfo->object)) {
+            if (object_type != kVulkanObjectTypeImage || !swapchain_image_map.contains(pTagInfo->object)) {
                 skip |= LogError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01495", device,
                                  error_obj.location.dot(Field::pTagInfo).dot(Field::objectType),
                                  "(%s) doesn't match the object (0x%" PRIx64 ").",
@@ -1116,7 +1116,7 @@ bool ObjectLifetimes::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device
                              error_obj.location.dot(Field::pNameInfo).dot(Field::object), "is VK_NULL_HANDLE.");
         } else if (!object_map[object_type].contains(pNameInfo->object)) {
             // Need to check for swapchain images as they are not in object_map
-            if (object_type != kVulkanObjectTypeImage && !swapchain_image_map.contains(pNameInfo->object)) {
+            if (object_type != kVulkanObjectTypeImage || !swapchain_image_map.contains(pNameInfo->object)) {
                 skip |= LogError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01492", device,
                                  error_obj.location.dot(Field::pNameInfo).dot(Field::objectType),
                                  "(%s) doesn't match the object (0x%" PRIx64 ").",

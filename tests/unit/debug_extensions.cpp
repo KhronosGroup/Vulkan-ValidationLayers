@@ -528,3 +528,65 @@ TEST_F(NegativeDebugExtensions, DebugLabelSecondaryCommandBuffer) {
     m_errorMonitor->VerifyFound();
     cb.end();
 }
+
+TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7977");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    SurfaceInformation info = GetSwapchainInfo(m_surface);
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
+                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = info.surface_composite_alpha;
+    swapchain_create_info.presentMode = info.surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    VkSwapchainKHR swapchain;
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+
+    uint32_t imageCount;
+    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
+    std::vector<VkImage> images(imageCount);
+    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
+
+    {
+        VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
+        name_info.object = (uint64_t)images[0];
+        name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;
+        std::string image_name = "swapchain [0]";
+        name_info.pObjectName = image_name.c_str();
+        m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01492");
+        vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        int tags[2] = {1, 2};
+        VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
+        name_info.object = (uint64_t)images[0];
+        name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;
+        name_info.tagName = 1;
+        name_info.tagSize = 2;
+        name_info.pTag = tags;
+        m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01495");
+        vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
+}
