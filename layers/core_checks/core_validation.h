@@ -149,8 +149,6 @@ class CoreChecks : public ValidationStateTracker {
                                                   uint32_t dst_queue_family);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                     VkSubpassContents contents, const ErrorObject& error_obj) const;
-    bool ValidateDependencies(const vvl::Framebuffer& framebuffer_state, const vvl::RenderPass& render_pass_state,
-                              const ErrorObject& error_obj) const;
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
                                const BufferBarrier& barrier) const;
 
@@ -230,9 +228,6 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* vuid, const Location& create_info_loc) const;
-    bool ValidateDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
-                                  const std::vector<SubpassLayout>& dependent_subpasses,
-                                  const std::vector<DAGNode>& subpass_to_node, const Location& attachment_loc) const;
     bool ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                  const ErrorObject& error_obj) const;
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
