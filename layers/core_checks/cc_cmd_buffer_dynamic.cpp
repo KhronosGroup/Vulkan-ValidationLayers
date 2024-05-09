@@ -307,12 +307,14 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
 
                     // first type check before doing 64-bit matching
                     if ((attribute_type & var_numeric_type) == 0) {
-                        skip |= LogError(vuid.vertex_input_08734, vert_spirv_state->handle(), loc,
+                        if (!enabled_features.legacyVertexAttributes || shader64) {
+                            skip |=
+                                LogError(vuid.vertex_input_08734, vert_spirv_state->handle(), loc,
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "].location (%" PRIu32
                                          ") with format %s but the vertex shader input is numeric type %s",
                                          i, description.location, string_VkFormat(description.format),
                                          vert_spirv_state->DescribeType(var_base_type_id).c_str());
-
+                        }
                     } else if (attribute64 && !shader64) {
                         skip |= LogError(vuid.vertex_input_format_08936, vert_spirv_state->handle(), loc,
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "].location (%" PRIu32
