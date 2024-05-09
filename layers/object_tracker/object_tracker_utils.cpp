@@ -1089,8 +1089,13 @@ bool ObjectLifetimes::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device,
             skip |= LogError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01494", device,
                              error_obj.location.dot(Field::pTagInfo).dot(Field::object), "is VK_NULL_HANDLE.");
         } else if (!object_map[object_type].contains(pTagInfo->object)) {
-            skip |= LogError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01495", device,
-                             error_obj.location.dot(Field::pTagInfo).dot(Field::objectType), "doesn't match the object.");
+            // Need to check for swapchain images as they are not in object_map
+            if (object_type != kVulkanObjectTypeImage && !swapchain_image_map.contains(pTagInfo->object)) {
+                skip |= LogError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01495", device,
+                                 error_obj.location.dot(Field::pTagInfo).dot(Field::objectType),
+                                 "(%s) doesn't match the object (0x%" PRIx64 ").",
+                                 string_VkDebugReportObjectTypeEXT(pTagInfo->objectType), pTagInfo->object);
+            }
         }
     }
     return skip;
@@ -1110,8 +1115,13 @@ bool ObjectLifetimes::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device
             skip |= LogError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01491", device,
                              error_obj.location.dot(Field::pNameInfo).dot(Field::object), "is VK_NULL_HANDLE.");
         } else if (!object_map[object_type].contains(pNameInfo->object)) {
-            skip |= LogError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01492", device,
-                             error_obj.location.dot(Field::pNameInfo).dot(Field::objectType), "doesn't match the object.");
+            // Need to check for swapchain images as they are not in object_map
+            if (object_type != kVulkanObjectTypeImage && !swapchain_image_map.contains(pNameInfo->object)) {
+                skip |= LogError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01492", device,
+                                 error_obj.location.dot(Field::pNameInfo).dot(Field::objectType),
+                                 "(%s) doesn't match the object (0x%" PRIx64 ").",
+                                 string_VkDebugReportObjectTypeEXT(pNameInfo->objectType), pNameInfo->object);
+            }
         }
     }
     return skip;
