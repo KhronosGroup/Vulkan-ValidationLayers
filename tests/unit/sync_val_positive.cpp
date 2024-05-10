@@ -1677,3 +1677,29 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
     vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOneQueueSubmit) {
+    TEST_DESCRIPTION("Signal and wait semaphore using one submit command");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Semaphore semaphore(*m_device);
+
+    VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.semaphore = semaphore;
+    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSubmitInfo2 submits[2];
+    submits[0] = vku::InitStructHelper();
+    submits[0].signalSemaphoreInfoCount = 1;
+    submits[0].pSignalSemaphoreInfos = &semaphore_info;
+
+    submits[1] = vku::InitStructHelper();
+    submits[1].waitSemaphoreInfoCount = 1;
+    submits[1].pWaitSemaphoreInfos = &semaphore_info;
+
+    vk::QueueSubmit2(*m_default_queue, 2, submits, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+}
