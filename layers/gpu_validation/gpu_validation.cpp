@@ -554,7 +554,7 @@ CommandResources Validator::AllocateActionCommandResources(const LockedSharedPtr
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, debug_pipeline_layout, desc_set_bind_index, 1,
+        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, GetDebugPipelineLayout(), desc_set_bind_index, 1,
                                       &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     }

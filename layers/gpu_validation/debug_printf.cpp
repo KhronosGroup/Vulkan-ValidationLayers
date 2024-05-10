@@ -629,8 +629,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
 
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    result = desc_set_manager->GetDescriptorSets(1, &desc_pool, debug_desc_layout_, &desc_sets);
-    assert(result == VK_SUCCESS);
+    result = desc_set_manager->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);
     if (result != VK_SUCCESS) {
         ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor sets.");
         return;
@@ -706,7 +705,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, debug_pipeline_layout, desc_set_bind_index, 1, desc_sets.data(), 0,
+        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, GetDebugPipelineLayout(), desc_set_bind_index, 1, desc_sets.data(), 0,
                                       nullptr);
     }
     // Record buffer and memory info in CB state tracking

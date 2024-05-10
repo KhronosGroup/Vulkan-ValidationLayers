@@ -224,6 +224,8 @@ target_sources(vvl PRIVATE
     gpu_validation/gpu_error_message.cpp
     gpu_validation/gpu_error_message.h
     gpu_validation/gpu_image_layout.cpp
+    gpu_validation/gpu_shader_instrumentor.cpp
+    gpu_validation/gpu_shader_instrumentor.h
     gpu_validation/gpu_state_tracker.cpp
     gpu_validation/gpu_state_tracker.h
     gpu_validation/gpu_subclasses.cpp

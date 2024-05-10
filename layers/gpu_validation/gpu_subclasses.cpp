@@ -546,7 +546,7 @@ Queue::Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFla
     : gpu_tracker::Queue(state, q, index, flags, qfp) {}
 
 uint64_t Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
-    auto &gpuav = static_cast<Validator &>(state_);
+    auto &gpuav = static_cast<Validator &>(shader_instrumentor_);
     if (gpuav.aborted) {
         return 0;
     }

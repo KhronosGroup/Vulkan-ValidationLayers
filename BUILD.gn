@@ -175,6 +175,8 @@ vvl_sources = [
   "layers/gpu_validation/gpu_error_message.h",
   "layers/gpu_validation/gpu_image_layout.cpp",
   "layers/gpu_validation/gpu_settings.h",
+  "layers/gpu_validation/gpu_shader_instrumentor.cpp",
+  "layers/gpu_validation/gpu_shader_instrumentor.h",
   "layers/gpu_validation/gpu_state_tracker.cpp",
   "layers/gpu_validation/gpu_state_tracker.h",
   "layers/gpu_validation/gpu_subclasses.cpp",

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "gpu_validation/gpu_state_tracker.h"
+#include "gpu_validation/gpu_shader_instrumentor.h"
 #include "gpu_validation/gpu_error_message.h"
 #include "gpu_validation/gpu_descriptor_set.h"
 #include "gpu_validation/gpu_resources.h"
@@ -84,8 +84,8 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
 
-class Validator : public gpu_tracker::Validator {
-    using BaseClass = gpu_tracker::Validator;
+class Validator : public GpuShaderInstrumentor {
+    using BaseClass = GpuShaderInstrumentor;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
@@ -93,7 +93,6 @@ class Validator : public gpu_tracker::Validator {
 
   public:
     Validator() {
-        setup_vuid = "UNASSIGNED-GPU-Assisted-Validation";
         container_type = LayerObjectTypeGpuAssisted;
         desired_features.vertexPipelineStoresAndAtomics = true;
         desired_features.fragmentStoresAndAtomics = true;
