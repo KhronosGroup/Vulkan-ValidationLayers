@@ -665,11 +665,14 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
         }
 
         if (SafeModulo(bufferOffset, 4) != 0) {
-            std::stringstream ss;
-            ss << "(" << bufferOffset << ") is not a multiple of 4, but is ";
-            const char *vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07737).c_str();
-            skip |= ValidateCmdQueueFlags(cb_state, region_loc.dot(Field::bufferOffset),
-                                          VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid, ss.str().c_str());
+            const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+            if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
+                const char *vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07737).c_str();
+                const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+                skip |=
+                    LogError(vuid, objlist, region_loc.dot(Field::bufferOffset), "(%" PRIu64 ") is not a multiple of 4, but is %s",
+                             bufferOffset, DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str());
+            }
         }
     }
 
@@ -2291,11 +2294,14 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
 
         const VkImageAspectFlags region_aspect_mask = region.imageSubresource.aspectMask;
         if ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
-            std::stringstream ss;
-            ss << "is " << string_VkImageAspectFlags(region_aspect_mask) << ", but is ";
-            vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
-            skip |= ValidateCmdQueueFlags(cb_state, subresource_loc.dot(Field::aspectMask), VK_QUEUE_GRAPHICS_BIT, vuid,
-                                          ss.str().c_str());
+            if (!HasRequiredQueueFlags(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT)) {
+                vuid =
+                    is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
+                const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+                skip |= LogError(vuid, objlist, subresource_loc.dot(Field::aspectMask), "is %s, but is %s",
+                                 string_VkImageAspectFlags(region_aspect_mask).c_str(),
+                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
+            }
         }
     }
 

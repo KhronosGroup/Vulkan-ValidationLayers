@@ -481,8 +481,12 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     }
 
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-        skip |= ValidateCmdQueueFlags(cb_state, error_obj.location, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdFillBuffer-apiVersion-07894");
+        const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+        if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
+            const LogObjectList objlist_pool(cb_state.Handle(), cb_state.command_pool->Handle());
+            skip |= LogError("VUID-vkCmdFillBuffer-apiVersion-07894", objlist_pool, error_obj.location, "%s",
+                             DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str());
+        }
     }
 
     return skip;
