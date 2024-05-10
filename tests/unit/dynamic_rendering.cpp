@@ -2443,11 +2443,6 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     dependency_info.imageMemoryBarrierCount = 0;
     dependency_info.pImageMemoryBarriers = VK_NULL_HANDLE;
 
-    dependency_info.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
-    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dependencyFlags-07891");
-    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
-    m_errorMonitor->VerifyFound();
-
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -2458,7 +2453,6 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     buf_barrier_2.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     buf_barrier_2.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     dependency_info.bufferMemoryBarrierCount = 1;
     dependency_info.pBufferMemoryBarriers = &buf_barrier_2;
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-None-09554");

@@ -226,15 +226,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderTileImageColorReadAccess);
     RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
+    InitDynamicRenderTarget();
     m_commandBuffer->begin();
-
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
-    begin_rendering_info.renderArea = clear_rect.rect;
-    begin_rendering_info.layerCount = 1;
-
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -251,7 +244,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
 
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     auto img_barrier2 = ConvertVkImageMemoryBarrierToV2(img_barrier, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -309,14 +302,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderTileImageColorReadAccess);
     RETURN_IF_SKIP(Init());
-    InitRenderTarget();
+    InitDynamicRenderTarget();
 
     m_commandBuffer->begin();
-
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
-    begin_rendering_info.renderArea = clear_rect.rect;
-    begin_rendering_info.layerCount = 1;
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
 
@@ -334,7 +322,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
 
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     auto img_barrier2 = ConvertVkImageMemoryBarrierToV2(img_barrier, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -370,14 +358,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::shaderTileImageColorReadAccess);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
-    InitRenderTarget();
+    InitDynamicRenderTarget();
 
     m_commandBuffer->begin();
-
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
-    begin_rendering_info.renderArea = clear_rect.rect;
-    begin_rendering_info.layerCount = 1;
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
 
@@ -395,7 +378,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
 
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     auto img_barrier2 = ConvertVkImageMemoryBarrierToV2(img_barrier, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -424,16 +407,10 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierFramebufferStagesOnly) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
-    InitRenderTarget();
+    InitDynamicRenderTarget();
 
     m_commandBuffer->begin();
-
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
-    begin_rendering_info.renderArea = clear_rect.rect;
-    begin_rendering_info.layerCount = 1;
-
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
     barrier2.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
@@ -490,15 +467,10 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierRequireFeature) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
-    InitRenderTarget();
+    InitDynamicRenderTarget();
 
     m_commandBuffer->begin();
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
-    begin_rendering_info.renderArea = clear_rect.rect;
-    begin_rendering_info.layerCount = 1;
-
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
     barrier2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -1104,5 +1076,84 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsMax) {
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfoKHR-pColorAttachmentLocations-09515");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-09510");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRenderingLocalRead, DependencyViewLocalInsideRendering) {
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+    InitDynamicRenderTarget();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+
+    VkMemoryBarrier2KHR memory_barrier_2 = vku::InitStructHelper();
+    memory_barrier_2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_2.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+
+    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &memory_barrier_2;
+    dependency_info.bufferMemoryBarrierCount = 0;
+    dependency_info.imageMemoryBarrierCount = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dependencyFlags-07891");
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRenderingLocalRead, DependencyViewLocalOutsideRendering) {
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    m_commandBuffer->begin();
+
+    VkMemoryBarrier2KHR memory_barrier_2 = vku::InitStructHelper();
+    memory_barrier_2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_2.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+
+    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &memory_barrier_2;
+    dependency_info.bufferMemoryBarrierCount = 0;
+    dependency_info.imageMemoryBarrierCount = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dependencyFlags-01186");
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRenderingLocalRead, FramebufferSpaceStagesDst) {
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+    InitDynamicRenderTarget();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+
+    VkMemoryBarrier2KHR memory_barrier_2 = vku::InitStructHelper();
+    memory_barrier_2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_2.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+    memory_barrier_2.dstAccessMask = VK_ACCESS_2_NONE;
+
+    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &memory_barrier_2;
+    dependency_info.bufferMemoryBarrierCount = 0;
+    dependency_info.imageMemoryBarrierCount = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-09556");
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 }

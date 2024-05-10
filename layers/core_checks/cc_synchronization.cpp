@@ -2540,7 +2540,7 @@ bool CoreChecks::ValidateShaderTileImageCommon(const LogObjectList &objlist, con
             sync_vuid_maps::GetShaderTileImageVUID(outer_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageFeatureError);
         skip |= LogError(feature_error_vuid, objlist, outer_loc,
                          "can not be called inside a dynamic rendering instance. This can be fixed by enabling the "
-                         "VK_EXT_shader_tile_image features.");
+                         "VK_KHR_dynamic_rendering_local_read or VK_EXT_shader_tile_image features.");
     }
 
     if (!enabled_features.dynamicRenderingLocalRead) {
