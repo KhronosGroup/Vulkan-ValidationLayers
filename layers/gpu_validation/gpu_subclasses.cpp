@@ -135,10 +135,6 @@ void CommandBuffer::AllocateResources() {
 
     VkResult result = VK_SUCCESS;
 
-    const VkShaderStageFlags all_stages_flags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
-                                                VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT |
-                                                kShaderStageAllRayTracing;
-
     // Instrumentation descriptor set layout
     if (instrumentation_desc_set_layout_ == VK_NULL_HANDLE) {
         assert(!gpuav->validation_bindings_.empty());
@@ -208,13 +204,13 @@ void CommandBuffer::AllocateResources() {
     {
         const std::vector<VkDescriptorSetLayoutBinding> validation_cmd_bindings = {
             // Error output buffer
-            {glsl::kBindingDiagErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, all_stages_flags, nullptr},
+            {glsl::kBindingDiagErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
             // Buffer holding action command index in command buffer
-            {glsl::kBindingDiagActionIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, all_stages_flags, nullptr},
+            {glsl::kBindingDiagActionIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
             // Buffer holding a resource index from the per command buffer command resources list
-            {glsl::kBindingDiagCmdResourceIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, all_stages_flags, nullptr},
+            {glsl::kBindingDiagCmdResourceIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
             // Commands errors counts buffer
-            {glsl::kBindingDiagCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, all_stages_flags, nullptr},
+            {glsl::kBindingDiagCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         };
 
         if (validation_cmd_desc_set_layout_ == VK_NULL_HANDLE) {
