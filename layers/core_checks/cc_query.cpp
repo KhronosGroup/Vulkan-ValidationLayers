@@ -383,31 +383,43 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     return skip;
 }
 
-bool CoreChecks::ValidateCmdQueueFlags(const vvl::CommandBuffer &cb_state, const Location &loc, VkQueueFlags required_flags,
-                                       const char *vuid, const char *extra_message) const {
+bool CoreChecks::HasRequiredQueueFlags(const vvl::CommandBuffer &cb_state, const vvl::PhysicalDevice &physical_device_state,
+                                       VkQueueFlags required_flags) const {
     auto pool = cb_state.command_pool;
     if (pool) {
         const uint32_t queue_family_index = pool->queueFamilyIndex;
-        const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[queue_family_index].queueFlags;
+        const VkQueueFlags queue_flags = physical_device_state.queue_family_properties[queue_family_index].queueFlags;
         if (!(required_flags & queue_flags)) {
-            std::string required_flags_string;
-            for (const auto &flag : AllVkQueueFlags) {
-                if (flag & required_flags) {
-                    if (required_flags_string.size()) {
-                        required_flags_string += " or ";
-                    }
-                    required_flags_string += string_VkQueueFlagBits(flag);
-                }
-            }
-            const LogObjectList objlist(cb_state.Handle(), pool->Handle());
-            return LogError(vuid, objlist, loc,
-                            "%scalled in command buffer %s which was allocated from the command pool %s which was created with "
-                            "queueFamilyIndex %u which contains the capability flags %s (but requires %s).",
-                            extra_message, FormatHandle(cb_state).c_str(), FormatHandle(pool->Handle()).c_str(), queue_family_index,
-                            string_VkQueueFlags(queue_flags).c_str(), required_flags_string.c_str());
+            return false;
         }
     }
-    return false;
+    return true;
+    ;
+}
+
+std::string CoreChecks::DescribeRequiredQueueFlag(const vvl::CommandBuffer &cb_state,
+                                                  const vvl::PhysicalDevice &physical_device_state,
+                                                  VkQueueFlags required_flags) const {
+    std::stringstream ss;
+    auto pool = cb_state.command_pool;
+    const uint32_t queue_family_index = pool->queueFamilyIndex;
+    const VkQueueFlags queue_flags = physical_device_state.queue_family_properties[queue_family_index].queueFlags;
+    std::string required_flags_string;
+    for (const auto &flag : AllVkQueueFlags) {
+        if (flag & required_flags) {
+            if (required_flags_string.size()) {
+                required_flags_string += " or ";
+            }
+            required_flags_string += string_VkQueueFlagBits(flag);
+        }
+    }
+
+    ss << "called in " << FormatHandle(cb_state) << " which was allocated from the " << FormatHandle(pool->Handle())
+       << " which was created with "
+          "queueFamilyIndex "
+       << queue_family_index << " which contains the capability flags " << string_VkQueueFlags(queue_flags) << " (but requires "
+       << required_flags_string << ").";
+    return ss.str();
 }
 
 bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const QueryObject &query_obj, VkQueryControlFlags flags,
@@ -428,9 +440,14 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
         }
         case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT: {
             // There are tighter queue constraints to test for certain query pools
-            const char *flag_vuid =
-                is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338" : "VUID-vkCmdBeginQuery-queryType-02327";
-            skip |= ValidateCmdQueueFlags(cb_state, loc, VK_QUEUE_GRAPHICS_BIT, flag_vuid);
+            if (!HasRequiredQueueFlags(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT)) {
+                const char *vuid =
+                    is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338" : "VUID-vkCmdBeginQuery-queryType-02327";
+                const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+                skip |= LogError(vuid, objlist, loc, "%s",
+                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
+            }
+
             if (!phys_dev_ext_props.transform_feedback_props.transformFeedbackQueries) {
                 const char *vuid =
                     is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-02341" : "VUID-vkCmdBeginQuery-queryType-02328";
@@ -443,9 +460,13 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
             break;
         }
         case VK_QUERY_TYPE_OCCLUSION: {
-            const char *vuid =
-                is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803" : "VUID-vkCmdBeginQuery-queryType-00803";
-            skip |= ValidateCmdQueueFlags(cb_state, loc, VK_QUEUE_GRAPHICS_BIT, vuid);
+            if (!HasRequiredQueueFlags(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT)) {
+                const char *vuid =
+                    is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803" : "VUID-vkCmdBeginQuery-queryType-00803";
+                const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+                skip |= LogError(vuid, objlist, loc, "%s",
+                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
+            }
             break;
         }
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR: {
@@ -592,8 +613,10 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                 skip |= LogError("VUID-vkCmdBeginQueryIndexedEXT-queryType-07071", objlist, loc.dot(Field::queryPool),
                                  "(%s) was created with queryType %s.", FormatHandle(query_obj.pool).c_str(),
                                  string_VkQueryType(query_pool_ci.queryType));
-            } else {
-                skip |= ValidateCmdQueueFlags(cb_state, loc, VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdBeginQuery-queryType-07070");
+            } else if (!HasRequiredQueueFlags(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT)) {
+                const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+                skip |= LogError("VUID-vkCmdBeginQuery-queryType-07070", objlist, loc, "%s",
+                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
             }
             break;
         }

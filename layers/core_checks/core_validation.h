@@ -305,8 +305,10 @@ class CoreChecks : public ValidationStateTracker {
                                       const char* vuid) const;
 
     bool ValidateObjectNotInUse(const vvl::StateObject* obj_node, const Location& loc, const char* error_code) const;
-    bool ValidateCmdQueueFlags(const vvl::CommandBuffer& cb_state, const Location& loc, VkQueueFlags flags, const char* vuid,
-                               const char* extra_message = "") const;
+    bool HasRequiredQueueFlags(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
+                               VkQueueFlags required_flags) const;
+    std::string DescribeRequiredQueueFlag(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
+                                          VkQueueFlags required_flags) const;
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT& sample_location_info, const Location& loc) const;
     bool MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT& info_1, const VkSampleLocationsInfoEXT& info_2) const;
     bool InsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
