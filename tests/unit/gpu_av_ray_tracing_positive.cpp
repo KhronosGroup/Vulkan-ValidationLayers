@@ -39,44 +39,43 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
     // Set shaders
 
     const char* ray_gen = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        #version 460
+        #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
 
-    layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(location = 0) rayPayloadEXT vec3 hit;
 
-    void main() {
-      traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
-    }
-)glsl";
+        void main() {
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
     pipeline.SetRayGenShader(ray_gen);
 
     const char* miss = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
 
-    void main() {
-        hit = vec3(0.1, 0.2, 0.3);
-    }
-)glsl";
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+        }
+    )glsl";
     pipeline.AddMissShader(miss);
 
     const char* closest_hit = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
-    hitAttributeEXT vec2 baryCoord;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
 
-    void main() {
-      const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
-      hit = barycentricCoords;
-
-    }
-)glsl";
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+        }
+    )glsl";
     pipeline.AddClosestHitShader(closest_hit);
 
     // Add TLAS binding
@@ -122,50 +121,49 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
     // Set shaders
 
     const char* ray_gen = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        #version 460
+        #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
 
-    layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(location = 0) rayPayloadEXT vec3 hit;
 
-    void main() {
-      traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
-    }
-)glsl";
+        void main() {
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
     pipeline.SetRayGenShader(ray_gen);
 
     const char* miss = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
 
-    void main() {
-        hit = vec3(0.1, 0.2, 0.3);
-        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
-    }
-)glsl";
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
     pipeline.AddMissShader(miss);
 
     const char* closest_hit = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
-    hitAttributeEXT vec2 baryCoord;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
 
-    void main() {
-      const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
-      hit = barycentricCoords;
-      traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
-
-    }
-)glsl";
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
     pipeline.AddClosestHitShader(closest_hit);
 
     // Add TLAS binding
@@ -211,62 +209,61 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
     // Set shaders
 
     const char* ray_gen = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        #version 460
+        #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      float t_min;
-      float t_max;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            float t_min;
+            float t_max;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(location = 0) rayPayloadEXT vec3 hit;
 
-    void main() {
-      traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
-    }
-)glsl";
+        void main() {
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
+        }
+    )glsl";
     pipeline.SetRayGenShader(ray_gen);
 
     const char* miss = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      float t_min;
-      float t_max;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            float t_min;
+            float t_max;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
 
-    void main() {
-        hit = vec3(0.1, 0.2, 0.3);
-        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
-    }
-)glsl";
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
+        }
+    )glsl";
     pipeline.AddMissShader(miss);
 
     const char* closest_hit = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      float t_min;
-      float t_max;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            float t_min;
+            float t_max;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
-    hitAttributeEXT vec2 baryCoord;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
 
-    void main() {
-      const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
-      hit = barycentricCoords;
-      traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
-
-    }
-)glsl";
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
+        }
+    )glsl";
     pipeline.AddClosestHitShader(closest_hit);
 
     // Add TLAS binding
@@ -323,58 +320,58 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
     // Set shaders
 
     const char* ray_gen = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        #version 460
+        #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      uint ray_flags;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            uint ray_flags;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(location = 0) rayPayloadEXT vec3 hit;
 
-    void main() {
-      traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
-    }
-)glsl";
+        void main() {
+            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
+        }
+    )glsl";
     pipeline.SetRayGenShader(ray_gen);
 
     const char* miss = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      uint ray_flags;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+        uint ray_flags;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
 
-    void main() {
-        hit = vec3(0.1, 0.2, 0.3);
-        traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
-    }
-)glsl";
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
+        }
+    )glsl";
     pipeline.AddMissShader(miss);
 
     const char* closest_hit = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      uint ray_flags;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            uint ray_flags;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
-    hitAttributeEXT vec2 baryCoord;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
 
-    void main() {
-      const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
-      hit = barycentricCoords;
-      traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
-    }
-)glsl";
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
+        }
+    )glsl";
     pipeline.AddClosestHitShader(closest_hit);
 
     // Add TLAS binding
@@ -431,61 +428,61 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
     // Set shaders
 
     const char* ray_gen = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
-    #extension GL_EXT_ray_flags_primitive_culling : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        #extension GL_EXT_ray_flags_primitive_culling : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      uint ray_flags;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            uint ray_flags;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(location = 0) rayPayloadEXT vec3 hit;
 
-    void main() {
-      traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
-    }
-)glsl";
+        void main() {
+            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
+        }
+    )glsl";
     pipeline.SetRayGenShader(ray_gen);
 
     const char* miss = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
-    #extension GL_EXT_ray_flags_primitive_culling : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_ray_flags_primitive_culling : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      uint ray_flags;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            uint ray_flags;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
 
-    void main() {
-        hit = vec3(0.1, 0.2, 0.3);
-        traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
-    }
-)glsl";
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
+        }
+    )glsl";
     pipeline.AddMissShader(miss);
 
     const char* closest_hit = R"glsl(
-    #version 460
-    #extension GL_EXT_ray_tracing : require
-    #extension GL_EXT_ray_flags_primitive_culling : require
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_ray_flags_primitive_culling : require
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    layout(binding = 1, set = 0) uniform Uniforms {
-      uint ray_flags;
-    } trace_rays_params;
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) uniform Uniforms {
+            uint ray_flags;
+        } trace_rays_params;
 
-    layout(location = 0) rayPayloadInEXT vec3 hit;
-    hitAttributeEXT vec2 baryCoord;
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
 
-    void main() {
-      const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
-      hit = barycentricCoords;
-      traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
-    }
-)glsl";
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
+        }
+    )glsl";
     pipeline.AddClosestHitShader(closest_hit);
 
     // Add TLAS binding
