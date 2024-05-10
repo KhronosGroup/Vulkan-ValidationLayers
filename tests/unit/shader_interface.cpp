@@ -1785,3 +1785,60 @@ TEST_F(NegativeShaderInterface, MultipleFragmentAttachment) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderInterface, MissingInputAttachmentIndex) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[1];
+    // layout(location=0) out vec4 color;
+    // void main() {
+    //     color = subpassLoad(xs[0]);
+    // }
+    //
+    // missing OpDecorate %xs InputAttachmentIndex 0
+    const char *fsSource = R"(
+               OpCapability Shader
+               OpCapability InputAttachment
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %color Location 0
+               OpDecorate %xs DescriptorSet 0
+               OpDecorate %xs Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+         %10 = OpTypeImage %float SubpassData 0 0 0 2 Unknown
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_10_uint_1 = OpTypeArray %10 %uint_1
+%_ptr_UniformConstant__arr_10_uint_1 = OpTypePointer UniformConstant %_arr_10_uint_1
+         %xs = OpVariable %_ptr_UniformConstant__arr_10_uint_1 UniformConstant
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_UniformConstant_10 = OpTypePointer UniformConstant %10
+      %v2int = OpTypeVector %int 2
+         %22 = OpConstantComposite %v2int %int_0 %int_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpAccessChain %_ptr_UniformConstant_10 %xs %int_0
+         %20 = OpLoad %10 %19
+         %23 = OpImageRead %v4float %20 %22
+               OpStore %color %23
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    m_errorMonitor->SetDesiredWarning("VUID-RuntimeSpirv-None-09558");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
