@@ -89,7 +89,6 @@ class SignaledSemaphores {
   private:
     void Import(VkSemaphore sem, std::shared_ptr<Signal> &&move_from);
     void Reset();
-    std::shared_ptr<const Signal> GetPrev(VkSemaphore sem) const;
 
   private:
     vvl::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
