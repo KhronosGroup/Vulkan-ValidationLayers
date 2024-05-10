@@ -18,6 +18,7 @@
 #pragma once
 
 #include "gpu_validation/gpu_state_tracker.h"
+#include "gpu_validation/gpu_shader_instrumentor.h"
 #include "gpu_validation/gpu_error_message.h"
 
 namespace debug_printf {
@@ -77,11 +78,10 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf::CommandBuffer, vvl::CommandBuffer)
 
 namespace debug_printf {
-class Validator : public gpu_tracker::Validator {
+class Validator : public GpuShaderInstrumentor {
   public:
-    using BaseClass = gpu_tracker::Validator;
+    using BaseClass = GpuShaderInstrumentor;
     Validator() {
-        setup_vuid = "UNASSIGNED-DEBUG-PRINTF";
         container_type = LayerObjectTypeDebugPrintf;
         desired_features.vertexPipelineStoresAndAtomics = true;
         desired_features.fragmentStoresAndAtomics = true;
