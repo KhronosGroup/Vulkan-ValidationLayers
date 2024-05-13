@@ -1454,3 +1454,71 @@ TEST_F(NegativeDebugPrintf, DISABLED_VertexFragmentMultiEntrypoint) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+
+    char const *fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                  GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl));
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source));
+
+    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    renderingInfo.colorAttachmentCount = 0;
+    renderingInfo.layerCount = 1;
+    renderingInfo.renderArea = {{0, 0}, {1, 1}};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(renderingInfo);
+    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
+    m_commandBuffer->BindVertFragShader(vert_shader, frag_shader);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source));
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BindCompShader(comp_shader);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

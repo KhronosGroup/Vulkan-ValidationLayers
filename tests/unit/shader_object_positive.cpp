@@ -10,6 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/shader_object_helper.h"
 #include "../framework/descriptor_helper.h"
 
 void ShaderObjectTest::InitBasicShaderObject() {
@@ -95,7 +96,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD, GetShaderBinaryDataEXT not implemented";
     }
 
     InitDynamicRenderTarget();
@@ -136,21 +137,8 @@ TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[1].pCode = frag_spv.data();
-    createInfos[1].pName = "main";
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
@@ -172,46 +160,12 @@ TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[5];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfos[1].nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = tesc_spv.size() * sizeof(tesc_spv[0]);
-    createInfos[1].pCode = tesc_spv.data();
-    createInfos[1].pName = "main";
-    createInfos[2] = vku::InitStructHelper();
-    createInfos[2].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[2].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[2].nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfos[2].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[2].codeSize = tese_spv.size() * sizeof(tese_spv[0]);
-    createInfos[2].pCode = tese_spv.data();
-    createInfos[2].pName = "main";
-    createInfos[3] = vku::InitStructHelper();
-    createInfos[3].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[3].stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfos[3].nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[3].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[3].codeSize = geom_spv.size() * sizeof(geom_spv[0]);
-    createInfos[3].pCode = geom_spv.data();
-    createInfos[3].pName = "main";
-    createInfos[4] = vku::InitStructHelper();
-    createInfos[4].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[4].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[4].nextStage = 0u;
-    createInfos[4].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[4].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[4].pCode = frag_spv.data();
-    createInfos[4].pName = "main";
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    createInfos[1] =
+        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[2] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
+    createInfos[3] = ShaderCreateInfoLink(geom_spv, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[4] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[5];
     vk::CreateShadersEXT(m_device->handle(), 5u, createInfos, nullptr, shaders);
@@ -741,7 +695,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD because shader needs to fail";
     }
 
     static const char vert_src[] = R"glsl(
@@ -987,26 +941,8 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
 
     VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_.handle(), frag_descriptor_set.layout_.handle()};
 
-    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
-    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vert_create_info.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    vert_create_info.pCode = vert_spv.data();
-    vert_create_info.pName = "main";
-    vert_create_info.setLayoutCount = 2u;
-    vert_create_info.pSetLayouts = descriptor_set_layouts;
-
-    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper();
-    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    frag_create_info.codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    frag_create_info.pCode = frag_spv.data();
-    frag_create_info.pName = "main";
-    frag_create_info.setLayoutCount = 2u;
-    frag_create_info.pSetLayouts = descriptor_set_layouts;
-
-    const vkt::Shader vertShader(*m_device, vert_create_info);
-    const vkt::Shader fragShader(*m_device, frag_create_info);
+    const vkt::Shader vertShader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, descriptor_set_layouts));
+    const vkt::Shader fragShader(*m_device, ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, descriptor_set_layouts));
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -1125,26 +1061,10 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     push_constant_ranges[1].size = sizeof(float);
     vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_ranges[0], push_constant_ranges[1]});
 
-    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
-    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vert_create_info.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    vert_create_info.pCode = vert_spv.data();
-    vert_create_info.pName = "main";
-    vert_create_info.pushConstantRangeCount = 2u;
-    vert_create_info.pPushConstantRanges = push_constant_ranges;
-
-    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper();
-    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    frag_create_info.codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    frag_create_info.pCode = frag_spv.data();
-    frag_create_info.pName = "main";
-    frag_create_info.pushConstantRangeCount = 2u;
-    frag_create_info.pPushConstantRanges = push_constant_ranges;
-
-    const vkt::Shader vertShader(*m_device, vert_create_info);
-    const vkt::Shader fragShader(*m_device, frag_create_info);
+    const vkt::Shader vertShader(*m_device,
+                                 ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 2, push_constant_ranges));
+    const vkt::Shader fragShader(*m_device,
+                                 ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr, 2, push_constant_ranges));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -1207,24 +1127,10 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
     specialization_info.dataSize = sizeof(int) + sizeof(float);
     specialization_info.pData = &data;
 
-    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
-    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vert_create_info.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    vert_create_info.pCode = vert_spv.data();
-    vert_create_info.pName = "main";
-    vert_create_info.pSpecializationInfo = &specialization_info;
-
-    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper();
-    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    frag_create_info.codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    frag_create_info.pCode = frag_spv.data();
-    frag_create_info.pName = "main";
-    frag_create_info.pSpecializationInfo = &specialization_info;
-
-    const vkt::Shader vertShader(*m_device, vert_create_info);
-    const vkt::Shader fragShader(*m_device, frag_create_info);
+    const vkt::Shader vertShader(
+        *m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 0, nullptr, &specialization_info));
+    const vkt::Shader fragShader(
+        *m_device, ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr, 0, nullptr, &specialization_info));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -1565,7 +1471,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD, GetShaderBinaryDataEXT not implemented";
     }
     InitDynamicRenderTarget();
 
@@ -1655,56 +1561,21 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    const auto vertSpirv = GLSLToSPV(stages[0], kVertexMinimalGlsl);
-    const auto tescSpirv = GLSLToSPV(stages[1], kTessellationControlMinimalGlsl);
-    const auto teseSpirv = GLSLToSPV(stages[2], kTessellationEvalMinimalGlsl);
-    const auto geomSpirv = GLSLToSPV(stages[3], kGeometryMinimalGlsl);
-    const auto fragSpirv = GLSLToSPV(stages[4], kFragmentMinimalGlsl);
+    const auto vert_spv = GLSLToSPV(stages[0], kVertexMinimalGlsl);
+    const auto tesc_spv = GLSLToSPV(stages[1], kTessellationControlMinimalGlsl);
+    const auto tese_spv = GLSLToSPV(stages[2], kTessellationEvalMinimalGlsl);
+    const auto geom_spv = GLSLToSPV(stages[3], kGeometryMinimalGlsl);
+    const auto frag_spv = GLSLToSPV(stages[4], kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[5];
-
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = stages[0];
-    createInfos[0].nextStage = stages[1];
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vertSpirv.size() * sizeof(vertSpirv[0]);
-    createInfos[0].pCode = vertSpirv.data();
-    createInfos[0].pName = "main";
-
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = stages[1];
-    createInfos[1].nextStage = stages[2];
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = tescSpirv.size() * sizeof(tescSpirv[0]);
-    createInfos[1].pCode = tescSpirv.data();
-    createInfos[1].pName = "main";
-
-    createInfos[2] = vku::InitStructHelper();
-    createInfos[2].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[2].stage = stages[2];
-    createInfos[2].nextStage = stages[3] | stages[4];
-    createInfos[2].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[2].codeSize = teseSpirv.size() * sizeof(teseSpirv[0]);
-    createInfos[2].pCode = teseSpirv.data();
-    createInfos[2].pName = "main";
-
-    createInfos[3] = vku::InitStructHelper();
-    createInfos[3].stage = stages[3];
-    createInfos[3].nextStage = stages[4];
-    createInfos[3].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[3].codeSize = geomSpirv.size() * sizeof(geomSpirv[0]);
-    createInfos[3].pCode = geomSpirv.data();
-    createInfos[3].pName = "main";
-
-    createInfos[4] = vku::InitStructHelper();
-    createInfos[4].stage = stages[4];
-    createInfos[4].nextStage = 0u;
-    createInfos[4].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[4].codeSize = fragSpirv.size() * sizeof(fragSpirv[0]);
-    createInfos[4].pCode = fragSpirv.data();
-    createInfos[4].pName = "main";
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, stages[0], stages[1]);
+    createInfos[1] = ShaderCreateInfoLink(tesc_spv, stages[1], stages[2]);
+    createInfos[2] = ShaderCreateInfoLink(tese_spv, stages[2], stages[3] | stages[4]);
+    // unlinked shader
+    createInfos[3] = ShaderCreateInfoLink(geom_spv, stages[3], stages[4]);
+    createInfos[3].flags = 0;
+    createInfos[4] = ShaderCreateInfoLink(frag_spv, stages[4]);
+    createInfos[4].flags = 0;
 
     VkShaderEXT shaders[5];
     vk::CreateShadersEXT(*m_device, 3u, createInfos, nullptr, shaders);

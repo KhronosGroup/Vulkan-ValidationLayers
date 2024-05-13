@@ -822,8 +822,6 @@ class Shader : public internal::NonDispHandle<VkShaderEXT> {
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange* pushConstRange = nullptr);
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
-    Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
-           VkShaderCreateFlagsEXT flags);
     ~Shader() noexcept;
     void destroy() noexcept;
 
