@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,8 @@ typedef enum {
     SPV_SOURCE_ASM_TRY,
 } SpvSourceType;
 
+// VkShaderObj is really just the Shader Module, but we named before VK_EXT_shader_object
+// TODO - move all of VkShaderObj to vkt::ShaderModule
 class VkShaderObj : public vkt::ShaderModule {
   public:
     // optional arguments listed order of most likely to be changed manually by a test

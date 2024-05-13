@@ -97,8 +97,8 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStates();
-    BindVertFragShader(vertShader, fragShader);
+    SetDefaultDynamicStatesExclude();
+    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
@@ -115,8 +115,8 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     const vkt::Shader vertShader2(*m_device, vert_create_info);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStates();
-    BindVertFragShader(vertShader2, fragShader);
+    SetDefaultDynamicStatesExclude();
+    m_commandBuffer->BindVertFragShader(vertShader2, fragShader);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
