@@ -2158,7 +2158,7 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInf
                                  "specifies a self-dependency for subpass %" PRIu32 " with a viewMask 0x%" PRIx32
                                  ", but does not "
                                  "specify VK_DEPENDENCY_VIEW_LOCAL_BIT.",
-                                 pCreateInfo->pSubpasses[dependency.srcSubpass].viewMask, dependency.srcSubpass);
+                                 dependency.srcSubpass, pCreateInfo->pSubpasses[dependency.srcSubpass].viewMask);
             } else if (HasFramebufferStagePipelineStageFlags(dependency.srcStageMask) &&
                        HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask)) {
                 vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-06810" : "VUID-VkSubpassDependency-srcSubpass-06809";
