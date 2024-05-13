@@ -263,13 +263,13 @@ class ValidationStateTracker : public ValidationObject {
               typename MapTraits = MapTraits<BaseType>>
     typename MapTraits::MapType& GetStateMap() {
         auto map_member = MapTraits::Map();
-        return (MapTraits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+        return (MapTraits::kInstanceScope && (this->*map_member).empty()) ? instance_state->*map_member : this->*map_member;
     }
     template <typename State, typename BaseType = typename state_object::Traits<State>::BaseType,
               typename MapTraits = MapTraits<BaseType>>
     const typename MapTraits::MapType& GetStateMap() const {
         auto map_member = MapTraits::Map();
-        return (MapTraits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+        return (MapTraits::kInstanceScope && (this->*map_member).empty()) ? instance_state->*map_member : this->*map_member;
     }
 
   public:

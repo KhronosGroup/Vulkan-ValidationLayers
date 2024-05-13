@@ -622,7 +622,7 @@ bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
         ClearRead();
     }
 
-    bool all_clear = last_reads.size() == 0;
+    bool all_clear = last_reads.empty();
     if (last_write.has_value()) {
         if (predicate(*this) || sync_reads) {
             // Clear any predicated write, or any the write from any any access with synchronized reads.

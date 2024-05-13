@@ -715,7 +715,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     const auto *rp_state = pipeline.RasterizationState();
     const auto *viewport_state = pipeline.ViewportState();
     if ((!rp_state || (rp_state->rasterizerDiscardEnable == VK_FALSE)) && viewport_state &&
-        (cb_state.inheritedViewportDepths.size() == 0)) {
+        (cb_state.inheritedViewportDepths.empty())) {
         const bool dyn_scissor = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR);
 
         // NB (akeley98): Current validation layers do not detect the error where vkCmdSetViewport (or scissor) was called, but

@@ -930,7 +930,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                         list_of_enables.append(EnableFlagNameHelper[i]);
                     }
                 }
-                if (list_of_enables.size() == 0) {
+                if (list_of_enables.empty()) {
                     list_of_enables.append("None");
                 }
                 for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
@@ -939,7 +939,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                         list_of_disables.append(DisableFlagNameHelper[i]);
                     }
                 }
-                if (list_of_disables.size() == 0) {
+                if (list_of_disables.empty()) {
                     list_of_disables.append("None");
                 }
 

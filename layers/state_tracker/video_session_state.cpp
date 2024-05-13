@@ -383,7 +383,7 @@ void VideoSessionDeviceState::Invalidate(int32_t slot_index, const VideoPictureI
     }
 
     // If there are no remaining picture references then deactivate the slot
-    if (pictures_per_id_[slot_index].size() == 0) {
+    if (pictures_per_id_[slot_index].empty()) {
         is_active_[slot_index] = false;
     }
 }

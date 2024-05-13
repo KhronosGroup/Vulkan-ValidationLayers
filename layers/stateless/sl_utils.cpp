@@ -225,7 +225,7 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
             "header, in which case the use of %s is undefined and may not work correctly with validation enabled";
 
         const Location pNext_loc = loc.dot(Field::pNext);
-        if ((allowed_type_count == 0) && (custom_stype_info.size() == 0)) {
+        if ((allowed_type_count == 0) && (custom_stype_info.empty())) {
             std::string message = "must be NULL. ";
             message += disclaimer;
             skip |= LogError(pnext_vuid, device, pNext_loc, message.c_str(), header_version, pNext_loc.Fields().c_str());

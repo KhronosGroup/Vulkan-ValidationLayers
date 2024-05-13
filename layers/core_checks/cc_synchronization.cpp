@@ -807,7 +807,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     RenderPassDepState state(*this, "VUID-vkCmdPipelineBarrier-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
                              enabled_features, device_extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
                              rp_state->create_info.pDependencies);
-    if (state.self_dependencies.size() == 0) {
+    if (state.self_dependencies.empty()) {
         skip |= LogError("VUID-vkCmdPipelineBarrier-None-07889", state.rp_handle, outer_loc,
                          "Barriers cannot be set during subpass %" PRIu32 " of %s with no self-dependency specified.",
                          state.active_subpass, FormatHandle(state.rp_handle).c_str());
@@ -868,7 +868,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                              enabled_features, device_extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
                              rp_state->create_info.pDependencies);
 
-    if (state.self_dependencies.size() == 0) {
+    if (state.self_dependencies.empty()) {
         skip |= LogError(state.vuid, state.rp_handle, outer_loc,
                          "Barriers cannot be set during subpass %" PRIu32 " of %s with no self-dependency specified.",
                          state.active_subpass, FormatHandle(rp_state->Handle()).c_str());
@@ -2033,7 +2033,7 @@ void RecordQueuedQFOTransferBarriers(QFOTransferBarrierSets<TransferBarrier> &cb
         if (set_it != global_release_barriers.end()) {
             QFOTransferBarrierSet<TransferBarrier> &set_for_handle = set_it->second;
             set_for_handle.erase(acquire);
-            if (set_for_handle.size() == 0) {  // Clean up empty sets
+            if (set_for_handle.empty()) {  // Clean up empty sets
                 global_release_barriers.erase(acquire.handle);
             } else {
                 // NOTE: vvl::concurrent_ordered_map::find() makes a thread safe copy of the result, so we must
