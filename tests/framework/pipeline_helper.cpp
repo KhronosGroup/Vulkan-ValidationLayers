@@ -370,57 +370,6 @@ VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind) {
     return vk::CreateComputePipelines(device_->handle(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
 }
 
-void SetDefaultDynamicStates(VkCommandBuffer cmdBuffer) {
-    uint32_t width = 32;
-    uint32_t height = 32;
-    VkViewport viewport = {0, 0, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {width, height}};
-    vk::CmdSetViewportWithCountEXT(cmdBuffer, 1u, &viewport);
-    vk::CmdSetScissorWithCountEXT(cmdBuffer, 1u, &scissor);
-    vk::CmdSetLineWidth(cmdBuffer, 1.0f);
-    vk::CmdSetDepthBias(cmdBuffer, 1.0f, 0.0f, 1.0f);
-    float blendConstants[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-    vk::CmdSetBlendConstants(cmdBuffer, blendConstants);
-    vk::CmdSetDepthBounds(cmdBuffer, 0.0f, 1.0f);
-    vk::CmdSetStencilCompareMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
-    vk::CmdSetStencilWriteMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
-    vk::CmdSetStencilReference(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
-    vk::CmdSetCullModeEXT(cmdBuffer, VK_CULL_MODE_NONE);
-    vk::CmdSetDepthBoundsTestEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetDepthCompareOpEXT(cmdBuffer, VK_COMPARE_OP_NEVER);
-    vk::CmdSetDepthTestEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetDepthWriteEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetFrontFaceEXT(cmdBuffer, VK_FRONT_FACE_CLOCKWISE);
-    vk::CmdSetPrimitiveTopologyEXT(cmdBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-    vk::CmdSetStencilOpEXT(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP,
-                           VK_COMPARE_OP_NEVER);
-    vk::CmdSetStencilTestEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetDepthBiasEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetPrimitiveRestartEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetRasterizerDiscardEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetVertexInputEXT(cmdBuffer, 0u, nullptr, 0u, nullptr);
-    vk::CmdSetLogicOpEXT(cmdBuffer, VK_LOGIC_OP_COPY);
-    vk::CmdSetPatchControlPointsEXT(cmdBuffer, 4u);
-    vk::CmdSetTessellationDomainOriginEXT(cmdBuffer, VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
-    vk::CmdSetDepthClampEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
-    vk::CmdSetRasterizationSamplesEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT);
-    VkSampleMask sampleMask = 0xFFFFFFFF;
-    vk::CmdSetSampleMaskEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
-    vk::CmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetAlphaToOneEnableEXT(cmdBuffer, VK_FALSE);
-    vk::CmdSetLogicOpEnableEXT(cmdBuffer, VK_FALSE);
-    VkBool32 colorBlendEnable = VK_FALSE;
-    vk::CmdSetColorBlendEnableEXT(cmdBuffer, 0u, 1u, &colorBlendEnable);
-    VkColorBlendEquationEXT colorBlendEquation = {
-        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
-    };
-    vk::CmdSetColorBlendEquationEXT(cmdBuffer, 0u, 1u, &colorBlendEquation);
-    VkColorComponentFlags colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
-}
-
 namespace vkt {
 
 GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage) : spv(spv) {

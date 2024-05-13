@@ -1756,6 +1756,20 @@ void CommandBuffer::EndRendering() {
     }
 }
 
+void CommandBuffer::BindVertFragShader(const vkt::Shader &vert_shader, const vkt::Shader &frag_shader) {
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT};
+    const VkShaderEXT shaders[] = {vert_shader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, frag_shader.handle()};
+    vk::CmdBindShadersEXT(handle(), 5, stages, shaders);
+}
+
+void CommandBuffer::BindCompShader(const vkt::Shader &comp_shader) {
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
+    const VkShaderEXT shaders[] = {comp_shader.handle()};
+    vk::CmdBindShadersEXT(handle(), 1, stages, shaders);
+}
+
 void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo) {
     PFN_vkCmdBeginVideoCodingKHR vkCmdBeginVideoCodingKHR =
         (PFN_vkCmdBeginVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdBeginVideoCodingKHR");

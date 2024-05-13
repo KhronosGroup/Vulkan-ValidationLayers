@@ -1063,6 +1063,9 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void BeginRenderingColor(const VkImageView imageView, VkRect2D render_area);
     void EndRendering();
 
+    void BindVertFragShader(const vkt::Shader &vert_shader, const vkt::Shader &frag_shader);
+    void BindCompShader(const vkt::Shader &comp_shader);
+
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);
     void DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo);

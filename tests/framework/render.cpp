@@ -46,6 +46,7 @@ VkRenderFramework::VkRenderFramework()
       m_device(nullptr),
       m_commandBuffer(nullptr),
       m_renderPass(VK_NULL_HANDLE),
+      m_vertex_buffer(nullptr),
       m_width(256),   // default window width
       m_height(256),  // default window height
       m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
@@ -525,6 +526,9 @@ void VkRenderFramework::ShutdownFramework() {
         m_second_command_buffer.destroy();
         m_second_command_pool.destroy();
     }
+
+    delete m_vertex_buffer;
+    m_vertex_buffer = nullptr;
 
     delete m_framebuffer;
     m_framebuffer = nullptr;
@@ -1120,4 +1124,125 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_renderPass = VK_NULL_HANDLE;
     delete m_framebuffer;
     m_framebuffer = nullptr;
+}
+
+void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynamicState> &exclude, bool tessellation,
+                                                       VkCommandBuffer commandBuffer) {
+    const auto excluded = [&exclude](VkDynamicState state) {
+        return std::find(exclude.begin(), exclude.end(), state) != exclude.end();
+    };
+    if (!m_vertex_buffer) {
+        m_vertex_buffer = new vkt::Buffer(*m_device, 32u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    }
+
+    VkCommandBuffer cmdBuffer = commandBuffer ? commandBuffer : m_commandBuffer->handle();
+    VkViewport viewport = {0, 0, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 1.0f};
+    VkRect2D scissor = {{0, 0}, {m_width, m_height}};
+    if (!excluded(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) vk::CmdSetViewportWithCountEXT(cmdBuffer, 1u, &viewport);
+    if (!excluded(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) vk::CmdSetScissorWithCountEXT(cmdBuffer, 1u, &scissor);
+    if (!excluded(VK_DYNAMIC_STATE_LINE_WIDTH)) vk::CmdSetLineWidth(cmdBuffer, 1.0f);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BIAS)) vk::CmdSetDepthBias(cmdBuffer, 1.0f, 0.0f, 1.0f);
+    float blendConstants[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    if (!excluded(VK_DYNAMIC_STATE_BLEND_CONSTANTS)) vk::CmdSetBlendConstants(cmdBuffer, blendConstants);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BOUNDS)) vk::CmdSetDepthBounds(cmdBuffer, 0.0f, 1.0f);
+    if (!excluded(VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK))
+        vk::CmdSetStencilCompareMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+    if (!excluded(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK))
+        vk::CmdSetStencilWriteMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+    if (!excluded(VK_DYNAMIC_STATE_STENCIL_REFERENCE))
+        vk::CmdSetStencilReference(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+    VkDeviceSize offset = 0u;
+    VkDeviceSize size = sizeof(float);
+    if (!excluded(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE))
+        vk::CmdBindVertexBuffers2EXT(cmdBuffer, 0, 1, &m_vertex_buffer->handle(), &offset, &size, &size);
+    if (!excluded(VK_DYNAMIC_STATE_CULL_MODE)) vk::CmdSetCullModeEXT(cmdBuffer, VK_CULL_MODE_NONE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) vk::CmdSetDepthBoundsTestEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)) vk::CmdSetDepthCompareOpEXT(cmdBuffer, VK_COMPARE_OP_NEVER);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) vk::CmdSetDepthTestEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)) vk::CmdSetDepthWriteEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_FRONT_FACE)) vk::CmdSetFrontFaceEXT(cmdBuffer, VK_FRONT_FACE_CLOCKWISE);
+    if (!excluded(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY))
+        vk::CmdSetPrimitiveTopologyEXT(cmdBuffer,
+                                       tessellation ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    if (!excluded(VK_DYNAMIC_STATE_STENCIL_OP))
+        vk::CmdSetStencilOpEXT(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP,
+                               VK_STENCIL_OP_KEEP, VK_COMPARE_OP_NEVER);
+    if (!excluded(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) vk::CmdSetStencilTestEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) vk::CmdSetDepthBiasEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) vk::CmdSetPrimitiveRestartEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)) vk::CmdSetRasterizerDiscardEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) vk::CmdSetVertexInputEXT(cmdBuffer, 0u, nullptr, 0u, nullptr);
+    if (!excluded(VK_DYNAMIC_STATE_LOGIC_OP_EXT)) vk::CmdSetLogicOpEXT(cmdBuffer, VK_LOGIC_OP_COPY);
+    if (!excluded(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) vk::CmdSetPatchControlPointsEXT(cmdBuffer, 4u);
+    if (!excluded(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT))
+        vk::CmdSetTessellationDomainOriginEXT(cmdBuffer, VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) vk::CmdSetDepthClampEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_POLYGON_MODE_EXT)) vk::CmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
+    if (!excluded(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) vk::CmdSetRasterizationSamplesEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT);
+    VkSampleMask sampleMask = 0xFFFFFFFF;
+    if (!excluded(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)) vk::CmdSetSampleMaskEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
+    if (!excluded(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) vk::CmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) vk::CmdSetAlphaToOneEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) vk::CmdSetLogicOpEnableEXT(cmdBuffer, VK_FALSE);
+    VkBool32 colorBlendEnable = VK_FALSE;
+    if (!excluded(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) vk::CmdSetColorBlendEnableEXT(cmdBuffer, 0u, 1u, &colorBlendEnable);
+    VkColorBlendEquationEXT colorBlendEquation = {
+        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
+    };
+    if (!excluded(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT))
+        vk::CmdSetColorBlendEquationEXT(cmdBuffer, 0u, 1u, &colorBlendEquation);
+    VkColorComponentFlags colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    if (!excluded(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
+}
+
+void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
+    uint32_t width = 32;
+    uint32_t height = 32;
+    VkViewport viewport = {0, 0, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f};
+    VkRect2D scissor = {{0, 0}, {width, height}};
+    vk::CmdSetViewportWithCountEXT(cmdBuffer, 1u, &viewport);
+    vk::CmdSetScissorWithCountEXT(cmdBuffer, 1u, &scissor);
+    vk::CmdSetLineWidth(cmdBuffer, 1.0f);
+    vk::CmdSetDepthBias(cmdBuffer, 1.0f, 0.0f, 1.0f);
+    float blendConstants[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    vk::CmdSetBlendConstants(cmdBuffer, blendConstants);
+    vk::CmdSetDepthBounds(cmdBuffer, 0.0f, 1.0f);
+    vk::CmdSetStencilCompareMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+    vk::CmdSetStencilWriteMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+    vk::CmdSetStencilReference(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+    vk::CmdSetCullModeEXT(cmdBuffer, VK_CULL_MODE_NONE);
+    vk::CmdSetDepthBoundsTestEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetDepthCompareOpEXT(cmdBuffer, VK_COMPARE_OP_NEVER);
+    vk::CmdSetDepthTestEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetDepthWriteEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetFrontFaceEXT(cmdBuffer, VK_FRONT_FACE_CLOCKWISE);
+    vk::CmdSetPrimitiveTopologyEXT(cmdBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    vk::CmdSetStencilOpEXT(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP,
+                           VK_COMPARE_OP_NEVER);
+    vk::CmdSetStencilTestEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetDepthBiasEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetPrimitiveRestartEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetRasterizerDiscardEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetVertexInputEXT(cmdBuffer, 0u, nullptr, 0u, nullptr);
+    vk::CmdSetLogicOpEXT(cmdBuffer, VK_LOGIC_OP_COPY);
+    vk::CmdSetPatchControlPointsEXT(cmdBuffer, 4u);
+    vk::CmdSetTessellationDomainOriginEXT(cmdBuffer, VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
+    vk::CmdSetDepthClampEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
+    vk::CmdSetRasterizationSamplesEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT);
+    VkSampleMask sampleMask = 0xFFFFFFFF;
+    vk::CmdSetSampleMaskEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
+    vk::CmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetAlphaToOneEnableEXT(cmdBuffer, VK_FALSE);
+    vk::CmdSetLogicOpEnableEXT(cmdBuffer, VK_FALSE);
+    VkBool32 colorBlendEnable = VK_FALSE;
+    vk::CmdSetColorBlendEnableEXT(cmdBuffer, 0u, 1u, &colorBlendEnable);
+    VkColorBlendEquationEXT colorBlendEquation = {
+        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
+    };
+    vk::CmdSetColorBlendEquationEXT(cmdBuffer, 0u, 1u, &colorBlendEquation);
+    VkColorComponentFlags colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
 }

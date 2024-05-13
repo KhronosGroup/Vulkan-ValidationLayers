@@ -187,9 +187,6 @@ class CreateComputePipelineHelper {
     VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
-// Set all dynamic states needed when using shader objects
-void SetDefaultDynamicStates(VkCommandBuffer cmdBuffer);
-
 namespace vkt {
 
 struct GraphicsPipelineLibraryStage {

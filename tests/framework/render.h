@@ -111,6 +111,11 @@ class VkRenderFramework : public VkTestFramework {
     VkRect2D GetRenderTargetArea() const;
     void DestroyRenderTarget();
 
+    // Used for VK_EXT_shader_object
+    void SetDefaultDynamicStatesExclude(const std::vector<VkDynamicState> &exclude = {}, bool tessellation = false,
+                                        VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer);
+
     static bool IgnoreDisableChecks();
     bool IsPlatformMockICD();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
@@ -199,6 +204,8 @@ class VkRenderFramework : public VkTestFramework {
     vkt::CommandBuffer *m_commandBuffer;  // DEPRECATED: use m_command_buffer
     vkt::CommandBuffer m_command_buffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
+
+    vkt::Buffer *m_vertex_buffer;
 
     // WSI items
     SurfaceContext m_surface_context{};

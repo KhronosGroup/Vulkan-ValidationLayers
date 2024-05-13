@@ -562,20 +562,14 @@ class NegativeShaderCompute : public ShaderComputeTest {};
 class PositiveShaderCompute : public ShaderComputeTest {};
 
 class ShaderObjectTest : public virtual VkLayerTest {
-    vkt::Buffer vertexBuffer;
-
   public:
     void InitBasicShaderObject();
-    void InitBasicMeshShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1,
-                                   bool taskShader = true, bool meshShader = true);
-    void BindVertFragShader(const vkt::Shader &vertShader, const vkt::Shader &fragShader);
-    void BindCompShader(const vkt::Shader &compShader);
-    void SetDefaultDynamicStates(const std::vector<VkDynamicState>& exclude = {}, bool tessellation = false, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void InitBasicMeshShaderObject(APIVersion target_api_version);
 };
 class NegativeShaderObject : public ShaderObjectTest {};
 class PositiveShaderObject : public ShaderObjectTest {};
 
-class PositiveGpuAVShaderObject : public PositiveShaderObject, public PositiveGpuAV {};
+class PositiveGpuAVShaderObject : public PositiveGpuAV {};
 
 class ShaderInterfaceTest : public VkLayerTest {};
 class NegativeShaderInterface : public ShaderInterfaceTest {};

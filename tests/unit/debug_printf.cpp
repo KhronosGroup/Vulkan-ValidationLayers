@@ -1051,7 +1051,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
                                                 VK_SHADER_STAGE_FRAGMENT_BIT};
         const VkShaderEXT shaders[] = {vs.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
         vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-        SetDefaultDynamicStates(m_commandBuffer->handle());
+        SetDefaultDynamicStatesAll(m_commandBuffer->handle());
     }
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
@@ -1086,7 +1086,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
                                                     VK_SHADER_STAGE_FRAGMENT_BIT};
             const VkShaderEXT shaders[] = {vs.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
             vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-            SetDefaultDynamicStates(m_commandBuffer->handle());
+            SetDefaultDynamicStatesAll(m_commandBuffer->handle());
         }
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
@@ -1118,7 +1118,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
                                                     VK_SHADER_STAGE_FRAGMENT_BIT};
             const VkShaderEXT shaders[] = {vs.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
             vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-            SetDefaultDynamicStates(m_commandBuffer->handle());
+            SetDefaultDynamicStatesAll(m_commandBuffer->handle());
         }
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
@@ -1176,7 +1176,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
                                                     VK_SHADER_STAGE_FRAGMENT_BIT};
             const VkShaderEXT shaders[] = {vs_int64.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
             vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-            SetDefaultDynamicStates(m_commandBuffer->handle());
+            SetDefaultDynamicStatesAll(m_commandBuffer->handle());
         }
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
@@ -1276,7 +1276,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
                                             VK_SHADER_STAGE_MESH_BIT_EXT};
     const VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
                                    VK_NULL_HANDLE, ts.handle(),    ms.handle()};
-    SetDefaultDynamicStates(m_commandBuffer->handle());
+    SetDefaultDynamicStatesAll(m_commandBuffer->handle());
     vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 7u, stages, shaders);
     vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
