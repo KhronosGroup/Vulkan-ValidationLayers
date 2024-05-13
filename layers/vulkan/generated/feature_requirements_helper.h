@@ -440,6 +440,8 @@ enum class Feature {
     image2DViewOf3D,
     // VkPhysicalDeviceImage2DViewOf3DFeaturesEXT
     sampler2DViewOf3D,
+    // VkPhysicalDeviceImageAlignmentControlFeaturesMESA
+    imageAlignmentControl,
     // VkPhysicalDeviceImageCompressionControlFeaturesEXT
     imageCompressionControl,
     // VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT

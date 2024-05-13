@@ -3992,6 +3992,23 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceImageAlignmentControlFeaturesMESA structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ALIGNMENT_CONTROL_FEATURES_MESA: {  // Covers
+                                                                                         // VUID-VkPhysicalDeviceImageAlignmentControlFeaturesMESA-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageAlignmentControlFeaturesMESA);
+                if (!IsExtEnabled(device_extensions.vk_mesa_image_alignment_control)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceImageAlignmentControlFeaturesMESA, but when creating "
+                                     "VkDevice, the parent extension "
+                                     "(VK_MESA_image_alignment_control) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceImageAlignmentControlFeaturesMESA* structure =
+                    (VkPhysicalDeviceImageAlignmentControlFeaturesMESA*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::imageAlignmentControl), structure->imageAlignmentControl);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -4681,6 +4698,9 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
 
             // No Validation code for VkPhysicalDeviceLayeredDriverPropertiesMSFT structure members  -- Covers
             // VUID-VkPhysicalDeviceLayeredDriverPropertiesMSFT-sType-sType
+
+            // No Validation code for VkPhysicalDeviceImageAlignmentControlPropertiesMESA structure members  -- Covers
+            // VUID-VkPhysicalDeviceImageAlignmentControlPropertiesMESA-sType-sType
 
             // No Validation code for VkPhysicalDeviceAccelerationStructurePropertiesKHR structure members  -- Covers
             // VUID-VkPhysicalDeviceAccelerationStructurePropertiesKHR-sType-sType
@@ -9395,6 +9415,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkExternalFormatQNX structure members  -- Covers VUID-VkExternalFormatQNX-sType-sType
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+        // No Validation code for VkImageAlignmentControlCreateInfoMESA structure members  -- Covers
+        // VUID-VkImageAlignmentControlCreateInfoMESA-sType-sType
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -9728,6 +9751,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ALIGNMENT_CONTROL_FEATURES_MESA,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_FEATURES_QCOM,
@@ -11200,6 +11224,7 @@ bool StatelessValidation::PreCallValidateCreateImage(VkDevice device, const VkIm
             VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
             VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
             VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
+            VK_STRUCTURE_TYPE_IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA,
             VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT,
             VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT,
@@ -14015,6 +14040,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ALIGNMENT_CONTROL_PROPERTIES_MESA,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_PROPERTIES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES,
@@ -16739,6 +16765,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirements(VkDevi
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
+                VK_STRUCTURE_TYPE_IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA,
                 VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT,
@@ -16835,6 +16862,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
+                VK_STRUCTURE_TYPE_IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA,
                 VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT,
@@ -20629,6 +20657,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDe
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
+                VK_STRUCTURE_TYPE_IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA,
                 VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT,
@@ -25896,6 +25925,7 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionImageConstraintsFUCH
                     VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                     VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                     VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
+                    VK_STRUCTURE_TYPE_IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA,
                     VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT,
                     VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT,
                     VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT,

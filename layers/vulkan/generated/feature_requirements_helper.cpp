@@ -2727,6 +2727,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->sampler2DViewOf3D, "VkPhysicalDeviceImage2DViewOf3DFeaturesEXT::sampler2DViewOf3D"};
         }
+        case Feature::imageAlignmentControl: {
+            auto vk_struct = const_cast<VkPhysicalDeviceImageAlignmentControlFeaturesMESA *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceImageAlignmentControlFeaturesMESA>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceImageAlignmentControlFeaturesMESA;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->imageAlignmentControl, "VkPhysicalDeviceImageAlignmentControlFeaturesMESA::imageAlignmentControl"};
+        }
         case Feature::imageCompressionControl: {
             auto vk_struct = const_cast<VkPhysicalDeviceImageCompressionControlFeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceImageCompressionControlFeaturesEXT>(*inout_pnext_chain));

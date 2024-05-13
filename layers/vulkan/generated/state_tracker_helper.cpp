@@ -1514,6 +1514,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->rayTracingValidation |= enabled->rayTracingValidation == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ALIGNMENT_CONTROL_FEATURES_MESA: {
+                const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *>(pNext);
+                features->imageAlignmentControl |= enabled->imageAlignmentControl == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR *>(pNext);

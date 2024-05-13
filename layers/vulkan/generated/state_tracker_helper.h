@@ -445,6 +445,8 @@ struct DeviceFeatures {
     bool image2DViewOf3D;
     // VkPhysicalDeviceImage2DViewOf3DFeaturesEXT
     bool sampler2DViewOf3D;
+    // VkPhysicalDeviceImageAlignmentControlFeaturesMESA
+    bool imageAlignmentControl;
     // VkPhysicalDeviceImageCompressionControlFeaturesEXT
     bool imageCompressionControl;
     // VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT

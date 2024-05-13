@@ -394,6 +394,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_NV_raw_access_chains", vvl::Extension::_VK_NV_raw_access_chains},
         {"VK_NV_shader_atomic_float16_vector", vvl::Extension::_VK_NV_shader_atomic_float16_vector},
         {"VK_NV_ray_tracing_validation", vvl::Extension::_VK_NV_ray_tracing_validation},
+        {"VK_MESA_image_alignment_control", vvl::Extension::_VK_MESA_image_alignment_control},
         {"VK_KHR_acceleration_structure", vvl::Extension::_VK_KHR_acceleration_structure},
         {"VK_KHR_ray_tracing_pipeline", vvl::Extension::_VK_KHR_ray_tracing_pipeline},
         {"VK_KHR_ray_query", vvl::Extension::_VK_KHR_ray_query},
