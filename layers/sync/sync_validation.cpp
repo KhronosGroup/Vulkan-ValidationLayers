@@ -32,6 +32,30 @@ ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const 
     return reserve;
 }
 
+void SyncValidator::UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update,
+                                             const std::shared_ptr<QueueBatchContext> &last_batch) {
+    // NOTE: All conserved QueueBatchContexts need to have their access logs reset to use the global
+    // logger and the only conserved QBCs are those referenced by unwaited signals and the last batch.
+
+    for (auto &signal_entry : update.signals_to_add) {
+        auto &signal_batch = signal_entry.second.batch;
+        // Batches retained for signalled semaphore don't need to retain
+        // event data, unless it's the last batch in the submit
+        if (signal_batch != last_batch) {
+            signal_batch->ResetEventsContext();
+            // Make sure that retained batches are minimal, and trim
+            // after the events contexts has been cleared.
+            signal_batch->Trim();
+        }
+        const VkSemaphore semaphore = signal_entry.first;
+        SignalInfo &signal_info = signal_entry.second;
+        signaled_semaphores_.insert_or_assign(semaphore, std::move(signal_info));
+    }
+    for (VkSemaphore semaphore : update.signals_to_remove) {
+        signaled_semaphores_.erase(semaphore);
+    }
+}
+
 void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
     auto tagged_wait_op = [queue_id, tag](const std::shared_ptr<QueueBatchContext> &batch) {
         batch->ApplyTaggedWait(queue_id, tag);
@@ -2744,7 +2768,7 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
     ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
 
     // Eliminate waitable fences from the current queue.
-    vvl::EraseIf(waitable_fences_, [waited_queue](const SignaledFence &sf) { return sf.second.queue_id == waited_queue; });
+    vvl::EraseIf(waitable_fences_, [waited_queue](const auto &sf) { return sf.second.queue_id == waited_queue; });
 }
 
 void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
@@ -2760,9 +2784,9 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
 
 struct QueuePresentCmdState {
     std::shared_ptr<const QueueSyncState> queue;
-    SignaledSemaphores signaled;
+    SignaledSemaphoresUpdate signaled_semaphores_update;
     PresentedImages presented_images;
-    QueuePresentCmdState(const SignaledSemaphores &parent_semaphores) : signaled(parent_semaphores) {}
+    QueuePresentCmdState(const SyncValidator &sync_validator) : signaled_semaphores_update(sync_validator) {}
 };
 
 bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
@@ -2772,7 +2796,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (disabled[sync_validation_queue_submit]) return skip;
 
-    vvl::TlsGuard<QueuePresentCmdState> cmd_state(&skip, signaled_semaphores_);
+    vvl::TlsGuard<QueuePresentCmdState> cmd_state(&skip, *this);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -2783,7 +2807,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     std::shared_ptr<QueueBatchContext> batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, 0));
 
     ResourceUsageRange tag_range = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
-    batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled);
+    batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
     batch->SetupBatchTags(tag_range);
     // Update the present tags
     for (auto &presented : cmd_state->presented_images) {
@@ -2839,7 +2863,7 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
 
     // Update the state with the data from the validate phase
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
-    cmd_state->signaled.Resolve(signaled_semaphores_, queue_state->PendingLastBatch());
+    UpdateSignaledSemaphores(cmd_state->signaled_semaphores_update, queue_state->PendingLastBatch());
     for (auto &presented : cmd_state->presented_images) {
         presented.ExportToSwapchain(*this);
     }
@@ -2895,9 +2919,10 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 
     if (semaphore != VK_NULL_HANDLE) {
         std::shared_ptr<const vvl::Semaphore> sem_state = Get<vvl::Semaphore>(semaphore);
-
-        if (bool(sem_state)) {
-            signaled_semaphores_.SignalSemaphore(sem_state, presented, acquire_tag);
+        if (sem_state) {
+            // This will ignore any duplicated signal (emplace does not update existing entry),
+            // and the core validation reports and error in this case.
+            signaled_semaphores_.emplace(sem_state->VkHandle(), SignalInfo(presented, acquire_tag));
         }
     }
     if (fence != VK_NULL_HANDLE) {
@@ -2920,7 +2945,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (disabled[sync_validation_queue_submit]) return skip;
 
-    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, error_obj, signaled_semaphores_);
+    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, error_obj, *this);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -2939,7 +2964,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, batch_idx);
         batch->SetupCommandBufferInfo(submit);
-        batch->SetupAccessContext(last_batch, submit, cmd_state->signaled);
+        batch->SetupAccessContext(last_batch, submit, cmd_state->signaled_semaphores_update);
         batch->SetCurrentLabelStack(&current_label_stack);
 
         // Skip import and validation of empty batches
@@ -2953,10 +2978,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
         // Empty batches could have semaphores, though.
         for (uint32_t sem_idx = 0; sem_idx < submit.signalSemaphoreInfoCount; ++sem_idx) {
             const VkSemaphoreSubmitInfo &semaphore_info = submit.pSignalSemaphoreInfos[sem_idx];
-            // Make a copy of the state, signal the copy and pend it...
-            auto sem_state = Get<vvl::Semaphore>(semaphore_info.semaphore);
-            if (!sem_state) continue;
-            cmd_state->signaled.SignalSemaphore(sem_state, batch, semaphore_info);
+            cmd_state->signaled_semaphores_update.OnSignal(batch, semaphore_info);
         }
         // Unless the previous batch was referenced by a signal, the QueueBatchContext will self destruct, but as
         // we ResolvePrevious as we can let any contexts we've fully referenced go.
@@ -2992,8 +3014,7 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, const Record
 
     // Don't need to look up the queue state again, but we need a non-const version
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
-
-    cmd_state->signaled.Resolve(signaled_semaphores_, queue_state->PendingLastBatch());
+    UpdateSignaledSemaphores(cmd_state->signaled_semaphores_update, queue_state->PendingLastBatch());
     queue_state->UpdateLastBatch();
 
     ResourceUsageRange fence_tag_range = ReserveGlobalTagRange(1U);
