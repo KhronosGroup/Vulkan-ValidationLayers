@@ -1492,18 +1492,6 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
     init(dev, createInfo);
 }
 
-Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
-               VkShaderCreateFlagsEXT flags) {
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = flags;
-    createInfo.stage = stage;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-    init(dev, createInfo);
-}
-
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineCache, vk::DestroyPipelineCache)
 
 void PipelineCache::init(const Device &dev, const VkPipelineCacheCreateInfo &info) {

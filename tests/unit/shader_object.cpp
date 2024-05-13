@@ -10,6 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/shader_object_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 
@@ -423,22 +424,8 @@ TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
-    VkShaderCreateInfoEXT vertCreateInfo = vku::InitStructHelper();
-    vertCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vertCreateInfo.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    vertCreateInfo.pCode = vert_spv.data();
-    vertCreateInfo.pName = "main";
-
-    VkShaderCreateInfoEXT taskCreateInfo = vku::InitStructHelper();
-    taskCreateInfo.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
-    taskCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    taskCreateInfo.codeSize = task_spv.size() * sizeof(task_spv[0]);
-    taskCreateInfo.pCode = task_spv.data();
-    taskCreateInfo.pName = "main";
-
-    vkt::Shader vert_shader(*m_device, vertCreateInfo);
-    vkt::Shader task_shader(*m_device, taskCreateInfo);
+    vkt::Shader vert_shader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT));
+    vkt::Shader task_shader(*m_device, ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT));
     VkShaderEXT shaderHandles[] = {
         vert_shader.handle(),
         task_shader.handle(),
@@ -465,22 +452,8 @@ TEST_F(NegativeShaderObject, BindVertexAndMeshShaders) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
-    VkShaderCreateInfoEXT vertCreateInfo = vku::InitStructHelper();
-    vertCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vertCreateInfo.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    vertCreateInfo.pCode = vert_spv.data();
-    vertCreateInfo.pName = "main";
-
-    VkShaderCreateInfoEXT meshCreateInfo = vku::InitStructHelper();
-    meshCreateInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    meshCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    meshCreateInfo.codeSize = mesh_spv.size() * sizeof(mesh_spv[0]);
-    meshCreateInfo.pCode = mesh_spv.data();
-    meshCreateInfo.pName = "main";
-
-    vkt::Shader vert_shader(*m_device, vertCreateInfo);
-    vkt::Shader mesh_shader(*m_device, meshCreateInfo);
+    vkt::Shader vert_shader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT));
+    vkt::Shader mesh_shader(*m_device, ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT));
     VkShaderEXT shaderHandles[] = {
         vert_shader.handle(),
         mesh_shader.handle(),
@@ -512,35 +485,15 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08419");
-
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
-
-        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-        createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        createInfo.codeSize = spv.size() * sizeof(spv[0]);
-        createInfo.pCode = spv.data();
-        createInfo.pName = "main";
-
-        vkt::Shader shader(*m_device, createInfo);
-
+        vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT));
         m_errorMonitor->VerifyFound();
     }
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08420");
-
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
-
-        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-        createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-        createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        createInfo.codeSize = spv.size() * sizeof(spv[0]);
-        createInfo.pCode = spv.data();
-        createInfo.pName = "main";
-
-        vkt::Shader shader(*m_device, createInfo);
-
+        vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -558,35 +511,15 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08421");
-
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
-
-        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-        createInfo.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
-        createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        createInfo.codeSize = spv.size() * sizeof(spv[0]);
-        createInfo.pCode = spv.data();
-        createInfo.pName = "main";
-
-        vkt::Shader shader(*m_device, createInfo);
-
+        vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_TASK_BIT_EXT));
         m_errorMonitor->VerifyFound();
     }
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08422");
-
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-
-        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-        createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-        createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        createInfo.codeSize = spv.size() * sizeof(spv[0]);
-        createInfo.pCode = spv.data();
-        createInfo.pName = "main";
-
-        vkt::Shader shader(*m_device, createInfo);
-
+        vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_MESH_BIT_EXT));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -604,22 +537,15 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
-    vkt::Shader shader(*m_device, createInfo);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    vkt::Shader shader(*m_device, create_info);
     VkShaderEXT shaderHandle = shader.handle();
 
     vkt::CommandPool command_pool(*m_device, transfer_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
-    vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &createInfo.stage, &shaderHandle);
+    vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &create_info.stage, &shaderHandle);
     command_buffer.end();
 
     m_errorMonitor->VerifyFound();
@@ -639,22 +565,15 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
-    vkt::Shader shader(*m_device, createInfo);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::Shader shader(*m_device, create_info);
     VkShaderEXT shaderHandle = shader.handle();
 
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
-    vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &createInfo.stage, &shaderHandle);
+    vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &create_info.stage, &shaderHandle);
     command_buffer.end();
 
     m_errorMonitor->VerifyFound();
@@ -674,22 +593,15 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
-    vkt::Shader shader(*m_device, createInfo);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    vkt::Shader shader(*m_device, create_info);
     VkShaderEXT shaderHandle = shader.handle();
 
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.begin();
 
-    vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &createInfo.stage, &shaderHandle);
+    vk::CmdBindShadersEXT(command_buffer.handle(), 1u, &create_info.stage, &shaderHandle);
     command_buffer.end();
 
     m_errorMonitor->VerifyFound();
@@ -704,15 +616,9 @@ TEST_F(NegativeShaderObject, NonUniqueShadersBind) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
-    vkt::Shader shader1(*m_device, createInfo);
-    vkt::Shader shader2(*m_device, createInfo);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::Shader shader1(*m_device, create_info);
+    vkt::Shader shader2(*m_device, create_info);
 
     VkShaderEXT shaders[] = {
         shader1.handle(),
@@ -739,15 +645,7 @@ TEST_F(NegativeShaderObject, InvalidShaderStageBind) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
-    vkt::Shader shader(*m_device, createInfo);
+    vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT));
     VkShaderEXT shaderHandle = shader.handle();
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_ALL_GRAPHICS;
@@ -766,19 +664,11 @@ TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD, GetShaderBinaryDataEXT not implemented";
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
-    vkt::Shader shader(*m_device, createInfo);
+    vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT));
     VkShaderEXT shaderHandle = shader.handle();
 
     size_t dataSize = 0;
@@ -870,31 +760,31 @@ TEST_F(NegativeShaderObject, DrawWithoutBindingMeshShadersWhenEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidShaderCreateInfoFlags) {
+TEST_F(NegativeShaderObject, FlagAttachmentFragmentShadingRate) {
     TEST_DESCRIPTION("Create shader with invalid flags.");
 
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT);
+    VkShaderEXT shader;
+
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08487");
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, FlagFragmentDensityMap) {
+    TEST_DESCRIPTION("Create shader with invalid flags.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT;
-    createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
-    m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08489");
-    createInfo.flags = VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -909,21 +799,8 @@ TEST_F(NegativeShaderObject, MissingLinkStageBit) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[1].pCode = frag_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -941,20 +818,8 @@ TEST_F(NegativeShaderObject, MissingLinkStageBitMesh) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = mesh_spv.size() * sizeof(mesh_spv[0]);
-    createInfos[0].pCode = mesh_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[1].pCode = frag_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -972,21 +837,8 @@ TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = mesh_spv.size() * sizeof(mesh_spv[0]);
-    createInfos[1].pCode = mesh_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    createInfos[1] = ShaderCreateInfoLink(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -1004,22 +856,9 @@ TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_TASK_BIT_EXT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = task_spv.size() * sizeof(task_spv[0]);
-    createInfos[0].pCode = task_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = mesh_spv.size() * sizeof(mesh_spv[0]);
-    createInfos[1].pCode = mesh_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[1] = ShaderCreateInfoLink(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[1].flags |= VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -1037,21 +876,8 @@ TEST_F(NegativeShaderObject, MissingNextStage) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[1].pCode = frag_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -1073,21 +899,8 @@ TEST_F(NegativeShaderObject, SameLinkedStage) {
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = spv.size() * sizeof(spv[0]);
-    createInfos[0].pCode = spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = spv.size() * sizeof(spv[0]);
-    createInfos[1].pCode = spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    createInfos[1] = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -1101,29 +914,15 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD, GetShaderBinaryDataEXT not implemented";
     }
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[1].pCode = frag_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -1148,8 +947,6 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
 TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     TEST_DESCRIPTION("Create shader with unsupported next stage.");
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08428");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1168,22 +965,17 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoLink(spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
 
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08428");
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08429");
-    createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    create_info.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1191,22 +983,12 @@ TEST_F(NegativeShaderObject, InvalidTessellationControlNextStage) {
     TEST_DESCRIPTION("Create tessellation control shader with invalid nextStage.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08430");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1214,22 +996,12 @@ TEST_F(NegativeShaderObject, InvalidTessellationEvaluationNextStage) {
     TEST_DESCRIPTION("Create tessellation evaluation shader with invalid nextStage.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08431");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1237,22 +1009,11 @@ TEST_F(NegativeShaderObject, InvalidGeometryNextStage) {
     TEST_DESCRIPTION("Create geometry shader with invalid nextStage.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08433");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1260,22 +1021,11 @@ TEST_F(NegativeShaderObject, InvalidFragmentNextStage) {
     TEST_DESCRIPTION("Create fragment shader with invalid nextStage.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08434");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.nextStage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1283,22 +1033,11 @@ TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
     TEST_DESCRIPTION("Create task shader with invalid nextStage.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08435");
-
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
-    createInfo.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1306,22 +1045,11 @@ TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
     TEST_DESCRIPTION("Create mesh shader with invalid nextStage.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08436");
-
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    createInfo.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1331,7 +1059,6 @@ TEST_F(NegativeShaderObject, BindInvalidShaderStage) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-pShaders-08469");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
-
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -3266,9 +2993,11 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothBound) {
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
-    const vkt::Shader meshShader(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
-                                 GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3),
-                                 VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info =
+        ShaderCreateInfoFlag(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+    const vkt::Shader meshShader(*m_device, mesh_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -3339,14 +3068,9 @@ TEST_F(NegativeShaderObject, TaskAndMeshShaderWithNoTaskFlag) {
                                  GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3));
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT meshCreateInfo = vku::InitStructHelper();
-    meshCreateInfo.flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
-    meshCreateInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    meshCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    meshCreateInfo.codeSize = mesh_spv.size() * sizeof(mesh_spv[0]);
-    meshCreateInfo.pCode = mesh_spv.data();
-    meshCreateInfo.pName = "main";
-    const vkt::Shader meshShader(*m_device, meshCreateInfo);
+    VkShaderCreateInfoEXT mesh_create_info =
+        ShaderCreateInfoFlag(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+    const vkt::Shader meshShader(*m_device, mesh_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -3383,14 +3107,9 @@ TEST_F(NegativeShaderObject, VertAndTaskShadersBound) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT meshCreateInfo = vku::InitStructHelper();
-    meshCreateInfo.flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
-    meshCreateInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    meshCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    meshCreateInfo.codeSize = mesh_spv.size() * sizeof(mesh_spv[0]);
-    meshCreateInfo.pCode = mesh_spv.data();
-    meshCreateInfo.pName = "main";
-    const vkt::Shader meshShader(*m_device, meshCreateInfo);
+    VkShaderCreateInfoEXT mesh_create_info =
+        ShaderCreateInfoFlag(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+    const vkt::Shader meshShader(*m_device, mesh_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -3426,23 +3145,8 @@ TEST_F(NegativeShaderObject, MissingLinkedShaderBind) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[1].pCode = frag_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
 
@@ -3477,23 +3181,8 @@ TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    createInfos[0].pCode = vert_spv.data();
-    createInfos[0].pName = "main";
-
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    createInfos[1].pCode = frag_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
 
@@ -3731,9 +3420,11 @@ TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
-    const vkt::Shader meshShader(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
-                                 GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3),
-                                 VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info =
+        ShaderCreateInfoFlag(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+    const vkt::Shader meshShader(*m_device, mesh_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -4296,15 +3987,9 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, csSource.str().c_str());
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4313,22 +3998,12 @@ TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08992");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
-
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4362,16 +4037,11 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-    createInfo.pSpecializationInfo = &specializationInfo;
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.pSpecializationInfo = &specializationInfo;
 
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4406,16 +4076,11 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-    createInfo.pSpecializationInfo = &specializationInfo;
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.pSpecializationInfo = &specializationInfo;
 
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4450,16 +4115,11 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
     specializationInfo.dataSize = sizeof(uint32_t) * 2;
     specializationInfo.pData = &data;
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-    createInfo.pSpecializationInfo = &specializationInfo;
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.pSpecializationInfo = &specializationInfo;
 
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4497,16 +4157,11 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-    createInfo.pSpecializationInfo = &specializationInfo;
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.pSpecializationInfo = &specializationInfo;
 
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4519,16 +4174,11 @@ TEST_F(NegativeShaderObject, MissingEntrypoint) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "invalid";
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.pName = "invalid";
 
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4587,16 +4237,11 @@ TEST_F(NegativeShaderObject, SpecializationApplied) {
     specializationInfo.dataSize = sizeof(uint32_t);
     specializationInfo.pData = &data;
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = fs_spv.size() * sizeof(fs_spv[0]);
-    createInfo.pCode = fs_spv.data();
-    createInfo.pName = "main";
-    createInfo.pSpecializationInfo = &specializationInfo;
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_info.pSpecializationInfo = &specializationInfo;
 
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4670,17 +4315,9 @@ TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = cs_spv.size() * sizeof(cs_spv[0]);
-    createInfo.pCode = cs_spv.data();
-    createInfo.pName = "main";
-    createInfo.setLayoutCount = 1u;
-    createInfo.pSetLayouts = &descriptor_set.layout_.handle();
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4754,15 +4391,9 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = vs_spv.size() * sizeof(vs_spv[0]);
-    createInfo.pCode = vs_spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4797,15 +4428,9 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = vs_spv.size() * sizeof(vs_spv[0]);
-    createInfo.pCode = vs_spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4840,15 +4465,9 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
     std::vector<uint32_t> cs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, cs_spv);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = cs_spv.size() * sizeof(cs_spv[0]);
-    createInfo.pCode = cs_spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4881,16 +4500,9 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -4961,15 +4573,9 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
     std::vector<uint32_t> gs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, gsSource.str().c_str(), gs_spv);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = gs_spv.size() * sizeof(gs_spv[0]);
-    createInfo.pCode = gs_spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(gs_spv, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5030,15 +4636,9 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vsSource.str().c_str(), vs_spv);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = vs_spv.size() * sizeof(vs_spv[0]);
-    createInfo.pCode = vs_spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5080,16 +4680,9 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, mesh_src.c_str(), spv);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-    createInfo.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5121,16 +4714,9 @@ TEST_F(NegativeShaderObject, Atomics) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src.c_str());
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5170,16 +4756,9 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src, SPV_ENV_VULKAN_1_3);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5203,16 +4782,9 @@ TEST_F(NegativeShaderObject, ReadShaderClock) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src, SPV_ENV_VULKAN_1_3);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5255,16 +4827,9 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5298,16 +4863,9 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5344,16 +4902,9 @@ TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_2, 0, cs_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5408,16 +4959,9 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5494,17 +5038,9 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5550,16 +5086,9 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -5607,16 +5136,9 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src.c_str(), spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6121,26 +5643,8 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
 
     VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_.handle(), frag_descriptor_set.layout_.handle()};
 
-    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
-    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vert_create_info.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    vert_create_info.pCode = vert_spv.data();
-    vert_create_info.pName = "main";
-    vert_create_info.setLayoutCount = 2u;
-    vert_create_info.pSetLayouts = descriptor_set_layouts;
-
-    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper();
-    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    frag_create_info.codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    frag_create_info.pCode = frag_spv.data();
-    frag_create_info.pName = "main";
-    frag_create_info.setLayoutCount = 2u;
-    frag_create_info.pSetLayouts = descriptor_set_layouts;
-
-    const vkt::Shader vertShader(*m_device, vert_create_info);
-    const vkt::Shader fragShader(*m_device, frag_create_info);
+    const vkt::Shader vertShader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, descriptor_set_layouts));
+    const vkt::Shader fragShader(*m_device, ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, descriptor_set_layouts));
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -6183,17 +5687,11 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT | VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoFlag(
+        spv, VK_SHADER_STAGE_COMPUTE_BIT,
+        VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT | VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6220,17 +5718,10 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6304,16 +5795,9 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6387,16 +5871,9 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6691,16 +6168,9 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6822,21 +6292,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = tesc_spv.size() * sizeof(tesc_spv[0]);
-    createInfos[0].pCode = tesc_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = tese_spv.size() * sizeof(tese_spv[0]);
-    createInfos[1].pCode = tese_spv.data();
-    createInfos[1].pName = "main";
+    createInfos[0] =
+        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
@@ -6962,22 +6420,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = tesc_spv.size() * sizeof(tesc_spv[0]);
-    createInfos[0].pCode = tesc_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = tese_spv.size() * sizeof(tese_spv[0]);
-    createInfos[1].pCode = tese_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] =
+        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -7102,22 +6547,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = tesc_spv.size() * sizeof(tesc_spv[0]);
-    createInfos[0].pCode = tesc_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = tese_spv.size() * sizeof(tese_spv[0]);
-    createInfos[1].pCode = tese_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] =
+        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -7242,22 +6674,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = vku::InitStructHelper();
-    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    createInfos[0].nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[0].codeSize = tesc_spv.size() * sizeof(tesc_spv[0]);
-    createInfos[0].pCode = tesc_spv.data();
-    createInfos[0].pName = "main";
-    createInfos[1] = vku::InitStructHelper();
-    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfos[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfos[1].codeSize = tese_spv.size() * sizeof(tese_spv[0]);
-    createInfos[1].pCode = tese_spv.data();
-    createInfos[1].pName = "main";
-
+    createInfos[0] =
+        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
@@ -7272,17 +6691,10 @@ TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -7301,17 +6713,10 @@ TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_source);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -7435,16 +6840,9 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -7508,16 +6906,9 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationOrientation) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -7581,16 +6972,9 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSpacing) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -7660,17 +7044,10 @@ TEST_F(NegativeShaderObject, TessellationPatchSize) {
 
         std::vector<uint32_t> spv;
         ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src.c_str(), spv);
-
-        VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-        createInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        createInfo.nextStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        createInfo.codeSize = spv.size() * sizeof(spv[0]);
-        createInfo.pCode = spv.data();
-        createInfo.pName = "main";
-
+        VkShaderCreateInfoEXT create_info =
+            ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         VkShaderEXT shader;
-        vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+        vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
         m_errorMonitor->VerifyFound();
     }
