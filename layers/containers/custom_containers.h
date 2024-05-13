@@ -1047,6 +1047,48 @@ bool Contains(const Container &container, const Key &key) {
     return container.find(key) != container.cend();
 }
 
+//
+// if (auto [found, it] = vvl::Find(map, key); found) { it->jump(); }
+//
+template <typename Container, typename Key = typename Container::key_type>
+std::pair<bool, typename Container::iterator> Find(Container &container, const Key &key) {
+    auto it = container.find(key);
+    return std::make_pair(it != container.end(), it);
+}
+template <typename Container, typename Key = typename Container::key_type>
+std::pair<bool, typename Container::const_iterator> Find(const Container &container, const Key &key) {
+    auto it = container.find(key);
+    return std::make_pair(it != container.cend(), it);
+}
+
+//
+// if (auto it_holder = vvl::FindIt(map, key); it_holder) { it_holder->jump(); }
+//
+template <typename Container>
+struct IteratorHolder {
+    typename Container::iterator it;
+    typename Container::iterator end_it;
+    typename Container::value_type &operator*() { return *it; }
+    typename Container::value_type *operator->() { return &*it; }
+    operator bool() { return it != end_it; }
+};
+template <typename Container>
+struct ConstIteratorHolder {
+    typename Container::const_iterator it;
+    typename Container::const_iterator end_it;
+    const typename Container::value_type &operator*() { return *it; }
+    const typename Container::value_type *operator->() { return &*it; }
+    operator bool() { return it != end_it; }
+};
+template <typename Container, typename Key = typename Container::key_type>
+IteratorHolder<Container> FindIt(Container &container, const Key &key) {
+    return {container.find(key), container.end()};
+}
+template <typename Container, typename Key = typename Container::key_type>
+ConstIteratorHolder<Container> FindIt(const Container &container, const Key &key) {
+    return {container.find(key), container.cend()};
+}
+
 // EraseIf is not implemented as std::erase(std::remove_if(...), ...) for two reasons:
 //   1) Robin Hood containers don't support two-argument erase functions
 //   2) STL remove_if requires the predicate to be const w.r.t the value-type, and std::erase_if doesn't AFAICT

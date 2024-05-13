@@ -23,6 +23,7 @@ struct PresentedImage;
 class QueueBatchContext;
 struct QueueSubmitCmdState;
 class QueueSyncState;
+class SyncValidator;
 
 namespace vvl {
 class Semaphore;
@@ -39,60 +40,44 @@ struct AcquiredImage {
     AcquiredImage(const PresentedImage &presented, ResourceUsageTag acq_tag);
 };
 
-class SignaledSemaphores {
-  public:
-    // Is the record of a signaled semaphore, deleted when unsignaled
-    struct Signal {
-        Signal() = delete;
-        Signal(const Signal &other) = default;
-        Signal(Signal &&other) = default;
-        Signal &operator=(const Signal &other) = default;
-        Signal &operator=(Signal &&other) = default;
-        Signal(const std::shared_ptr<const vvl::Semaphore> &sem_state_, const std::shared_ptr<QueueBatchContext> &batch_,
-               const SyncExecScope &exec_scope_);
-        Signal(const std::shared_ptr<const vvl::Semaphore> &sem_state_, const PresentedImage &presented, ResourceUsageTag acq_tag);
+// Information associated with a semaphore signal
+struct SignalInfo {
+    SignalInfo(const std::shared_ptr<QueueBatchContext> &batch, const SyncExecScope &exec_scope);
+    SignalInfo(const PresentedImage &presented, ResourceUsageTag acquire_tag);
 
-        std::shared_ptr<const vvl::Semaphore> sem_state;
-        std::shared_ptr<QueueBatchContext> batch;
-        // Use the SyncExecScope::valid_accesses for first access scope
-        SemaphoreScope first_scope;
+    // Batch from the first scope of the signal.
+    std::shared_ptr<QueueBatchContext> batch;
 
-        // Swapchain specific support signal info
-        // IFF swapchain_image is non-null
-        //     batch is the batch of the last present for the acquired image
-        //     The address_type, range_generator pair further limit the scope of the resolve operation, and the "barrier" will
-        //     also be special case (updating "PRESENTED" write with "ACQUIRE" read, as well as setting the barrier)
-        AcquiredImage acquired;
+    // Use the SyncExecScope::valid_accesses for first access scope
+    SemaphoreScope first_scope;
 
-        // TODO add timeline semaphore support.
-    };
+    // Swapchain specific signal info.
+    // Batch field is the batch of the last present for the acquired image.
+    // The AcquiredImage further limits the scope of the resolve operation, and the "barrier" will also
+    // be special case (updating "PRESENTED" write with "ACQUIRE" read, as well as setting the barrier).
+    //
+    // NOTE: shared_ptr is used here as a memory saver. AcquiredImage is 224 bytes at the time
+    // of writing and is not used in the queue submit signals. If we optimize ImageRangeGenerator
+    // memory usage then shared_ptr can be replaced by std::optional to avoid allocation.
+    std::shared_ptr<AcquiredImage> acquired_image;
+};
 
-    using SignalMap = vvl::unordered_map<VkSemaphore, std::shared_ptr<Signal>>;
-    using iterator = SignalMap::iterator;
-    using const_iterator = SignalMap::const_iterator;
-    using mapped_type = SignalMap::mapped_type;
-    iterator begin() { return signaled_.begin(); }
-    const_iterator begin() const { return signaled_.begin(); }
-    iterator end() { return signaled_.end(); }
-    const_iterator end() const { return signaled_.end(); }
+// Globally tracks signaled semaphores.
+using SignaledSemaphores = vvl::unordered_map<VkSemaphore, SignalInfo>;
 
-    bool SignalSemaphore(const std::shared_ptr<const vvl::Semaphore> &sem_state, const std::shared_ptr<QueueBatchContext> &batch,
-                         const VkSemaphoreSubmitInfo &signal_info);
-    bool Insert(const std::shared_ptr<const vvl::Semaphore> &sem_state, std::shared_ptr<Signal> &&signal);
-    bool SignalSemaphore(const std::shared_ptr<const vvl::Semaphore> &sem_state, const PresentedImage &presented,
-                         ResourceUsageTag acq_tag);
-    std::shared_ptr<const Signal> Unsignal(VkSemaphore);
-    void Resolve(SignaledSemaphores &parent, const std::shared_ptr<QueueBatchContext> &last_batch);
-    SignaledSemaphores() : prev_(nullptr) {}
-    SignaledSemaphores(const SignaledSemaphores &prev) : prev_(&prev) {}
+// The list of changes that should to be applied to SignaledSemaphores.
+// These changes are collected during validation phase of QueueSubmit and are applied in the record phase.
+struct SignaledSemaphoresUpdate {
+    vvl::unordered_map<VkSemaphore, SignalInfo> signals_to_add;
+    vvl::unordered_set<VkSemaphore> signals_to_remove;
+
+    void OnSignal(const std::shared_ptr<QueueBatchContext> &batch, const VkSemaphoreSubmitInfo &signal_info);
+    std::optional<SignalInfo> OnUnsignal(VkSemaphore semaphore);
+
+    SignaledSemaphoresUpdate(const SyncValidator &sync_validator) : sync_validator_(sync_validator) {}
 
   private:
-    void Import(VkSemaphore sem, std::shared_ptr<Signal> &&move_from);
-    void Reset();
-
-  private:
-    vvl::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
-    const SignaledSemaphores *prev_;  // Allowing this type to act as a writable overlay
+    const SyncValidator &sync_validator_;
 };
 
 struct FenceSyncState {
@@ -277,14 +262,14 @@ class QueueBatchContext : public CommandExecutionContext {
     void SetTagBias(ResourceUsageTag);
     // For Submit
     void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
-                            SignaledSemaphores &signaled_semaphores);
+                            SignaledSemaphoresUpdate &signaled_semaphores_update);
     void SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info);
     bool DoQueueSubmitValidate(const SyncValidator &sync_state, QueueSubmitCmdState &cmd_state, const VkSubmitInfo2 &submit_info);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     // For Present
     void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkPresentInfoKHR &present_info,
-                            const PresentedImages &presented_images, SignaledSemaphores &signaled);
+                            const PresentedImages &presented_images, SignaledSemaphoresUpdate &signaled_semaphores_update);
     bool DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images);
     void DoPresentOperations(const PresentedImages &presented_images);
     void LogPresentOperations(const PresentedImages &presented_images);
@@ -312,9 +297,9 @@ class QueueBatchContext : public CommandExecutionContext {
     void CommonSetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev,
                                   QueueBatchContext::ConstBatchSet &batches_resolved);
     std::shared_ptr<QueueBatchContext> ResolveOneWaitSemaphore(VkSemaphore sem, const PresentedImages &presented_images,
-                                                               SignaledSemaphores &signaled);
+                                                               SignaledSemaphoresUpdate &signaled_semaphores_update);
     std::shared_ptr<QueueBatchContext> ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
-                                                               SignaledSemaphores &signaled);
+                                                               SignaledSemaphoresUpdate &signaled_semaphores_update);
 
     void ImportSyncTags(const QueueBatchContext &from);
     const QueueSyncState *queue_state_ = nullptr;
@@ -398,7 +383,7 @@ struct SubmitInfoConverter {
 struct QueueSubmitCmdState {
     std::shared_ptr<const QueueSyncState> queue;
     const ErrorObject &error_obj;
-    SignaledSemaphores signaled;
-    QueueSubmitCmdState(const ErrorObject &error_obj, const SignaledSemaphores &parent_semaphores)
-        : error_obj(error_obj), signaled(parent_semaphores) {}
+    SignaledSemaphoresUpdate signaled_semaphores_update;
+    QueueSubmitCmdState(const ErrorObject &error_obj, const SyncValidator &sync_validator)
+        : error_obj(error_obj), signaled_semaphores_update(sync_validator) {}
 };

@@ -24,118 +24,55 @@ AcquiredImage::AcquiredImage(const PresentedImage& presented, ResourceUsageTag a
 
 bool AcquiredImage::Invalid() const { return vvl::StateObject::Invalid(image); }
 
-SignaledSemaphores::Signal::Signal(const std::shared_ptr<const vvl::Semaphore>& sem_state_,
-                                   const std::shared_ptr<QueueBatchContext>& batch_, const SyncExecScope& exec_scope_)
-    : sem_state(sem_state_), batch(batch_), first_scope({batch->GetQueueId(), exec_scope_}) {
-    // Illegal to create a signal from no batch or an invalid semaphore... caller must assure validity
-    assert(batch);
-    assert(sem_state);
-}
+SignalInfo::SignalInfo(const std::shared_ptr<QueueBatchContext>& batch, const SyncExecScope& exec_scope)
+    : batch(batch), first_scope({batch->GetQueueId(), exec_scope}) {}
 
-SignaledSemaphores::Signal::Signal(const std::shared_ptr<const vvl::Semaphore>& sem_state_, const PresentedImage& presented,
-                                   ResourceUsageTag acq_tag)
-    : sem_state(sem_state_), batch(presented.batch), first_scope(), acquired(presented, acq_tag) {
-    // Illegal to create a signal from no batch or an invalid semaphore... caller must assure validity
-    assert(batch);
-    assert(sem_state);
-}
-bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const vvl::Semaphore>& sem_state,
-                                         const std::shared_ptr<QueueBatchContext>& batch,
-                                         const VkSemaphoreSubmitInfo& signal_info) {
-    assert(batch);
-    const SyncExecScope exec_scope =
-        SyncExecScope::MakeSrc(batch->GetQueueFlags(), signal_info.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
-    std::shared_ptr<Signal> signal = std::make_shared<Signal>(sem_state, batch, exec_scope);
-    return Insert(sem_state, std::move(signal));
-}
+SignalInfo::SignalInfo(const PresentedImage& presented, ResourceUsageTag acquire_tag)
+    : batch(presented.batch), first_scope(), acquired_image(std::make_shared<AcquiredImage>(presented, acquire_tag)) {}
 
-bool SignaledSemaphores::Insert(const std::shared_ptr<const vvl::Semaphore>& sem_state, std::shared_ptr<Signal>&& signal) {
-    const VkSemaphore sem = sem_state->VkHandle();
-    auto signal_it = signaled_.find(sem);
-    std::shared_ptr<Signal> insert_signal;
-    if (signal_it == signaled_.end()) {
-        if (prev_) {
-            auto prev_sig = GetMapped(prev_->signaled_, sem_state->VkHandle());
-            if (prev_sig) {
-                // The is an invalid signal, as this semaphore is already signaled... copy the prev state (as prev_ is const)
-                insert_signal = std::make_shared<Signal>(*prev_sig);
-            }
-        }
-        auto insert_pair = signaled_.emplace(sem, std::move(insert_signal));
-        signal_it = insert_pair.first;
+void SignaledSemaphoresUpdate::OnSignal(const std::shared_ptr<QueueBatchContext>& batch, const VkSemaphoreSubmitInfo& signal_info) {
+    auto sem_state = sync_validator_.Get<vvl::Semaphore>(signal_info.semaphore);
+    if (!sem_state) {
+        return;
     }
+    const VkSemaphore semaphore = sem_state->VkHandle();
+    // Signal can't be registered in both lists at the same time.
+    assert(!vvl::Contains(signals_to_add, semaphore) || !vvl::Contains(signals_to_remove, semaphore));
 
-    bool success = false;
-    if (!signal_it->second) {
-        signal_it->second = std::move(signal);
-        success = true;
+    const bool emplace_signal =
+        // Add signal if it was previously in the remove list. It's a scenario when the semaphore
+        // is unsignaled and then signaled by the same queue submit command.
+        (signals_to_remove.erase(semaphore) == 1) ||
+        // Or if the semaphore is not in the removal list, then add it only if it is not registered in
+        // the global signaling list, because duplicated signal is an error (reported by core validation)
+        // and the state should not be updated in this case.
+        !vvl::Contains(sync_validator_.signaled_semaphores_, semaphore);
+
+    if (emplace_signal) {
+        const VkQueueFlags queue_flags = batch->GetQueueFlags();
+        const SyncExecScope exec_scope = SyncExecScope::MakeSrc(queue_flags, signal_info.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
+        // If the semaphore is already in this list (duplicated binary signal error)
+        // then emplace does not update the map, and this is the behavior we need.
+        signals_to_add.emplace(semaphore, SignalInfo(batch, exec_scope));
     }
-
-    return success;
 }
 
-bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const vvl::Semaphore>& sem_state, const PresentedImage& presented,
-                                         ResourceUsageTag acq_tag) {
-    // Ignore any signal we haven't waited... CoreChecks should have reported this
-    std::shared_ptr<Signal> signal = std::make_shared<Signal>(sem_state, presented, acq_tag);
-    return Insert(sem_state, std::move(signal));
-}
+std::optional<SignalInfo> SignaledSemaphoresUpdate::OnUnsignal(VkSemaphore semaphore) {
+    // Signal can't be registered in both lists at the same time.
+    assert(!vvl::Contains(signals_to_add, semaphore) || !vvl::Contains(signals_to_remove, semaphore));
+    std::optional<SignalInfo> unsignaled;
 
-std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::Unsignal(VkSemaphore sem) {
-    assert(prev_ != nullptr);
-    std::shared_ptr<const Signal> unsignaled;
-    const auto found_it = signaled_.find(sem);
-    if (found_it != signaled_.end()) {
-        // Move the unsignaled singal out from the signaled list, but keep the shared_ptr as the caller needs the contents for
-        // a bit.
-        unsignaled = std::move(found_it->second);
-    } else {
-        // We can't unsignal prev_ because it's const * by design.
-        // We put in an empty placeholder
-        signaled_.emplace(sem, std::shared_ptr<Signal>());
-        unsignaled = GetMapped(prev_->signaled_, sem);
+    if (auto local_it = vvl::FindIt(signals_to_add, semaphore)) {
+        unsignaled.emplace(std::move(local_it->second));
+        signals_to_add.erase(local_it.it);
+    } else if (auto global_it = vvl::FindIt(sync_validator_.signaled_semaphores_, semaphore)) {
+        unsignaled.emplace(std::move(global_it->second));
     }
+    signals_to_remove.emplace(semaphore);
 
-    // If unsignaled is null, there was a missing pending semaphore, and that's also issue CoreChecks reports
+    // If unsignaled is null, there was a missing pending semaphore.
+    // The caller returns early in this case. Error is reported by core validation.
     return unsignaled;
-}
-
-void SignaledSemaphores::Resolve(SignaledSemaphores& parent, const std::shared_ptr<QueueBatchContext>& last_batch) {
-    // Must only be called on child objects, with the non-const reference of the parent/previous object passed in
-    assert(prev_ == &parent);
-
-    // The global  the semaphores we applied to the cmd_state QueueBatchContexts
-    // NOTE: All conserved QueueBatchContext's need to have there access logs reset to use the global logger and the only conserved
-    //       QBC's are those referenced by unwaited signals and the last batch.
-    for (auto& sig_sem : signaled_) {
-        if (sig_sem.second && sig_sem.second->batch) {
-            auto& sig_batch = sig_sem.second->batch;
-            // Batches retained for signalled semaphore don't need to retain event data, unless it's the last batch in the submit
-            if (sig_batch != last_batch) {
-                sig_batch->ResetEventsContext();
-                // Make sure that retained batches are minimal, and trim after the events contexts has been cleared.
-                sig_batch->Trim();
-            }
-        }
-        // Import clears in the parent any signal waited in the
-        parent.Import(sig_sem.first, std::move(sig_sem.second));
-    }
-    Reset();
-}
-
-void SignaledSemaphores::Import(VkSemaphore sem, std::shared_ptr<Signal>&& from) {
-    // Overwrite the s  tate with the last state from this
-    if (from) {
-        assert(sem == from->sem_state->VkHandle());
-        signaled_[sem] = std::move(from);
-    } else {
-        signaled_.erase(sem);
-    }
-}
-
-void SignaledSemaphores::Reset() {
-    signaled_.clear();
-    prev_ = nullptr;
 }
 
 FenceSyncState::FenceSyncState() : fence(), tag(kInvalidTag), queue_id(kQueueIdInvalid) {}
@@ -318,14 +255,13 @@ void QueueBatchContext::Cleanup() {
 }
 
 // Overload for QueuePresent semaphore waiting.  Not applicable to QueueSubmit semaphores
-std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(VkSemaphore sem,
-                                                                              const PresentedImages& presented_images,
-                                                                              SignaledSemaphores& signaled) {
+std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(
+    VkSemaphore sem, const PresentedImages& presented_images, SignaledSemaphoresUpdate& signaled_semaphores_update) {
     auto sem_state = sync_state_->Get<vvl::Semaphore>(sem);
     if (!sem_state) return nullptr;  // Semaphore validity is handled by CoreChecks
 
     // When signal_state goes out of scope, the signal information will be dropped, as Unsignal has released ownership.
-    auto signal_state = signaled.Unsignal(sem);
+    auto signal_state = signaled_semaphores_update.OnUnsignal(sem);
     if (!signal_state) return nullptr;  // Invalid signal, skip it.
 
     assert(signal_state->batch);
@@ -367,13 +303,13 @@ std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(Vk
     return signal_state->batch;
 }
 
-std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
-                                                                              SignaledSemaphores& signaled) {
+std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(
+    VkSemaphore sem, VkPipelineStageFlags2 wait_mask, SignaledSemaphoresUpdate& signaled_semaphores_update) {
     auto sem_state = sync_state_->Get<vvl::Semaphore>(sem);
     if (!sem_state) return nullptr;  // Semaphore validity is handled by CoreChecks
 
     // When signal state goes out of scope, the signal information will be dropped, as Unsignal has released ownership.
-    auto signal_state = signaled.Unsignal(sem);
+    auto signal_state = signaled_semaphores_update.OnUnsignal(sem);
     if (!signal_state) return nullptr;  // Invalid signal, skip it.
 
     assert(signal_state->batch);
@@ -383,10 +319,10 @@ std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(Vk
     SemaphoreScope wait_scope{GetQueueId(), SyncExecScope::MakeDst(queue_flags, wait_mask)};
 
     const AccessContext& from_context = signal_state->batch->access_context_;
-    if (signal_state->acquired.image) {
+    if (signal_state->acquired_image) {
         // Import the *presenting* batch, but replacing presenting with acquired.
-        ApplyAcquireNextSemaphoreAction apply_acq(wait_scope, signal_state->acquired.acquire_tag);
-        access_context_.ResolveFromContext(apply_acq, from_context, signal_state->acquired.generator);
+        ApplyAcquireNextSemaphoreAction apply_acq(wait_scope, signal_state->acquired_image->acquire_tag);
+        access_context_.ResolveFromContext(apply_acq, from_context, signal_state->acquired_image->generator);
 
         // Grab the reset of the presenting QBC, with no effective barrier, won't overwrite the acquire, as the tag is newer
         SyncBarrier noop_barrier;
@@ -421,10 +357,10 @@ void QueueBatchContext::ImportSyncTags(const QueueBatchContext& from) {
 
 void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext>& prev,
                                            const VkPresentInfoKHR& present_info, const PresentedImages& presented_images,
-                                           SignaledSemaphores& signaled) {
+                                           SignaledSemaphoresUpdate& signaled_semaphores_update) {
     ConstBatchSet batches_resolved;
     for (VkSemaphore sem : vvl::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount)) {
-        std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(sem, presented_images, signaled);
+        std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(sem, presented_images, signaled_semaphores_update);
         if (resolved) {
             batches_resolved.emplace(std::move(resolved));
         }
@@ -489,13 +425,14 @@ void QueueBatchContext::LogAcquireOperation(const PresentedImage& presented, vvl
 }
 
 void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext>& prev, const VkSubmitInfo2& submit_info,
-                                           SignaledSemaphores& signaled) {
+                                           SignaledSemaphoresUpdate& signaled_semaphores_update) {
     // Import (resolve) the batches that are waited on, with the semaphore's effective barriers applied
     ConstBatchSet batches_resolved;
     const uint32_t wait_count = submit_info.waitSemaphoreInfoCount;
     const VkSemaphoreSubmitInfo* wait_infos = submit_info.pWaitSemaphoreInfos;
     for (const auto& wait_info : vvl::make_span(wait_infos, wait_count)) {
-        std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(wait_info.semaphore, wait_info.stageMask, signaled);
+        std::shared_ptr<QueueBatchContext> resolved =
+            ResolveOneWaitSemaphore(wait_info.semaphore, wait_info.stageMask, signaled_semaphores_update);
         if (resolved) {
             batches_resolved.emplace(std::move(resolved));
         }
@@ -712,9 +649,9 @@ struct GetBatchTraits<std::shared_ptr<QueueSyncState>> {
 };
 
 template <>
-struct GetBatchTraits<std::shared_ptr<SignaledSemaphores::Signal>> {
+struct GetBatchTraits<SignalInfo> {
     using Batch = std::shared_ptr<QueueBatchContext>;
-    static Batch Get(const std::shared_ptr<SignaledSemaphores::Signal>& sig) { return sig ? sig->batch : Batch(); }
+    static Batch Get(const SignalInfo& sig) { return sig.batch; }
 };
 
 template <typename BatchSet, typename Map, typename Predicate>
@@ -746,6 +683,7 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueBatchSnapshot() {
         }
         return false;
     };
+
     GetQueueBatchSnapshotImpl<QueueBatchContext::BatchSet>(signaled_semaphores_, append);
     return snapshot;
 }

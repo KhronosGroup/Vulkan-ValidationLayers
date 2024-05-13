@@ -51,15 +51,19 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     vvl::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
     QueueId queue_id_limit_ = kQueueIdBase;
+
     SignaledSemaphores signaled_semaphores_;
 
     using SignaledFences = vvl::unordered_map<VkFence, FenceSyncState>;
-    using SignaledFence = SignaledFences::value_type;
     SignaledFences waitable_fences_;
 
     uint32_t debug_command_number = vvl::kU32Max;
     uint32_t debug_reset_count = 1;
     std::string debug_cmdbuf_pattern;
+
+    // Applies information from update object to signaled_semaphores_.
+    // The update object is mutable to be able to std::move SignalInfo from it.
+    void UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update, const std::shared_ptr<QueueBatchContext> &last_batch);
 
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
