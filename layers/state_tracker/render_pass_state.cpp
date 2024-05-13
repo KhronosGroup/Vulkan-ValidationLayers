@@ -96,13 +96,13 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
     // If no barriers to external are provided for a given subpass, add them.
     for (auto &subpass_dep : subpass_dependencies) {
         const uint32_t pass = subpass_dep.pass;
-        if (subpass_dep.barrier_from_external.size() == 0) {
+        if (subpass_dep.barrier_from_external.empty()) {
             // Add implicit from barrier if they're aren't any
             subpass_dep.implicit_barrier_from_external =
                 std::make_unique<VkSubpassDependency2>(ImplicitDependencyFromExternal(pass));
             subpass_dep.barrier_from_external.emplace_back(subpass_dep.implicit_barrier_from_external.get());
         }
-        if (subpass_dep.barrier_to_external.size() == 0) {
+        if (subpass_dep.barrier_to_external.empty()) {
             // Add implicit to barrier  if they're aren't any
             subpass_dep.implicit_barrier_to_external = std::make_unique<VkSubpassDependency2>(ImplicitDependencyToExternal(pass));
             subpass_dep.barrier_to_external.emplace_back(subpass_dep.implicit_barrier_to_external.get());
@@ -218,7 +218,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                     }
                 }
 
-                if (no_external_transition && (rp->subpass_dependencies[subpass].prev.size() == 0)) {
+                if (no_external_transition && (rp->subpass_dependencies[subpass].prev.empty())) {
                     // This will insert a layout transition when dependencies are missing between first and subsequent use
                     // but is consistent with the idea of an implicit external dependency
                     if (initial_layout != layout) {

@@ -149,7 +149,7 @@ void AccessContext::ResolveFromContext(const AccessContext &from) {
 void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
                                           const ResourceAccessState *infill_state,
                                           const ResourceAccessStateFunction *previous_barrier) const {
-    if (prev_.size() == 0) {
+    if (prev_.empty()) {
         if (range.non_empty() && infill_state) {
             // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
             ResourceAccessState state_copy;

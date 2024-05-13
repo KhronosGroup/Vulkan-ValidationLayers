@@ -1072,7 +1072,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
                                cb_context.GetCurrentAccessContext());
 
     // Validate attachment operations
-    if (attachments_.size() == 0) return skip;
+    if (attachments_.empty()) return skip;
     const auto &render_area = renderpass_begin_info_.renderArea;
 
     // Since the isn't a valid RenderPassAccessContext until Record, needs to create the view/generator list... we could limit this

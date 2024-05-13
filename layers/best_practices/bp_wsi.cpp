@@ -253,7 +253,7 @@ bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapch
                                                        const ErrorObject& error_obj) const {
     auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     bool skip = false;
-    if (swapchain_data && swapchain_data->images.size() == 0) {
+    if (swapchain_data && swapchain_data->images.empty()) {
         skip |= LogWarning(kVUID_BestPractices_DrawState_SwapchainImagesNotFound, swapchain, error_obj.location,
                            "No images found to acquire from. Application probably did not call "
                            "vkGetSwapchainImagesKHR after swapchain creation.");
