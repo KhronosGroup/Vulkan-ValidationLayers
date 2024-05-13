@@ -596,20 +596,9 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
 
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT tf_features = vku::InitStructHelper(&mv_features);
-    auto pd_features = GetPhysicalDeviceFeatures2(tf_features);
-
-    if (!tf_features.transformFeedback) {
-        GTEST_SKIP() << "transformFeedback not supported; skipped.";
-    }
-    if (!mv_features.multiview) {
-        GTEST_SKIP() << "multiview not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &pd_features));
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     uint32_t viewMask = 0x1u;
     VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
