@@ -238,6 +238,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     // Not found in current SPIR-V Headers
     //    {spv::CapabilityClusterCullingShadingHUAWEI, {0, &DeviceFeatures::clustercullingShader, nullptr, ""}},
     {spv::CapabilityRayTracingPositionFetchKHR, {0, &DeviceFeatures::rayTracingPositionFetch, nullptr, ""}},
+    {spv::CapabilityRayQueryPositionFetchKHR, {0, &DeviceFeatures::rayTracingPositionFetch, nullptr, ""}},
     {spv::CapabilityTileImageColorReadAccessEXT, {0, &DeviceFeatures::shaderTileImageColorReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageDepthReadAccessEXT, {0, &DeviceFeatures::shaderTileImageDepthReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageStencilReadAccessEXT, {0, &DeviceFeatures::shaderTileImageStencilReadAccess, nullptr, ""}},
@@ -247,8 +248,6 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityExpectAssumeKHR, {0, &DeviceFeatures::shaderExpectAssume, nullptr, ""}},
     {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
     {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityMaximallyReconvergesKHR, {0, &DeviceFeatures::shaderMaximalReconvergence, nullptr, ""}},
     {spv::CapabilityRawAccessChainsNV, {0, &DeviceFeatures::shaderRawAccessChains, nullptr, ""}},
 };
 // clang-format on
@@ -947,6 +946,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityCoreBuiltinsARM, "VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::shaderCoreBuiltins"},
     {spv::CapabilityShaderInvocationReorderNV, "VK_NV_ray_tracing_invocation_reorder"},
     {spv::CapabilityRayTracingPositionFetchKHR, "VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::rayTracingPositionFetch"},
+    {spv::CapabilityRayQueryPositionFetchKHR, "VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::rayTracingPositionFetch"},
     {spv::CapabilityTileImageColorReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageColorReadAccess"},
     {spv::CapabilityTileImageDepthReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess"},
     {spv::CapabilityTileImageStencilReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess"},
