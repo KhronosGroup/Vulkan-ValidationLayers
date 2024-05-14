@@ -1574,7 +1574,7 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC) {
     vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
         GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
     }
 
     const VkDeviceSize buffer_size = 32;  // enough for 20x10 ASTC_10x10 region
@@ -1609,7 +1609,7 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC2) {
     vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
         GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
     }
 
     const VkDeviceSize buffer_size = 32;  // enough for 10x20 ASTC_10x10 region
@@ -1644,7 +1644,7 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
     vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
         GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
     }
 
     const VkDeviceSize buffer_size = 64;  // enough for 20x20 ASTC_10x10 region
