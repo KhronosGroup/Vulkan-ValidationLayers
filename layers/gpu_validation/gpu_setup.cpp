@@ -198,31 +198,31 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         desc_heap.emplace(*this, num_descs);
     }
 
+    VkBufferCreateInfo output_buffer_create_info = vku::InitStructHelper();
+    output_buffer_create_info.size = output_buffer_byte_size;
+    output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VmaAllocationCreateInfo alloc_create_info = {};
+    alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    uint32_t mem_type_index;
+    VkResult result =
+        vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(device, loc, "Unable to find memory type index");
+        aborted = true;
+        return;
+    }
+    VmaPoolCreateInfo pool_create_info = {};
+    pool_create_info.memoryTypeIndex = mem_type_index;
+    pool_create_info.blockSize = 0;
+    pool_create_info.maxBlockCount = 0;
     if (gpuav_settings.vma_linear_output) {
-        VkBufferCreateInfo output_buffer_create_info = vku::InitStructHelper();
-        output_buffer_create_info.size = output_buffer_byte_size;
-        output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        VmaAllocationCreateInfo alloc_create_info = {};
-        alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        uint32_t mem_type_index;
-        VkResult result =
-            vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc, "Unable to find memory type index");
-            aborted = true;
-            return;
-        }
-        VmaPoolCreateInfo pool_create_info = {};
-        pool_create_info.memoryTypeIndex = mem_type_index;
-        pool_create_info.blockSize = 0;
-        pool_create_info.maxBlockCount = 0;
         pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
-        result = vmaCreatePool(vmaAllocator, &pool_create_info, &output_buffer_pool);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc, "Unable to create VMA memory pool");
-            aborted = true;
-            return;
-        }
+    }
+    result = vmaCreatePool(vmaAllocator, &pool_create_info, &output_buffer_pool);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(device, loc, "Unable to create VMA memory pool");
+        aborted = true;
+        return;
     }
 
     if (gpuav_settings.cache_instrumented_shaders) {
@@ -264,7 +264,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         assert(output_buffer_pool);
         alloc_info.pool = output_buffer_pool;
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        VkResult result =
+        result =
             vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &indices_buffer.buffer, &indices_buffer.allocation, nullptr);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, loc, "Unable to allocate device memory for command indices. Device could become unstable.",
