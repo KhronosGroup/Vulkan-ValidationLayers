@@ -494,6 +494,61 @@ TEST_F(PositiveExternalMemorySync, ExportFromImportedFence) {
         ::CloseHandle(handle2);
     }
 }
+
+TEST_F(PositiveExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/35");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    auto buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    const auto handle_types = FindSupportedExternalMemoryHandleTypes(
+        gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
+    if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT) == 0) {
+        GTEST_SKIP() << "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT is not both exportable and importable";
+    }
+
+    VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
+    external_buffer_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    buffer_info.pNext = &external_buffer_info;
+
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
+
+    VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
+    dedicated_info.buffer = buffer.handle();
+
+    VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper(&dedicated_info);
+    export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
+
+    vkt::DeviceMemory memory_export;
+    memory_export.init(*m_device, alloc_info);
+
+    VkMemoryGetWin32HandleInfoKHR get_handle_info = vku::InitStructHelper();
+    get_handle_info.memory = memory_export.handle();
+    get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    HANDLE handle = NULL;
+    vk::GetMemoryWin32HandleKHR(device(), &get_handle_info, &handle);
+
+    vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
+    dedicated_info.buffer = buffer2.handle();
+
+    VkImportMemoryWin32HandleInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    import_info.handle = handle;
+
+    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer2.memory_requirements(), 0, &import_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
+
+    // "For handle types defined as NT handles, the handles returned by vkGetFenceWin32HandleKHR are owned by the application. To
+    // avoid leaking resources, the application must release ownership of them using the CloseHandle system call when they are no
+    // longer needed."
+    ::CloseHandle(handle);
+}
+
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 TEST_F(PositiveExternalMemorySync, MultipleExportOpaqueFd) {
@@ -516,4 +571,58 @@ TEST_F(PositiveExternalMemorySync, MultipleExportOpaqueFd) {
     int handle = 0;
     semaphore.export_handle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
     semaphore.export_handle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
+}
+
+TEST_F(PositiveExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/35");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
+    external_buffer_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    auto buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    if (!FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT)) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    if (!FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
+        GTEST_SKIP() << "Unable to find importable handle type";
+    }
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT);
+    if ((VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT & compatible_types) == 0) {
+        GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
+    }
+
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
+
+    VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
+    dedicated_info.image = VK_NULL_HANDLE;
+    dedicated_info.buffer = buffer.handle();
+
+    VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper(&dedicated_info);
+    export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
+
+    vkt::DeviceMemory memory_export;
+    memory_export.init(*m_device, alloc_info);
+
+    VkMemoryGetFdInfoKHR mgfi = vku::InitStructHelper();
+    mgfi.memory = memory_export.handle();
+    mgfi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    int fd;
+    vk::GetMemoryFdKHR(device(), &mgfi, &fd);
+
+    vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
+
+    dedicated_info.buffer = buffer2.handle();
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    import_info.fd = fd;
+
+    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer2.memory_requirements(), 0, &import_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
 }

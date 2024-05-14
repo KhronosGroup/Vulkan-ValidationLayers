@@ -219,6 +219,8 @@ class Image : public Bindable {
     void SetInitialLayoutMap();
     void SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout);
 
+    bool CompareCreateInfo(const Image &other) const;
+
   protected:
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 

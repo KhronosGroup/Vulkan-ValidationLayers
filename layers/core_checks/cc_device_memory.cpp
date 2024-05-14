@@ -573,13 +573,19 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                      "is %s but %s (%d) was not created with a dedicated image.",
                                      FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(), import_memory_fd_info->fd);
 
-                } else if (payload_info->dedicated_image != dedicated_image) {
-                    const LogObjectList objlist(payload_info->dedicated_image, dedicated_image);
-                    skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01878", objlist,
-                                     allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
-                                     "is %s but %s (%d) was created with a dedicated image %s.",
-                                     FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(), import_memory_fd_info->fd,
-                                     FormatHandle(payload_info->dedicated_image).c_str());
+                } else {
+                    auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
+                    auto payload_image_state = Get<vvl::Image>(payload_info->dedicated_image);
+                    if (!dedicated_image_state || !payload_image_state ||
+                        !dedicated_image_state->CompareCreateInfo(*payload_image_state)) {
+                        // TODO - Print out info about image creation info
+                        const LogObjectList objlist(payload_info->dedicated_image, dedicated_image);
+                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01878", objlist,
+                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                         "is %s but %s (%d) was created with a dedicated image %s.",
+                                         FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(),
+                                         import_memory_fd_info->fd, FormatHandle(payload_info->dedicated_image).c_str());
+                    }
                 }
             }
             if (dedicated_buffer != VK_NULL_HANDLE) {
@@ -590,13 +596,19 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                  "is %s but %s (%d) was not created with a dedicated buffer.",
                                  FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(), import_memory_fd_info->fd);
 
-                } else if (payload_info->dedicated_buffer != dedicated_buffer) {
-                    const LogObjectList objlist(payload_info->dedicated_buffer, dedicated_buffer);
-                    skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01879", objlist,
-                                     allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
-                                     "is %s but %s (%d) was created with a dedicated buffer %s.",
-                                     FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(), import_memory_fd_info->fd,
-                                     FormatHandle(payload_info->dedicated_buffer).c_str());
+                } else {
+                    auto dedicated_buffer_state = Get<vvl::Buffer>(dedicated_buffer);
+                    auto payload_buffer_state = Get<vvl::Buffer>(payload_info->dedicated_buffer);
+                    if (!dedicated_buffer_state || !payload_buffer_state ||
+                        !dedicated_buffer_state->CompareCreateInfo(*payload_buffer_state)) {
+                        // TODO - Print out info about buffer creation info
+                        const LogObjectList objlist(payload_info->dedicated_buffer, dedicated_buffer);
+                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01879", objlist,
+                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                         "is %s but %s (%d) was created with a dedicated buffer %s.",
+                                         FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(),
+                                         import_memory_fd_info->fd, FormatHandle(payload_info->dedicated_buffer).c_str());
+                    }
                 }
             }
         }
@@ -662,14 +674,20 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                          "is %s but %s (0x%" PRIxPTR ") was not created with a dedicated image.",
                                          FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(),
                                          reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle));
-                    } else if (payload_info->dedicated_image != dedicated_image) {
-                        const LogObjectList objlist(payload_info->dedicated_image, dedicated_image);
-                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01876", objlist,
-                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
-                                         "is %s but %s (0x%" PRIxPTR ") was created with a dedicated image %s.",
-                                         FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(),
-                                         reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
-                                         FormatHandle(payload_info->dedicated_image).c_str());
+                    } else {
+                        auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
+                        auto payload_image_state = Get<vvl::Image>(payload_info->dedicated_image);
+                        if (!dedicated_image_state || !payload_image_state ||
+                            !dedicated_image_state->CompareCreateInfo(*payload_image_state)) {
+                            // TODO - Print out info about image creation info
+                            const LogObjectList objlist(payload_info->dedicated_image, dedicated_image);
+                            skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01876", objlist,
+                                             allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                             "is %s but %s (0x%" PRIxPTR ") was created with a dedicated image %s.",
+                                             FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(),
+                                             reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                             FormatHandle(payload_info->dedicated_image).c_str());
+                        }
                     }
                 }
             }
@@ -688,15 +706,22 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                      reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
                                      string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType));
 
-                    } else if (payload_info->dedicated_buffer != dedicated_buffer) {
-                        const LogObjectList objlist(payload_info->dedicated_buffer, dedicated_buffer);
-                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01877", objlist,
+                    } else {
+                        auto dedicated_buffer_state = Get<vvl::Buffer>(dedicated_buffer);
+                        auto payload_buffer_state = Get<vvl::Buffer>(payload_info->dedicated_buffer);
+                        if (!dedicated_buffer_state || !payload_buffer_state ||
+                            !dedicated_buffer_state->CompareCreateInfo(*payload_buffer_state)) {
+                            // TODO - Print out info about buffer creation info
+                            const LogObjectList objlist(payload_info->dedicated_buffer, dedicated_buffer);
+                            skip |=
+                                LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01877", objlist,
                                          allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
                                          "is %s but %s (0x%" PRIxPTR ") was created with a dedicated buffer %s with handleType %s.",
                                          FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(),
                                          reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
                                          FormatHandle(payload_info->dedicated_buffer).c_str(),
                                          string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType));
+                        }
                     }
                 }
             }

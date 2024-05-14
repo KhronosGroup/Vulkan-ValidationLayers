@@ -2135,6 +2135,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     HANDLE handle = NULL;
     vk::GetMemoryWin32HandleKHR(device(), &get_handle_info, &handle);
 
+    buffer_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
     dedicated_info.buffer = buffer2.handle();
 
@@ -2336,6 +2337,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     int fd;
     vk::GetMemoryFdKHR(device(), &mgfi, &fd);
 
+    buffer_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
 
     dedicated_info.buffer = buffer2.handle();
