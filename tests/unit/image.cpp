@@ -5619,3 +5619,99 @@ TEST_F(NegativeImage, IncompatibleArrayAndSparseFlags) {
     vk::CreateImage(*m_device, &create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImage, ImageAlignmentControlFeature) {
+    AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper();
+    alignment_control.maximumRequestedAlignment = 1;
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.pNext = &alignment_control;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredError("VUID-VkImageAlignmentControlCreateInfoMESA-imageAlignmentControl-09657");
+    vk::CreateImage(*m_device, &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, ImageAlignmentControlPowerOfTwo) {
+    AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageAlignmentControl);
+    RETURN_IF_SKIP(Init());
+
+    VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper();
+    alignment_control.maximumRequestedAlignment = 3;  // non-power of 2
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.pNext = &alignment_control;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09655");
+    // incase not supported
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09656");
+    vk::CreateImage(*m_device, &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, ImageAlignmentControlBitmask) {
+    AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageAlignmentControl);
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t bad_alignment = 0x40000000;
+    VkPhysicalDeviceImageAlignmentControlPropertiesMESA props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if (props.supportedImageAlignmentMask & bad_alignment) {
+        GTEST_SKIP() << "supportedImageAlignmentMask support testing alignment";
+    }
+
+    VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper();
+    alignment_control.maximumRequestedAlignment = bad_alignment;
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.pNext = &alignment_control;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09656");
+    vk::CreateImage(*m_device, &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, ImageAlignmentControlLinear) {
+    AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageAlignmentControl);
+    RETURN_IF_SKIP(Init());
+
+    VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper();
+    alignment_control.maximumRequestedAlignment = 0;  // Should ignore
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.pNext = &alignment_control;
+    VkImage image;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-09653");
+    vk::CreateImage(*m_device, &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, ImageAlignmentControlExternalMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageAlignmentControl);
+    RETURN_IF_SKIP(Init());
+
+    VkExternalMemoryImageCreateInfo external_memory = vku::InitStructHelper();
+    external_memory.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper(&external_memory);
+    alignment_control.maximumRequestedAlignment = 0;  // Should ignore
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.pNext = &alignment_control;
+    VkImage image;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-09654");
+    vk::CreateImage(*m_device, &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
