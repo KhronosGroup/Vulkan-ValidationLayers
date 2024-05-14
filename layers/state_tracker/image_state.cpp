@@ -371,6 +371,35 @@ void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t sw
     bind_swapchain->AddParent(this);
 }
 
+// This function is only used for comparing Imported External Dedicated Memory
+bool Image::CompareCreateInfo(const Image &other) const {
+    bool valid_queue_family = true;
+    if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+        if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
+            valid_queue_family = false;
+        } else {
+            for (uint32_t i = 0; i < create_info.queueFamilyIndexCount; i++) {
+                if (create_info.pQueueFamilyIndices[i] != other.create_info.pQueueFamilyIndices[i]) {
+                    valid_queue_family = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    // There are limitations what actually needs to be compared, so for simplicity (until found otherwise needed), we only need to
+    // check the ExternalHandleType and not other pNext chains
+    const bool valid_external = GetExternalHandleTypes(&create_info) == GetExternalHandleTypes(&other.create_info);
+
+    return (create_info.flags == other.create_info.flags) && (create_info.imageType == other.create_info.imageType) &&
+           (create_info.format == other.create_info.format) && (create_info.extent.width == other.create_info.extent.width) &&
+           (create_info.extent.height == other.create_info.extent.height) &&
+           (create_info.extent.depth == other.create_info.extent.depth) && (create_info.mipLevels == other.create_info.mipLevels) &&
+           (create_info.arrayLayers == other.create_info.arrayLayers) && (create_info.samples == other.create_info.samples) &&
+           (create_info.tiling == other.create_info.tiling) && (create_info.usage == other.create_info.usage) &&
+           (create_info.initialLayout == other.create_info.initialLayout) && valid_queue_family && valid_external;
+}
+
 }  // namespace vvl
 
 static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo *ci) {

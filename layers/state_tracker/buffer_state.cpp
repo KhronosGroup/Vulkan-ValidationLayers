@@ -73,6 +73,31 @@ Buffer::Buffer(ValidationStateTracker &dev_data, VkBuffer handle, const VkBuffer
     }
 }
 
+// This function is only used for comparing Imported External Dedicated Memory
+bool Buffer::CompareCreateInfo(const Buffer &other) const {
+    bool valid_queue_family = true;
+    if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+        if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
+            valid_queue_family = false;
+        } else {
+            for (uint32_t i = 0; i < create_info.queueFamilyIndexCount; i++) {
+                if (create_info.pQueueFamilyIndices[i] != other.create_info.pQueueFamilyIndices[i]) {
+                    valid_queue_family = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    // There are limitations what actually needs to be compared, so for simplicity (until found otherwise needed), we only need to
+    // check the ExternalHandleType and not other pNext chains
+    const bool valid_external = GetExternalHandleTypes(&create_info) == GetExternalHandleTypes(&other.create_info);
+
+    return (create_info.flags == other.create_info.flags) && (create_info.size == other.create_info.size) &&
+           (usage == other.usage) && (create_info.sharingMode == other.create_info.sharingMode) && valid_external &&
+           valid_queue_family;
+}
+
 BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
                        VkFormatFeatureFlags2KHR format_features)
     : StateObject(handle, kVulkanObjectTypeBufferView),
