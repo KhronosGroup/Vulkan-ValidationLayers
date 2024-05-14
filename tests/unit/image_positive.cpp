@@ -1200,3 +1200,35 @@ TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
     ivci.subresourceRange.layerCount = 2;
     vkt::ImageView view(*m_device, ivci);
 }
+
+TEST_F(PositiveImage, ImageAlignmentControl) {
+    AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageAlignmentControl);
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t alignment = 0x1;
+    VkPhysicalDeviceImageAlignmentControlPropertiesMESA props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if (!(props.supportedImageAlignmentMask & alignment)) {
+        GTEST_SKIP() << "supportedImageAlignmentMask doesn't support testing alignment";
+    }
+    VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper();
+    alignment_control.maximumRequestedAlignment = alignment;
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.pNext = &alignment_control;
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+}
+
+TEST_F(PositiveImage, ImageAlignmentControlZero) {
+    AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageAlignmentControl);
+    RETURN_IF_SKIP(Init());
+
+    VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper();
+    alignment_control.maximumRequestedAlignment = 0;  // Should ignore
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.pNext = &alignment_control;
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+}
