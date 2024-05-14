@@ -61,6 +61,8 @@ target_sources(VkLayer_utils PRIVATE
     utils/ray_tracing_utils.h
     utils/vk_layer_utils.cpp
     utils/vk_layer_utils.h
+    utils/vk_struct_compare.cpp
+    utils/vk_struct_compare.h
     vk_layer_config.h
     vk_layer_config.cpp
 )
