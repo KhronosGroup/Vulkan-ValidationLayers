@@ -125,6 +125,48 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
     return skip;
 }
 
+bool CoreChecks::ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo &create_info,
+                                                         const Location &create_info_loc) const {
+    bool skip = false;
+    const auto alignment_control_create_info =
+        vku::FindStructInPNextChain<VkImageAlignmentControlCreateInfoMESA>(create_info.pNext);
+    if (!alignment_control_create_info) {
+        return skip;
+    }
+
+    if (!enabled_features.imageAlignmentControl) {
+        skip |= LogError(
+            "VUID-VkImageAlignmentControlCreateInfoMESA-imageAlignmentControl-09657", device, create_info_loc.dot(Field::pNext),
+            "contains a VkImageAlignmentControlCreateInfoMESA struct but the imageAlignmentControl feature was not enabled.");
+    }
+
+    if (vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info.pNext)) {
+        skip |= LogError("VUID-VkImageCreateInfo-pNext-09654", device, create_info_loc.dot(Field::pNext),
+                         "contains both a VkImageAlignmentControlCreateInfoMESA and VkExternalMemoryImageCreateInfo struct.");
+    }
+
+    if (create_info.tiling != VK_IMAGE_TILING_OPTIMAL) {
+        skip |= LogError("VUID-VkImageCreateInfo-pNext-09653", device, create_info_loc.dot(Field::tiling),
+                         "is %s but needs to be VK_IMAGE_TILING_OPTIMAL", string_VkImageTiling(create_info.tiling));
+    }
+
+    if (alignment_control_create_info->maximumRequestedAlignment != 0) {
+        if (!IsPowerOfTwo(alignment_control_create_info->maximumRequestedAlignment)) {
+            skip |= LogError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09655", device,
+                             create_info_loc.pNext(Struct::VkImageAlignmentControlCreateInfoMESA, Field::maximumRequestedAlignment),
+                             "(%" PRIu32 ") must be a power of two.", alignment_control_create_info->maximumRequestedAlignment);
+        } else if ((alignment_control_create_info->maximumRequestedAlignment &
+                    phys_dev_ext_props.image_alignment_control_props.supportedImageAlignmentMask) == 0) {
+            skip |= LogError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09656", device,
+                             create_info_loc.pNext(Struct::VkImageAlignmentControlCreateInfoMESA, Field::maximumRequestedAlignment),
+                             "(0x%" PRIx32 ") and supportedImageAlignmentMask (0x%" PRIx32 ") don't share any bits.",
+                             alignment_control_create_info->maximumRequestedAlignment,
+                             phys_dev_ext_props.image_alignment_control_props.supportedImageAlignmentMask);
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkImage *pImage,
                                             const ErrorObject &error_obj) const {
@@ -535,6 +577,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     skip |= ValidateImageFormatFeatures(*pCreateInfo, create_info_loc);
+    skip |= ValidateImageAlignmentControlCreateInfo(*pCreateInfo, create_info_loc);
 
     // Check compatibility with VK_KHR_portability_subset
     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {

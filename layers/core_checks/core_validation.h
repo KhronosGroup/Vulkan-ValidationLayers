@@ -727,6 +727,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc) const;
 
+    bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
+
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkImage* pImage, const ErrorObject& error_obj) const override;
 
