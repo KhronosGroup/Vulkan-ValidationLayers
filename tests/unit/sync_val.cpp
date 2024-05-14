@@ -4636,6 +4636,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
+    all_queue_count_ = true;
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -4720,6 +4721,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
 }
 
 TEST_F(NegativeSyncVal, QSBufferEvents) {
+    all_queue_count_ = true;
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -4823,6 +4825,7 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
 }
 
 TEST_F(NegativeSyncVal, QSOBarrierHazard) {
+    all_queue_count_ = true;
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
