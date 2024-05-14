@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include "utils/vk_struct_compare.h"
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
@@ -430,52 +431,6 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
     }
 
     return skip;
-}
-
-// Using memcmp will fail sometimes as the alignment/padding in the struct can have undefined values, so because we can't ensure the
-// memory was zero-intialized, we need to just do a normal compare on each member
-static bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo &a,
-                                                      const VkPipelineMultisampleStateCreateInfo &b) {
-    bool valid_mask = true;
-    if (a.pSampleMask && b.pSampleMask && (a.rasterizationSamples == b.rasterizationSamples)) {
-        uint32_t length = (SampleCountSize(a.rasterizationSamples) + 31) / 32;
-        for (uint32_t i = 0; i < length; i++) {
-            if (a.pSampleMask[i] != b.pSampleMask[i]) {
-                valid_mask = false;
-                break;
-            }
-        }
-    } else if (a.pSampleMask || b.pSampleMask) {
-        valid_mask = false;  // one is not null
-    }
-
-    // TODO - to do a deep pNext chain check would require us generating these compare functions for all structs
-    // For now, just check if pNext both null or not
-    const bool valid_pNext = (a.pNext && b.pNext) || (a.pNext == b.pNext);
-
-    return (a.sType == b.sType) && (valid_pNext) && (a.flags == b.flags) && (a.rasterizationSamples == b.rasterizationSamples) &&
-           (a.sampleShadingEnable == b.sampleShadingEnable) && (a.minSampleShading == b.minSampleShading) && (valid_mask) &&
-           (a.alphaToCoverageEnable == b.alphaToCoverageEnable) && (a.alphaToOneEnable == b.alphaToOneEnable);
-}
-
-static bool CompareDescriptorSetLayoutBinding(const VkDescriptorSetLayoutBinding &a, const VkDescriptorSetLayoutBinding &b) {
-    return (a.binding == b.binding) && (a.descriptorType == b.descriptorType) && (a.descriptorCount == b.descriptorCount) &&
-           (a.stageFlags == b.stageFlags) && (a.pImmutableSamplers == b.pImmutableSamplers);
-}
-
-static bool ComparePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState &a,
-                                                     const VkPipelineColorBlendAttachmentState &b) {
-    return (a.blendEnable == b.blendEnable) && (a.srcColorBlendFactor == b.srcColorBlendFactor) &&
-           (a.dstColorBlendFactor == b.dstColorBlendFactor) && (a.colorBlendOp == b.colorBlendOp) &&
-           (a.srcAlphaBlendFactor == b.srcAlphaBlendFactor) && (a.dstAlphaBlendFactor == b.dstAlphaBlendFactor) &&
-           (a.alphaBlendOp == b.alphaBlendOp) && (a.colorWriteMask == b.colorWriteMask);
-}
-
-static bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentShadingRateStateCreateInfoKHR &a,
-                                                              const VkPipelineFragmentShadingRateStateCreateInfoKHR &b) {
-    // Since this is chained in a pnext, we don't want to check the pNext/sType
-    return (a.fragmentSize.width == b.fragmentSize.width) && (a.fragmentSize.height == b.fragmentSize.height) &&
-           (a.combinerOps[0] == b.combinerOps[0]) && (a.combinerOps[1] == b.combinerOps[1]);
 }
 
 // vkspec.html#pipelines-graphics-subsets-vertex-input

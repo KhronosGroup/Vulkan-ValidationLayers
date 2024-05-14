@@ -366,6 +366,8 @@ vvl_sources = [
   "layers/utils/vk_layer_extension_utils.h",
   "layers/utils/vk_layer_utils.cpp",
   "layers/utils/vk_layer_utils.h",
+  "layers/utils/vk_struct_compare.cpp",
+  "layers/utils/vk_struct_compare.h",
   "layers/vk_layer_config.cpp",
   "layers/vk_layer_config.h",
   "layers/vulkan/generated/error_location_helper.cpp",
