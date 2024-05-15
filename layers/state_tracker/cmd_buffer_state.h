@@ -199,6 +199,10 @@ class CommandBuffer : public RefcountedStateObject {
     struct DynamicStateStatus {
         CBDynamicFlags cb;        // for lifetime of CommandBuffer
         CBDynamicFlags pipeline;  // for lifetime since last bound pipeline
+
+        // There is currently only a single non-graphics dynamic state, for now manage manually to save memory
+        bool rtx_stack_size_cb;        // for lifetime of CommandBuffer
+        bool rtx_stack_size_pipeline;  // for lifetime since last bound pipeline
     } dynamic_state_status;
 
     // These are values that are being set with vkCmdSet* tied to a command buffer
