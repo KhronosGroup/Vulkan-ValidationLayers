@@ -4507,47 +4507,56 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 
             if (enabled_features.fragmentDensityMap) {
                 const auto *fdm_attachment = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
-                if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                    uint32_t ceiling_width = vvl::GetQuotientCeil(
-                        pCreateInfo->width, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
-                    if (mip_width < ceiling_width) {
+                if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
+                    if (fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
+                        uint32_t ceiling_width = vvl::GetQuotientCeil(
+                            pCreateInfo->width, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
+                        if (mip_width < ceiling_width) {
+                            LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-02555", objlist, attachment_loc,
+                                             "mip level %" PRIu32
+                                             " has width "
+                                             "smaller than the corresponding the ceiling of framebuffer width / "
+                                             "maxFragmentDensityTexelSize.width "
+                                             "Here are the respective dimensions for attachment #%" PRIu32
+                                             ", the ceiling value:\n "
+                                             "attachment #%" PRIu32
+                                             ", framebuffer:\n"
+                                             "width: %" PRIu32 ", the ceiling value: %" PRIu32 "\n",
+                                             subresource_range.baseMipLevel, i, i, mip_width, ceiling_width);
+                        }
+                        uint32_t ceiling_height = vvl::GetQuotientCeil(
+                            pCreateInfo->height, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
+                        if (mip_height < ceiling_height) {
+                            LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-02556", objlist, attachment_loc,
+                                             "mip level %" PRIu32
+                                             " has height smaller than the corresponding the ceiling of framebuffer height / "
+                                             "maxFragmentDensityTexelSize.height "
+                                             "Here are the respective dimensions for attachment #%" PRIu32
+                                             ", the ceiling value:\n "
+                                             "attachment #%" PRIu32
+                                             ", framebuffer:\n"
+                                             "height: %" PRIu32 ", the ceiling value: %" PRIu32 "\n",
+                                             subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
+                        }
+                        if (view_state->normalized_subresource_range.layerCount != 1 &&
+                            !IsExtEnabled(device_extensions.vk_khr_multiview)) {
+                            LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
+                                             "is referenced by "
+                                             "VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment in "
+                                             "the pNext chain, but it was create with subresourceRange.layerCount (%" PRIu32
+                                             ") different from 1.",
+                                             view_state->normalized_subresource_range.layerCount);
+                        }
+                    } else if (!enabled_features.fragmentDensityMapNonSubsampledImages &&
+                               (ici.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) == 0) {
                         LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
-                        skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-02555", objlist, attachment_loc,
-                                         "mip level %" PRIu32
-                                         " has width "
-                                         "smaller than the corresponding the ceiling of framebuffer width / "
-                                         "maxFragmentDensityTexelSize.width "
-                                         "Here are the respective dimensions for attachment #%" PRIu32
-                                         ", the ceiling value:\n "
-                                         "attachment #%" PRIu32
-                                         ", framebuffer:\n"
-                                         "width: %" PRIu32 ", the ceiling value: %" PRIu32 "\n",
-                                         subresource_range.baseMipLevel, i, i, mip_width, ceiling_width);
-                    }
-                    uint32_t ceiling_height = vvl::GetQuotientCeil(
-                        pCreateInfo->height, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
-                    if (mip_height < ceiling_height) {
-                        LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
-                        skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-02556", objlist, attachment_loc,
-                                         "mip level %" PRIu32
-                                         " has height smaller than the corresponding the ceiling of framebuffer height / "
-                                         "maxFragmentDensityTexelSize.height "
-                                         "Here are the respective dimensions for attachment #%" PRIu32
-                                         ", the ceiling value:\n "
-                                         "attachment #%" PRIu32
-                                         ", framebuffer:\n"
-                                         "height: %" PRIu32 ", the ceiling value: %" PRIu32 "\n",
-                                         subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
-                    }
-                    if (view_state->normalized_subresource_range.layerCount != 1 &&
-                        !IsExtEnabled(device_extensions.vk_khr_multiview)) {
-                        LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
-                        skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
-                                         "is referenced by "
-                                         "VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment in "
-                                         "the pNext chain, but it was create with subresourceRange.layerCount (%" PRIu32
-                                         ") different from 1.",
-                                         view_state->normalized_subresource_range.layerCount);
+                        skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02553", objlist, attachment_loc,
+                                         "is not created with flag value "
+                                         "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT and "
+                                         "fragmentDensityMapNonSubsampledImages is not enabled");
                     }
                 }
             }
