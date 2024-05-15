@@ -31,7 +31,8 @@
 bool CoreChecks::ValidateDynamicStateIsSet(CBDynamicFlags state_status_cb, CBDynamicState dynamic_state,
                                            const LogObjectList& objlist, const Location& loc, const char* vuid) const {
     if (!state_status_cb[dynamic_state]) {
-        return LogError(vuid, objlist, loc, "%s state not set for this command buffer.", DynamicStateToString(dynamic_state));
+        return LogError(vuid, objlist, loc, "%s state is dynamic, but the command buffer never called %s.",
+                        DynamicStateToString(dynamic_state), DescribeDynamicStateCommand(dynamic_state).c_str());
     }
     return false;
 }

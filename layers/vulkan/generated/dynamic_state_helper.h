@@ -107,4 +107,6 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state);
 const char* DynamicStateToString(CBDynamicState dynamic_state);
 std::string DynamicStatesToString(CBDynamicFlags const& dynamic_states);
 
+std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state);
+
 // NOLINTEND
