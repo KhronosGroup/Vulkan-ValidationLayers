@@ -1467,3 +1467,82 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOneQueueSubmit) {
     vk::QueueSubmit2(*m_default_queue, 2, submits, VK_NULL_HANDLE);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncVal, SignalUnsignalSignalMultipleSubmits) {
+    TEST_DESCRIPTION("Create a sequence that at some point unsignals and then signals a semaphore through separate submit calls");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Semaphore semaphore(*m_device);
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.end();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.begin();
+    command_buffer2.Copy(buffer_a, buffer_b);
+    command_buffer2.end();
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::signal, semaphore);
+    m_default_queue->Submit2(m_command_buffer, semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, semaphore,
+                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_default_queue->Submit2(command_buffer2, vkt::wait, semaphore);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncVal, SignalUnsignalSignalSingleSubmit) {
+    TEST_DESCRIPTION("Create a sequence that at some point unsignals and then signals a semaphore using a single submit call");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Semaphore semaphore(*m_device);
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.end();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.begin();
+    command_buffer2.Copy(buffer_a, buffer_b);
+    command_buffer2.end();
+
+    VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.semaphore = semaphore;
+    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkCommandBufferSubmitInfo cmd_info = vku::InitStructHelper();
+    cmd_info.commandBuffer = m_command_buffer.handle();
+
+    VkCommandBufferSubmitInfo cmd_info2 = vku::InitStructHelper();
+    cmd_info2.commandBuffer = command_buffer2.handle();
+
+    VkSubmitInfo2 submits[3];
+    submits[0] = vku::InitStructHelper();
+    submits[0].signalSemaphoreInfoCount = 1;
+    submits[0].pSignalSemaphoreInfos = &semaphore_info;
+
+    submits[1] = vku::InitStructHelper();
+    submits[1].waitSemaphoreInfoCount = 1;
+    submits[1].pWaitSemaphoreInfos = &semaphore_info;
+    submits[1].commandBufferInfoCount = 1;
+    submits[1].pCommandBufferInfos = &cmd_info;
+    submits[1].signalSemaphoreInfoCount = 1;
+    submits[1].pSignalSemaphoreInfos = &semaphore_info;
+
+    submits[2] = vku::InitStructHelper();
+    submits[2].waitSemaphoreInfoCount = 1;
+    submits[2].pWaitSemaphoreInfos = &semaphore_info;
+    submits[2].commandBufferInfoCount = 1;
+    submits[2].pCommandBufferInfos = &cmd_info2;
+
+    vk::QueueSubmit2(*m_default_queue, 3, submits, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+}
