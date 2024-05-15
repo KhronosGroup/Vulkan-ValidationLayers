@@ -84,8 +84,8 @@ class CoreChecks : public ValidationStateTracker {
                                      const Location& submit_loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkBindSparseInfo& submit,
                                      const Location& submit_loc) const;
-    bool ValidateDynamicStateIsSet(CBDynamicFlags not_set_status, CBDynamicState dynamic_state, const LogObjectList& objlist,
-                                   const Location& loc, const char* vuid) const;
+    bool ValidateDynamicStateIsSet(const CBDynamicFlags& state_status_cb, CBDynamicState dynamic_state,
+                                   const LogObjectList& objlist, const Location& loc, const char* vuid) const;
     bool ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicState(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const Location& loc) const;

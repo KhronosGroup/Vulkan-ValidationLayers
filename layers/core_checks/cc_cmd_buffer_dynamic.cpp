@@ -28,7 +28,7 @@
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_module.h"
 
-bool CoreChecks::ValidateDynamicStateIsSet(CBDynamicFlags state_status_cb, CBDynamicState dynamic_state,
+bool CoreChecks::ValidateDynamicStateIsSet(const CBDynamicFlags& state_status_cb, CBDynamicState dynamic_state,
                                            const LogObjectList& objlist, const Location& loc, const char* vuid) const {
     if (!state_status_cb[dynamic_state]) {
         return LogError(vuid, objlist, loc, "%s state is dynamic, but the command buffer never called %s.",
