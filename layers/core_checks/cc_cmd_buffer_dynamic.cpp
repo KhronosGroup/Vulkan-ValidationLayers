@@ -50,8 +50,9 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
     if (unset_status_pipeline.any()) {
         skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, loc,
-                         "%s doesn't set up %s, but it calls the related dynamic state setting commands.",
-                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str());
+                         "%s doesn't set up %s, but it calls the related dynamic state setting commands (%s).",
+                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
+                         DynamicStatesCommandsToString(unset_status_pipeline).c_str());
     }
 
     // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer
@@ -1670,8 +1671,9 @@ bool CoreChecks::ValidateRayTracingDynamicStateSetStatus(const LastBound& last_b
         (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
     if (unset_status_pipeline.any()) {
         skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, loc,
-                         "%s doesn't set up %s, but it calls the related dynamic state setting commands.",
-                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str());
+                         "%s doesn't set up %s, but it calls the related dynamic state setting commands (%s).",
+                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
+                         DynamicStatesCommandsToString(unset_status_pipeline).c_str());
     }
 
     // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer

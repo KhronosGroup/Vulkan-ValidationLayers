@@ -300,6 +300,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
             CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state);
             const char* DynamicStateToString(CBDynamicState dynamic_state);
             std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states);
+            std::string DynamicStatesCommandsToString(CBDynamicFlags const &dynamic_states);
 
             std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state);
             ''')
@@ -356,7 +357,21 @@ class DynamicStateOutputGenerator(BaseGenerator):
                         ret.append(string_VkDynamicState(ConvertToDynamicState(status)));
                     }
                 }
-                if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(CB_DYNAMIC_STATE_STATUS_NUM)));
+                if (ret.empty()) ret.append("(Unknown Dynamic State)");
+                return ret;
+            }
+
+            std::string DynamicStatesCommandsToString(CBDynamicFlags const& dynamic_states) {
+                std::string ret;
+                // enum is not zero based
+                for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
+                    CBDynamicState status = static_cast<CBDynamicState>(index);
+                    if (dynamic_states[status]) {
+                        if (!ret.empty()) ret.append(", ");
+                        ret.append(DescribeDynamicStateCommand(status));
+                    }
+                }
+                if (ret.empty()) ret.append("(Unknown Dynamic State)");
                 return ret;
             }
             ''')
