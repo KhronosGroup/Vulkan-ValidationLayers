@@ -371,7 +371,6 @@ void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t sw
     bind_swapchain->AddParent(this);
 }
 
-// This function is only used for comparing Imported External Dedicated Memory
 bool Image::CompareCreateInfo(const Image &other) const {
     bool valid_queue_family = true;
     if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {

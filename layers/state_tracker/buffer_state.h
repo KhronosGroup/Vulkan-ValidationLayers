@@ -69,6 +69,7 @@ class Buffer : public Bindable {
         return {deviceAddress, deviceAddress + create_info.size};
     }
 
+    // This function is only used for comparing Imported External Dedicated Memory
     bool CompareCreateInfo(const Buffer &other) const;
 
   private:
