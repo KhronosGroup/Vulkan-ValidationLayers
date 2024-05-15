@@ -1444,19 +1444,18 @@ void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImage
 void CommandBuffer::RecordCmd(Func command) { command_count++; }
 
 void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
-    CBDynamicFlags state_bits;
-    state_bits.set(state);
-    RecordStateCmd(command, state_bits);
+    RecordCmd(command);
+    RecordDynamicState(state);
+
     vvl::Pipeline *pipeline = GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline && !pipeline->IsDynamic(ConvertToDynamicState(state))) {
         dirtyStaticState = true;
     }
 }
 
-void CommandBuffer::RecordStateCmd(Func command, CBDynamicFlags const &state_bits) {
-    RecordCmd(command);
-    dynamic_state_status.cb |= state_bits;
-    dynamic_state_status.pipeline |= state_bits;
+void CommandBuffer::RecordDynamicState(CBDynamicState state) {
+    dynamic_state_status.cb.set(state);
+    dynamic_state_status.pipeline.set(state);
 }
 
 void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2) {
