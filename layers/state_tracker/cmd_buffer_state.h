@@ -606,7 +606,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     virtual void RecordCmd(Func command);
     void RecordStateCmd(Func command, CBDynamicState dynamic_state);
-    void RecordStateCmd(Func command, CBDynamicFlags const &state_bits);
+    void RecordDynamicState(CBDynamicState dynamic_state);
     void RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2 = nullptr);
     void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
