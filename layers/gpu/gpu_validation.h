@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include "gpu_validation/gpu_shader_instrumentor.h"
-#include "gpu_validation/gpu_error_message.h"
-#include "gpu_validation/gpu_descriptor_set.h"
-#include "gpu_validation/gpu_resources.h"
+#include "gpu/gpu_shader_instrumentor.h"
+#include "gpu/gpu_error_message.h"
+#include "gpu/gpu_descriptor_set.h"
+#include "gpu/gpu_resources.h"
 
 #include <typeinfo>
 #include <unordered_map>
@@ -33,7 +33,6 @@ struct ShaderObject;
 }  // namespace chassis
 
 namespace gpuav {
-class AccelerationStructureKHR;
 class Buffer;
 class BufferView;
 class CommandBuffer;
@@ -73,7 +72,6 @@ struct GpuVuid {
 };
 }  // namespace gpuav
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureKHR, gpuav::AccelerationStructureKHR, vvl::AccelerationStructureKHR)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, vvl::BufferView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, vvl::CommandBuffer)
@@ -131,6 +129,22 @@ class Validator : public GpuShaderInstrumentor {
     // Allocate memory for the output block that the gpu will use to return any error information
     [[nodiscard]] bool AllocateOutputMem(DeviceMemoryBlock& output_mem, const Location& loc);
 
+  private:
+    void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
+                               const Location& loc);
+
+    using TypeInfoRef = std::reference_wrapper<const std::type_info>;
+    struct Hasher {
+        std::size_t operator()(TypeInfoRef code) const { return code.get().hash_code(); }
+    };
+    struct EqualTo {
+        bool operator()(TypeInfoRef lhs, TypeInfoRef rhs) const { return lhs.get() == rhs.get(); }
+    };
+    std::unordered_map<TypeInfoRef, std::unique_ptr<SharedValidationResources>, Hasher, EqualTo> shared_validation_resources_map;
+
+    // cmd/ folder
+    // -----------
+  public:
     [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDrawIndirectValidationResources(
         const Location& loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset,
         uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
@@ -158,18 +172,6 @@ class Validator : public GpuShaderInstrumentor {
                                                                                   const Location& loc);
     PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources(
         VkDescriptorSetLayout error_output_set_layout, const Location& loc);
-
-    void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
-                               const Location& loc);
-
-    using TypeInfoRef = std::reference_wrapper<const std::type_info>;
-    struct Hasher {
-        std::size_t operator()(TypeInfoRef code) const { return code.get().hash_code(); }
-    };
-    struct EqualTo {
-        bool operator()(TypeInfoRef lhs, TypeInfoRef rhs) const { return lhs.get() == rhs.get(); }
-    };
-    std::unordered_map<TypeInfoRef, std::unique_ptr<SharedValidationResources>, Hasher, EqualTo> shared_validation_resources_map;
 
     // gpu_error_message.cpp
     // ---------------------

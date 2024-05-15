@@ -16,8 +16,8 @@
  */
 #pragma once
 #include "generated/chassis.h"
-#include "gpu_validation/gpu_resources.h"
-#include "gpu_validation/gpu_state_tracker.h"
+#include "gpu/gpu_resources.h"
+#include "gpu/gpu_state_tracker.h"
 #include "vma/vma.h"
 
 class DescriptorSetManager {
@@ -182,7 +182,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     VmaPool output_buffer_pool = VK_NULL_HANDLE;
     std::unique_ptr<DescriptorSetManager> desc_set_manager;
     vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
-    std::vector<VkDescriptorSetLayoutBinding> validation_bindings_;
+    std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
 
     gpuav::DeviceMemoryBlock indices_buffer{};
 

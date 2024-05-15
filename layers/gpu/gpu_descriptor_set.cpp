@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include "gpu_validation/gpu_descriptor_set.h"
-#include "gpu_validation/gpu_validation.h"
-#include "gpu_validation/gpu_subclasses.h"
+#include "gpu/gpu_descriptor_set.h"
+#include "gpu/gpu_validation.h"
+#include "gpu/gpu_subclasses.h"
 #include "gpu_shaders/gpu_shaders_constants.h"
 
 using vvl::DescriptorClass;

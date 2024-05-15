@@ -23,7 +23,7 @@ target_sources(instrumentation PRIVATE
 target_include_directories(instrumentation PRIVATE
     ${CMAKE_SOURCE_DIR}/layers
     ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}
-    ${CMAKE_SOURCE_DIR}/layers/gpu_validation/spirv)
+    ${CMAKE_SOURCE_DIR}/layers/gpu/spirv)
 
 target_link_libraries(instrumentation PRIVATE
     SPIRV-Headers::SPIRV-Headers
