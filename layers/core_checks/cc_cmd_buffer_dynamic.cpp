@@ -50,7 +50,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
     if (unset_status_pipeline.any()) {
         skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, loc,
-                         "%s doesn't set up %s, but it calls the related dynamic state setting commands (%s).",
+                         "%s doesn't set up %s, but since the vkCmdBindPipeline, the related dynamic state commands (%s) have been "
+                         "called in this command buffer.",
                          FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
                          DynamicStatesCommandsToString(unset_status_pipeline).c_str());
     }
@@ -1664,24 +1665,25 @@ bool CoreChecks::ValidateRayTracingDynamicStateSetStatus(const LastBound& last_b
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
-    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
-    // Verify vkCmdSet* calls since last bound pipeline
-    const CBDynamicFlags unset_status_pipeline =
-        (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
-    if (unset_status_pipeline.any()) {
-        skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, loc,
-                         "%s doesn't set up %s, but it calls the related dynamic state setting commands (%s).",
-                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
-                         DynamicStatesCommandsToString(unset_status_pipeline).c_str());
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
+        if (!cb_state.dynamic_state_status.rtx_stack_size_cb) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+            skip |= LogError(vuid.ray_tracing_pipeline_stack_size_09458, objlist, loc,
+                             "VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR state is dynamic, but the command buffer never "
+                             "called vkCmdSetRayTracingPipelineStackSizeKHR().");
+        }
+    } else {
+        if (cb_state.dynamic_state_status.rtx_stack_size_pipeline) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+            skip |= LogError(
+                vuid.dynamic_state_setting_commands_08608, objlist, loc,
+                "%s doesn't set up VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR,  but since the vkCmdBindPipeline, the "
+                "related dynamic state commands (vkCmdSetRayTracingPipelineStackSizeKHR) have been called in this command buffer.",
+                FormatHandle(pipeline).c_str());
+        }
     }
 
-    // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer
-    const CBDynamicFlags state_status_cb = ~((cb_state.dynamic_state_status.cb ^ pipeline.dynamic_state) & pipeline.dynamic_state);
-
-    // VK_KHR_ray_tracing_pipeline
-    skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR, objlist, loc,
-                                      vuid.ray_tracing_pipeline_stack_size_09458);
     return skip;
 }
 

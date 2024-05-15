@@ -204,6 +204,8 @@ void CommandBuffer::ResetCBState() {
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
+    dynamic_state_status.rtx_stack_size_cb = false;
+    dynamic_state_status.rtx_stack_size_pipeline = false;
     dynamic_state_value.reset();
     inheritedViewportDepths.clear();
     usedViewportScissorCount = 0;
@@ -1721,6 +1723,8 @@ void CommandBuffer::UnbindResources() {
     // Index buffer included
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
+    dynamic_state_status.rtx_stack_size_cb = false;
+    dynamic_state_status.rtx_stack_size_pipeline = false;
 
     // Pipeline and descriptor sets
     lastBound[BindPoint_Graphics].Reset();

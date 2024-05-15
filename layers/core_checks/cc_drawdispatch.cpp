@@ -1531,7 +1531,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         if (cb_state.activeFramebuffer && has_last_pipeline) {
             skip |= ValidateCmdDrawFramebuffer(cb_state, *last_pipeline, vuid, loc);
         }
-    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR || bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         skip |= ValidateRayTracingDynamicStateSetStatus(last_bound_state, loc);
         if (!cb_state.unprotected) {
             skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.GetObjectList(bind_point), loc,

@@ -2303,7 +2303,10 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
+    } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        cb_state->dynamic_state_status.rtx_stack_size_pipeline = false;
     }
+
     cb_state->BindPipeline(ConvertToLvlBindPoint(pipelineBindPoint), pipe_state.get());
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipe_state);
@@ -5209,7 +5212,10 @@ void ValidationStateTracker::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(
                                                                                 uint32_t pipelineStackSize,
                                                                                 const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
+    cb_state->RecordCmd(record_obj.location.function);
+    // CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
+    cb_state->dynamic_state_status.rtx_stack_size_cb = true;
+    cb_state->dynamic_state_status.rtx_stack_size_pipeline = true;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
