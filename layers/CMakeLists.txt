@@ -111,7 +111,7 @@ elseif(MSVC)
     )
 endif()
 
-add_subdirectory(gpu_validation/spirv)
+add_subdirectory(gpu/spirv)
 
 if(IOS)
     add_library(vvl SHARED)
@@ -218,28 +218,32 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/gpu_pre_draw_vert.cpp
     ${API_TYPE}/generated/gpu_pre_trace_rays_rgen.h
     ${API_TYPE}/generated/gpu_pre_trace_rays_rgen.cpp
-    gpu_validation/debug_printf.cpp
-    gpu_validation/debug_printf.h
-    gpu_validation/gpu_constants.h
-    gpu_validation/gpu_descriptor_set.cpp
-    gpu_validation/gpu_descriptor_set.h
-    gpu_validation/gpu_error_message.cpp
-    gpu_validation/gpu_error_message.h
-    gpu_validation/gpu_image_layout.cpp
-    gpu_validation/gpu_shader_instrumentor.cpp
-    gpu_validation/gpu_shader_instrumentor.h
-    gpu_validation/gpu_state_tracker.cpp
-    gpu_validation/gpu_state_tracker.h
-    gpu_validation/gpu_subclasses.cpp
-    gpu_validation/gpu_subclasses.h
-    gpu_validation/gpu_record.cpp
-    gpu_validation/gpu_resources.h
-    gpu_validation/gpu_settings.h
-    gpu_validation/gpu_setup.cpp
-    gpu_validation/gpu_validation.cpp
-    gpu_validation/gpu_validation.h
-    gpu_validation/gpu_vuids.cpp
-    gpu_validation/gpu_vuids.h
+    gpu/debug_printf.cpp
+    gpu/debug_printf.h
+    gpu/gpu_constants.h
+    gpu/gpu_descriptor_set.cpp
+    gpu/gpu_descriptor_set.h
+    gpu/gpu_error_message.cpp
+    gpu/gpu_error_message.h
+    gpu/gpu_image_layout.cpp
+    gpu/gpu_shader_instrumentor.cpp
+    gpu/gpu_shader_instrumentor.h
+    gpu/gpu_state_tracker.cpp
+    gpu/gpu_state_tracker.h
+    gpu/gpu_subclasses.cpp
+    gpu/gpu_subclasses.h
+    gpu/gpu_record.cpp
+    gpu/gpu_resources.h
+    gpu/gpu_settings.h
+    gpu/gpu_setup.cpp
+    gpu/gpu_validation.cpp
+    gpu/cmd/draw_validation.cpp
+    gpu/cmd/dispatch_validation.cpp
+    gpu/cmd/trace_rays_validation.cpp
+    gpu/cmd/copy_validation.cpp
+    gpu/gpu_validation.h
+    gpu/gpu_vuids.cpp
+    gpu/gpu_vuids.h
     gpu_shaders/gpu_error_codes.h
     gpu_shaders/gpu_error_header.h
     gpu_shaders/gpu_shaders_constants.h

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#include "gpu_validation/gpu_shader_instrumentor.h"
-#include "gpu_validation/gpu_state_tracker.h"
+#include "gpu/gpu_shader_instrumentor.h"
+#include "gpu/gpu_state_tracker.h"
 #include "chassis/chassis_modification_state.h"
 
 // Implementation for Descriptor Set Manager class
@@ -400,11 +400,11 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
         return;
     }
 
-    desc_set_manager = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(validation_bindings_.size()));
+    desc_set_manager = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
 
     const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, 0,
-                                                                    static_cast<uint32_t>(validation_bindings_.size()),
-                                                                    validation_bindings_.data()};
+                                                                    static_cast<uint32_t>(instrumentation_bindings_.size()),
+                                                                    instrumentation_bindings_.data()};
 
     result = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, nullptr, &debug_desc_layout_);
     if (result != VK_SUCCESS) {

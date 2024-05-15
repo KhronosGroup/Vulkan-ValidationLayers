@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "gpu_validation/debug_printf.h"
+#include "gpu/debug_printf.h"
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
 #include "generated/layer_chassis_dispatch.h"
@@ -45,7 +45,7 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
     VkDescriptorSetLayoutBinding binding = {kDebugOutputPrintfStream, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                             kShaderStageAllGraphics | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing,
                                             nullptr};
-    validation_bindings_.push_back(binding);
+    instrumentation_bindings_.push_back(binding);
 
     BaseClass::CreateDevice(pCreateInfo, loc);  // will set up bindings
 

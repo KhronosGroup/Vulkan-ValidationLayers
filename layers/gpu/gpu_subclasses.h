@@ -20,9 +20,9 @@
 #include <vector>
 #include <mutex>
 
-#include "gpu_validation/gpu_descriptor_set.h"
-#include "gpu_validation/gpu_state_tracker.h"
-#include "gpu_validation/gpu_resources.h"
+#include "gpu/gpu_descriptor_set.h"
+#include "gpu/gpu_state_tracker.h"
+#include "gpu/gpu_resources.h"
 #include "generated/vk_object_types.h"
 #include "gpu_shaders/gpu_shaders_constants.h"
 

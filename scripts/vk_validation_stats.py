@@ -460,7 +460,7 @@ def main(argv):
         'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
         'layers/state_tracker/descriptor_sets.cpp',
         'layers/state_tracker/video_session_state.cpp',
-        'layers/gpu_validation/gpu_vuids.h',
+        'layers/gpu/gpu_vuids.h',
         'layers/stateless/stateless_validation.h',
         f'layers/{args.api}/generated/stateless_validation_helper.cpp',
         f'layers/{args.api}/generated/object_tracker.cpp',
@@ -473,7 +473,7 @@ def main(argv):
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/sync/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/object_tracker/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/drawdispatch/'), '*.cpp')))
-    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu_validation/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu/'), '*.cpp')))
 
     test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 

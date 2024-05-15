@@ -21,7 +21,7 @@
 #include "drawdispatch/descriptor_validator.h"
 #include "spirv-tools/instrument.hpp"
 #include "gpu_shaders/gpu_error_header.h"
-#include "gpu_validation/gpu_constants.h"
+#include "gpu/gpu_constants.h"
 
 namespace gpuav {
 
@@ -133,10 +133,10 @@ void CommandBuffer::AllocateResources() {
 
     // Instrumentation descriptor set layout
     if (instrumentation_desc_set_layout_ == VK_NULL_HANDLE) {
-        assert(!gpuav->validation_bindings_.empty());
+        assert(!gpuav->instrumentation_bindings_.empty());
         VkDescriptorSetLayoutCreateInfo instrumentation_desc_set_layout_ci = vku::InitStructHelper();
-        instrumentation_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(gpuav->validation_bindings_.size());
-        instrumentation_desc_set_layout_ci.pBindings = gpuav->validation_bindings_.data();
+        instrumentation_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(gpuav->instrumentation_bindings_.size());
+        instrumentation_desc_set_layout_ci.pBindings = gpuav->instrumentation_bindings_.data();
         result = DispatchCreateDescriptorSetLayout(gpuav->device, &instrumentation_desc_set_layout_ci, nullptr,
                                                    &instrumentation_desc_set_layout_);
         if (result != VK_SUCCESS) {
@@ -451,20 +451,20 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
             uint32_t *const error_records_end =
                 error_output_buffer_ptr + (gpuav->output_buffer_byte_size - cst::stream_output_data_offset);
 
-            uint32_t *error_record = error_records_start;
-            uint32_t record_size = error_record[glsl::kHeaderErrorRecordSizeOffset];
+            uint32_t *error_record_ptr = error_records_start;
+            uint32_t record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
             assert(record_size == glsl::kErrorRecordSize);
 
-            while (record_size > 0 && (error_record + record_size) <= error_records_end) {
-                const uint32_t resource_index = error_record[glsl::kHeaderCommandResourceIdOffset];
-                assert(resource_index < per_command_resources.size());
-                auto &cmd_info = per_command_resources[resource_index];
+            while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
+                const uint32_t resource_i = error_record_ptr[glsl::kHeaderCommandResourceIdOffset];
+                assert(resource_i < per_command_resources.size());
+                auto &cmd_info = per_command_resources[resource_i];
                 const LogObjectList objlist(queue, VkHandle());
-                cmd_info->LogValidationMessage(*gpuav, queue, VkHandle(), error_record, cmd_info->operation_index, objlist);
+                cmd_info->LogValidationMessage(*gpuav, queue, VkHandle(), error_record_ptr, cmd_info->operation_index, objlist);
 
                 // Next record
-                error_record += record_size;
-                record_size = error_record[glsl::kHeaderErrorRecordSizeOffset];
+                error_record_ptr += record_size;
+                record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
             }
 
             // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.

@@ -19,6 +19,8 @@
 
 #include "vma/vma.h"
 
+#include <vector>
+
 namespace gpuav {
 class Validator;
 struct DescBindingInfo;
@@ -34,6 +36,21 @@ struct DeviceMemoryBlock {
         }
     }
     bool IsNull() { return buffer == VK_NULL_HANDLE; }
+};
+
+class GpuResourcesManager {
+  public:
+    void AddPipeline(VkPipeline);
+
+  private:
+    std::vector<VkPipeline> pipelines_;
+    std::vector<VkDescriptorPool> descriptor_pools_;
+    std::vector<VkDescriptorSet> descriptor_sets_;
+    std::vector<DeviceMemoryBlock> buffers_;
+    std::vector<VkShaderModule> shader_modules_;
+    std::vector<VkDescriptorSetLayout> descriptor_set_layouts_;
+    std::vector<VkPipelineLayout> pipeline_layouts_;
+    std::vector<VkShaderEXT> shader_objects_;
 };
 
 // Every recorded action command needs the validation resources listed in this function
@@ -56,18 +73,23 @@ class CommandResources {
         return false;
     }
 
-    // {CommandBuffer::per_command_resources index, dispatch/draw/trace_rays index}
-    static constexpr uint32_t push_constant_words = 2;
-    VkPushConstantRange GetPushConstantRange();
+    // Used by gpu av inserted validation pipelines
+    // ---
+    vvl::Func command = vvl::Func::Empty;  // Should probably use Location instead
+    // Draw/dispatch/trace rays index in cmd buffer. 0 for all other operations (TODO: maintain it correctly)
+    uint32_t operation_index = 0;
+
+    // Only used for shader instrumentation
+    // ---
+    bool uses_shader_object = false;  // Only used in error message logging, to select VUID
     VkDescriptorSet instrumentation_desc_set = VK_NULL_HANDLE;
     VkDescriptorPool instrumentation_desc_pool = VK_NULL_HANDLE;
-    uint32_t operation_index =
-        0;  // Draw/dispatch/trace rays index in cmd buffer. 0 for all other operations (TODO: maintain it correctly)
+
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     bool uses_robustness = false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
-    bool uses_shader_object = false;       // Some VU are dependent if used with pipeline or shader object
-    vvl::Func command = vvl::Func::Empty;  // Should probably use Location instead
-    uint32_t desc_binding_index = vvl::kU32Max;// desc_binding is only used to help generate an error message
+
+    // desc_binding list and index are only used to help generate an error message
+    uint32_t desc_binding_index = vvl::kU32Max;
     std::vector<DescBindingInfo> *desc_binding_list = nullptr;
 };
 

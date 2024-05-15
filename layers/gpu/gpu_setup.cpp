@@ -23,9 +23,9 @@
 #include "utils/cast_utils.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
-#include "gpu_validation/gpu_constants.h"
-#include "gpu_validation/gpu_validation.h"
-#include "gpu_validation/gpu_subclasses.h"
+#include "gpu/gpu_constants.h"
+#include "gpu/gpu_validation.h"
+#include "gpu/gpu_subclasses.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "spirv-tools/instrument.hpp"
@@ -92,7 +92,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
     // Set up a stub implementation of the descriptor heap in case we abort.
     desc_heap.emplace(*this, 0);
 
-    validation_bindings_ = {
+    instrumentation_bindings_ = {
         // Error output buffer
         {glsl::kBindingInstErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Current bindless buffer

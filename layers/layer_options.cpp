@@ -20,7 +20,7 @@
 #include "utils/hash_util.h"
 #include <vulkan/layer/vk_layer_settings.hpp>
 
-#include "gpu_validation/gpu_settings.h"
+#include "gpu/gpu_settings.h"
 #include "error_message/logging.h"
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
