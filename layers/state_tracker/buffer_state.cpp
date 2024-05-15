@@ -73,7 +73,6 @@ Buffer::Buffer(ValidationStateTracker &dev_data, VkBuffer handle, const VkBuffer
     }
 }
 
-// This function is only used for comparing Imported External Dedicated Memory
 bool Buffer::CompareCreateInfo(const Buffer &other) const {
     bool valid_queue_family = true;
     if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
