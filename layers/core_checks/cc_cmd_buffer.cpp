@@ -92,14 +92,14 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
 
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 if (info->renderPass != VK_NULL_HANDLE) {
-                    auto framebuffer = Get<vvl::Framebuffer>(info->framebuffer);
-                    if (framebuffer) {
+                    if (auto framebuffer = Get<vvl::Framebuffer>(info->framebuffer)) {
                         if (framebuffer->create_info.renderPass != info->renderPass) {
-                            auto render_pass = Get<vvl::RenderPass>(info->renderPass);
-                            // renderPass that framebuffer was created with must be compatible with local renderPass
-                            skip |= ValidateRenderPassCompatibility(framebuffer->Handle(), *framebuffer->rp_state.get(),
-                                                                    cb_state->Handle(), *render_pass.get(), inheritance_loc,
-                                                                    "VUID-VkCommandBufferBeginInfo-flags-00055");
+                            if (auto render_pass = Get<vvl::RenderPass>(info->renderPass)) {
+                                // renderPass that framebuffer was created with must be compatible with local renderPass
+                                skip |= ValidateRenderPassCompatibility(framebuffer->Handle(), *framebuffer->rp_state.get(),
+                                                                        cb_state->Handle(), *render_pass.get(), inheritance_loc,
+                                                                        "VUID-VkCommandBufferBeginInfo-flags-00055");
+                            }
                         }
                     }
 
@@ -886,7 +886,6 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             } else if (sub_cb_state.beginInfo.pInheritanceInfo != nullptr) {
                 const uint32_t inheritance_subpass = sub_cb_state.beginInfo.pInheritanceInfo->subpass;
                 const VkRenderPass inheritance_render_pass = sub_cb_state.beginInfo.pInheritanceInfo->renderPass;
-                auto secondary_rp_state = Get<vvl::RenderPass>(inheritance_render_pass);
                 if (!(sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     const LogObjectList objlist(pCommandBuffers[i], cb_state.activeRenderPass->Handle());
                     skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00096", objlist, cb_loc,
@@ -900,7 +899,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     if (!cb_state.activeRenderPass->UsesDynamicRendering()) {
                         // Make sure render pass is compatible with parent command buffer pass if secondary command buffer has
                         // "render pass continue" usage flag
-                        if (cb_state.activeRenderPass->VkHandle() != secondary_rp_state->VkHandle()) {
+                        auto secondary_rp_state = Get<vvl::RenderPass>(inheritance_render_pass);
+                        if (secondary_rp_state && (cb_state.activeRenderPass->VkHandle() != secondary_rp_state->VkHandle())) {
                             skip |= ValidateRenderPassCompatibility(cb_state.Handle(), *cb_state.activeRenderPass.get(),
                                                                     secondary_rp_state->Handle(), *secondary_rp_state.get(), cb_loc,
                                                                     "VUID-vkCmdExecuteCommands-pBeginInfo-06020");

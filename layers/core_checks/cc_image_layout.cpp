@@ -476,6 +476,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
                                                        const Location &rp_begin_loc) const {
     bool skip = false;
     auto render_pass_state = Get<vvl::RenderPass>(begin_info.renderPass);
+    if (!render_pass_state) return skip;
     const auto *render_pass_info = render_pass_state->create_info.ptr();
     const VkRenderPass render_pass = render_pass_state->VkHandle();
     auto const &framebuffer_info = framebuffer_state.create_info;
