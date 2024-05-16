@@ -2291,8 +2291,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
     skip |= ValidateQFOTransferBarrierUniqueness(barrier_loc, cb_state, mem_barrier, cb_state.qfo_transfer_buffer_barriers);
 
     // Validate buffer barrier queue family indices
-    auto buffer_state = Get<vvl::Buffer>(mem_barrier.buffer);
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(mem_barrier.buffer)) {
         auto buf_loc = barrier_loc.dot(Field::buffer);
         const auto &mem_vuid = GetBufferBarrierVUID(buf_loc, BufferError::kNoMemory);
         skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), *buffer_state, buf_loc, mem_vuid.c_str());

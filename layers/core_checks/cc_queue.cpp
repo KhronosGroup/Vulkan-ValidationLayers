@@ -668,6 +668,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const VkSparseBufferMemoryBindInfo &buffer_bind = bind_info.pBufferBinds[buffer_idx];
                 if (buffer_bind.pBinds) {
                     auto buffer_state = Get<vvl::Buffer>(buffer_bind.buffer);
+                    if (!buffer_state) continue;
                     for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
                         const Location buffer_loc = bind_info_loc.dot(Field::pBufferBinds, buffer_idx);

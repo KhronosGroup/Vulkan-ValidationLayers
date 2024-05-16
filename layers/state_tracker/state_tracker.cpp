@@ -510,8 +510,7 @@ void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkIm
 
 void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                                         const RecordObject &record_obj) {
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(buffer)) {
         WriteLockGuard guard(buffer_address_lock_);
 
         const VkBufferUsageFlags descriptor_buffer_usages =
@@ -1278,17 +1277,13 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
     if (const auto dedicated = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext)) {
         if (dedicated->buffer) {
             auto buffer_state = Get<vvl::Buffer>(dedicated->buffer);
-            assert(buffer_state);
-            if (!buffer_state) {
-                return;
-            }
+            if (!buffer_state) return;
+
             dedicated_binding.emplace(dedicated->buffer, buffer_state->create_info);
         } else if (dedicated->image) {
             auto image_state = Get<vvl::Image>(dedicated->image);
-            assert(image_state);
-            if (!image_state) {
-                return;
-            }
+            if (!image_state) return;
+
             dedicated_binding.emplace(dedicated->image, image_state->create_info);
         }
     }
@@ -1616,8 +1611,7 @@ void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQu
 }
 
 void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(buffer)) {
         // Track objects tied to memory
         if (auto mem_state = Get<vvl::DeviceMemory>(mem)) {
             buffer_state->BindMemory(buffer_state.get(), mem_state, memoryOffset, 0u, buffer_state->requirements.size);

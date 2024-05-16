@@ -1151,8 +1151,8 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto dst_buff_state = Get<vvl::Buffer>(dstBuffer);
-    assert(cb_state);
-    assert(dst_buff_state);
+    if (!dst_buff_state) return skip;
+
     const LogObjectList buffer_objlist(commandBuffer, dstBuffer);
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buff_state, error_obj.location.dot(Field::dstBuffer),
                                           "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");

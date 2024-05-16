@@ -3722,55 +3722,54 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
 
     const auto &profile_caps = vs_state->profile->GetCapabilities();
 
-    auto buffer_state = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(pDecodeInfo->srcBuffer)) {
         const char *where = " Buffer referenced in pDecodeInfo->srcBuffer.";
         skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, error_obj.location,
                                         "VUID-vkCmdDecodeVideoKHR-commandBuffer-07136", where);
         skip |= ValidateUnprotectedBuffer(*cb_state, *buffer_state, error_obj.location,
                                           "VUID-vkCmdDecodeVideoKHR-commandBuffer-07137", where);
-    }
 
-    if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR) == 0) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
-        skip |= LogError("VUID-VkVideoDecodeInfoKHR-srcBuffer-07165", objlist, decode_info_loc.dot(Field::srcBuffer),
-                         "(%s) was not created with "
-                         "VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR.",
-                         FormatHandle(pDecodeInfo->srcBuffer).c_str());
-    }
+        if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR) == 0) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
+            skip |= LogError("VUID-VkVideoDecodeInfoKHR-srcBuffer-07165", objlist, decode_info_loc.dot(Field::srcBuffer),
+                             "(%s) was not created with "
+                             "VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR.",
+                             FormatHandle(pDecodeInfo->srcBuffer).c_str());
+        }
 
-    if (!IsBufferCompatibleWithVideoProfile(*buffer_state, vs_state->profile)) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
-        skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07135", objlist, decode_info_loc.dot(Field::srcBuffer),
-                         "(%s) is not compatible "
-                         "with the video profile %s was created with.",
-                         FormatHandle(pDecodeInfo->srcBuffer).c_str(), FormatHandle(*vs_state).c_str());
-    }
+        if (!IsBufferCompatibleWithVideoProfile(*buffer_state, vs_state->profile)) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
+            skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07135", objlist, decode_info_loc.dot(Field::srcBuffer),
+                             "(%s) is not compatible "
+                             "with the video profile %s was created with.",
+                             FormatHandle(pDecodeInfo->srcBuffer).c_str(), FormatHandle(*vs_state).c_str());
+        }
 
-    if (pDecodeInfo->srcBufferOffset >= buffer_state->create_info.size) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
-        skip |=
-            LogError("VUID-VkVideoDecodeInfoKHR-srcBufferOffset-07166", objlist, decode_info_loc.dot(Field::srcBufferOffset),
-                     "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pDecodeInfo->srcBuffer (%s).",
-                     pDecodeInfo->srcBufferOffset, buffer_state->create_info.size, FormatHandle(pDecodeInfo->srcBuffer).c_str());
-    }
+        if (pDecodeInfo->srcBufferOffset >= buffer_state->create_info.size) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
+            skip |= LogError(
+                "VUID-VkVideoDecodeInfoKHR-srcBufferOffset-07166", objlist, decode_info_loc.dot(Field::srcBufferOffset),
+                "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pDecodeInfo->srcBuffer (%s).",
+                pDecodeInfo->srcBufferOffset, buffer_state->create_info.size, FormatHandle(pDecodeInfo->srcBuffer).c_str());
+        }
 
-    if (!IsIntegerMultipleOf(pDecodeInfo->srcBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment)) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle());
-        skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07138", objlist, decode_info_loc.dot(Field::srcBufferOffset),
-                         "(%" PRIu64 ") is not an integer multiple of the minBitstreamBufferOffsetAlignment (%" PRIu64
-                         ") required by the video profile %s was created with.",
-                         pDecodeInfo->srcBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment,
-                         FormatHandle(*vs_state).c_str());
-    }
+        if (!IsIntegerMultipleOf(pDecodeInfo->srcBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment)) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle());
+            skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07138", objlist, decode_info_loc.dot(Field::srcBufferOffset),
+                             "(%" PRIu64 ") is not an integer multiple of the minBitstreamBufferOffsetAlignment (%" PRIu64
+                             ") required by the video profile %s was created with.",
+                             pDecodeInfo->srcBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment,
+                             FormatHandle(*vs_state).c_str());
+        }
 
-    if (pDecodeInfo->srcBufferOffset + pDecodeInfo->srcBufferRange > buffer_state->create_info.size) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
-        skip |= LogError("VUID-VkVideoDecodeInfoKHR-srcBufferRange-07167", objlist, decode_info_loc.dot(Field::srcBufferOffset),
-                         "(%" PRIu64 ") plus pDecodeInfo->srcBufferRange (%" PRIu64
-                         ") must be less than or equal to the size (%" PRIu64 ") of pDecodeInfo->srcBuffer (%s).",
-                         pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange, buffer_state->create_info.size,
-                         FormatHandle(pDecodeInfo->srcBuffer).c_str());
+        if (pDecodeInfo->srcBufferOffset + pDecodeInfo->srcBufferRange > buffer_state->create_info.size) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
+            skip |= LogError("VUID-VkVideoDecodeInfoKHR-srcBufferRange-07167", objlist, decode_info_loc.dot(Field::srcBufferOffset),
+                             "(%" PRIu64 ") plus pDecodeInfo->srcBufferRange (%" PRIu64
+                             ") must be less than or equal to the size (%" PRIu64 ") of pDecodeInfo->srcBuffer (%s).",
+                             pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange, buffer_state->create_info.size,
+                             FormatHandle(pDecodeInfo->srcBuffer).c_str());
+        }
     }
 
     if (!IsIntegerMultipleOf(pDecodeInfo->srcBufferRange, profile_caps.base.minBitstreamBufferSizeAlignment)) {
@@ -4153,55 +4152,54 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
 
     const auto &profile_caps = vs_state->profile->GetCapabilities();
 
-    auto buffer_state = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(pEncodeInfo->dstBuffer)) {
         const char *where = " Buffer referenced in pEncodeInfo->dstBuffer.";
         skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, error_obj.location,
                                         "VUID-vkCmdEncodeVideoKHR-commandBuffer-08202", where);
         skip |= ValidateUnprotectedBuffer(*cb_state, *buffer_state, error_obj.location,
                                           "VUID-vkCmdEncodeVideoKHR-commandBuffer-08203", where);
-    }
 
-    if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
-        skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBuffer-08236", objlist, encode_info_loc.dot(Field::dstBuffer),
-                         "(%s) was not created with "
-                         "VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR.",
-                         FormatHandle(pEncodeInfo->dstBuffer).c_str());
-    }
+        if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
+            skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBuffer-08236", objlist, encode_info_loc.dot(Field::dstBuffer),
+                             "(%s) was not created with "
+                             "VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR.",
+                             FormatHandle(pEncodeInfo->dstBuffer).c_str());
+        }
 
-    if (!IsBufferCompatibleWithVideoProfile(*buffer_state, vs_state->profile)) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
-        skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08201", objlist, encode_info_loc.dot(Field::dstBuffer),
-                         " (%s) is not compatible "
-                         "with the video profile %s was created with.",
-                         FormatHandle(pEncodeInfo->dstBuffer).c_str(), FormatHandle(*vs_state).c_str());
-    }
+        if (!IsBufferCompatibleWithVideoProfile(*buffer_state, vs_state->profile)) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
+            skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08201", objlist, encode_info_loc.dot(Field::dstBuffer),
+                             " (%s) is not compatible "
+                             "with the video profile %s was created with.",
+                             FormatHandle(pEncodeInfo->dstBuffer).c_str(), FormatHandle(*vs_state).c_str());
+        }
 
-    if (pEncodeInfo->dstBufferOffset >= buffer_state->create_info.size) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
-        skip |=
-            LogError("VUID-VkVideoEncodeInfoKHR-dstBufferOffset-08237", objlist, encode_info_loc.dot(Field::dstBufferOffset),
-                     "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pEncodeInfo->dstBuffer (%s).",
-                     pEncodeInfo->dstBufferOffset, buffer_state->create_info.size, FormatHandle(pEncodeInfo->dstBuffer).c_str());
-    }
+        if (pEncodeInfo->dstBufferOffset >= buffer_state->create_info.size) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
+            skip |= LogError(
+                "VUID-VkVideoEncodeInfoKHR-dstBufferOffset-08237", objlist, encode_info_loc.dot(Field::dstBufferOffset),
+                "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pEncodeInfo->dstBuffer (%s).",
+                pEncodeInfo->dstBufferOffset, buffer_state->create_info.size, FormatHandle(pEncodeInfo->dstBuffer).c_str());
+        }
 
-    if (!IsIntegerMultipleOf(pEncodeInfo->dstBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment)) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle());
-        skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08204", objlist, encode_info_loc.dot(Field::dstBufferOffset),
-                         "(%" PRIu64 ") is not an integer multiple of the minBitstreamBufferOffsetAlignment (%" PRIu64
-                         ") required by the video profile %s was created with.",
-                         pEncodeInfo->dstBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment,
-                         FormatHandle(*vs_state).c_str());
-    }
+        if (!IsIntegerMultipleOf(pEncodeInfo->dstBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment)) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle());
+            skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08204", objlist, encode_info_loc.dot(Field::dstBufferOffset),
+                             "(%" PRIu64 ") is not an integer multiple of the minBitstreamBufferOffsetAlignment (%" PRIu64
+                             ") required by the video profile %s was created with.",
+                             pEncodeInfo->dstBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment,
+                             FormatHandle(*vs_state).c_str());
+        }
 
-    if (pEncodeInfo->dstBufferOffset + pEncodeInfo->dstBufferRange > buffer_state->create_info.size) {
-        const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
-        skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBufferRange-08238", objlist, encode_info_loc.dot(Field::dstBufferOffset),
-                         "(%" PRIu64 ") plus pEncodeInfo->dstBufferRange (%" PRIu64
-                         ") must be less than or equal to the size (%" PRIu64 ") of pEncodeInfo->dstBuffer (%s).",
-                         pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange, buffer_state->create_info.size,
-                         FormatHandle(pEncodeInfo->dstBuffer).c_str());
+        if (pEncodeInfo->dstBufferOffset + pEncodeInfo->dstBufferRange > buffer_state->create_info.size) {
+            const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
+            skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBufferRange-08238", objlist, encode_info_loc.dot(Field::dstBufferOffset),
+                             "(%" PRIu64 ") plus pEncodeInfo->dstBufferRange (%" PRIu64
+                             ") must be less than or equal to the size (%" PRIu64 ") of pEncodeInfo->dstBuffer (%s).",
+                             pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange, buffer_state->create_info.size,
+                             FormatHandle(pEncodeInfo->dstBuffer).c_str());
+        }
     }
 
     if (!IsIntegerMultipleOf(pEncodeInfo->dstBufferRange, profile_caps.base.minBitstreamBufferSizeAlignment)) {

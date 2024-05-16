@@ -315,9 +315,8 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     auto buffer_state_ptr = Get<vvl::Buffer>(pCreateInfo->buffer);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
-    if (!buffer_state_ptr) {
-        return skip;
-    }
+    if (!buffer_state_ptr) return skip;
+
     const auto &buffer_state = *buffer_state_ptr;
     const LogObjectList objlist(device, pCreateInfo->buffer);
 
@@ -429,10 +428,8 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                               const ErrorObject &error_obj) const {
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-
     bool skip = false;
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(buffer)) {
         skip |= ValidateObjectNotInUse(buffer_state.get(), error_obj.location, "VUID-vkDestroyBuffer-buffer-00922");
     }
     return skip;
@@ -440,9 +437,8 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
                                                   const ErrorObject &error_obj) const {
-    auto buffer_view_state = Get<vvl::BufferView>(bufferView);
     bool skip = false;
-    if (buffer_view_state) {
+    if (auto buffer_view_state = Get<vvl::BufferView>(bufferView)) {
         skip |= ValidateObjectNotInUse(buffer_view_state.get(), error_obj.location, "VUID-vkDestroyBufferView-bufferView-00936");
     }
     return skip;
@@ -453,9 +449,8 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto buffer_state = Get<vvl::Buffer>(dstBuffer);
-    if (!cb_state_ptr || !buffer_state) {
-        return skip;
-    }
+    if (!cb_state_ptr || !buffer_state) return skip;
+
     const LogObjectList objlist(commandBuffer, dstBuffer);
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     const Location buffer_loc = error_obj.location.dot(Field::dstBuffer);

@@ -55,13 +55,9 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                                VkAccelerationStructureKHR *pAccelerationStructure,
                                                                const ErrorObject &error_obj) const {
     bool skip = false;
-    if (!pCreateInfo) {
-        return false;
-    }
+    if (!pCreateInfo) return skip;
     auto buffer_state = Get<vvl::Buffer>(pCreateInfo->buffer);
-    if (!buffer_state) {
-        return false;
-    }
+    if (!buffer_state) return skip;
 
     if (!(buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR)) {
         skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-buffer-03614", buffer_state->Handle(),
@@ -1189,7 +1185,6 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
 
     auto dst_as_state = Get<vvl::AccelerationStructureNV>(dst);
     auto src_as_state = Get<vvl::AccelerationStructureNV>(src);
-    auto scratch_buffer_state = Get<vvl::Buffer>(scratch);
 
     if (dst_as_state && pInfo) {
         if (dst_as_state->create_info.info.type != pInfo->type) {
@@ -1261,6 +1256,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                                          error_obj.location.dot(Field::dst), "VUID-vkCmdBuildAccelerationStructureNV-dst-07787");
     }
 
+    auto scratch_buffer_state = Get<vvl::Buffer>(scratch);
     if (update == VK_TRUE) {
         if (src == VK_NULL_HANDLE) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-update-02489", commandBuffer, error_obj.location,
@@ -1313,8 +1309,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     }
     if (instanceData != VK_NULL_HANDLE) {
-        auto buffer_state = Get<vvl::Buffer>(instanceData);
-        if (buffer_state) {
+        if (auto buffer_state = Get<vvl::Buffer>(instanceData)) {
             skip |= ValidateBufferUsageFlags(
                 LogObjectList(commandBuffer, instanceData), *buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
                 "VUID-VkAccelerationStructureInfoNV-instanceData-02782", error_obj.location.dot(Field::instanceData));
@@ -1534,9 +1529,10 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
                              "has not been built.");
         }
 
-        auto buffer_state = Get<vvl::Buffer>(src_accel_state->create_info.buffer);
-        skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::src),
-                                              "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
+        if (auto buffer_state = Get<vvl::Buffer>(src_accel_state->create_info.buffer)) {
+            skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::src),
+                                                  "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
+        }
 
         if (as_info.mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR) {
             if (!(src_accel_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
@@ -1550,9 +1546,10 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
     }
     auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(as_info.dst);
     if (dst_accel_state) {
-        auto buffer_state = Get<vvl::Buffer>(dst_accel_state->create_info.buffer);
-        skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::dst),
-                                              "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
+        if (auto buffer_state = Get<vvl::Buffer>(dst_accel_state->create_info.buffer)) {
+            skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::dst),
+                                                  "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
+        }
     }
 
     if (src_accel_state && dst_accel_state) {
@@ -1669,9 +1666,11 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
         skip |= ValidateVkCopyAccelerationStructureToMemoryInfoKHR(*src_accel_struct, LogObjectList(commandBuffer),
                                                                    error_obj.location.dot(Field::pInfo));
 
-        auto buffer_state = Get<vvl::Buffer>(src_accel_struct->create_info.buffer);
-        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pInfo).dot(Field::src),
+        if (auto buffer_state = Get<vvl::Buffer>(src_accel_struct->create_info.buffer)) {
+            skip |=
+                ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pInfo).dot(Field::src),
                                               "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
+        }
     }
 
     const VkDeviceAddress dst_address = pInfo->dst.deviceAddress;
@@ -1953,17 +1952,17 @@ bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triang
     bool skip = false;
 
     auto vb_state = Get<vvl::Buffer>(triangles.vertexData);
-    if (vb_state != nullptr && vb_state->create_info.size <= triangles.vertexOffset) {
+    if (vb_state && vb_state->create_info.size <= triangles.vertexOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-vertexOffset-02428", device, loc, "is invalid.");
     }
 
     auto ib_state = Get<vvl::Buffer>(triangles.indexData);
-    if (ib_state != nullptr && ib_state->create_info.size <= triangles.indexOffset) {
+    if (ib_state && ib_state->create_info.size <= triangles.indexOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02431", device, loc, "is invalid.");
     }
 
     auto td_state = Get<vvl::Buffer>(triangles.transformData);
-    if (td_state != nullptr && td_state->create_info.size <= triangles.transformOffset) {
+    if (td_state && td_state->create_info.size <= triangles.transformOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-transformOffset-02437", device, loc, "is invalid.");
     }
 
@@ -1974,7 +1973,7 @@ bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, const Loc
     bool skip = false;
 
     auto aabb_state = Get<vvl::Buffer>(aabbs.aabbData);
-    if (aabb_state != nullptr && aabb_state->create_info.size > 0 && aabb_state->create_info.size <= aabbs.offset) {
+    if (aabb_state && aabb_state->create_info.size > 0 && aabb_state->create_info.size <= aabbs.offset) {
         skip |= LogError("VUID-VkGeometryAABBNV-offset-02439", device, loc, "is invalid.");
     }
 

@@ -155,7 +155,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
     bool skip = false;
     auto buffer_state = Get<vvl::Buffer>(buffer);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
-    if (!mem_state) return skip;
+    if (!mem_state || !buffer_state) return skip;
 
     if (mem_state->allocate_info.allocationSize == buffer_state->create_info.size &&
         mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {

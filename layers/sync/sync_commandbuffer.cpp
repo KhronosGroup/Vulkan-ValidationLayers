@@ -596,9 +596,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uin
     bool skip = false;
     const auto &index_binding = cb_state_->index_buffer_binding;
     const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
-    if (!index_buf_state) {
-        return skip;
-    }
+    if (!index_buf_state) return skip;
 
     const auto index_size = GetIndexAlignment(index_binding.index_type);
     const ResourceAccessRange range = MakeRange(index_binding, firstIndex, index_count, index_size);

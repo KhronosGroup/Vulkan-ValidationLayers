@@ -466,8 +466,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                     }
                 }
                 if (metal_texture_ptr->bufferView) {
-                    auto buffer_view_info = Get<vvl::BufferView>(metal_texture_ptr->bufferView);
-                    if (buffer_view_info) {
+                    if (auto buffer_view_info = Get<vvl::BufferView>(metal_texture_ptr->bufferView)) {
                         if (!buffer_view_info->metal_bufferview_export) {
                             skip |= LogError(
                                 "VUID-VkExportMetalObjectsInfoEXT-pNext-06797", device, error_obj.location,
