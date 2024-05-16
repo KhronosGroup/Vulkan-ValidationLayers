@@ -449,9 +449,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
-    if (swapchain_create_info != nullptr) {
-        if (swapchain_create_info->swapchain != VK_NULL_HANDLE) {
-            auto swapchain_state = Get<vvl::Swapchain>(swapchain_create_info->swapchain);
+    if (swapchain_create_info != nullptr && swapchain_create_info->swapchain != VK_NULL_HANDLE) {
+        if (auto swapchain_state = Get<vvl::Swapchain>(swapchain_create_info->swapchain)) {
             const VkSwapchainCreateFlagsKHR swapchain_flags = swapchain_state->create_info.flags;
 
             // Validate rest of Swapchain Image create check that require swapchain state
