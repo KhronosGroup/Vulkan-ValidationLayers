@@ -821,6 +821,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     const QueryObject *active_occlusion_query = nullptr;
     for (const auto &active_query : cb_state.activeQueries) {
         auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
+        if (!query_pool_state) continue;
         const auto queryType = query_pool_state->create_info.queryType;
         if (queryType == VK_QUERY_TYPE_OCCLUSION) {
             active_occlusion_query = &active_query;

@@ -1468,6 +1468,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
     auto query_pool_state = Get<vvl::QueryPool>(queryPool);
+    if (!query_pool_state) return skip;
     const auto &query_pool_ci = query_pool_state->create_info;
     if (query_pool_ci.queryType != queryType) {
         skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryPool-02493", commandBuffer,
@@ -1506,6 +1507,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
     auto query_pool_state = Get<vvl::QueryPool>(queryPool);
+    if (!query_pool_state) return skip;
     const auto &query_pool_ci = query_pool_state->create_info;
     if (query_pool_ci.queryType != queryType) {
         skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryPool-03755", commandBuffer,

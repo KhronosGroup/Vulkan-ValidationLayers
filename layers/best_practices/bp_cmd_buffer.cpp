@@ -139,14 +139,15 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
                                                        VkQueryResultFlags flags, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    const auto& query_pool_state = *Get<vvl::QueryPool>(queryPool);
+    const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
+    if (!query_pool_state) return skip;
 
     for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
-        if (query_pool_state.GetQueryState(i, 0u) == QUERYSTATE_RESET) {
+        if (query_pool_state->GetQueryState(i, 0u) == QUERYSTATE_RESET) {
             const LogObjectList objlist(queryPool);
             skip |= LogWarning(kVUID_BestPractices_QueryPool_Unavailable, objlist, error_obj.location,
                                "QueryPool %s and query %" PRIu32 ": vkCmdBeginQuery() was never called.",
-                               FormatHandle(query_pool_state.Handle()).c_str(), i);
+                               FormatHandle(query_pool_state->Handle()).c_str(), i);
             break;
         }
     }

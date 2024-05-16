@@ -1591,6 +1591,7 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
         }
         for (const auto &query_state_pair : local_query_to_state_map) {
             auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_state_pair.first.pool);
+            if (!query_pool_state) continue;
             query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, query_state_pair.second);
         }
     }
@@ -1636,10 +1637,8 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
     for (const auto &query_state_pair : local_query_to_state_map) {
         if (query_state_pair.second == QUERYSTATE_ENDED && !is_query_updated_after(query_state_pair.first)) {
             auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_state_pair.first.pool);
-            if (query_pool_state) {
-                query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass,
-                                                QUERYSTATE_AVAILABLE);
-            }
+            if (!query_pool_state) continue;
+            query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, QUERYSTATE_AVAILABLE);
         }
     }
 }
