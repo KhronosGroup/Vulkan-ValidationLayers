@@ -203,7 +203,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
-    if (!mem_state) return skip;
+    if (!mem_state || !image_state) return skip;
 
     if (mem_state->allocate_info.allocationSize == image_state->requirements[0].size &&
         mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {

@@ -275,6 +275,8 @@ bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
         const Location color_attachment_info = rendering_info.dot(Field::pColorAttachments, i);
 
         auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+        if (!image_view_state) continue;
+
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {
             if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                 const VkFormat format = image_view_state->create_info.format;
@@ -518,8 +520,10 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
             for (uint32_t i = 0; i < rp->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
                 const auto& color_attachment = rp->dynamic_rendering_begin_rendering_info.pColorAttachments[i];
                 if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                    const VkFormat format = Get<vvl::ImageView>(color_attachment.imageView)->create_info.format;
-                    RecordClearColor(format, color_attachment.clearValue.color);
+                    if (auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView)) {
+                        const VkFormat format = image_view_state->create_info.format;
+                        RecordClearColor(format, color_attachment.clearValue.color);
+                    }
                 }
             }
 

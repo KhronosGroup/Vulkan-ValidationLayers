@@ -681,6 +681,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
                 if (image_opaque_bind.pBinds) {
                     auto image_state = Get<vvl::Image>(image_opaque_bind.image);
+                    if (!image_state) continue;
                     for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount;
                          ++image_opaque_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
@@ -701,9 +702,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const Location bind_loc = bind_info_loc.dot(Field::pImageBinds, image_idx);
                 const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
                 auto image_state = Get<vvl::Image>(image_bind.image);
-                if (!image_state) {
-                    continue;
-                }
+                if (!image_state) continue;
 
                 if (!image_state->sparse_residency) {
                     skip |=

@@ -101,9 +101,8 @@ void Validator::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const 
         }
     }
     auto image_state = Get<vvl::Image>(mem_barrier.image);
-    if (!image_state) {
-        return;
-    }
+    if (!image_state) return;
+
     auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
 
     VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
@@ -155,15 +154,15 @@ void Validator::PostCallRecordCreateImage(VkDevice device, const VkImageCreateIn
     BaseClass::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
         // non-sparse images set up their layout maps when memory is bound
-        auto image_state = Get<vvl::Image>(*pImage);
-        image_state->SetInitialLayoutMap();
+        if (auto image_state = Get<vvl::Image>(*pImage)) {
+            image_state->SetInitialLayoutMap();
+        }
     }
 }
 
 void Validator::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                           const RecordObject &record_obj) {
     // Clean up validation specific data
-    auto image_state = Get<vvl::Image>(image);
     // Clean up generic image state
     BaseClass::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
 }
@@ -427,8 +426,7 @@ void Validator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, Vk
     if (VK_SUCCESS != record_obj.result) return;
     BaseClass::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
 
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state) {
+    if (auto image_state = Get<vvl::Image>(image)) {
         image_state->SetInitialLayoutMap();
     }
 }
@@ -439,8 +437,7 @@ void Validator::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInf
     BaseClass::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        auto image_state = Get<vvl::Image>(pBindInfos[i].image);
-        if (image_state) {
+        if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
             image_state->SetInitialLayoutMap();
         }
     }
@@ -452,8 +449,7 @@ void Validator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bind
     BaseClass::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        auto image_state = Get<vvl::Image>(pBindInfos[i].image);
-        if (image_state) {
+        if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
             image_state->SetInitialLayoutMap();
         }
     }

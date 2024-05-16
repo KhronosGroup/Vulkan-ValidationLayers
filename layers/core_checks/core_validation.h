@@ -421,8 +421,7 @@ class CoreChecks : public ValidationStateTracker {
                                   VkDeviceSize count_buffer_offset, const Location& loc) const;
     bool ValidateCmdDrawFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
                                     const vvl::DrawDispatchVuid& vuid, const Location& loc) const;
-    bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
-                                                      const std::shared_ptr<const vvl::ImageView>& image_view_state,
+    bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer, const vvl::ImageView& image_view_state,
                                                       const VkMultisampledRenderToSingleSampledInfoEXT& msrtss_info,
                                                       const Location& attachment_loc, const Location& rendering_info_loc) const;
 

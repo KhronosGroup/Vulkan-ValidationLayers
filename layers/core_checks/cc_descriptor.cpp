@@ -2687,9 +2687,7 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice 
                          physical_device_count);
     }
 
-    auto image_state = Get<vvl::Image>(pInfo->image);
-
-    if (image_state) {
+    if (auto image_state = Get<vvl::Image>(pInfo->image)) {
         if (!(image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkImageCaptureDescriptorDataInfoEXT-image-08079", pInfo->image,
                              error_obj.location.dot(Field::pInfo).dot(Field::image), "is %s.",

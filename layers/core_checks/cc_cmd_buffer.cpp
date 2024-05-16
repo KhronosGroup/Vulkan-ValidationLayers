@@ -990,8 +990,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             } else {
                                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[color_i].imageView);
 
-                                if (image_view_state->create_info.format !=
-                                    inheritance_rendering_info.pColorAttachmentFormats[color_i]) {
+                                if (image_view_state && image_view_state->create_info.format !=
+                                                            inheritance_rendering_info.pColorAttachmentFormats[color_i]) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->Handle());
                                     skip |= LogError("VUID-vkCmdExecuteCommands-imageView-06028", objlist, cb_loc,
@@ -1012,7 +1012,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
                             auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
-                            if (image_view_state->create_info.format != inheritance_rendering_info.depthAttachmentFormat) {
+                            if (image_view_state &&
+                                image_view_state->create_info.format != inheritance_rendering_info.depthAttachmentFormat) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->Handle());
                                 skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06029", objlist, cb_loc,
                                                  "(%s) is executed within a dynamic renderpass "
@@ -1028,7 +1029,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
                             auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
-                            if (image_view_state->create_info.format != inheritance_rendering_info.stencilAttachmentFormat) {
+                            if (image_view_state &&
+                                image_view_state->create_info.format != inheritance_rendering_info.stencilAttachmentFormat) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->Handle());
                                 skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06030", objlist, cb_loc,
                                                  "(%s) is executed within a dynamic renderpass "
@@ -1093,7 +1095,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 }
                                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[index].imageView);
 
-                                if (image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
+                                if (image_view_state &&
+                                    image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->Handle());
                                     skip |= LogError(
@@ -1113,7 +1116,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
                                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
-                                if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
+                                if (image_view_state &&
+                                    image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->Handle());
                                     skip |= LogError(
@@ -1131,7 +1135,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
                                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
-                                if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
+                                if (image_view_state &&
+                                    image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->Handle());
                                     skip |= LogError(
@@ -1151,7 +1156,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 }
                                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[index].imageView);
 
-                                if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
+                                if (image_view_state &&
+                                    image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->Handle());
                                     skip |= LogError(
@@ -1170,7 +1176,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
                                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
-                                if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
+                                if (image_view_state &&
+                                    image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->Handle());
                                     skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06036", objlist, cb_loc,
@@ -1187,7 +1194,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
                                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
-                                if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
+                                if (image_view_state &&
+                                    image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->Handle());
                                     skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06037", objlist, cb_loc,
@@ -1279,6 +1287,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     for (auto index = iter->range.begin; index < iter->range.end; index++) {
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
                         const auto image_state = Get<vvl::Image>(image);
+                        if (!image_state) continue;
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
                         skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, cb_loc,

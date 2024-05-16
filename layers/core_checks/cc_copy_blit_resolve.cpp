@@ -2442,6 +2442,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
     bool skip = false;
     VkImage image = GetImage(*info_ptr);
     auto image_state = Get<vvl::Image>(image);
+    if (!image_state) return skip;
     auto image_layout = GetImageLayout(*info_ptr);
     auto regionCount = info_ptr->regionCount;
     const bool from_image = loc.function == Func::vkCopyImageToMemoryEXT;
@@ -2665,7 +2666,6 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCo
     bool skip = false;
     const Location copy_loc = error_obj.location.dot(Field::pCopyMemoryToImageInfo);
     auto dst_image = pCopyMemoryToImageInfo->dstImage;
-    auto image_state = Get<vvl::Image>(dst_image);
 
     skip |= ValidateMemoryImageCopyCommon(pCopyMemoryToImageInfo, copy_loc);
     auto *props = &phys_dev_ext_props.host_image_copy_props;
@@ -2680,7 +2680,6 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCo
     bool skip = false;
     const Location copy_loc = error_obj.location.dot(Field::pCopyImageToMemoryInfo);
     auto src_image = pCopyImageToMemoryInfo->srcImage;
-    auto image_state = Get<vvl::Image>(src_image);
 
     skip |= ValidateMemoryImageCopyCommon(pCopyImageToMemoryInfo, copy_loc);
     auto *props = &phys_dev_ext_props.host_image_copy_props;
@@ -2745,6 +2744,7 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     const Location loc = error_obj.location.dot(Field::pCopyImageToImageInfo);
     auto src_image_state = Get<vvl::Image>(info_ptr->srcImage);
     auto dst_image_state = Get<vvl::Image>(info_ptr->dstImage);
+    if (!src_image_state || !dst_image_state) return skip;
     // Formats are required to match, but check each image anyway
     auto src_plane_count = vkuFormatPlaneCount(src_image_state->create_info.format);
     auto dst_plane_count = vkuFormatPlaneCount(dst_image_state->create_info.format);

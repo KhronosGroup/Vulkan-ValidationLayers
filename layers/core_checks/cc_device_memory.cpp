@@ -507,6 +507,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             const LogObjectList objlist(device, dedicated_image);
             const Location image_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
             auto image_state = Get<vvl::Image>(dedicated_image);
+            if (!image_state) return skip;
             if (image_state->disjoint == true) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01797", objlist, image_loc,
                                  "(%s) was created with VK_IMAGE_CREATE_DISJOINT_BIT.", FormatHandle(dedicated_image).c_str());
@@ -1087,8 +1088,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
     const Location image_loc = error_obj.location.dot(Field::image);
     skip |= ValidateGetImageMemoryRequirementsANDROID(image, image_loc);
 
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state) {
+    if (auto image_state = Get<vvl::Image>(image)) {
         // Checks for no disjoint bit
         if (image_state->disjoint == true) {
             skip |= LogError("VUID-vkGetImageMemoryRequirements-image-01588", image, image_loc,
@@ -1109,6 +1109,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
     skip |= ValidateGetImageMemoryRequirementsANDROID(pInfo->image, image_loc);
 
     auto image_state = Get<vvl::Image>(pInfo->image);
+    if (!image_state) return skip;
     const VkFormat image_format = image_state->create_info.format;
     const VkImageTiling image_tiling = image_state->create_info.tiling;
     const auto *image_plane_info = vku::FindStructInPNextChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
@@ -1502,8 +1503,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const Location loc = bind_image_mem_2 ? error_obj.location.dot(Field::pBindInfos, i) : error_obj.location.function;
         const VkBindImageMemoryInfo &bind_info = pBindInfos[i];
-        auto image_state = Get<vvl::Image>(bind_info.image);
-        if (image_state) {
+        if (auto image_state = Get<vvl::Image>(bind_info.image)) {
             // Track objects tied to memory
             skip |= ValidateSetMemBinding(bind_info.memory, *image_state, loc);
 
@@ -2009,7 +2009,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     // Check to make sure all disjoint planes were bound
     for (auto &resource : resources_bound) {
         auto image_state = Get<vvl::Image>(resource.first);
-        if (image_state->disjoint == true && !is_drm) {
+        if (image_state && image_state->disjoint == true && !is_drm) {
             uint32_t total_planes = vkuFormatPlaneCount(image_state->create_info.format);
             for (uint32_t i = 0; i < total_planes; i++) {
                 if (resource.second[i] == vvl::kU32Max) {
@@ -2028,8 +2028,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                 const ErrorObject &error_obj) const {
     bool skip = false;
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state) {
+    if (auto image_state = Get<vvl::Image>(image)) {
         // Checks for no disjoint bit
         if (image_state->disjoint == true) {
             const LogObjectList objlist(image, memory);
@@ -2051,8 +2050,7 @@ void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, V
     if (VK_SUCCESS != record_obj.result) return;
 
     StateTracker::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state) {
+    if (auto image_state = Get<vvl::Image>(image)) {
         image_state->SetInitialLayoutMap();
     }
 }
@@ -2068,8 +2066,7 @@ void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindIn
     StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        auto image_state = Get<vvl::Image>(pBindInfos[i].image);
-        if (image_state) {
+        if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
             image_state->SetInitialLayoutMap();
         }
     }

@@ -383,8 +383,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                  FormatHandle(metal_texture_ptr->bufferView).c_str());
                 }
                 if (metal_texture_ptr->image) {
-                    auto image_info = Get<vvl::Image>(metal_texture_ptr->image);
-                    if (image_info) {
+                    if (auto image_info = Get<vvl::Image>(metal_texture_ptr->image)) {
                         if (!image_info->metal_image_export) {
                             skip |= LogError(
                                 "VUID-VkExportMetalObjectsInfoEXT-pNext-06795", device, error_obj.location,
@@ -418,8 +417,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                     }
                 }
                 if (metal_texture_ptr->imageView) {
-                    auto image_view_info = Get<vvl::ImageView>(metal_texture_ptr->imageView);
-                    if (image_view_info) {
+                    if (auto image_view_info = Get<vvl::ImageView>(metal_texture_ptr->imageView)) {
                         if (!image_view_info->metal_imageview_export) {
                             skip |= LogError(
                                 "VUID-VkExportMetalObjectsInfoEXT-pNext-06796", device, error_obj.location,
@@ -491,8 +489,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
 
             case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT: {
                 auto metal_io_surface_ptr = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT *>(metal_objects_info_ptr);
-                auto image_info = Get<vvl::Image>(metal_io_surface_ptr->image);
-                if (image_info) {
+                if (auto image_info = Get<vvl::Image>(metal_io_surface_ptr->image)) {
                     if (!image_info->metal_io_surface_export) {
                         skip |= LogError(
                             "VUID-VkExportMetalObjectsInfoEXT-pNext-06803", device, error_obj.location,
