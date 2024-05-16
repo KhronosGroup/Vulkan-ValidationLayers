@@ -1453,8 +1453,7 @@ void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, c
 }
 
 void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
-    auto mem_info = Get<vvl::DeviceMemory>(mem);
-    if (mem_info) {
+    if (auto mem_info = Get<vvl::DeviceMemory>(mem)) {
         mem_info->mapped_range.offset = offset;
         mem_info->mapped_range.size = size;
         mem_info->p_driver_data = *ppData;
@@ -1620,8 +1619,7 @@ void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDevi
     auto buffer_state = Get<vvl::Buffer>(buffer);
     if (buffer_state) {
         // Track objects tied to memory
-        auto mem_state = Get<vvl::DeviceMemory>(mem);
-        if (mem_state) {
+        if (auto mem_state = Get<vvl::DeviceMemory>(mem)) {
             buffer_state->BindMemory(buffer_state.get(), mem_state, memoryOffset, 0u, buffer_state->requirements.size);
         }
     }
@@ -2537,8 +2535,7 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
         auto as_state = Get<vvl::AccelerationStructureNV>(info.accelerationStructure);
         if (as_state) {
             // Track objects tied to memory
-            auto mem_state = Get<vvl::DeviceMemory>(info.memory);
-            if (mem_state) {
+            if (auto mem_state = Get<vvl::DeviceMemory>(info.memory)) {
                 as_state->BindMemory(as_state.get(), mem_state, info.memoryOffset, 0u, as_state->memory_requirements.size);
             }
 
@@ -3435,8 +3432,7 @@ void ValidationStateTracker::PostCallRecordMapMemory2KHR(VkDevice device, const 
 }
 
 void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem, const RecordObject &record_obj) {
-    auto mem_info = Get<vvl::DeviceMemory>(mem);
-    if (mem_info) {
+    if (auto mem_info = Get<vvl::DeviceMemory>(mem)) {
         mem_info->mapped_range = vvl::MemRange();
         mem_info->p_driver_data = nullptr;
     }
@@ -3444,8 +3440,7 @@ void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceM
 
 void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
                                                           const RecordObject &record_obj) {
-    auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory);
-    if (mem_info) {
+    if (auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory)) {
         mem_info->mapped_range = vvl::MemRange();
         mem_info->p_driver_data = nullptr;
     }

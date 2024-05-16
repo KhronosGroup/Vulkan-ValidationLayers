@@ -359,8 +359,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
 
             case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
                 auto metal_buffer_ptr = reinterpret_cast<const VkExportMetalBufferInfoEXT *>(metal_objects_info_ptr);
-                auto mem_info = Get<vvl::DeviceMemory>(metal_buffer_ptr->memory);
-                if (mem_info) {
+                if (auto mem_info = Get<vvl::DeviceMemory>(metal_buffer_ptr->memory)) {
                     if (!mem_info->metal_buffer_export) {
                         skip |= LogError(
                             "VUID-VkExportMetalObjectsInfoEXT-pNext-06793", device, error_obj.location,

@@ -116,6 +116,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
                                             const RecordObject& record_obj) {
     if (memory != VK_NULL_HANDLE && VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto mem_info = Get<vvl::DeviceMemory>(memory);
+        if (!mem_info) return;
 
         // Exclude memory free events on dedicated allocations, or imported/exported allocations.
         if (!mem_info->IsDedicatedBuffer() && !mem_info->IsDedicatedImage() && !mem_info->IsExport() && !mem_info->IsImport()) {
@@ -134,10 +135,11 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
 
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
                                               const ErrorObject& error_obj) const {
-    if (memory == VK_NULL_HANDLE) return false;
     bool skip = false;
+    if (memory == VK_NULL_HANDLE) return skip;
 
     auto mem_info = Get<vvl::DeviceMemory>(memory);
+    if (!mem_info) return skip;
 
     for (const auto& item : mem_info->ObjectBindings()) {
         const auto& obj = item.first;
@@ -153,8 +155,9 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
     bool skip = false;
     auto buffer_state = Get<vvl::Buffer>(buffer);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
+    if (!mem_state) return skip;
 
-    if (mem_state && mem_state->allocate_info.allocationSize == buffer_state->create_info.size &&
+    if (mem_state->allocate_info.allocationSize == buffer_state->create_info.size &&
         mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
         skip |= LogPerformanceWarning(kVUID_BestPractices_SmallDedicatedAllocation, device, loc,
                                       "%s: Trying to bind %s to a memory block which is fully consumed by the buffer. "
@@ -200,6 +203,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
+    if (!mem_state) return skip;
 
     if (mem_state->allocate_info.allocationSize == image_state->requirements[0].size &&
         mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
