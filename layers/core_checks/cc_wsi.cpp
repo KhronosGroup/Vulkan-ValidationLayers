@@ -969,8 +969,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
             for (uint32_t i = 0; i < swapchain_present_fence_info->swapchainCount; i++) {
                 if (swapchain_present_fence_info->pFences[i]) {
-                    const auto fence_state = Get<vvl::Fence>(swapchain_present_fence_info->pFences[i]);
-                    if (fence_state) {
+                    if (const auto fence_state = Get<vvl::Fence>(swapchain_present_fence_info->pFences[i])) {
                         const LogObjectList objlist(queue, swapchain_present_fence_info->pFences[i]);
                         skip |= ValidateFenceForSubmit(
                             *fence_state, "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759",
@@ -1070,8 +1069,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
                                           VkFence fence, const Location &loc, const char *semaphore_type_vuid) const {
     bool skip = false;
     const bool version_2 = loc.function != Func::vkAcquireNextImageKHR;
-    auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-    if (semaphore_state) {
+    if (auto semaphore_state = Get<vvl::Semaphore>(semaphore)) {
         if (semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError(semaphore_type_vuid, semaphore, loc, "%s is not a VK_SEMAPHORE_TYPE_BINARY.",
                              FormatHandle(semaphore).c_str());
@@ -1094,15 +1092,13 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         }
     }
 
-    auto fence_state = Get<vvl::Fence>(fence);
-    if (fence_state) {
+    if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(device, fence);
         skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkAcquireNextImageKHR-fence-01287",
                                        "VUID-vkAcquireNextImageKHR-fence-01287", objlist, loc);
     }
 
-    auto swapchain_data = Get<vvl::Swapchain>(swapchain);
-    if (swapchain_data) {
+    if (auto swapchain_data = Get<vvl::Swapchain>(swapchain)) {
         if (swapchain_data->retired) {
             const char *vuid =
                 version_2 ? "VUID-VkAcquireNextImageInfoKHR-swapchain-01675" : "VUID-vkAcquireNextImageKHR-swapchain-01285";

@@ -136,9 +136,8 @@ bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_
     bool skip = false;
 
     auto semaphore_state = core.Get<vvl::Semaphore>(semaphore);
-    if (!semaphore_state) {
-        return skip;
-    }
+    if (!semaphore_state) return skip;
+
     switch (semaphore_state->type) {
         case VK_SEMAPHORE_TYPE_BINARY:
             skip |= ValidateBinaryWait(wait_semaphore_loc, queue, *semaphore_state);
@@ -169,9 +168,8 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
     LogObjectList objlist(semaphore, queue);
 
     auto semaphore_state = core.Get<vvl::Semaphore>(semaphore);
-    if (!semaphore_state) {
-        return skip;
-    }
+    if (!semaphore_state) return skip;
+
     switch (semaphore_state->type) {
         case VK_SEMAPHORE_TYPE_BINARY: {
             if ((semaphore_state->Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(semaphore))) {
@@ -271,9 +269,8 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             skip |= ValidateStageMaskHost(objlist, stage_mask_loc, submit.pWaitDstStageMask[i]);
         }
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) {
-            continue;
-        }
+        if (!semaphore_state) continue;
+
         auto wait_semaphore_loc = submit_loc.dot(Field::pWaitSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             if (timeline_semaphore_submit_info == nullptr) {
@@ -302,9 +299,8 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) {
-            continue;
-        }
+        if (!semaphore_state) continue;
+
         auto signal_semaphore_loc = submit_loc.dot(Field::pSignalSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             if (timeline_semaphore_submit_info == nullptr) {
@@ -378,9 +374,8 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         const LogObjectList objlist(semaphore, state.queue);
         // NOTE: there are no stage masks in bind sparse submissions
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) {
-            continue;
-        }
+        if (!semaphore_state) continue;
+
         auto wait_semaphore_loc = submit_loc.dot(Field::pWaitSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             if (timeline_semaphore_submit_info == nullptr) {
@@ -409,9 +404,8 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) {
-            continue;
-        }
+        if (!semaphore_state) continue;
+
         auto signal_semaphore_loc = submit_loc.dot(Field::pSignalSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             if (timeline_semaphore_submit_info == nullptr) {
@@ -574,9 +568,8 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
 
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator,
                                                  const ErrorObject &error_obj) const {
-    auto sema_node = Get<vvl::Semaphore>(semaphore);
     bool skip = false;
-    if (sema_node) {
+    if (auto sema_node = Get<vvl::Semaphore>(semaphore)) {
         skip |= ValidateObjectNotInUse(sema_node.get(), error_obj.location.dot(Field::semaphore),
                                        "VUID-vkDestroySemaphore-semaphore-05149");
     }
@@ -585,9 +578,8 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator,
                                              const ErrorObject &error_obj) const {
-    auto event_state = Get<vvl::Event>(event);
     bool skip = false;
-    if (event_state) {
+    if (auto event_state = Get<vvl::Event>(event)) {
         skip |= ValidateObjectNotInUse(event_state.get(), error_obj.location.dot(Field::event), "VUID-vkDestroyEvent-event-01145");
     }
     return skip;
@@ -595,9 +587,8 @@ bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, con
 
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator,
                                                const ErrorObject &error_obj) const {
-    auto sampler_state = Get<vvl::Sampler>(sampler);
     bool skip = false;
-    if (sampler_state) {
+    if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
         skip |= ValidateObjectNotInUse(sampler_state.get(), error_obj.location.dot(Field::sampler),
                                        "VUID-vkDestroySampler-sampler-01082");
     }
@@ -1063,7 +1054,7 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
             // The "set event" is found in the current submission (the same queue); there can't be inter-queue usage errors
         } else {
             auto event_state = state_data.Get<vvl::Event>(event);
-            assert(event_state);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter
+            if (!event_state) continue;
             stage_mask |= event_state->signal_src_stage_mask;
 
             if (event_state->signaling_queue != VK_NULL_HANDLE && event_state->signaling_queue != waiting_queue) {
@@ -1327,8 +1318,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
 
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto event_state = Get<vvl::Event>(event);
-    if (event_state) {
+    if (auto event_state = Get<vvl::Event>(event)) {
         if (event_state->write_in_use) {
             skip |= LogError("VUID-vkSetEvent-event-09543", event, error_obj.location.dot(Field::event),
                              "(%s) that is already in use by a command buffer.", FormatHandle(event).c_str());
@@ -1343,8 +1333,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const E
 
 bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto event_state = Get<vvl::Event>(event);
-    if (event_state) {
+    if (auto event_state = Get<vvl::Event>(event)) {
         if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
             skip |= LogError("VUID-vkResetEvent-event-03823", event, error_obj.location.dot(Field::event),
                              "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR.", FormatHandle(event).c_str());
@@ -1355,8 +1344,7 @@ bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const
 
 bool CoreChecks::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
-    auto event_state = Get<vvl::Event>(event);
-    if (event_state) {
+    if (auto event_state = Get<vvl::Event>(event)) {
         if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
             skip |= LogError("VUID-vkGetEventStatus-event-03940", event, error_obj.location.dot(Field::event),
                              "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR.", FormatHandle(event).c_str());
@@ -1369,9 +1357,8 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
     bool skip = false;
     const Location signal_loc = error_obj.location.dot(Field::pSignalInfo);
     auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
-    if (!semaphore_state) {
-        return skip;
-    }
+    if (!semaphore_state) return skip;
+
     if (semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
         skip |= LogError("VUID-VkSemaphoreSignalInfo-semaphore-03257", pSignalInfo->semaphore, signal_loc.dot(Field::semaphore),
                          "%s was created with %s.", FormatHandle(pSignalInfo->semaphore).c_str(),
