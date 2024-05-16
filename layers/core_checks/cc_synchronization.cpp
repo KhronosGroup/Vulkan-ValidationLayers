@@ -1579,9 +1579,8 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
 
     {
         auto image_state = Get<vvl::Image>(img_barrier.image);
-        if (!image_state) {
-            return skip;
-        }
+        if (!image_state) return skip;
+
         auto image_loc = barrier_loc.dot(Field::image);
 
         if ((img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) ||
@@ -1683,7 +1682,8 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
                 if (color_attachment.imageView == VK_NULL_HANDLE) {
                     continue;
                 }
-                const auto &image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+                const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+                if (!image_view_state) continue;
                 const auto &image_view_image_state = image_view_state->image_state;
 
                 if (img_barrier_image == image_view_image_state->VkHandle()) {
@@ -2363,8 +2363,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         }
     }
 
-    auto image_data = Get<vvl::Image>(mem_barrier.image);
-    if (image_data) {
+    if (auto image_data = Get<vvl::Image>(mem_barrier.image)) {
         auto image_loc = barrier_loc.dot(Field::image);
         // TODO - use LocationVuidAdapter
         const auto &vuid_no_memory = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kNoMemory);

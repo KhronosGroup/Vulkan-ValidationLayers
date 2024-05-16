@@ -88,7 +88,7 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkI
     assert((subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U);
 
     auto image_state = Get<vvl::Image>(depth_attachment);
-    assert(image_state);
+    if (!image_state) return;
 
     const uint32_t mip_levels = image_state->create_info.mipLevels;
     const uint32_t array_layers = image_state->create_info.arrayLayers;
@@ -236,9 +236,7 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
     const auto& tree = image_it->second;
 
     auto image_state = Get<vvl::Image>(image);
-    if (!image_state) {
-        return skip;
-    }
+    if (!image_state) return skip;
 
     ForEachSubresource(*image_state, subresource_range, [&](uint32_t layer, uint32_t level) {
         if (is_balanced) {

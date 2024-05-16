@@ -825,16 +825,16 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
         // non-sparse images set up their layout maps when memory is bound
-        auto image_state = Get<vvl::Image>(*pImage);
-        image_state->SetInitialLayoutMap();
+        if (auto image_state = Get<vvl::Image>(*pImage)) {
+            image_state->SetInitialLayoutMap();
+        }
     }
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                              const ErrorObject &error_obj) const {
-    auto image_state = Get<vvl::Image>(image);
     bool skip = false;
-    if (image_state) {
+    if (auto image_state = Get<vvl::Image>(image)) {
         if (image_state->IsSwapchainImage() && image_state->owned_by_swapchain) {
             skip |= LogError("VUID-vkDestroyImage-image-04882", image, error_obj.location.dot(Field::image),
                              "%s is a presentable image controlled by the implementation and must be destroyed "
@@ -849,7 +849,6 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                            const RecordObject &record_obj) {
     // Clean up validation specific data
-    auto image_state = Get<vvl::Image>(image);
     qfo_release_image_barrier_map.erase(image);
     // Clean up generic image state
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
@@ -1807,9 +1806,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                                 [[maybe_unused]] VkImageView *pView, const ErrorObject &error_obj) const {
     bool skip = false;
     auto image_state_ptr = Get<vvl::Image>(pCreateInfo->image);
-    if (!image_state_ptr) {
-        return skip;
-    }
+    if (!image_state_ptr) return skip;
+
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     const auto &image_state = *image_state_ptr;
 
@@ -2368,10 +2366,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator,
                                                  const ErrorObject &error_obj) const {
-    auto image_view_state = Get<vvl::ImageView>(imageView);
-
     bool skip = false;
-    if (image_view_state) {
+    if (auto image_view_state = Get<vvl::ImageView>(imageView)) {
         skip |= ValidateObjectNotInUse(image_view_state.get(), error_obj.location, "VUID-vkDestroyImageView-imageView-01026");
     }
     return skip;
@@ -2560,8 +2556,7 @@ bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice 
                                                                        VkImageDrmFormatModifierPropertiesEXT *pProperties,
                                                                        const ErrorObject &error_obj) const {
     bool skip = false;
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state) {
+    if (auto image_state = Get<vvl::Image>(image)) {
         if (image_state->create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             skip |=
                 LogError("VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-02272", image, error_obj.location.dot(Field::image),
@@ -2580,6 +2575,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
         const Location transition_loc = error_obj.location.dot(Field::pTransitions, i);
         const auto &transition = pTransitions[i];
         const auto image_state = Get<vvl::Image>(transition.image);
+        if (!image_state) continue;
         const auto image_format = image_state->create_info.format;
         const auto aspect_mask = transition.subresourceRange.aspectMask;
         const bool has_depth_mask = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;

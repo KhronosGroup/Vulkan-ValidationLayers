@@ -156,7 +156,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     const VkImage dedicated_image = mem_info->GetDedicatedImage();
     if (dedicated_image != VK_NULL_HANDLE) {
         auto image_state = Get<vvl::Image>(dedicated_image);
-        if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->VkHandle())))) {
+        if (!image_state || (0 == (image_state->CountDeviceMemory(mem_info->VkHandle())))) {
             const LogObjectList objlist(device, pInfo->memory, dedicated_image);
             skip |= LogError("VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883", objlist,
                              error_obj.location.dot(Field::pInfo).dot(Field::memory),
@@ -297,6 +297,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             }
 
             auto image_state = Get<vvl::Image>(mem_ded_alloc_info->image);
+            if (!image_state) return skip;
             const auto *ici = &image_state->create_info;
             const Location &dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
 
@@ -402,9 +403,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
 
 bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location &loc) const {
     bool skip = false;
-
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state != nullptr) {
+    if (auto image_state = Get<vvl::Image>(image)) {
         if (image_state->IsExternalBuffer() && (0 == image_state->GetBoundMemoryStates().size())) {
             const char *vuid = loc.function == Func::vkGetImageMemoryRequirements
                                    ? "VUID-vkGetImageMemoryRequirements-image-04004"
@@ -558,6 +557,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(create_info.image);
+    if (!image_state) return skip;
 
     if (image_state->HasAHBFormat()) {
         if (VK_FORMAT_UNDEFINED != create_info.format) {

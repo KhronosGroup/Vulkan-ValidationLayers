@@ -38,38 +38,38 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         }
 
         auto view_state = Get<vvl::ImageView>(attachments[i]);
-        if (view_state) {
-            const auto& ici = view_state->image_state->create_info;
+        if (!view_state) continue;
 
-            const bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
+        const auto& ici = view_state->image_state->create_info;
 
-            // The check for an image that should not be transient applies to all GPUs
-            if (!attachment_should_be_transient && image_is_transient) {
-                skip |= LogPerformanceWarning(
-                    kVUID_BestPractices_CreateFramebuffer_AttachmentShouldNotBeTransient, device, loc,
-                    "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
-                    "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
-                    "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
-                    i);
+        const bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
+
+        // The check for an image that should not be transient applies to all GPUs
+        if (!attachment_should_be_transient && image_is_transient) {
+            skip |=
+                LogPerformanceWarning(kVUID_BestPractices_CreateFramebuffer_AttachmentShouldNotBeTransient, device, loc,
+                                      "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
+                                      "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
+                                      "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
+                                      i);
+        }
+
+        bool supports_lazy = false;
+        for (uint32_t j = 0; j < phys_dev_mem_props.memoryTypeCount; j++) {
+            if (phys_dev_mem_props.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
+                supports_lazy = true;
             }
+        }
 
-            bool supports_lazy = false;
-            for (uint32_t j = 0; j < phys_dev_mem_props.memoryTypeCount; j++) {
-                if (phys_dev_mem_props.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
-                    supports_lazy = true;
-                }
-            }
-
-            // The check for an image that should be transient only applies to GPUs supporting
-            // lazily allocated memory
-            if (supports_lazy && attachment_should_be_transient && !image_is_transient) {
-                skip |= LogPerformanceWarning(
-                    kVUID_BestPractices_CreateFramebuffer_AttachmentShouldBeTransient, device, loc,
-                    "Attachment %u in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
-                    "but the image backing the image view does not have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
-                    "You can save physical memory by using transient attachment backed by lazily allocated memory here.",
-                    i);
-            }
+        // The check for an image that should be transient only applies to GPUs supporting
+        // lazily allocated memory
+        if (supports_lazy && attachment_should_be_transient && !image_is_transient) {
+            skip |= LogPerformanceWarning(
+                kVUID_BestPractices_CreateFramebuffer_AttachmentShouldBeTransient, device, loc,
+                "Attachment %u in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
+                "but the image backing the image view does not have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
+                "You can save physical memory by using transient attachment backed by lazily allocated memory here.",
+                i);
         }
     }
     return skip;

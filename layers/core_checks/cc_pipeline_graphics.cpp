@@ -3782,6 +3782,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
                     auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
+                    if (!view_state) continue;
                     if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
                         (view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                         (pipeline_rendering_ci.pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED) &&
@@ -3810,6 +3811,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                     }
                 } else {
                     auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
+                    if (!view_state) continue;
                     if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
                         view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
@@ -3828,7 +3830,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
                     auto view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-                    if ((view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
+                    if (view_state && (view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                         (pipeline_rendering_ci.depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
                         (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat)) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
@@ -3852,7 +3854,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                     }
                 } else {
                     auto view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-                    if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
+                    if (view_state && view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                         skip |= LogError(vuid.dynamic_rendering_depth_format_08914, objlist, loc,
                                          "VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
@@ -3879,7 +3881,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
                     auto view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-                    if ((view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
+                    if (view_state && (view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                         (pipeline_rendering_ci.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
                         (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat)) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
@@ -3903,7 +3905,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                     }
                 } else {
                     auto view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-                    if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
+                    if (view_state && view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                         skip |= LogError(vuid.dynamic_rendering_stencil_format_08917, objlist, loc,
                                          "VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
@@ -4021,8 +4023,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
             const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
             if (rendering_info.colorAttachmentCount == 1 &&
                 rendering_info.pColorAttachments[0].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
-                auto resolve_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].resolveImageView);
-                if (resolve_image_view_state) {
+                if (auto resolve_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].resolveImageView)) {
                     if (resolve_image_view_state->image_state->ahb_format != pipeline_external_format) {
                         skip |= LogError(vuid.external_format_resolve_09362, objlist, loc,
                                          "pipeline externalFormat is %" PRIu64
@@ -4031,8 +4032,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                     }
                 }
 
-                auto color_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].imageView);
-                if (color_image_view_state) {
+                if (auto color_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].imageView)) {
                     if (color_image_view_state->image_state->ahb_format != pipeline_external_format) {
                         skip |= LogError(vuid.external_format_resolve_09363, objlist, loc,
                                          "pipeline externalFormat is %" PRIu64
@@ -4094,7 +4094,9 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                 continue;
             }
             auto color_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
+            if (!color_view_state) continue;
             auto color_image_samples = Get<vvl::Image>(color_view_state->create_info.image)->create_info.samples;
+            if (!color_image_samples) continue;
 
             if (p_attachment_sample_count_info &&
                 (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
@@ -4110,7 +4112,9 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if (rendering_info.pDepthAttachment != nullptr) {
             auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
+            if (!depth_view_state) return skip;
             auto depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
+            if (!depth_image_samples) return skip;
 
             if (p_attachment_sample_count_info) {
                 if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -4127,7 +4131,9 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if (rendering_info.pStencilAttachment != nullptr) {
             auto stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
+            if (!stencil_view_state) return skip;
             auto stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
+            if (!stencil_image_samples) return skip;
 
             if (p_attachment_sample_count_info) {
                 if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -4149,8 +4155,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                 continue;
             }
             auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-            auto samples = Get<vvl::Image>(view_state->create_info.image)->create_info.samples;
+            if (!view_state) continue;
+            auto image_state = Get<vvl::Image>(view_state->create_info.image);
+            if (!image_state) continue;
 
+            auto samples = image_state->create_info.samples;
             if (samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.dynamic_rendering_07285, objlist, loc,
@@ -4163,8 +4172,9 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
+            if (!depth_view_state) return skip;
             const auto &depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
-            if (depth_image_samples != rasterization_samples) {
+            if (depth_image_samples && (depth_image_samples != rasterization_samples)) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.dynamic_rendering_07286, objlist, loc,
                                  "Depth attachment sample count (%s) must match corresponding "
@@ -4176,8 +4186,9 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if ((rendering_info.pStencilAttachment != nullptr) && (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
+            if (!stencil_view_state) return skip;
             const auto &stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
-            if (stencil_image_samples != rasterization_samples) {
+            if (stencil_image_samples && (stencil_image_samples != rasterization_samples)) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.dynamic_rendering_07287, objlist, loc,
                                  "Stencil attachment sample count (%s) must match corresponding "
