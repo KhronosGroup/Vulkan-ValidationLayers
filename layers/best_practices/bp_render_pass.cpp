@@ -164,9 +164,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
                                                const Location& loc) const {
     bool skip = false;
 
-    if (!pRenderPassBegin) {
-        return skip;
-    }
+    if (!pRenderPassBegin) return skip;
 
     if (pRenderPassBegin->renderArea.extent.width == 0 || pRenderPassBegin->renderArea.extent.height == 0) {
         skip |= LogWarning(kVUID_BestPractices_BeginRenderPass_ZeroSizeRenderArea, commandBuffer, loc,
@@ -175,38 +173,39 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
     }
 
     auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    if (rp_state) {
-        if (rp_state->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
-            const VkRenderPassAttachmentBeginInfo* rpabi = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
-            if (rpabi) {
-                skip |= ValidateAttachments(rp_state->create_info.ptr(), rpabi->attachmentCount, rpabi->pAttachments, loc);
-            }
+    if (!rp_state) return skip;
+
+    if (rp_state->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
+        const VkRenderPassAttachmentBeginInfo* rpabi =
+            vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+        if (rpabi) {
+            skip |= ValidateAttachments(rp_state->create_info.ptr(), rpabi->attachmentCount, rpabi->pAttachments, loc);
         }
-        // Check if any attachments have LOAD operation on them
-        for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
-            const auto& attachment = rp_state->create_info.pAttachments[att];
+    }
+    // Check if any attachments have LOAD operation on them
+    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+        const auto& attachment = rp_state->create_info.pAttachments[att];
 
-            bool attachment_has_readback = false;
-            if (!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-                attachment_has_readback = true;
-            }
+        bool attachment_has_readback = false;
+        if (!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+            attachment_has_readback = true;
+        }
 
-            if (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-                attachment_has_readback = true;
-            }
+        if (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+            attachment_has_readback = true;
+        }
 
-            bool attachment_needs_readback = false;
+        bool attachment_needs_readback = false;
 
-            // Check if the attachment is actually used in any subpass on-tile
-            if (attachment_has_readback && RenderPassUsesAttachmentOnTile(rp_state->create_info, att)) {
-                attachment_needs_readback = true;
-            }
+        // Check if the attachment is actually used in any subpass on-tile
+        if (attachment_has_readback && RenderPassUsesAttachmentOnTile(rp_state->create_info, att)) {
+            attachment_needs_readback = true;
+        }
 
-            // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
-            if (attachment_needs_readback && (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
-                const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
-                skip |=
-                    LogPerformanceWarning(kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback, objlist, loc,
+        // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
+        if (attachment_needs_readback && (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
+            const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
+            skip |= LogPerformanceWarning(kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback, objlist, loc,
                                           "%s %s: Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
                                           "Submitting this renderpass will cause the driver to inject a readback of the attachment "
                                           "which will copy in total %u pixels (renderArea = "
@@ -214,53 +213,51 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
                                           VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), att,
                                           pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
                                           string_VkRect2D(pRenderPassBegin->renderArea).c_str());
-            }
         }
+    }
 
-        // Check if renderpass has at least one VK_ATTACHMENT_LOAD_OP_CLEAR
+    // Check if renderpass has at least one VK_ATTACHMENT_LOAD_OP_CLEAR
 
-        bool clearing = false;
+    bool clearing = false;
 
-        for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
-            const auto& attachment = rp_state->create_info.pAttachments[att];
+    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+        const auto& attachment = rp_state->create_info.pAttachments[att];
 
-            if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                clearing = true;
-                break;
-            }
+        if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+            clearing = true;
+            break;
         }
+    }
 
-        // Check if there are ClearValues passed to BeginRenderPass even though no attachments will be cleared
-        if (!clearing && pRenderPassBegin->clearValueCount > 0) {
-            // Flag as warning because nothing will happen per spec, and pClearValues will be ignored
-            const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
-            skip |= LogWarning(
-                kVUID_BestPractices_ClearValueWithoutLoadOpClear, objlist, loc,
-                "This render pass does not have VkRenderPassCreateInfo.pAttachments->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR "
-                "but VkRenderPassBeginInfo.clearValueCount > 0. VkRenderPassBeginInfo.pClearValues will be ignored and no "
-                "attachments will be cleared.");
-        }
+    // Check if there are ClearValues passed to BeginRenderPass even though no attachments will be cleared
+    if (!clearing && pRenderPassBegin->clearValueCount > 0) {
+        // Flag as warning because nothing will happen per spec, and pClearValues will be ignored
+        const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
+        skip |=
+            LogWarning(kVUID_BestPractices_ClearValueWithoutLoadOpClear, objlist, loc,
+                       "This render pass does not have VkRenderPassCreateInfo.pAttachments->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR "
+                       "but VkRenderPassBeginInfo.clearValueCount > 0. VkRenderPassBeginInfo.pClearValues will be ignored and no "
+                       "attachments will be cleared.");
+    }
 
-        // Check if there are more clearValues than attachments
-        if (pRenderPassBegin->clearValueCount > rp_state->create_info.attachmentCount) {
-            // Flag as warning because the overflowing clearValues will be ignored and could even be undefined on certain platforms.
-            // This could signal a bug and there seems to be no reason for this to happen on purpose.
-            const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
-            skip |=
-                LogWarning(kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount, objlist, loc,
+    // Check if there are more clearValues than attachments
+    if (pRenderPassBegin->clearValueCount > rp_state->create_info.attachmentCount) {
+        // Flag as warning because the overflowing clearValues will be ignored and could even be undefined on certain platforms.
+        // This could signal a bug and there seems to be no reason for this to happen on purpose.
+        const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
+        skip |= LogWarning(kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount, objlist, loc,
                            "This render pass has VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount "
                            "(%" PRIu32 " > %" PRIu32
                            ") and as such the clearValues that do not have a corresponding attachment will be ignored.",
                            pRenderPassBegin->clearValueCount, rp_state->create_info.attachmentCount);
-        }
+    }
 
-        if (VendorCheckEnabled(kBPVendorNVIDIA) && rp_state->create_info.pAttachments) {
-            for (uint32_t i = 0; i < pRenderPassBegin->clearValueCount; ++i) {
-                const auto& attachment = rp_state->create_info.pAttachments[i];
-                if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                    const auto& clear_color = pRenderPassBegin->pClearValues[i].color;
-                    skip |= ValidateClearColor(commandBuffer, attachment.format, clear_color, loc);
-                }
+    if (VendorCheckEnabled(kBPVendorNVIDIA) && rp_state->create_info.pAttachments) {
+        for (uint32_t i = 0; i < pRenderPassBegin->clearValueCount; ++i) {
+            const auto& attachment = rp_state->create_info.pAttachments[i];
+            if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                const auto& clear_color = pRenderPassBegin->pClearValues[i].color;
+                skip |= ValidateClearColor(commandBuffer, attachment.format, clear_color, loc);
             }
         }
     }
@@ -410,44 +407,42 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
 }
 
 void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin) {
-    if (!pRenderPassBegin) {
-        return;
-    }
+    if (!pRenderPassBegin) return;
 
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
     auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    if (rp_state) {
-        // Check load ops
-        for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
-            const auto& attachment = rp_state->create_info.pAttachments[att];
+    if (!rp_state) return;
 
-            if (!RenderPassUsesAttachmentAsImageOnly(rp_state->create_info, att) &&
-                !RenderPassUsesAttachmentOnTile(rp_state->create_info, att)) {
-                continue;
-            }
+    // Check load ops
+    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+        const auto& attachment = rp_state->create_info.pAttachments[att];
 
-            // If renderpass doesn't load attachment, no need to validate image in queue
-            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_NONE_KHR) ||
-                (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_NONE_KHR)) {
-                continue;
-            }
+        if (!RenderPassUsesAttachmentAsImageOnly(rp_state->create_info, att) &&
+            !RenderPassUsesAttachmentOnTile(rp_state->create_info, att)) {
+            continue;
+        }
 
-            IMAGE_SUBRESOURCE_USAGE_BP usage = IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED;
+        // If renderpass doesn't load attachment, no need to validate image in queue
+        if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_NONE_KHR) ||
+            (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_NONE_KHR)) {
+            continue;
+        }
 
-            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) ||
-                (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD)) {
-                usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE;
-            } else if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) ||
-                       (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)) {
-                usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED;
-            } else if (RenderPassUsesAttachmentAsImageOnly(rp_state->create_info, att)) {
-                usage = IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS;
-            }
+        IMAGE_SUBRESOURCE_USAGE_BP usage = IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED;
 
-            auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
-            std::shared_ptr<vvl::ImageView> image_view = nullptr;
+        if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) ||
+            (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD)) {
+            usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE;
+        } else if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) ||
+                   (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)) {
+            usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED;
+        } else if (RenderPassUsesAttachmentAsImageOnly(rp_state->create_info, att)) {
+            usage = IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS;
+        }
 
+        std::shared_ptr<vvl::ImageView> image_view = nullptr;
+        if (auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer)) {
             if (framebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi =
                     vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
@@ -457,34 +452,34 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
             } else {
                 image_view = Get<vvl::ImageView>(framebuffer->create_info.pAttachments[att]);
             }
-
-            QueueValidateImageView(cb->queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
         }
 
-        // Check store ops
-        for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
-            const auto& attachment = rp_state->create_info.pAttachments[att];
+        QueueValidateImageView(cb->queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
+    }
 
-            if (!RenderPassUsesAttachmentOnTile(rp_state->create_info, att)) {
-                continue;
-            }
+    // Check store ops
+    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+        const auto& attachment = rp_state->create_info.pAttachments[att];
 
-            // If renderpass doesn't store attachment, no need to validate image in queue
-            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_NONE) ||
-                (vkuFormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_NONE)) {
-                continue;
-            }
+        if (!RenderPassUsesAttachmentOnTile(rp_state->create_info, att)) {
+            continue;
+        }
 
-            IMAGE_SUBRESOURCE_USAGE_BP usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED;
+        // If renderpass doesn't store attachment, no need to validate image in queue
+        if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_NONE) ||
+            (vkuFormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_NONE)) {
+            continue;
+        }
 
-            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE) ||
-                (vkuFormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
-                usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED;
-            }
+        IMAGE_SUBRESOURCE_USAGE_BP usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED;
 
-            auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
+        if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE) ||
+            (vkuFormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
+            usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED;
+        }
 
-            std::shared_ptr<vvl::ImageView> image_view;
+        std::shared_ptr<vvl::ImageView> image_view;
+        if (auto framebuffer = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer)) {
             if (framebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi =
                     vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
@@ -494,9 +489,9 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
             } else {
                 image_view = Get<vvl::ImageView>(framebuffer->create_info.pAttachments[att]);
             }
-
-            QueueValidateImageView(cb->queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(), usage);
         }
+
+        QueueValidateImageView(cb->queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(), usage);
     }
 }
 
@@ -711,8 +706,7 @@ void BestPractices::PostRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, 
     // Reset NV state
     cb_state->nv = {};
 
-    auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    if (rp_state) {
+    if (auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass)) {
         // track depth / color attachment usage within the renderpass
         for (size_t i = 0; i < rp_state->create_info.subpassCount; i++) {
             // record if depth/color attachments are in use for this renderpass

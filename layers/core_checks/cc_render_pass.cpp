@@ -459,9 +459,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
 
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
                                                   const ErrorObject &error_obj) const {
-    auto rp_state = Get<vvl::RenderPass>(renderPass);
     bool skip = false;
-    if (rp_state) {
+    if (auto rp_state = Get<vvl::RenderPass>(renderPass)) {
         skip |= ValidateObjectNotInUse(rp_state.get(), error_obj.location, "VUID-vkDestroyRenderPass-renderPass-00873");
     }
     return skip;
@@ -485,8 +484,9 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                                             VkSubpassContents contents, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    const auto &rp_state = *Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    const auto &fb_state = *Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
+    const auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
+    const auto fb_state = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
+    if (!rp_state || !fb_state) return skip;
     const Location rp_begin_loc = error_obj.location.dot(Field::pRenderPassBegin);
 
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -502,12 +502,12 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
             const VkAttachmentSampleLocationsEXT &sample_location =
                 sample_locations_begin_info->pAttachmentInitialSampleLocations[i];
             skip |= ValidateSampleLocationsInfo(sample_location.sampleLocationsInfo, sampler_loc.dot(Field::sampleLocationsInfo));
-            if (sample_location.attachmentIndex >= rp_state.create_info.attachmentCount) {
+            if (sample_location.attachmentIndex >= rp_state->create_info.attachmentCount) {
                 const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
                 skip |= LogError(
                     "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531", objlist, sampler_loc.dot(Field::attachmentIndex),
                     "(%" PRIu32 ") is greater than the attachment count of %" PRIu32 " for the render pass being begun.",
-                    sample_location.attachmentIndex, rp_state.create_info.attachmentCount);
+                    sample_location.attachmentIndex, rp_state->create_info.attachmentCount);
             }
         }
 
@@ -516,18 +516,18 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                 rp_begin_loc.pNext(Struct::VkRenderPassSampleLocationsBeginInfoEXT, Field::pPostSubpassSampleLocations, i);
             const VkSubpassSampleLocationsEXT &sample_location = sample_locations_begin_info->pPostSubpassSampleLocations[i];
             skip |= ValidateSampleLocationsInfo(sample_location.sampleLocationsInfo, sampler_loc.dot(Field::sampleLocationsInfo));
-            if (sample_location.subpassIndex >= rp_state.create_info.subpassCount) {
+            if (sample_location.subpassIndex >= rp_state->create_info.subpassCount) {
                 const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
                 skip |=
                     LogError("VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532", objlist, sampler_loc.dot(Field::subpassIndex),
                              "(%" PRIu32 ") is greater than the subpass count of %" PRIu32 " for the render pass being begun.",
-                             sample_location.subpassIndex, rp_state.create_info.subpassCount);
+                             sample_location.subpassIndex, rp_state->create_info.subpassCount);
             }
         }
     }
 
-    for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; ++i) {
-        auto attachment = &rp_state.create_info.pAttachments[i];
+    for (uint32_t i = 0; i < rp_state->create_info.attachmentCount; ++i) {
+        auto attachment = &rp_state->create_info.pAttachments[i];
         if (FormatSpecificLoadAndStoreOpSettings(attachment->format, attachment->loadOp, attachment->stencilLoadOp,
                                                  VK_ATTACHMENT_LOAD_OP_CLEAR)) {
             clear_op_size = static_cast<uint32_t>(i) + 1;
@@ -549,15 +549,15 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                          "attachment number so even if some pClearValues entries between 0 and %" PRIu32
                          " correspond to attachments "
                          "that aren't cleared they will be ignored.",
-                         pRenderPassBegin->clearValueCount, clear_op_size, FormatHandle(rp_state.Handle()).c_str(), clear_op_size,
+                         pRenderPassBegin->clearValueCount, clear_op_size, FormatHandle(rp_state->Handle()).c_str(), clear_op_size,
                          clear_op_size - 1);
     }
     skip |= VerifyFramebufferAndRenderPassImageViews(*pRenderPassBegin, rp_begin_loc);
     skip |= VerifyRenderAreaBounds(*pRenderPassBegin, rp_begin_loc);
 
-    skip |= VerifyFramebufferAndRenderPassLayouts(cb_state, *pRenderPassBegin, fb_state, rp_begin_loc);
-    if (fb_state.rp_state->VkHandle() != rp_state.VkHandle()) {
-        skip |= ValidateRenderPassCompatibility(rp_state.Handle(), rp_state, fb_state.Handle(), *fb_state.rp_state,
+    skip |= VerifyFramebufferAndRenderPassLayouts(cb_state, *pRenderPassBegin, *fb_state, rp_begin_loc);
+    if (fb_state->rp_state->VkHandle() != rp_state->VkHandle()) {
+        skip |= ValidateRenderPassCompatibility(rp_state->Handle(), *rp_state, fb_state->Handle(), *fb_state->rp_state,
                                                 error_obj.location, "VUID-VkRenderPassBeginInfo-renderPass-00904");
     }
 
@@ -665,9 +665,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
     skip |= ValidateCmd(cb_state, error_obj.location);
 
     const auto *rp_state_ptr = cb_state.activeRenderPass.get();
-    if (!rp_state_ptr) {
-        return skip;
-    }
+    if (!rp_state_ptr) return skip;
 
     const auto &rp_state = *rp_state_ptr;
     const VkRenderPassCreateInfo2 *rpci = rp_state.create_info.ptr();
@@ -922,6 +920,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
         device_group_render_pass_begin_info ? device_group_render_pass_begin_info->deviceRenderAreaCount : 0;
 
     auto framebuffer_state = Get<vvl::Framebuffer>(begin_info.framebuffer);
+    if (!framebuffer_state) return skip;
     const auto *framebuffer_info = &framebuffer_state->create_info;
     // These VUs depend on count being non-zero, or else acts like struct is not there
     if (device_group_area_count > 0) {
@@ -997,8 +996,10 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         return false;
     }
 
-    const auto &framebuffer_state = *Get<vvl::Framebuffer>(begin_info.framebuffer);
-    const auto &framebuffer_create_info = framebuffer_state.create_info;
+    const auto framebuffer_state = Get<vvl::Framebuffer>(begin_info.framebuffer);
+    if (!framebuffer_state) return skip;
+
+    const auto &framebuffer_create_info = framebuffer_state->create_info;
     if ((framebuffer_create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         const LogObjectList objlist(begin_info.renderPass, begin_info.framebuffer);
         skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03207", objlist,
@@ -1027,6 +1028,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
     }
 
     auto render_pass_state = Get<vvl::RenderPass>(begin_info.renderPass);
+    if (!render_pass_state) return skip;
     const auto *render_pass_create_info = &render_pass_state->create_info;
     for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
         const Location attachment_loc = begin_info_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo, Field::pAttachments, i);
@@ -4257,9 +4259,8 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
     }
 
     auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);
-    if (!rp_state) {
-        return skip;
-    }
+    if (!rp_state) return skip;
+
     const VkRenderPassCreateInfo2 *rpci = rp_state->create_info.ptr();
 
     bool b_has_non_zero_view_masks = false;
@@ -4928,9 +4929,8 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                    const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
-    auto framebuffer_state = Get<vvl::Framebuffer>(framebuffer);
     bool skip = false;
-    if (framebuffer_state) {
+    if (auto framebuffer_state = Get<vvl::Framebuffer>(framebuffer)) {
         skip |= ValidateObjectNotInUse(framebuffer_state.get(), error_obj.location, "VUID-vkDestroyFramebuffer-framebuffer-00892");
     }
     return skip;
