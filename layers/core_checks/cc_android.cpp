@@ -572,8 +572,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &cre
         const VkSamplerYcbcrConversionInfo *ycbcr_conv_info =
             vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
         if (ycbcr_conv_info != nullptr) {
-            auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(ycbcr_conv_info->conversion);
-            if (ycbcr_state) {
+            if (auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(ycbcr_conv_info->conversion)) {
                 conv_found = true;
                 external_format = ycbcr_state->external_format;
             }
