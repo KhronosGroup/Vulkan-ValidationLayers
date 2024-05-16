@@ -512,18 +512,22 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                     break;  // Only need to report for the first component found
                 }
 
+                // TODO - Being discussed if Patch have own Location slots or not
+                // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3858
+                // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8014
+                //
                 // Tessellation needs to match Patch vs Vertex
-                if ((producer_stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
-                    (consumer_stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
-                    (input_var->is_patch != output_var->is_patch)) {
-                    const LogObjectList objlist(producer.handle(), consumer.handle());
-                    skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
-                                     "(SPIR-V Interface) at Location %" PRIu32 " Component %" PRIu32
-                                     " Tessellation Control is %s while Tessellation Evaluation is %s",
-                                     location, component, input_var->is_patch ? "patch" : "vertex",
-                                     output_var->is_patch ? "patch" : "vertex");
-                    break;  // Only need to report for the first component found
-                }
+                // if ((producer_stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
+                //     (consumer_stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
+                //     (input_var->is_patch != output_var->is_patch)) {
+                //     const LogObjectList objlist(producer.handle(), consumer.handle());
+                //     skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
+                //                      "(SPIR-V Interface) at Location %" PRIu32 " Component %" PRIu32
+                //                      " Tessellation Control is %s while Tessellation Evaluation is %s",
+                //                      location, component, input_var->is_patch ? "patch" : "vertex",
+                //                      output_var->is_patch ? "patch" : "vertex");
+                //     break;  // Only need to report for the first component found
+                // }
 
                 // If using maintenance4 need to check Vectors incase different sizes
                 if (!enabled_features.maintenance4 && (output_var->base_type.Opcode() == spv::OpTypeVector) &&
