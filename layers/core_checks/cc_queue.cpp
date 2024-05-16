@@ -89,7 +89,7 @@ struct CommandBufferSubmitState {
         for (const auto &it : cb_state.video_session_updates) {
             auto video_session_state = core.Get<vvl::VideoSession>(it.first);
             auto local_state_it = local_video_session_state.find(it.first);
-            if (local_state_it == local_video_session_state.end()) {
+            if (video_session_state && (local_state_it == local_video_session_state.end())) {
                 local_state_it = local_video_session_state.insert({it.first, video_session_state->DeviceStateCopy()}).first;
             }
             for (const auto &function : it.second) {

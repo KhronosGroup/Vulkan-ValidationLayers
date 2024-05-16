@@ -2600,9 +2600,8 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
 bool CoreChecks::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                        const VkAllocationCallbacks *pAllocator,
                                                        const ErrorObject &error_obj) const {
-    auto video_session_state = Get<vvl::VideoSession>(videoSession);
     bool skip = false;
-    if (video_session_state) {
+    if (auto video_session_state = Get<vvl::VideoSession>(videoSession)) {
         skip |= ValidateObjectNotInUse(video_session_state.get(), error_obj.location,
                                        "VUID-vkDestroyVideoSessionKHR-videoSession-07192");
     }
@@ -2616,7 +2615,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
     bool skip = false;
 
     auto vs_state = Get<vvl::VideoSession>(videoSession);
-    if (!vs_state) return false;
+    if (!vs_state) return skip;
 
     if (pBindSessionMemoryInfos) {
         {
@@ -2716,7 +2715,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
     std::shared_ptr<const vvl::VideoSessionParameters> template_state;
     if (pCreateInfo->videoSessionParametersTemplate != VK_NULL_HANDLE) {
         template_state = Get<vvl::VideoSessionParameters>(pCreateInfo->videoSessionParametersTemplate);
-        if (template_state->vs_state->VkHandle() != pCreateInfo->videoSession) {
+        if (template_state && (template_state->vs_state->VkHandle() != pCreateInfo->videoSession)) {
             template_state = nullptr;
             const LogObjectList objlist(device, pCreateInfo->videoSessionParametersTemplate, pCreateInfo->videoSession);
             skip |= LogError(
@@ -2727,7 +2726,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
     }
 
     auto vs_state = Get<vvl::VideoSession>(pCreateInfo->videoSession);
-    if (!vs_state) return false;
+    if (!vs_state) return skip;
 
     const char *pnext_chain_msg = "does not contain a %s structure.";
     switch (vs_state->GetCodecOp()) {
@@ -2845,7 +2844,7 @@ bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device,
     bool skip = false;
 
     auto vsp_state = Get<vvl::VideoSessionParameters>(videoSessionParameters);
-    if (!vsp_state) return false;
+    if (!vsp_state) return skip;
 
     const Location update_info_loc = error_obj.location.dot(Field::pUpdateInfo);
 
@@ -3135,9 +3134,8 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device
                                                                  VkVideoSessionParametersKHR videoSessionParameters,
                                                                  const VkAllocationCallbacks *pAllocator,
                                                                  const ErrorObject &error_obj) const {
-    auto video_session_parameters_state = Get<vvl::VideoSessionParameters>(videoSessionParameters);
     bool skip = false;
-    if (video_session_parameters_state) {
+    if (auto video_session_parameters_state = Get<vvl::VideoSessionParameters>(videoSessionParameters)) {
         skip |= ValidateObjectNotInUse(video_session_parameters_state.get(), error_obj.location,
                                        "VUID-vkDestroyVideoSessionParametersKHR-videoSessionParameters-07212");
     }
@@ -3151,7 +3149,7 @@ bool CoreChecks::PreCallValidateGetEncodedVideoSessionParametersKHR(
     bool skip = false;
 
     const auto vsp_state = Get<vvl::VideoSessionParameters>(pVideoSessionParametersInfo->videoSessionParameters);
-    if (!vsp_state) return false;
+    if (!vsp_state) return skip;
 
     const Location params_info_loc = error_obj.location.dot(Field::pVideoSessionParametersInfo);
 
@@ -3271,11 +3269,9 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
     }
 
     auto vs_state = Get<vvl::VideoSession>(pBeginInfo->videoSession);
-    if (!vs_state) return false;
+    if (!vs_state) return skip;
 
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
-
-    auto vsp_state = Get<vvl::VideoSessionParameters>(pBeginInfo->videoSessionParameters);
 
     auto qf_ext_props = queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
 
@@ -3441,6 +3437,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
         }
     }
 
+    auto vsp_state = Get<vvl::VideoSessionParameters>(pBeginInfo->videoSessionParameters);
     if (vsp_state && vsp_state->vs_state->VkHandle() != vs_state->VkHandle()) {
         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSessionParameters, pBeginInfo->videoSession);
         skip |= LogError("VUID-VkVideoBeginCodingInfoKHR-videoSessionParameters-04857", objlist,

@@ -26,9 +26,7 @@ bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice
                                                                         VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-
-    auto vs_state = Get<vvl::VideoSession>(videoSession);
-    if (vs_state) {
+    if (auto vs_state = Get<vvl::VideoSession>(videoSession)) {
         if (pMemoryRequirements != nullptr && !vs_state->memory_binding_count_queried) {
             skip |= LogWarning(kVUID_BestPractices_GetVideoSessionMemReqCountNotRetrieved, videoSession, error_obj.location,
                                "querying list of memory requirements of %s "
@@ -47,8 +45,7 @@ bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, Vk
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
 
-    auto vs_state = Get<vvl::VideoSession>(videoSession);
-    if (vs_state) {
+    if (auto vs_state = Get<vvl::VideoSession>(videoSession)) {
         if (!vs_state->memory_binding_count_queried) {
             skip |= LogWarning(kVUID_BestPractices_BindVideoSessionMemReqCountNotRetrieved, videoSession, error_obj.location,
                                "binding memory to %s but "
