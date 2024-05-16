@@ -436,10 +436,8 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
     StateTracker::PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
 
     auto pipeline_info = Get<vvl::Pipeline>(pipeline);
+    if (!pipeline_info) return;
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-
-    assert(pipeline_info);
-    assert(cb_state);
 
     if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && VendorCheckEnabled(kBPVendorNVIDIA)) {
         using TessGeometryMeshState = bp_state::CommandBufferStateNV::TessGeometryMesh::State;

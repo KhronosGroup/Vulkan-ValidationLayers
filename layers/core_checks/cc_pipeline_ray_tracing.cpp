@@ -44,6 +44,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
                 const Location library_info_loc = create_info_loc.dot(Field::pLibraryInfo);
                 const Location library_loc = library_info_loc.dot(Field::pLibraries, i);
                 const auto library_pipelinestate = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
+                if (!library_pipelinestate) continue;
                 const auto &library_create_info = library_pipelinestate->RayTracingCreateInfo();
                 if (library_create_info.maxPipelineRayRecursionDepth != create_info.maxPipelineRayRecursionDepth) {
                     skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03591", device, library_loc,
@@ -266,6 +267,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                 const Location library_info_loc = create_info_loc.dot(Field::pLibraryInfo);
                 const Location library_loc = library_info_loc.dot(Field::pLibraries, j);
                 const auto lib = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[j]);
+                if (!lib) continue;
+
                 if ((lib->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
                     skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", device, library_loc,
                                      "was created with %s.", string_VkPipelineCreateFlags2KHR(lib->create_flags).c_str());

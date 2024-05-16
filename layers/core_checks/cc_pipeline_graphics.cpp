@@ -270,9 +270,8 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
 
     for (uint32_t i = 0; i < library_create_info.libraryCount; ++i) {
         const auto lib = Get<vvl::Pipeline>(library_create_info.pLibraries[i]);
-        if (!lib) {
-            continue;
-        }
+        if (!lib) continue;
+
         const Location &library_loc = create_info_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i);
         const VkPipelineCreateFlags2KHR lib_pipeline_flags = lib->create_flags;
 
@@ -406,6 +405,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
             if (flags_count >= 1 && flags_count <= 2) {
                 for (uint32_t i = 0; i < library_create_info.libraryCount; ++i) {
                     const auto lib = Get<vvl::Pipeline>(library_create_info.pLibraries[i]);
+                    if (!lib) continue;
                     const auto lib_gpl_info =
                         vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->GraphicsCreateInfo().pNext);
                     if (!lib_gpl_info) {
@@ -425,6 +425,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
         }
         for (uint32_t i = 0; i < library_create_info.libraryCount; ++i) {
             const auto lib = Get<vvl::Pipeline>(library_create_info.pLibraries[i]);
+            if (!lib) continue;
             const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
             skip |= ValidatePipelineLibraryFlags(lib->graphics_lib_type, library_create_info, lib_rendering_struct, create_info_loc,
                                                  i, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
@@ -690,9 +691,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
 
         for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
             const auto lib = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
-            if (!lib) {
-                continue;
-            }
+            if (!lib) continue;
+
             const auto &lib_ci = lib->GraphicsCreateInfo();
             if (lib->graphics_lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
                 pre_raster_info.init = GPLInitType::link_libraries;
@@ -3547,7 +3547,7 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LastBound &last_bound_s
                 prev_stage = stage;
                 for (const auto &linked_shader : state->linked_shaders) {
                     const auto &linked_state = Get<vvl::ShaderObject>(linked_shader);
-                    if (linked_state->create_info.stage == state->create_info.nextStage) {
+                    if (linked_state && linked_state->create_info.stage == state->create_info.nextStage) {
                         next_stage = static_cast<VkShaderStageFlagBits>(state->create_info.nextStage);
                         break;
                     }
@@ -4280,6 +4280,8 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
         // loop
         for (int i = lib_index + 1; i < static_cast<int>(link_info.libraryCount); ++i) {
             const auto lib = Get<vvl::Pipeline>(link_info.pLibraries[i]);
+            if (!lib) continue;
+
             const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
             const bool other_flag = (lib->graphics_lib_type & flags) && (lib->graphics_lib_type & ~lib_flags);
             if (!other_flag) {

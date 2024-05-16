@@ -194,7 +194,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
                                            "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
 
     auto pipeline_state = Get<vvl::Pipeline>(pExecutableInfo->pipeline);
-    if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
+    if (pipeline_state && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
         skip |= LogError("VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274", pExecutableInfo->pipeline, error_obj.location,
                          "called on a pipeline created without the "
                          "VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR flag set.");
@@ -211,7 +211,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
                                            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
 
     auto pipeline_state = Get<vvl::Pipeline>(pExecutableInfo->pipeline);
-    if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
+    if (pipeline_state && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
         skip |= LogError("VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278", pExecutableInfo->pipeline,
                          error_obj.location,
                          "called on a pipeline created without the "
@@ -223,9 +223,8 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                                 const ErrorObject &error_obj) const {
-    auto pipeline_state = Get<vvl::Pipeline>(pipeline);
     bool skip = false;
-    if (pipeline_state) {
+    if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
         skip |= ValidateObjectNotInUse(pipeline_state.get(), error_obj.location, "VUID-vkDestroyPipeline-pipeline-00765");
     }
     return skip;
@@ -240,9 +239,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineBindPoint(*cb_state, pipelineBindPoint, error_obj.location);
 
-    auto pPipeline = Get<vvl::Pipeline>(pipeline);
-    assert(pPipeline);
-    const vvl::Pipeline &pipeline_state = *pPipeline;
+    auto pipeline_ptr = Get<vvl::Pipeline>(pipeline);
+    if (!pipeline_ptr) return skip;
+    const vvl::Pipeline &pipeline_state = *pipeline_ptr;
 
     if (pipelineBindPoint != pipeline_state.pipeline_type) {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {

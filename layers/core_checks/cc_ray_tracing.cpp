@@ -1760,6 +1760,7 @@ uint32_t CoreChecks::CalcTotalShaderGroupCount(const vvl::Pipeline &pipeline) co
         if (create_info.pLibraryInfo) {
             for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
                 auto library_pipeline_state = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
+                if (!library_pipeline_state) continue;
                 total += CalcTotalShaderGroupCount(*library_pipeline_state.get());
             }
         }
@@ -1769,6 +1770,7 @@ uint32_t CoreChecks::CalcTotalShaderGroupCount(const vvl::Pipeline &pipeline) co
         if (create_info.pLibraryInfo) {
             for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
                 auto library_pipeline_state = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
+                if (!library_pipeline_state) continue;
                 total += CalcTotalShaderGroupCount(*library_pipeline_state.get());
             }
         }
@@ -1781,17 +1783,17 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
                                                                    uint32_t groupCount, size_t dataSize, void *pData,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    auto pPipeline = Get<vvl::Pipeline>(pipeline);
-    if (!pPipeline) {
+    auto pipeline_ptr = Get<vvl::Pipeline>(pipeline);
+    if (!pipeline_ptr) {
         return skip;
-    } else if (pPipeline->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+    } else if (pipeline_ptr->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         skip |=
             LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-04619", pipeline, error_obj.location.dot(Field::pipeline),
-                     "is a %s pipeline.", string_VkPipelineBindPoint(pPipeline->pipeline_type));
+                     "is a %s pipeline.", string_VkPipelineBindPoint(pipeline_ptr->pipeline_type));
         return skip;
     }
 
-    const vvl::Pipeline &pipeline_state = *pPipeline;
+    const vvl::Pipeline &pipeline_state = *pipeline_ptr;
     if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipelineLibraryGroupHandles) {
             skip |= LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828", pipeline,
@@ -1895,53 +1897,53 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     auto pipeline_state = Get<vvl::Pipeline>(pipeline);
-    if (pipeline_state) {
-        if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-            skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622", pipeline,
-                             error_obj.location.dot(Field::pipeline), "is a %s pipeline.",
-                             string_VkPipelineBindPoint(pipeline_state->pipeline_type));
-        } else {
-            const auto &create_info = pipeline_state->RayTracingCreateInfo();
-            if (group >= create_info.groupCount) {
-                skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608", pipeline,
-                                 error_obj.location.dot(Field::group),
-                                 "(%" PRIu32 ") must be less than the number of shader groups in pipeline (%" PRIu32 ").", group,
-                                 create_info.groupCount);
-            } else {
-                const auto &group_info = create_info.pGroups[group];
-                bool unused_group = false;
-                switch (groupShader) {
-                    case VK_SHADER_GROUP_SHADER_GENERAL_KHR:
-                        if (group_info.generalShader == VK_SHADER_UNUSED_KHR) {
-                            unused_group = true;
-                        }
-                        break;
-                    case VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR:
-                        if (group_info.closestHitShader == VK_SHADER_UNUSED_KHR) {
-                            unused_group = true;
-                        }
-                        break;
-                    case VK_SHADER_GROUP_SHADER_ANY_HIT_KHR:
-                        if (group_info.anyHitShader == VK_SHADER_UNUSED_KHR) {
-                            unused_group = true;
-                        }
-                        break;
-                    case VK_SHADER_GROUP_SHADER_INTERSECTION_KHR:
-                        if (group_info.intersectionShader == VK_SHADER_UNUSED_KHR) {
-                            unused_group = true;
-                        }
-                        break;
+    if (!pipeline_state) return skip;
 
-                    default:
-                        break;
-                }
-                if (unused_group) {
-                    const LogObjectList objlist(device, pipeline);
-                    skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609", objlist,
-                                     error_obj.location.dot(Field::groupShader),
-                                     "is %s but the corresponding shader in shader group (%" PRIu32 ") is VK_SHADER_UNUSED_KHR.",
-                                     string_VkShaderGroupShaderKHR(groupShader), group);
-                }
+    if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622", pipeline,
+                         error_obj.location.dot(Field::pipeline), "is a %s pipeline.",
+                         string_VkPipelineBindPoint(pipeline_state->pipeline_type));
+    } else {
+        const auto &create_info = pipeline_state->RayTracingCreateInfo();
+        if (group >= create_info.groupCount) {
+            skip |=
+                LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608", pipeline, error_obj.location.dot(Field::group),
+                         "(%" PRIu32 ") must be less than the number of shader groups in pipeline (%" PRIu32 ").", group,
+                         create_info.groupCount);
+        } else {
+            const auto &group_info = create_info.pGroups[group];
+            bool unused_group = false;
+            switch (groupShader) {
+                case VK_SHADER_GROUP_SHADER_GENERAL_KHR:
+                    if (group_info.generalShader == VK_SHADER_UNUSED_KHR) {
+                        unused_group = true;
+                    }
+                    break;
+                case VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR:
+                    if (group_info.closestHitShader == VK_SHADER_UNUSED_KHR) {
+                        unused_group = true;
+                    }
+                    break;
+                case VK_SHADER_GROUP_SHADER_ANY_HIT_KHR:
+                    if (group_info.anyHitShader == VK_SHADER_UNUSED_KHR) {
+                        unused_group = true;
+                    }
+                    break;
+                case VK_SHADER_GROUP_SHADER_INTERSECTION_KHR:
+                    if (group_info.intersectionShader == VK_SHADER_UNUSED_KHR) {
+                        unused_group = true;
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            if (unused_group) {
+                const LogObjectList objlist(device, pipeline);
+                skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609", objlist,
+                                 error_obj.location.dot(Field::groupShader),
+                                 "is %s but the corresponding shader in shader group (%" PRIu32 ") is VK_SHADER_UNUSED_KHR.",
+                                 string_VkShaderGroupShaderKHR(groupShader), group);
             }
         }
     }
