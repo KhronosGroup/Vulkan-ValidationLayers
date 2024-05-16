@@ -529,19 +529,20 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             // Dedicated VkBuffer
             const LogObjectList objlist(device, dedicated_buffer);
             const Location buffer_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer);
-            auto buffer_state = Get<vvl::Buffer>(dedicated_buffer);
-            if (!IgnoreAllocationSize(*pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
-                !imported_ahb_buffer && !imported_qnx_buffer) {
-                skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
-                                 allocate_info_loc.dot(Field::allocationSize),
-                                 "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
-                                 pAllocateInfo->allocationSize, buffer_loc.Fields().c_str(), FormatHandle(dedicated_buffer).c_str(),
-                                 buffer_state->requirements.size);
-            }
-            if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
-                skip |=
-                    LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01436", objlist, buffer_loc,
-                             "(%s) was created with VK_BUFFER_CREATE_SPARSE_BINDING_BIT.", FormatHandle(dedicated_buffer).c_str());
+            if (auto buffer_state = Get<vvl::Buffer>(dedicated_buffer)) {
+                if (!IgnoreAllocationSize(*pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
+                    !imported_ahb_buffer && !imported_qnx_buffer) {
+                    skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
+                                     allocate_info_loc.dot(Field::allocationSize),
+                                     "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
+                                     pAllocateInfo->allocationSize, buffer_loc.Fields().c_str(),
+                                     FormatHandle(dedicated_buffer).c_str(), buffer_state->requirements.size);
+                }
+                if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
+                    skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01436", objlist, buffer_loc,
+                                     "(%s) was created with VK_BUFFER_CREATE_SPARSE_BINDING_BIT.",
+                                     FormatHandle(dedicated_buffer).c_str());
+                }
             }
         }
     }
@@ -616,21 +617,27 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         // There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the import
         // has dedicated Image/Buffer, we can at least validate that it has import support
         // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3667
-        if (dedicated_image != VK_NULL_HANDLE &&
-            !HasExternalMemoryImportSupport(*Get<vvl::Image>(dedicated_image), VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
-            skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_image,
-                             allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
-                             "is %s but vkGetPhysicalDeviceImageFormatProperties2 shows no support for "
-                             "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
-                             FormatHandle(dedicated_image).c_str());
+        if (dedicated_image != VK_NULL_HANDLE) {
+            auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
+            if (dedicated_image_state &&
+                !HasExternalMemoryImportSupport(*dedicated_image_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_image,
+                                 allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                 "is %s but vkGetPhysicalDeviceImageFormatProperties2 shows no support for "
+                                 "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
+                                 FormatHandle(dedicated_image).c_str());
+            }
         }
-        if (dedicated_buffer != VK_NULL_HANDLE &&
-            !HasExternalMemoryImportSupport(*Get<vvl::Buffer>(dedicated_buffer), VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
-            skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_buffer,
-                             allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
-                             "is %s but vkGetPhysicalDeviceExternalBufferProperties shows no support for "
-                             "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
-                             FormatHandle(dedicated_buffer).c_str());
+        if (dedicated_buffer != VK_NULL_HANDLE) {
+            auto dedicated_buffer_state = Get<vvl::Buffer>(dedicated_buffer);
+            if (dedicated_buffer_state &&
+                !HasExternalMemoryImportSupport(*dedicated_buffer_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_buffer,
+                                 allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                 "is %s but vkGetPhysicalDeviceExternalBufferProperties shows no support for "
+                                 "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
+                                 FormatHandle(dedicated_buffer).c_str());
+            }
         }
     }
 
@@ -838,9 +845,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
     }
 
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) {
-        return skip;
-    }
+    if (!buffer_state) return skip;
+
     const bool bind_buffer_mem_2 = loc.function != Func::vkBindBufferMemory;
 
     // Track objects tied to memory
@@ -2321,8 +2327,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
                          "bufferDeviceAddressMultiDevice feature must be enabled.");
     }
 
-    auto buffer_state = Get<vvl::Buffer>(pInfo->buffer);
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
         const Location info_loc = error_obj.location.dot(Field::pInfo);
         if (!(buffer_state->create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
             skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::buffer),

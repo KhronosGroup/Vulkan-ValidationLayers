@@ -1606,9 +1606,8 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
     bool skip = false;
     // Invalid handles should be caught by the object tracker, but lets make sure not to crash anyways.
     const auto buffer_state = Get<vvl::Buffer>(buffer_info.buffer);
-    if (!buffer_state) {
-        return skip;
-    }
+    if (!buffer_state) return skip;
+
     skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
     skip |= ValidateBufferUsage(*buffer_state, type, buffer_info_loc.dot(Field::buffer));
@@ -1759,8 +1758,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                                          "Attempted copy update to texel buffer descriptor with invalid buffer view (%s).",
                                          FormatHandle(buffer_view).c_str());
                     } else {
-                        auto buffer_state = Get<vvl::Buffer>(bv_state->create_info.buffer);
-                        if (buffer_state) {
+                        if (auto buffer_state = Get<vvl::Buffer>(bv_state->create_info.buffer)) {
                             skip |= ValidateBufferUsage(*buffer_state, src_type, copy_loc);
                         }
                     }
@@ -2659,9 +2657,7 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice
                          physical_device_count);
     }
 
-    auto buffer_state = Get<vvl::Buffer>(pInfo->buffer);
-
-    if (buffer_state) {
+    if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
         if (!(buffer_state->create_info.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkBufferCaptureDescriptorDataInfoEXT-buffer-08075", pInfo->buffer,
                              error_obj.location.dot(Field::pInfo).dot(Field::buffer), "was created with %s.",

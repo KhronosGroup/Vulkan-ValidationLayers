@@ -3223,14 +3223,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
     // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
     if (enabled_features.protectedMemory == VK_TRUE) {
         for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
-            const auto buffer_state = Get<vvl::Buffer>(vertex_buffer_binding.second.buffer);
-            if (buffer_state) {
+            if (const auto buffer_state = Get<vvl::Buffer>(vertex_buffer_binding.second.buffer)) {
                 skip |= ValidateProtectedBuffer(cb_state, *buffer_state, loc, vuid.unprotected_command_buffer_02707,
                                                 "Buffer is vertex buffer");
             }
         }
-        const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
-        if (buffer_state) {
+
+        if (const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer)) {
             skip |= ValidateProtectedBuffer(cb_state, *buffer_state, loc, vuid.unprotected_command_buffer_02707,
                                             "Buffer is index buffer");
         }

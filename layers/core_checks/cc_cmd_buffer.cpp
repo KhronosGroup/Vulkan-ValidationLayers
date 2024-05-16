@@ -396,6 +396,7 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
     }
 
     auto buffer_state = Get<vvl::Buffer>(buffer);
+    if (!buffer_state) return skip;
     const LogObjectList objlist(cb_state.Handle(), buffer);
 
     vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
@@ -437,6 +438,8 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
 
     if (size != VK_WHOLE_SIZE && buffer != VK_NULL_HANDLE) {
         auto buffer_state = Get<vvl::Buffer>(buffer);
+        if (!buffer_state) return skip;
+
         const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
         if (!IsIntegerMultipleOf(size, offset_align)) {
             const LogObjectList objlist(commandBuffer, buffer);
@@ -463,9 +466,8 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
     skip |= ValidateCmd(*cb_state, error_obj.location);
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
-        if (!buffer_state) {
-            continue;
-        }
+        if (!buffer_state) continue;
+
         const LogObjectList objlist(commandBuffer, buffer_state->Handle());
         skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", error_obj.location.dot(Field::pBuffers, i));
@@ -485,9 +487,8 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
-    if (!cb_state_ptr || !dst_buffer_state) {
-        return skip;
-    }
+    if (!cb_state_ptr || !dst_buffer_state) return skip;
+
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     const LogObjectList objlist(commandBuffer, dstBuffer);
     const Location buffer_loc = error_obj.location.dot(Field::dstBuffer);
@@ -1395,7 +1396,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
     for (uint32_t i = 0; i < bindingCount; ++i) {
         const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
-        assert(buffer_state != nullptr);
+        if (!buffer_state) continue;
 
         if (pOffsets[i] >= buffer_state->create_info.size) {
             const LogObjectList objlist(commandBuffer, pBuffers[i]);
@@ -1506,7 +1507,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                 continue;
             }
             auto buffer_state = Get<vvl::Buffer>(pCounterBuffers[i]);
-            assert(buffer_state != nullptr);
+            if (!buffer_state) continue;
 
             if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->create_info.size) {
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
@@ -1559,7 +1560,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                 continue;
             }
             auto buffer_state = Get<vvl::Buffer>(pCounterBuffers[i]);
-            assert(buffer_state != nullptr);
+            if (!buffer_state) continue;
 
             if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->create_info.size) {
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
@@ -1592,9 +1593,8 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
     skip |= ValidateCmd(*cb_state, error_obj.location);
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
-        if (!buffer_state) {
-            continue;  // Can be null handle if using nullDescriptor
-        }
+        if (!buffer_state) continue;  // Can be null handle if using nullDescriptor
+
         const LogObjectList objlist(commandBuffer, pBuffers[i]);
         const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
         skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
@@ -1648,8 +1648,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     }
 
     if (pConditionalRenderingBegin) {
-        auto buffer_state = Get<vvl::Buffer>(pConditionalRenderingBegin->buffer);
-        if (buffer_state) {
+        if (auto buffer_state = Get<vvl::Buffer>(pConditionalRenderingBegin->buffer)) {
             const Location conditional_loc = error_obj.location.dot(Field::pConditionalRenderingBegin);
             skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, conditional_loc.dot(Field::buffer),
                                                   "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01981");

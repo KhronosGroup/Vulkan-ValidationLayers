@@ -1829,6 +1829,8 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
 
     auto src_buffer_state = Get<vvl::Buffer>(srcBuffer);
     auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
+    if (!src_buffer_state || !dst_buffer_state) return;
+
     if (src_buffer_state->sparse || dst_buffer_state->sparse) {
         auto cb_state_ptr = Get<vvl::CommandBuffer>(commandBuffer);
 
