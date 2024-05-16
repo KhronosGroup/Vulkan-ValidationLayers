@@ -144,9 +144,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063", objlist,
                                        error_obj.location);
     }
-    if (skip) {
-        return skip;
-    }
+    if (skip) return skip;
 
     auto queue_state = Get<vvl::Queue>(queue);
     CommandBufferSubmitState cb_submit_state(*this, queue_state.get());
@@ -487,42 +485,41 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
     bool skip = false;
     auto pool = cb_state.command_pool;
     auto queue_state = Get<vvl::Queue>(queue);
+    if (!pool || !queue_state) return skip;
 
-    if (pool && queue_state) {
-        if (pool->queueFamilyIndex != queue_state->queueFamilyIndex) {
-            const LogObjectList objlist(cb_state.Handle(), queue);
-            const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
-            skip |= LogError(vuid, objlist, loc,
-                             "Primary command buffer %s created in queue family %d is being submitted on %s "
-                             "from queue family %d.",
-                             FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue).c_str(),
-                             queue_state->queueFamilyIndex);
-        }
+    if (pool->queueFamilyIndex != queue_state->queueFamilyIndex) {
+        const LogObjectList objlist(cb_state.Handle(), queue);
+        const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
+        skip |= LogError(vuid, objlist, loc,
+                         "Primary command buffer %s created in queue family %d is being submitted on %s "
+                         "from queue family %d.",
+                         FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue).c_str(),
+                         queue_state->queueFamilyIndex);
+    }
 
-        // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
-        for (const auto &state_object : cb_state.object_bindings) {
-            switch (state_object->Type()) {
-                case kVulkanObjectTypeImage: {
-                    auto image_state = static_cast<const vvl::Image *>(state_object.get());
-                    if (image_state && image_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                        skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state->queueFamilyIndex,
-                                                      image_state->create_info.queueFamilyIndexCount,
-                                                      image_state->create_info.pQueueFamilyIndices, loc);
-                    }
-                    break;
+    // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
+    for (const auto &state_object : cb_state.object_bindings) {
+        switch (state_object->Type()) {
+            case kVulkanObjectTypeImage: {
+                auto image_state = static_cast<const vvl::Image *>(state_object.get());
+                if (image_state && image_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                    skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state->queueFamilyIndex,
+                                                  image_state->create_info.queueFamilyIndexCount,
+                                                  image_state->create_info.pQueueFamilyIndices, loc);
                 }
-                case kVulkanObjectTypeBuffer: {
-                    auto buffer_state = static_cast<const vvl::Buffer *>(state_object.get());
-                    if (buffer_state && buffer_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                        skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state->queueFamilyIndex,
-                                                      buffer_state->create_info.queueFamilyIndexCount,
-                                                      buffer_state->create_info.pQueueFamilyIndices, loc);
-                    }
-                    break;
-                }
-                default:
-                    break;
+                break;
             }
+            case kVulkanObjectTypeBuffer: {
+                auto buffer_state = static_cast<const vvl::Buffer *>(state_object.get());
+                if (buffer_state && buffer_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                    skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state->queueFamilyIndex,
+                                                  buffer_state->create_info.queueFamilyIndexCount,
+                                                  buffer_state->create_info.pQueueFamilyIndices, loc);
+                }
+                break;
+            }
+            default:
+                break;
         }
     }
 
@@ -644,9 +641,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkQueueBindSparse-fence-01114", "VUID-vkQueueBindSparse-fence-01113",
                                        objlist, error_obj.location);
     }
-    if (skip) {
-        return skip;
-    }
+    if (skip) return skip;
 
     auto queue_state = Get<vvl::Queue>(queue);
     const VkQueueFlags queue_flags = queue_state->queueFamilyProperties.queueFlags;
