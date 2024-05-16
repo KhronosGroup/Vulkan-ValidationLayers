@@ -212,9 +212,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
     const bool is_2 = loc.function != Func::vkCmdBindDescriptorSets;
 
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
-    if (!pipeline_layout) {
-        return skip;  // dynamicPipelineLayout feature
-    }
+    if (!pipeline_layout) return skip;  // dynamicPipelineLayout feature
 
     // Track total count of dynamic descriptor types to make sure we have an offset for each one
     uint32_t total_dynamic_descriptors = 0;
@@ -2137,12 +2135,10 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
 bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout,
                                                        uint32_t firstSet, uint32_t setCount, const uint32_t *pBufferIndices,
                                                        const VkDeviceSize *pOffsets, const Location &loc) const {
-    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
-    if (!pipeline_layout) {
-        return false;  // dynamicPipelineLayout
-    }
-
     bool skip = false;
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
+    if (!pipeline_layout) return skip;  // dynamicPipelineLayout
+
     const bool is_2 = loc.function != Func::vkCmdSetDescriptorBufferOffsetsEXT;
 
     if (!enabled_features.descriptorBuffer) {
@@ -2347,9 +2343,7 @@ bool CoreChecks::ValidateCmdBindDescriptorBufferEmbeddedSamplers(const vvl::Comm
     }
 
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
-    if (!pipeline_layout) {
-        return skip;  // dynamicPipelineLayout
-    }
+    if (!pipeline_layout) return skip;  // dynamicPipelineLayout
 
     if (set >= pipeline_layout->set_layouts.size()) {
         const char *vuid = is_2 ? "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-set-08071"
@@ -3489,9 +3483,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
     const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetKHR;
 
     auto layout_data = Get<vvl::PipelineLayout>(layout);
-    if (!layout_data) {
-        return skip;  // dynamicPipelineLayout
-    }
+    if (!layout_data) return skip;  // dynamicPipelineLayout
 
     // Validate the set index points to a push descriptor set and is in range
     const LogObjectList objlist(cb_state.Handle(), layout);
@@ -4470,9 +4462,7 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
         return skip;
     }
     auto layout_state = Get<vvl::PipelineLayout>(layout);
-    if (!layout_state) {
-        return skip;  // dynamicPipelineLayout feature
-    }
+    if (!layout_state) return skip;  // dynamicPipelineLayout feature
 
     const bool is_2 = loc.function != Func::vkCmdPushConstants;
     const auto &ranges = *layout_state->push_constant_ranges;

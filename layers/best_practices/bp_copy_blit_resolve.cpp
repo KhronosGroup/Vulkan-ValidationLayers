@@ -331,7 +331,7 @@ bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkIm
     bool skip = false;
     auto src_image_state = Get<vvl::Image>(src_image);
     auto dst_image_state = Get<vvl::Image>(dst_image);
-    if (!src_image_state || dst_image_state) return skip;
+    if (!src_image_state || !dst_image_state) return skip;
 
     auto src_image_type = src_image_state->create_info.imageType;
     auto dst_image_type = dst_image_state->create_info.imageType;

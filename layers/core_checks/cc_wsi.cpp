@@ -1367,7 +1367,8 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
 
-    auto swapchain_state = Get<vvl::Swapchain>(swapchain) if (!swapchain_state) return skip;
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
+    if (!swapchain_state) return skip;
 
     if (swapchain_state->retired) {
         skip |= LogError("VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674", device, error_obj.location,
