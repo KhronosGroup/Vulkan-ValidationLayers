@@ -2450,7 +2450,7 @@ void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const RecordObject &record_obj) {
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfos[i].dstAccelerationStructure);
-        if (dst_as_state != nullptr) {
+        if (dst_as_state) {
             dst_as_state->Build(&pInfos[i], true, *ppBuildRangeInfos);
         }
     }
@@ -2520,7 +2520,7 @@ void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequire
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2 *pMemoryRequirements,
     const RecordObject &record_obj) {
     auto as_state = Get<vvl::AccelerationStructureNV>(pInfo->accelerationStructure);
-    if (as_state != nullptr) {
+    if (as_state) {
         if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV) {
             as_state->memory_requirements_checked = true;
         } else if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV) {
@@ -2620,10 +2620,10 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkComm
     if (cb_state) {
         auto src_as_state = Get<vvl::AccelerationStructureNV>(src);
         auto dst_as_state = Get<vvl::AccelerationStructureNV>(dst);
-        if (!disabled[command_buffer_state]) {
-            cb_state->RecordTransferCmd(record_obj.location.function, src_as_state, dst_as_state);
-        }
-        if (dst_as_state != nullptr && src_as_state != nullptr) {
+        if (dst_as_state && src_as_state) {
+            if (!disabled[command_buffer_state]) {
+                cb_state->RecordTransferCmd(record_obj.location.function, src_as_state, dst_as_state);
+            }
             dst_as_state->built = true;
             dst_as_state->build_info = src_as_state->build_info;
         }
@@ -4831,7 +4831,7 @@ void ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(VkDevice
                                                                         const RecordObject &record_obj) {
     auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
-    if (dst_as_state != nullptr && src_as_state != nullptr) {
+    if (dst_as_state && src_as_state) {
         dst_as_state->built = true;
         dst_as_state->build_info_khr = src_as_state->build_info_khr;
     }
@@ -4845,7 +4845,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCom
         cb_state->RecordCmd(record_obj.location.function);
         auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
         auto dst_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
-        if (dst_as_state != nullptr && src_as_state != nullptr) {
+        if (dst_as_state && src_as_state) {
             dst_as_state->built = true;
             dst_as_state->build_info_khr = src_as_state->build_info_khr;
             if (!disabled[command_buffer_state]) {
