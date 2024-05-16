@@ -1244,3 +1244,31 @@ TEST_F(PositiveDynamicRendering, AttachmentCountDynamicState) {
     pipe.cb_ci_ = color_blend_state_create_info;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveDynamicRendering, VertexOnlyDepth) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8015");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 0;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+
+    VkPipelineMultisampleStateCreateInfo ms_ci = vku::InitStructHelper();
+    ms_ci.sampleShadingEnable = VK_TRUE;
+    ms_ci.minSampleShading = 1.0;
+    ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
+    ds_state.depthWriteEnable = VK_TRUE;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pMultisampleState = &ms_ci;
+    pipe.gp_ci_.pDepthStencilState = &ds_state;
+    pipe.CreateGraphicsPipeline();
+}
