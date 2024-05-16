@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "9241a58a8028c49510bc174b6c970e3c2b4b8e51"
+            "commit": "ccf3e3c1035189bbb50793d1e249a2c0ba3388a3"
         },
         {
             "name": "robin-hood-hashing",
@@ -95,7 +95,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "effcbf7893a177b756bc80bf74009a950c3073a1",
+            "commit": "af0641aa09f2e63da2423fd652d2cd57497c5b48",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],
