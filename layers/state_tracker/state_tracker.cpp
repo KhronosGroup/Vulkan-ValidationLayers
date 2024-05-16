@@ -2147,9 +2147,8 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device,
 void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                                VkDescriptorPoolResetFlags flags, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    auto pool = Get<vvl::DescriptorPool>(descriptorPool);
-    if (pool) {
-        pool->Reset();
+    if (auto ds_pool_state = Get<vvl::DescriptorPool>(descriptorPool)) {
+        ds_pool_state->Reset();
     }
 }
 
@@ -2169,18 +2168,16 @@ void ValidationStateTracker::PostCallRecordAllocateDescriptorSets(VkDevice devic
                                                                   vvl::AllocateDescriptorSetsData &ads_state) {
     if (VK_SUCCESS != record_obj.result) return;
     // All the updates are contained in a single vvl function
-    auto pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
-    if (pool_state) {
-        pool_state->Allocate(pAllocateInfo, pDescriptorSets, ads_state);
+    if (auto ds_pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool)) {
+        ds_pool_state->Allocate(pAllocateInfo, pDescriptorSets, ads_state);
     }
 }
 
 void ValidationStateTracker::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                                              const VkDescriptorSet *pDescriptorSets,
                                                              const RecordObject &record_obj) {
-    auto pool_state = Get<vvl::DescriptorPool>(descriptorPool);
-    if (pool_state) {
-        pool_state->Free(count, pDescriptorSets);
+    if (auto ds_pool_state = Get<vvl::DescriptorPool>(descriptorPool)) {
+        ds_pool_state->Free(count, pDescriptorSets);
     }
 }
 
@@ -2190,8 +2187,7 @@ void ValidationStateTracker::PerformUpdateDescriptorSets(uint32_t write_count, c
     uint32_t i = 0;
     for (i = 0; i < write_count; ++i) {
         auto dest_set = p_wds[i].dstSet;
-        auto set_node = Get<vvl::DescriptorSet>(dest_set);
-        if (set_node) {
+        if (auto set_node = Get<vvl::DescriptorSet>(dest_set)) {
             set_node->PerformWriteUpdate(p_wds[i]);
         }
     }
@@ -4290,7 +4286,6 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevi
                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                           const void *pData, const RecordObject &record_obj) {
     auto const template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
-    assert(template_state);
     if (template_state) {
         // TODO: Record template push descriptor updates
         if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {

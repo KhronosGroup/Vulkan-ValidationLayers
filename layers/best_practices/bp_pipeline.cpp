@@ -554,6 +554,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         uint32_t pipeline_size = pCreateInfo->setLayoutCount;  // in DWORDS
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; i++) {
             auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+            if (!descriptor_set_layout_state) continue;
             pipeline_size += descriptor_set_layout_state->GetDynamicDescriptorCount() * descriptor_size;
         }
 
@@ -578,6 +579,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
 
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+            if (!descriptor_set_layout_state) continue;
             for (const auto& binding : descriptor_set_layout_state->GetBindings()) {
                 if (binding.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
                     has_separate_sampler = true;
