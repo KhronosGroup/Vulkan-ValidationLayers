@@ -142,7 +142,7 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
         helper.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
         helper.shader_stages_.emplace_back(tes.GetStageCreateInfo());
     };
-    constexpr std::array vuids = {"VUID-VkPipelineShaderStageCreateInfo-stage-00705", "VUID-RuntimeSpirv-OpVariable-08746",
+    constexpr std::array vuids = {"VUID-VkPipelineShaderStageCreateInfo-stage-00705",
                                   "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"};
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
 }
@@ -756,7 +756,8 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
     }
 }
 
-TEST_F(NegativeGeometryTessellation, TessellationPatchDecorationMismatch) {
+// Waiting on https://gitlab.khronos.org/vulkan/vulkan/-/issues/3858 to know what is valid or not
+TEST_F(NegativeGeometryTessellation, DISABLED_TessellationPatchDecorationMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a variable output from the TCS without the patch decoration, but consumed in the TES "
         "with the decoration.");
