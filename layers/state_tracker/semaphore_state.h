@@ -187,8 +187,8 @@ struct SemaphoreSubmitState {
     VkQueue AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const;
 
     bool ValidateBinaryWait(const Location &loc, VkQueue queue, const vvl::Semaphore &semaphore_state);
-    bool ValidateWaitSemaphore(const Location &wait_semaphore_loc, VkSemaphore semaphore, uint64_t value);
-    bool ValidateSignalSemaphore(const Location &signal_semaphore_loc, VkSemaphore semaphore, uint64_t value);
+    bool ValidateWaitSemaphore(const Location &wait_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+    bool ValidateSignalSemaphore(const Location &signal_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
 
     bool CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_command) const;
 

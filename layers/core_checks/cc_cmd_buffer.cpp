@@ -527,9 +527,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
     if (!disabled[query_validation]) {
         for (const auto &query_object : cb_state.activeQueries) {
             auto query_pool_state = Get<vvl::QueryPool>(query_object.pool);
-            if (!query_pool_state) {
-                continue;
-            }
+            if (!query_pool_state) continue;
             if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
                 sub_cb_state.beginInfo.pInheritanceInfo) {
                 VkQueryPipelineStatisticFlags cmd_buf_statistics = sub_cb_state.beginInfo.pInheritanceInfo->pipelineStatistics;
@@ -548,7 +546,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
         }
         for (const auto &query_object : sub_cb_state.startedQueries) {
             auto query_pool_state = Get<vvl::QueryPool>(query_object.pool);
-            if (query_pool_state && active_types.count(query_pool_state->create_info.queryType)) {
+            if (!query_pool_state) continue;
+            if (active_types.count(query_pool_state->create_info.queryType)) {
                 const LogObjectList objlist(cb_state.Handle(), sub_cb_state.Handle(), query_object.pool);
                 skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00105", objlist, cb_loc,
                                  "called with invalid %s which has invalid active %s"

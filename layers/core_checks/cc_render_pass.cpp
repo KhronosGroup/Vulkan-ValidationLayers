@@ -555,7 +555,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
     skip |= VerifyFramebufferAndRenderPassImageViews(*pRenderPassBegin, rp_begin_loc);
     skip |= VerifyRenderAreaBounds(*pRenderPassBegin, rp_begin_loc);
 
-    skip |= VerifyFramebufferAndRenderPassLayouts(cb_state, *pRenderPassBegin, *fb_state, rp_begin_loc);
+    skip |= VerifyFramebufferAndRenderPassLayouts(cb_state, *pRenderPassBegin, *rp_state, *fb_state, rp_begin_loc);
     if (fb_state->rp_state->VkHandle() != rp_state->VkHandle()) {
         skip |= ValidateRenderPassCompatibility(rp_state->Handle(), *rp_state, fb_state->Handle(), *fb_state->rp_state,
                                                 error_obj.location, "VUID-VkRenderPassBeginInfo-renderPass-00904");

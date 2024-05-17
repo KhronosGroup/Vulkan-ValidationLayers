@@ -794,14 +794,15 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     const Location present_info_loc = error_obj.location.dot(Struct::VkPresentInfoKHR, Field::pPresentInfo);
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<vvl::Semaphore>(pPresentInfo->pWaitSemaphores[i]);
-        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
+        if (!semaphore_state) continue;
+
+        if (semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError("VUID-vkQueuePresentKHR-pWaitSemaphores-03267", pPresentInfo->pWaitSemaphores[i],
                              present_info_loc.dot(Field::pWaitSemaphores, i), "(%s) is not a VK_SEMAPHORE_TYPE_BINARY",
                              FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
             continue;
         }
-        skip |= sem_submit_state.ValidateWaitSemaphore(present_info_loc.dot(Field::pWaitSemaphores, i),
-                                                       pPresentInfo->pWaitSemaphores[i], 0);
+        skip |= sem_submit_state.ValidateWaitSemaphore(present_info_loc.dot(Field::pWaitSemaphores, i), *semaphore_state, 0);
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {

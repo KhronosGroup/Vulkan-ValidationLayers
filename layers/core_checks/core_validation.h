@@ -61,7 +61,7 @@ class CoreChecks : public ValidationStateTracker {
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
-    bool ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindable& mem_binding, const Location& loc) const;
+    bool ValidateSetMemBinding(const vvl::DeviceMemory& memory_state, const vvl::Bindable& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
     bool ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
@@ -479,7 +479,7 @@ class CoreChecks : public ValidationStateTracker {
                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
                                            const EventToStageMap& local_event_signal_info, VkQueue waiting_queue,
                                            const Location& loc);
-    bool ValidateQueueFamilyIndices(const Location& loc, const vvl::CommandBuffer& cb_state, VkQueue queue) const;
+    bool ValidateQueueFamilyIndices(const Location& loc, const vvl::CommandBuffer& cb_state, const vvl::Queue& queue_state) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
     void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
@@ -803,7 +803,8 @@ class CoreChecks : public ValidationStateTracker {
     bool FindLayouts(const vvl::Image& image_state, std::vector<VkImageLayout>& layouts) const;
 
     bool VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer& cb_state, const VkRenderPassBeginInfo& begin_info,
-                                               const vvl::Framebuffer& framebuffer_state, const Location& rp_begin_loc) const;
+                                               const vvl::RenderPass& render_pass_state, const vvl::Framebuffer& framebuffer_state,
+                                               const Location& rp_begin_loc) const;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
     void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const vku::safe_VkAttachmentReference2& ref);

@@ -64,7 +64,7 @@ struct CommandBufferSubmitState {
         skip |= core.ValidatePrimaryCommandBufferState(
             loc, cb_state, static_cast<uint32_t>(std::count(current_cmds.begin(), current_cmds.end(), cmd)), &qfo_image_scoreboards,
             &qfo_buffer_scoreboards);
-        skip |= core.ValidateQueueFamilyIndices(loc, cb_state, queue_state->VkHandle());
+        skip |= core.ValidateQueueFamilyIndices(loc, cb_state, *queue_state);
         skip |= ValidateCmdBufLabelMatching(loc, cb_state);
 
         // Potential early exit here as bad object state may crash in delayed function calls
@@ -479,22 +479,22 @@ bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer &cb_state, const
 
 // Validate that queueFamilyIndices of primary command buffers match this queue
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
-bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::CommandBuffer &cb_state, VkQueue queue) const {
+bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::CommandBuffer &cb_state,
+                                            const vvl::Queue &queue_state) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
     auto pool = cb_state.command_pool;
-    auto queue_state = Get<vvl::Queue>(queue);
-    if (!pool || !queue_state) return skip;
+    if (!pool) return skip;
 
-    if (pool->queueFamilyIndex != queue_state->queueFamilyIndex) {
-        const LogObjectList objlist(cb_state.Handle(), queue);
+    if (pool->queueFamilyIndex != queue_state.queueFamilyIndex) {
+        const LogObjectList objlist(cb_state.Handle(), queue_state.Handle());
         const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
         skip |= LogError(vuid, objlist, loc,
                          "Primary command buffer %s created in queue family %d is being submitted on %s "
                          "from queue family %d.",
-                         FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue).c_str(),
-                         queue_state->queueFamilyIndex);
+                         FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue_state.Handle()).c_str(),
+                         queue_state.queueFamilyIndex);
     }
 
     // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
@@ -503,7 +503,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
             case kVulkanObjectTypeImage: {
                 auto image_state = static_cast<const vvl::Image *>(state_object.get());
                 if (image_state && image_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state->queueFamilyIndex,
+                    skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state.queueFamilyIndex,
                                                   image_state->create_info.queueFamilyIndexCount,
                                                   image_state->create_info.pQueueFamilyIndices, loc);
                 }
@@ -512,7 +512,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
             case kVulkanObjectTypeBuffer: {
                 auto buffer_state = static_cast<const vvl::Buffer *>(state_object.get());
                 if (buffer_state && buffer_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state->queueFamilyIndex,
+                    skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state.queueFamilyIndex,
                                                   buffer_state->create_info.queueFamilyIndexCount,
                                                   buffer_state->create_info.pQueueFamilyIndices, loc);
                 }
