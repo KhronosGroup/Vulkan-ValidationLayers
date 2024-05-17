@@ -138,8 +138,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
 
-    void ReportSetupProblem(LogObjectList objlist, const Location &loc, const char *const specific_message,
-                            bool vma_fail = false) const;
+    void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message, bool vma_fail = false) const;
     bool CheckForGpuAvEnabled(const void *pNext);
 
   protected:
@@ -164,7 +163,12 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     VkPipelineLayout GetDebugPipelineLayout() { return debug_pipeline_layout_; }
 
   public:
+    // When aborting we will disconnect all future chassis calls.
+    // If we are deep into a call stack, we can use this to return up to the chassis call.
+    // It should only be used after calls that might abort, not to be used for guarding a function (unless a case is found that make
+    // sense too)
     mutable bool aborted = false;
+
     bool force_buffer_device_address;
     vvl::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;

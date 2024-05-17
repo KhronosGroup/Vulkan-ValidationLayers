@@ -25,7 +25,7 @@
 // Perform initializations that can be done at Create Device time.
 void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     if (enabled[gpu_validation]) {
-        ReportSetupProblem(device, loc, "Debug Printf cannot be enabled when gpu assisted validation is enabled.");
+        InternalError(device, loc, "Debug Printf cannot be enabled when gpu assisted validation is enabled.");
         return;
     }
 
@@ -49,14 +49,18 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
 
     BaseClass::CreateDevice(pCreateInfo, loc);  // will set up bindings
 
-    if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
-        ReportSetupProblem(device, loc, "Debug Printf requires Vulkan 1.1 or later.");
+    if (api_version < VK_API_VERSION_1_1) {
+        InternalError(device, loc, "Debug Printf requires Vulkan 1.1 or later.");
         return;
     }
 
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
-    if (!supported_features.fragmentStoresAndAtomics || !supported_features.vertexPipelineStoresAndAtomics) {
-        ReportSetupProblem(device, loc, "Debug Printf requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.");
+    if (!supported_features.fragmentStoresAndAtomics) {
+        InternalError(device, loc, "Debug Printf requires fragmentStoresAndAtomics.");
+        return;
+    }
+    if (!supported_features.vertexPipelineStoresAndAtomics) {
+        InternalError(device, loc, "Debug Printf requires vertexPipelineStoresAndAtomics.");
         return;
     }
 }
@@ -107,7 +111,7 @@ bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &
     optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_id));
     const bool pass = optimizer.Run(instrumented_spirv.data(), instrumented_spirv.size(), &instrumented_spirv, opt_options);
     if (!pass) {
-        ReportSetupProblem(device, loc, "Failure to instrument shader in spirv-opt. Proceeding with non-instrumented shader.");
+        InternalError(device, loc, "Failure to instrument shader in spirv-opt. Proceeding with non-instrumented shader.");
     }
     return pass;
 }
@@ -631,7 +635,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
     result = desc_set_manager->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor sets.");
+        InternalError(cmd_buffer, loc, "Unable to allocate descriptor sets.");
         return;
     }
 
@@ -640,7 +644,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
 
     auto cb_node = GetWrite<debug_printf::CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer.");
+        InternalError(cmd_buffer, loc, "Unrecognized command buffer.");
         return;
     }
 
@@ -649,7 +653,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
-        ReportSetupProblem(cmd_buffer, loc, "Neither pipeline state nor shader object states were found.");
+        InternalError(cmd_buffer, loc, "Neither pipeline state nor shader object states were found.");
         return;
     }
 
@@ -662,7 +666,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate device memory.");
+        InternalError(cmd_buffer, loc, "Unable to allocate device memory.");
         return;
     }
 
@@ -742,11 +746,4 @@ void debug_printf::CommandBuffer::ResetCBState() {
         debug_printf->DestroyBuffer(buffer_info);
     }
     buffer_infos.clear();
-}
-
-// TODO - Remove this function once ReleaseDeviceDispatchObject() is added to GPU-AV as well
-void debug_printf::Validator::ReportSetupProblemPrintF(LogObjectList objlist, const Location &loc,
-                                                       const char *const specific_message, bool vma_fail) const {
-    ReportSetupProblem(objlist, loc, specific_message, vma_fail);
-    ReleaseDeviceDispatchObject(this->container_type);
 }

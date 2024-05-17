@@ -87,8 +87,6 @@ class Validator : public GpuShaderInstrumentor {
         desired_features.fragmentStoresAndAtomics = true;
     }
 
-    void ReportSetupProblemPrintF(LogObjectList objlist, const Location& loc, const char* const specific_message,
-                                  bool vma_fail) const;
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& instrumented_spirv,
                           uint32_t unique_shader_id, const Location& loc) override;

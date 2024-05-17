@@ -112,17 +112,13 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
     BaseClass::CreateDevice(pCreateInfo, loc);
 
     if (api_version < VK_API_VERSION_1_1) {
-        ReportSetupProblem(device, loc, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
-        aborted = true;
+        InternalError(device, loc, "GPU-Assisted validation requires Vulkan 1.1 or later.");
         return;
     }
 
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
     if (!supported_features.fragmentStoresAndAtomics || !supported_features.vertexPipelineStoresAndAtomics) {
-        ReportSetupProblem(device, loc,
-                           "GPU-Assisted validation requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.  "
-                           "GPU-Assisted Validation disabled.");
-        aborted = true;
+        InternalError(device, loc, "GPU-Assisted validation requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.");
         return;
     }
 
@@ -207,8 +203,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
     VkResult result =
         vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to find memory type index");
-        aborted = true;
+        InternalError(device, loc, "Unable to find memory type index");
         return;
     }
     VmaPoolCreateInfo pool_create_info = {};
@@ -220,8 +215,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
     }
     result = vmaCreatePool(vmaAllocator, &pool_create_info, &output_buffer_pool);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create VMA memory pool");
-        aborted = true;
+        InternalError(device, loc, "Unable to create VMA memory pool");
         return;
     }
 
@@ -268,17 +262,14 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         result =
             vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &indices_buffer.buffer, &indices_buffer.allocation, nullptr);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc, "Unable to allocate device memory for command indices. Device could become unstable.",
-                               true);
-            aborted = true;
+            InternalError(device, loc, "Unable to allocate device memory for command indices.", true);
             return;
         }
 
         uint32_t *indices_ptr = nullptr;
         result = vmaMapMemory(vmaAllocator, indices_buffer.allocation, reinterpret_cast<void **>(&indices_ptr));
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc, "Unable to map device memory for command indices buffer.");
-            aborted = true;
+            InternalError(device, loc, "Unable to map device memory for command indices buffer.");
             return;
         }
 

@@ -57,9 +57,23 @@ TEST_F(NegativeGpuAV, ValidationAbort) {
     features.vertexPipelineStoresAndAtomics = false;
     features.fragmentStoresAndAtomics = false;
     fpvkSetPhysicalDeviceFeaturesEXT(gpu(), features);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "GPU-Assisted Validation disabled");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "GPU-AV is being disabled");
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();
+
+    // Still make sure we can use Vulkan as expected without errors
+    InitRenderTarget();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeGpuAV, ValidationFeatures) {
