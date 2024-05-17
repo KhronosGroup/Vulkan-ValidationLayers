@@ -521,7 +521,7 @@ class CoreChecks : public ValidationStateTracker {
                                    const Location& write_loc, bool push) const;
     // Shared helper functions - These are useful because the shared sampler image descriptor type
     //  performs common functions with both sampler and image descriptors so they can share their common functions
-    bool ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
+    bool ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLayout image_layout, VkDescriptorType type,
                              const Location& image_info_loc) const;
     // Validate contents of a push descriptor update
     bool ValidatePushDescriptorsUpdate(const DescriptorSet& push_set, uint32_t descriptorWriteCount,

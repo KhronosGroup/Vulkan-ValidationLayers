@@ -1127,21 +1127,20 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
 // Validate given sampler. Currently this only checks to make sure it exists in the samplerMap
 bool CoreChecks::ValidateSampler(const VkSampler sampler) const { return Get<vvl::Sampler>(sampler).get() != nullptr; }
 
-bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
+bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLayout image_layout, VkDescriptorType type,
                                      const Location &image_info_loc) const {
     bool skip = false;
-    auto iv_state = Get<vvl::ImageView>(image_view);
 
     // Note that when an imageview is created, we validated that memory is bound so no need to re-check here
     // Validate that imageLayout is compatible with aspect_mask and image format
     //  and validate that image usage bits are correct for given usage
-    VkImageAspectFlags aspect_mask = iv_state->normalized_subresource_range.aspectMask;
-    VkImage image = iv_state->create_info.image;
+    VkImageAspectFlags aspect_mask = view_state.normalized_subresource_range.aspectMask;
+    VkImage image = view_state.create_info.image;
     VkImageUsageFlags usage = 0;
-    auto *image_node = iv_state->image_state.get();
+    auto *image_node = view_state.image_state.get();
     assert(image_node);
 
-    const auto image_view_usage_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(iv_state->create_info.pNext);
+    const auto image_view_usage_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(view_state.create_info.pNext);
     const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_node->create_info.pNext);
     if (image_view_usage_info) {
         usage = image_view_usage_info->usage;
@@ -1163,15 +1162,15 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     skip |= ValidateMemoryIsBoundToImage(LogObjectList(image), *image_node, image_info_loc.dot(Field::image),
                                          "UNASSIGNED-VkDescriptorImageInfo-BoundResourceFreedMemoryAccess");
 
-    const LogObjectList objlist(iv_state->Handle(), image_node->Handle());
+    const LogObjectList objlist(view_state.Handle(), image_node->Handle());
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
     // but not binding them to descriptor sets.
-    if (iv_state->IsDepthSliced() && image_node->create_info.imageType == VK_IMAGE_TYPE_3D) {
+    if (view_state.IsDepthSliced() && image_node->create_info.imageType == VK_IMAGE_TYPE_3D) {
         // VK_EXT_image_2d_view_of_3d allows use of VIEW_TYPE_2D in descriptor
-        if (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+        if (view_state.create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
             skip |= LogError("VUID-VkDescriptorImageInfo-imageView-06712", objlist, image_info_loc.dot(Field::imageView),
                              "is VK_IMAGE_VIEW_TYPE_2D_ARRAY but the image is VK_IMAGE_TYPE_3D.");
-        } else if (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D) {
+        } else if (view_state.create_info.viewType == VK_IMAGE_VIEW_TYPE_2D) {
             // Check 06713/06714 first to alert apps without VK_EXT_image_2d_view_of_3d that the features are needed
             if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE && !enabled_features.image2DViewOf3D) {
                 skip |= LogError("VUID-VkDescriptorImageInfo-descriptorType-06713", objlist, image_info_loc.dot(Field::imageView),
@@ -1235,10 +1234,10 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
 
     switch (type) {
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            if (iv_state->samplerConversion != VK_NULL_HANDLE) {
+            if (view_state.samplerConversion != VK_NULL_HANDLE) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-01946", objlist, image_info_loc.dot(Field::imageView),
                                  "is used as VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but was created with %s",
-                                 FormatHandle(iv_state->samplerConversion).c_str());
+                                 FormatHandle(view_state.samplerConversion).c_str());
             }
             [[fallthrough]];
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
@@ -1343,7 +1342,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             std::stringstream error_str;
             error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
                       << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
-                      << FormatHandle(image) << " in imageView " << FormatHandle(image_view)
+                      << FormatHandle(image) << " in imageView " << FormatHandle(view_state.Handle())
                       << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
             for (auto &ext_layout : extended_layouts) {
@@ -1356,7 +1355,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     }
 
     if ((type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) || (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-        const VkComponentMapping components = iv_state->create_info.components;
+        const VkComponentMapping components = view_state.create_info.components;
         if (IsIdentitySwizzle(components) == false) {
             skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00336", objlist, image_info_loc.dot(Field::imageView),
                              "has a non-identiy swizzle component, here are the actual swizzle values:\n"
@@ -1369,10 +1368,10 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         }
     }
 
-    if ((type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) && (iv_state->min_lod != 0.0f)) {
+    if ((type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) && (view_state.min_lod != 0.0f)) {
         skip |=
             LogError("VUID-VkWriteDescriptorSet-descriptorType-06450", objlist, image_info_loc.dot(Field::imageView),
-                     "was created with minLod %f, but descriptorType is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT.", iv_state->min_lod);
+                     "was created with minLod %f, but descriptorType is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT.", view_state.min_lod);
     }
 
     return skip;
@@ -1724,8 +1723,8 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                 // Validate image
                 auto image_view = img_samp_desc.GetImageView();
                 auto image_layout = img_samp_desc.GetImageLayout();
-                if (image_view) {
-                    skip |= ValidateImageUpdate(image_view, image_layout, src_type, copy_loc);
+                if (auto iv_state = Get<vvl::ImageView>(image_view)) {
+                    skip |= ValidateImageUpdate(*iv_state, image_layout, src_type, copy_loc);
                 }
             }
             break;
@@ -1737,8 +1736,8 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                 auto img_desc = static_cast<const ImageDescriptor &>(*src_iter);
                 auto image_view = img_desc.GetImageView();
                 auto image_layout = img_desc.GetImageLayout();
-                if (image_view) {
-                    skip |= ValidateImageUpdate(image_view, image_layout, src_type, copy_loc);
+                if (auto iv_state = Get<vvl::ImageView>(image_view)) {
+                    skip |= ValidateImageUpdate(*iv_state, image_layout, src_type, copy_loc);
                 }
             }
             break;
@@ -1976,9 +1975,10 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                 auto image_layout = update.pImageInfo[di].imageLayout;
                 auto sampler = update.pImageInfo[di].sampler;
                 auto iv_state = Get<vvl::ImageView>(image_view);
+                if (!iv_state) continue;
 
                 const auto *image_state = iv_state->image_state.get();
-                skip |= ValidateImageUpdate(image_view, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
+                skip |= ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
 
                 if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
                     if (desc.IsImmutableSampler()) {
@@ -2058,9 +2058,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
                 const VkImageView image_view = update.pImageInfo[di].imageView;
                 auto image_layout = update.pImageInfo[di].imageLayout;
-                if (image_view) {
+                if (auto iv_state = Get<vvl::ImageView>(image_view)) {
                     skip |=
-                        ValidateImageUpdate(image_view, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
+                        ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
                 }
             }
             break;
