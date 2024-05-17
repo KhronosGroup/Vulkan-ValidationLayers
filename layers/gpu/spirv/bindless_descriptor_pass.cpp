@@ -17,12 +17,12 @@
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 
-#include "generated/inst_bindless_descriptor_comp.h"
+#include "generated/instrumentation_bindless_descriptor_comp.h"
 
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {inst_bindless_descriptor_comp, inst_bindless_descriptor_comp_size,
+static LinkInfo link_info = {instrumentation_bindless_descriptor_comp, instrumentation_bindless_descriptor_comp_size,
                              LinkFunctions::inst_bindless_descriptor, 0, "inst_bindless_descriptor"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.

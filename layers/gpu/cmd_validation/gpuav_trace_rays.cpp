@@ -18,7 +18,7 @@
 #include "gpu/gpu_subclasses.h"
 #include "gpu/gpu_validation.h"
 // Generated shaders
-#include "generated/gpu_pre_trace_rays_rgen.h"
+#include "generated/cmd_validation_trace_rays_rgen.h"
 
 namespace gpuav {
 
@@ -126,8 +126,8 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     }
 
     VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-    shader_module_ci.codeSize = gpu_pre_trace_rays_rgen_size * sizeof(uint32_t);
-    shader_module_ci.pCode = gpu_pre_trace_rays_rgen;
+    shader_module_ci.codeSize = cmd_validation_trace_rays_rgen_size * sizeof(uint32_t);
+    shader_module_ci.pCode = cmd_validation_trace_rays_rgen;
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
     if (result != VK_SUCCESS) {

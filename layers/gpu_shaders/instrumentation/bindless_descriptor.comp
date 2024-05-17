@@ -28,7 +28,7 @@
 
 #include "gpu_error_header.h"
 #include "gpu_shaders_constants.h"
-#include "gpu_inst_common_descriptor_sets.h"
+#include "common_descriptor_sets.h"
 
 layout(buffer_reference) buffer DescriptorSetData;
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorLayoutData {

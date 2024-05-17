@@ -33,12 +33,7 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
-// Generated shaders
 #include "gpu_shaders/gpu_error_header.h"
-#include "generated/gpu_pre_draw_vert.h"
-#include "generated/gpu_pre_dispatch_comp.h"
-#include "generated/gpu_pre_trace_rays_rgen.h"
-#include "generated/gpu_inst_shader_hash.h"
 
 namespace gpuav {
 
@@ -150,7 +145,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         }
     }
 
-    // gpu_pre_copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
+    // copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
     if (gpuav_settings.validate_buffer_copies) {
         if (!enabled_features.uniformAndStorageBuffer8BitAccess) {
             gpuav_settings.validate_buffer_copies = false;

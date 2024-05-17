@@ -31,7 +31,7 @@
 #include "chassis/chassis_modification_state.h"
 
 // Generated shaders
-#include "generated/gpu_inst_shader_hash.h"
+#include "generated/gpu_av_shader_hash.h"
 
 namespace gpuav {
 

@@ -23,9 +23,7 @@ layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagErrorBuffer) buffer
     uint errors_buffer[];
 };
 
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex) buffer ActionIndexBuffer {
-    uint action_index[];
-};
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex) buffer ActionIndexBuffer { uint action_index[]; };
 
 layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdResourceIndex) buffer ResourceIndexBuffer {
     uint resource_index[];

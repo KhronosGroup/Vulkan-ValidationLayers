@@ -17,12 +17,12 @@
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 
-#include "generated/inst_buffer_device_address_comp.h"
+#include "generated/instrumentation_buffer_device_address_comp.h"
 
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {inst_buffer_device_address_comp, inst_buffer_device_address_comp_size,
+static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size,
                              LinkFunctions::inst_buffer_device_address, 0, "inst_buffer_device_address"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.

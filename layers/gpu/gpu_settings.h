@@ -18,7 +18,7 @@
 #pragma once
 // Default values for those settings should match layers/VkLayer_khronos_validation.json.in
 
-#include "generated/gpu_inst_shader_hash.h"
+#include "generated/gpu_av_shader_hash.h"
 
 struct GpuAVSettings {
     bool shader_instrumentation_enabled = true;
@@ -68,7 +68,7 @@ struct GpuAVSettings {
 struct ShaderCacheHash {
     ShaderCacheHash(const GpuAVSettings& gpuav_settings) : gpuav_settings(gpuav_settings) {}
     GpuAVSettings gpuav_settings{};
-    const char inst_shader_git_hash[sizeof(INST_SHADER_GIT_HASH)] = INST_SHADER_GIT_HASH;
+    const char gpu_av_shader_git_hash[sizeof(GPU_AV_SHADER_GIT_HASH)] = GPU_AV_SHADER_GIT_HASH;
 };
 #pragma pack(pop)
 

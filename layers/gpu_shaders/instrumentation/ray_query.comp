@@ -28,7 +28,7 @@
 
 #include "gpu_error_header.h"
 #include "gpu_shaders_constants.h"
-#include "gpu_inst_common_descriptor_sets.h"
+#include "common_descriptor_sets.h"
 
 bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
 {

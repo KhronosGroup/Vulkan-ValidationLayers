@@ -208,16 +208,15 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety_counter_bodies.h
     ${API_TYPE}/generated/thread_safety_counter_definitions.h
     ${API_TYPE}/generated/thread_safety_counter_instances.h
-    ${API_TYPE}/generated/gpu_inst_shader_hash.h
-    ${API_TYPE}/generated/gpu_inst_shader_hash.h
-    ${API_TYPE}/generated/gpu_pre_copy_buffer_to_image_comp.h
-    ${API_TYPE}/generated/gpu_pre_copy_buffer_to_image_comp.cpp
-    ${API_TYPE}/generated/gpu_pre_dispatch_comp.h
-    ${API_TYPE}/generated/gpu_pre_dispatch_comp.cpp
-    ${API_TYPE}/generated/gpu_pre_draw_vert.h
-    ${API_TYPE}/generated/gpu_pre_draw_vert.cpp
-    ${API_TYPE}/generated/gpu_pre_trace_rays_rgen.h
-    ${API_TYPE}/generated/gpu_pre_trace_rays_rgen.cpp
+    ${API_TYPE}/generated/gpu_av_shader_hash.h
+    ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.h
+    ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.cpp
+    ${API_TYPE}/generated/cmd_validation_dispatch_comp.h
+    ${API_TYPE}/generated/cmd_validation_dispatch_comp.cpp
+    ${API_TYPE}/generated/cmd_validation_draw_vert.h
+    ${API_TYPE}/generated/cmd_validation_draw_vert.cpp
+    ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.h
+    ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.cpp
     gpu/debug_printf.cpp
     gpu/debug_printf.h
     gpu/gpu_constants.h
@@ -237,10 +236,10 @@ target_sources(vvl PRIVATE
     gpu/gpu_settings.h
     gpu/gpu_setup.cpp
     gpu/gpu_validation.cpp
-    gpu/cmd/draw_validation.cpp
-    gpu/cmd/dispatch_validation.cpp
-    gpu/cmd/trace_rays_validation.cpp
-    gpu/cmd/copy_validation.cpp
+    gpu/cmd_validation/gpuav_draw.cpp
+    gpu/cmd_validation/gpuav_dispatch.cpp
+    gpu/cmd_validation/gpuav_trace_rays.cpp
+    gpu/cmd_validation/gpuav_copy_buffer_to_image.cpp
     gpu/gpu_validation.h
     gpu/gpu_vuids.cpp
     gpu/gpu_vuids.h

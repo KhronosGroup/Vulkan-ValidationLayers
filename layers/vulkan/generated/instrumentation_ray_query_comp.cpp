@@ -2,30 +2,30 @@
 // See generate_spirv.py for modifications
 
 /***************************************************************************
-*
-* Copyright (c) 2021-2024 The Khronos Group Inc.
-* Copyright (c) 2021-2024 Valve Corporation
-* Copyright (c) 2021-2024 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-****************************************************************************/
+ *
+ * Copyright (c) 2021-2024 The Khronos Group Inc.
+ * Copyright (c) 2021-2024 Valve Corporation
+ * Copyright (c) 2021-2024 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ****************************************************************************/
 
-#include "inst_ray_query_comp.h"
+#include "instrumentation_ray_query_comp.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-[[maybe_unused]] const uint32_t inst_ray_query_comp_size = 1522;
-[[maybe_unused]] const uint32_t inst_ray_query_comp[1522] = {
+[[maybe_unused]] const uint32_t instrumentation_ray_query_comp_size = 1522;
+[[maybe_unused]] const uint32_t instrumentation_ray_query_comp[1522] = {
     0x07230203, 0x00010300, 0x0008000b, 0x0000010c, 0x00000000, 0x00020011, 0x00000001, 0x00020011, 0x00000005, 0x0006000b,
     0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001, 0x00030003, 0x00000002,
     0x000001c2, 0x00070004, 0x415f4c47, 0x675f4252, 0x735f7570, 0x65646168, 0x6e695f72, 0x00343674, 0x00070004, 0x455f4c47,

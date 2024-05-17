@@ -38,7 +38,7 @@ def identifierize(s):
     # translate leading digits
     return re.sub("^[^a-zA-Z_]+", "_", s)
 
-def compile(filename, glslang_validator, spirv_opt, target_env):
+def compile(gpu_shaders_dir, filename, glslang_validator, spirv_opt, target_env):
     tmpfile = os.path.basename(filename) + '.tmp'
 
     # invoke glslangValidator
@@ -49,18 +49,19 @@ def compile(filename, glslang_validator, spirv_opt, target_env):
             requires_vulkan_1_2 = ['rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
             if filename.split(".")[-1] in requires_vulkan_1_2:
                 target_env = "vulkan1.2"
-            elif tmpfile.startswith("inst_"):
+            elif filename.find('instrumentation') != -1:
                 target_env = "vulkan1.1" # Otherwise glslang might create BufferBlocks
             else:
                 target_env = "vulkan1.0"
         if target_env:
             args += ["--target-env", target_env]
         # functions called by the SPIRV-Tools instrumentation require special options
-        if tmpfile.startswith("inst_"):
+        if filename.find('instrumentation') != -1:
             args += ["--no-link"]
         else:
             args += ["-V"]
-        args += ["-o", tmpfile, filename]
+        include_dir = "-I" + gpu_shaders_dir
+        args += [include_dir, "-o", tmpfile, filename]
         subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         raise Exception(e.output)
@@ -101,7 +102,9 @@ def compile(filename, glslang_validator, spirv_opt, target_env):
     return words
 
 def write(words, filename, apiname, outdir = None):
-    name = identifierize(os.path.basename(filename))
+    head_tail = os.path.split(filename)
+    name = os.path.basename(head_tail[0]) + "_" + head_tail[1]
+    name = identifierize(name)
 
     literals = []
     for i in range(0, len(words), COLUMNS):
@@ -187,11 +190,11 @@ extern const uint32_t {name}[];
         print(source, end="", file=f)
 
 
-def write_inst_hash(generate_shaders, outdir=None):
+def write_inst_hash(shaders_to_compile, outdir=None):
     # Build a hash of the git hash for all instrumentation shaders
     hash_string = ''
-    for shader in generate_shaders:
-        if not os.path.basename(shader).startswith('inst_'):
+    for shader in shaders_to_compile:
+        if os.path.basename(shader).find('instrumentation') == -1:
             continue
         result = subprocess.run(["git", "hash-object", shader], capture_output=True, text=True)
         git_hash = result.stdout.rstrip('\n')
@@ -199,9 +202,9 @@ def write_inst_hash(generate_shaders, outdir=None):
         try:
             int(git_hash, 16)
         except ValueError:
-            raise ValueError(f'value for INST_SHADER_GIT_HASH ({git_hash}) must be a SHA1 hash.')
+            raise ValueError(f'value for GPU_AV_SHADER_GIT_HASH ({git_hash}) must be a SHA1 hash.')
         if len(git_hash) != 40:
-            raise ValueError(f'value for INST_SHADER_GIT_HASH ({git_hash}) must be a SHA1 hash.')
+            raise ValueError(f'value for GPU_AV_SHADER_GIT_HASH ({git_hash}) must be a SHA1 hash.')
         hash_string += git_hash
 
     out = []
@@ -233,14 +236,14 @@ def write_inst_hash(generate_shaders, outdir=None):
 
 ''')
 
-    out.append(f'#define INST_SHADER_GIT_HASH "{hashlib.sha1(hash_string.encode("utf-8")).hexdigest()}"\n')
+    out.append(f'#define GPU_AV_SHADER_GIT_HASH "{hashlib.sha1(hash_string.encode("utf-8")).hexdigest()}"\n')
 
     if outdir:
       out_file = os.path.join(outdir, 'layers/vulkan/generated')
     else:
       out_file = common_ci.RepoRelative('layers/vulkan/generated')
     os.makedirs(out_file, exist_ok=True)
-    out_file = os.path.join(out_file, "gpu_inst_shader_hash.h")
+    out_file = os.path.join(out_file, "gpu_av_shader_hash.h")
     with open(out_file, 'w') as outfile:
         outfile.write("".join(out))
 
@@ -257,13 +260,19 @@ def main():
     parser.add_argument('--targetenv', action='store', type=str, help='Optional --target-env argument passed down to glslangValidator')
     args = parser.parse_args()
 
-    generate_shaders = []
+    shaders_to_compile = []
     # Get all shaders in gpu_shaders folder
     shader_type = ['vert', 'tesc', 'tese', 'geom', 'frag', 'comp', 'mesh', 'task', 'rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
-    gpu_shaders = common_ci.RepoRelative('layers/gpu_shaders')
-    for filename in os.listdir(gpu_shaders):
+    gpu_shaders_dir = common_ci.RepoRelative('layers/gpu_shaders')
+    diagnostic_shaders = common_ci.RepoRelative('layers/gpu_shaders/cmd_validation')
+    for filename in os.listdir(diagnostic_shaders):
         if (filename.split(".")[-1] in shader_type):
-            generate_shaders.append(os.path.join(gpu_shaders, filename))
+            shaders_to_compile.append(os.path.join(diagnostic_shaders, filename))
+    
+    instrumentation_shaders = common_ci.RepoRelative('layers/gpu_shaders/instrumentation')
+    for filename in os.listdir(instrumentation_shaders):
+        if (filename.split(".")[-1] in shader_type):
+            shaders_to_compile.append(os.path.join(instrumentation_shaders, filename))
 
     # Spots external folder should be in
     for path in ['external/Debug/64', 'external/Release/64', 'external']:
@@ -289,15 +298,15 @@ def main():
     if args.shader:
         if not os.path.isfile(args.shader):
             sys.exit("Cannot find infilename " + args.shader)
-        generate_shaders = [args.shader]
+        shaders_to_compile = [args.shader]
 
-    for shader in generate_shaders:
-        words = compile(shader, glslang, spirv_opt, args.targetenv)
+    for shader in shaders_to_compile:
+        words = compile(gpu_shaders_dir, shader, glslang, spirv_opt, args.targetenv)
         write(words, shader, args.api, args.outdir)
 
     # Don't want to hash if just generating a single shader for testings
-    if (len(generate_shaders) > 1):
-        write_inst_hash(generate_shaders, args.outdir)
+    if (len(shaders_to_compile) > 1):
+        write_inst_hash(shaders_to_compile, args.outdir)
 
 if __name__ == '__main__':
   main()
