@@ -1035,8 +1035,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
 
 bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::CommandBuffer &cb_state, size_t eventCount,
                                             size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
-                                            const EventToStageMap &local_event_signal_info, VkQueue waiting_queue,
-                                            const Location &loc) {
+                                            const EventMap &local_event_signal_info, VkQueue waiting_queue, const Location &loc) {
     bool skip = false;
     const ValidationStateTracker &state_data = cb_state.dev_data;
     VkPipelineStageFlags2KHR stage_mask = 0;
@@ -1051,8 +1050,8 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
         // conveniently stored in the vvl::Event object itself (after each queue
         // submit, vvl::CommandBuffer::Submit() updates vvl::Event, so it contains
         // the last src_stage from that submission).
-        if (auto signal_info = local_event_signal_info.find(event); signal_info != local_event_signal_info.end()) {
-            stage_mask |= signal_info->second;
+        if (const auto *event_info = vvl::Find(local_event_signal_info, event)) {
+            stage_mask |= event_info->src_stage_mask;
             // The "set event" is found in the current submission (the same queue); there can't be inter-queue usage errors
         } else {
             auto event_state = state_data.Get<vvl::Event>(event);

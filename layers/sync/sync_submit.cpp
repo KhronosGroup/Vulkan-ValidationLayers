@@ -62,11 +62,11 @@ std::optional<SignalInfo> SignaledSemaphoresUpdate::OnUnsignal(VkSemaphore semap
     assert(!vvl::Contains(signals_to_add, semaphore) || !vvl::Contains(signals_to_remove, semaphore));
     std::optional<SignalInfo> unsignaled;
 
-    if (auto local_it = vvl::FindIt(signals_to_add, semaphore)) {
-        unsignaled.emplace(std::move(local_it->second));
-        signals_to_add.erase(local_it.it);
-    } else if (auto global_it = vvl::FindIt(sync_validator_.signaled_semaphores_, semaphore)) {
-        unsignaled.emplace(std::move(global_it->second));
+    if (auto add_it = signals_to_add.find(semaphore); add_it != signals_to_add.end()) {
+        unsignaled.emplace(std::move(add_it->second));
+        signals_to_add.erase(add_it);
+    } else if (auto* p_global_info = vvl::Find(sync_validator_.signaled_semaphores_, semaphore)) {
+        unsignaled.emplace(*p_global_info);
     }
     signals_to_remove.emplace(semaphore);
 

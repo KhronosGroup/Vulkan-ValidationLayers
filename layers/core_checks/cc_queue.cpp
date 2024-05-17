@@ -45,7 +45,7 @@ struct CommandBufferSubmitState {
     // (accross all command buffers of that submission), as opposed to globally
     // tracking state accross *all* submissions to the same queue.
     QueryMap local_query_to_state_map;
-    EventToStageMap local_event_signal_info;
+    EventMap local_event_signal_info;
     vvl::unordered_map<VkVideoSessionKHR, vvl::VideoSessionDeviceState> local_video_session_state{};
 
     CommandBufferSubmitState(const CoreChecks &c, const vvl::Queue *q) : core(c), queue_state(q) {

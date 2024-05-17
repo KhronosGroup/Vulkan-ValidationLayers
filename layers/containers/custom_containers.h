@@ -1048,45 +1048,17 @@ bool Contains(const Container &container, const Key &key) {
 }
 
 //
-// if (auto [found, it] = vvl::Find(map, key); found) { it->jump(); }
+// if (auto* thing = vvl::Find(map, key)) { thing->jump(); }
 //
-template <typename Container, typename Key = typename Container::key_type>
-std::pair<bool, typename Container::iterator> Find(Container &container, const Key &key) {
+template <typename Container, typename Key = typename Container::key_type, typename Value = typename Container::mapped_type>
+Value *Find(Container &container, const Key &key) {
     auto it = container.find(key);
-    return std::make_pair(it != container.end(), it);
+    return (it != container.end()) ? &it->second : nullptr;
 }
-template <typename Container, typename Key = typename Container::key_type>
-std::pair<bool, typename Container::const_iterator> Find(const Container &container, const Key &key) {
+template <typename Container, typename Key = typename Container::key_type, typename Value = typename Container::mapped_type>
+const Value *Find(const Container &container, const Key &key) {
     auto it = container.find(key);
-    return std::make_pair(it != container.cend(), it);
-}
-
-//
-// if (auto it_holder = vvl::FindIt(map, key); it_holder) { it_holder->jump(); }
-//
-template <typename Container>
-struct IteratorHolder {
-    typename Container::iterator it;
-    typename Container::iterator end_it;
-    typename Container::value_type &operator*() { return *it; }
-    typename Container::value_type *operator->() { return &*it; }
-    operator bool() { return it != end_it; }
-};
-template <typename Container>
-struct ConstIteratorHolder {
-    typename Container::const_iterator it;
-    typename Container::const_iterator end_it;
-    const typename Container::value_type &operator*() { return *it; }
-    const typename Container::value_type *operator->() { return &*it; }
-    operator bool() { return it != end_it; }
-};
-template <typename Container, typename Key = typename Container::key_type>
-IteratorHolder<Container> FindIt(Container &container, const Key &key) {
-    return {container.find(key), container.end()};
-}
-template <typename Container, typename Key = typename Container::key_type>
-ConstIteratorHolder<Container> FindIt(const Container &container, const Key &key) {
-    return {container.find(key), container.cend()};
+    return (it != container.cend()) ? &it->second : nullptr;
 }
 
 // EraseIf is not implemented as std::erase(std::remove_if(...), ...) for two reasons:
