@@ -3504,6 +3504,7 @@ void ValidationStateTracker::PostCallRecordBindImageMemory2KHR(VkDevice device, 
 void ValidationStateTracker::PreCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject &record_obj) {
     auto event_state = Get<vvl::Event>(event);
     if (event_state) {
+        event_state->signaled = true;
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_HOST_BIT;
         event_state->signaling_queue = VK_NULL_HANDLE;
     }

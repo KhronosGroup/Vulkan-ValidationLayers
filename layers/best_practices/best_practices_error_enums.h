@@ -124,6 +124,7 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_Shader_MissingInputAttachment =
     "BestPractices-Shader-MissingInputAttachment";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderingInfo_ResolveModeNone = "BestPractices-VkRenderingInfo-ResolveModeNone";
+[[maybe_unused]] static const char *kVUID_BestPractices_Event_SignalSignaledEvent = "BestPractices-Event-SignalSignaledEvent";
 
 // Arm-specific best practice
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =

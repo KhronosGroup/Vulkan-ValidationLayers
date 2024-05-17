@@ -40,25 +40,15 @@ class VideoSession;
 class VideoSessionParameters;
 }  // namespace vvl
 
-#ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkEventCreateInfo *info) {
-    bool retval = false;
-    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
-    while (export_metal_object_info) {
-        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT) {
-            retval = true;
-            break;
-        }
-        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
-    }
-    return retval;
-}
-#endif  // VK_USE_PLATFORM_METAL_EXT
-
 // Only CoreChecks uses this, but the state tracker stores it.
 constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
 using ImageSubresourceLayoutMap = image_layout_map::ImageSubresourceLayoutMap;
-typedef vvl::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
+
+struct EventInfo {
+    VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
+    bool signal = false;  // signal (SetEvent) or unsignal (ResetEvent)
+};
+using EventMap = vvl::unordered_map<VkEvent, EventInfo>;
 
 enum class CbState {
     New,                // Newly created CB w/o any cmds
@@ -114,28 +104,27 @@ namespace vvl {
 
 class Event : public StateObject {
   public:
-    int write_in_use;
+    Event(VkEvent handle, const VkEventCreateInfo *pCreateInfo);
+    VkEvent VkHandle() const { return handle_.Cast<VkEvent>(); }
+
+    const VkEventCreateFlags flags;
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_event_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
-    const VkEventCreateFlags flags;
 
-    // Source stage specified by the "set event" command
+    int write_in_use = 0;
+
+    // Signaling state.
+    // Gets updated at queue submission granularity or when signaled from the host.
+    bool signaled = false;
+
+    // Source stage specified by the "set event" command.
+    // Gets updated at queue submission granularity.
     VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
 
-    // Queue that signaled this event. It's null if event was signaled from the host
+    // Queue that signaled this event. It's null if event was signaled from the host.
     VkQueue signaling_queue = VK_NULL_HANDLE;
-
-    Event(VkEvent handle, const VkEventCreateInfo *pCreateInfo)
-        : StateObject(handle, kVulkanObjectTypeEvent),
-          write_in_use(0),
-#ifdef VK_USE_PLATFORM_METAL_EXT
-          metal_event_export(GetMetalExport(pCreateInfo)),
-#endif  // VK_USE_PLATFORM_METAL_EXT
-          flags(pCreateInfo->flags) {
-    }
-
-    VkEvent VkHandle() const { return handle_.Cast<VkEvent>(); }
 };
 
 // Track command pools and their command buffers
@@ -467,7 +456,7 @@ class CommandBuffer : public RefcountedStateObject {
     std::vector<std::function<bool(const CommandBuffer &secondary, const CommandBuffer *primary, const vvl::Framebuffer *)>>
         cmd_execute_commands_functions;
 
-    using EventCallback = std::function<bool(CommandBuffer &cb_state, bool do_validate, EventToStageMap &local_event_signal_info,
+    using EventCallback = std::function<bool(CommandBuffer &cb_state, bool do_validate, EventMap &local_event_signal_info,
                                              VkQueue waiting_queue, const Location &loc)>;
     std::vector<EventCallback> eventUpdates;
 

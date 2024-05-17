@@ -90,7 +90,32 @@ std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) co
     return ss.str();
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static bool GetMetalExport(const VkEventCreateInfo *info) {
+    bool retval = false;
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT) {
+            retval = true;
+            break;
+        }
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return retval;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 namespace vvl {
+
+Event::Event(VkEvent handle, const VkEventCreateInfo *pCreateInfo)
+    : StateObject(handle, kVulkanObjectTypeEvent),
+      flags(pCreateInfo->flags)
+#ifdef VK_USE_PLATFORM_METAL_EXT
+      ,
+      metal_event_export(GetMetalExport(pCreateInfo))
+#endif  // VK_USE_PLATFORM_METAL_EXT
+{
+}
 
 CommandPool::CommandPool(ValidationStateTracker &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *pCreateInfo,
                          VkQueueFlags flags)
@@ -1470,16 +1495,6 @@ void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&
     }
 }
 
-// Stores information associated with the event's signal operation.
-// This function is also used for unsignal (reset) operation which sets source stage to NONE.
-// NOTE: for additional event validation we might need to store a boolean flag to
-// distinguish between signal/unsignal operations (NONE stage can not be used for this,
-// since it's a valid source stage in sync2).
-static bool SetEventSignalInfo(VkEvent event, VkPipelineStageFlags2 src_stage_mask, EventToStageMap &local_event_signal_info) {
-    local_event_signal_info[event] = src_stage_mask;
-    return false;
-}
-
 void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
     RecordCmd(command);
     if (!dev_data.disabled[command_buffer_state]) {
@@ -1493,8 +1508,10 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
         writeEventsBeforeWait.push_back(event);
     }
     eventUpdates.emplace_back(
-        [event, stageMask](CommandBuffer &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue,
-                           const Location &loc) { return SetEventSignalInfo(event, stageMask, local_event_signal_info); });
+        [event, stageMask](CommandBuffer &, bool do_validate, EventMap &local_event_signal_info, VkQueue, const Location &loc) {
+            local_event_signal_info[event] = EventInfo{stageMask, true};
+            return false;  // skip
+        });
 }
 
 void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
@@ -1511,8 +1528,9 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
     }
 
     eventUpdates.emplace_back(
-        [event](CommandBuffer &, bool do_validate, EventToStageMap &local_event_signal_info, VkQueue, const Location &loc) {
-            return SetEventSignalInfo(event, VK_PIPELINE_STAGE_2_NONE, local_event_signal_info);
+        [event](CommandBuffer &, bool do_validate, EventMap &local_event_signal_info, VkQueue, const Location &loc) {
+            local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false};
+            return false;  // skip
         });
 }
 
@@ -1599,14 +1617,15 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
     // Update vvl::Event with src_stage from the last recorded SetEvent.
     // Ultimately, it tracks the last SetEvent for the entire submission.
     {
-        EventToStageMap local_event_signal_info;
+        EventMap local_event_signal_info;
         for (const auto &function : eventUpdates) {
             function(*this, /*do_validate*/ false, local_event_signal_info,
                      VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */, loc);
         }
-        for (const auto &event_signal : local_event_signal_info) {
-            auto event_state = dev_data.Get<vvl::Event>(event_signal.first);
-            event_state->signal_src_stage_mask = event_signal.second;
+        for (const auto &[event, info] : local_event_signal_info) {
+            auto event_state = dev_data.Get<vvl::Event>(event);
+            event_state->signaled = info.signal;
+            event_state->signal_src_stage_mask = info.src_stage_mask;
             event_state->signaling_queue = queue;
         }
     }

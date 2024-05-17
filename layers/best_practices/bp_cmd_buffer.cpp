@@ -189,9 +189,49 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer comman
     PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 }
 
+namespace {
+struct EventValidator {
+    const ValidationStateTracker& state_tracker;
+    vvl::unordered_map<VkEvent, bool> signaling_state;
+
+    EventValidator(const ValidationStateTracker& state_tracker) : state_tracker(state_tracker) {}
+
+    bool ValidateSecondaryCbSignalingState(const bp_state::CommandBuffer& primary_cb, const bp_state::CommandBuffer& secondary_cb,
+                                           const Location& secondary_cb_loc) {
+        bool skip = false;
+        for (const auto& [event, signaling_info] : secondary_cb.event_signaling_state) {
+            if (signaling_info.first_state_change_is_signal) {
+                bool signaled = false;
+                if (auto* p_signaled = vvl::Find(signaling_state, event)) {
+                    // check local tracking map
+                    signaled = *p_signaled;
+                } else if (auto* primary_signal_info = vvl::Find(primary_cb.event_signaling_state, event)) {
+                    // check parent command buffer
+                    signaled = primary_signal_info->signaled;
+                }
+                if (signaled) {
+                    // the most recent state update was signal (signaled == true) and the secondary
+                    // command buffer starts with a signal too (first_state_change_is_signal).
+                    const LogObjectList objlist(primary_cb.VkHandle(), secondary_cb.VkHandle(), event);
+                    skip |= state_tracker.LogWarning(
+                        kVUID_BestPractices_Event_SignalSignaledEvent, objlist, secondary_cb_loc,
+                        "%s sets event %s which was already set (in the primary command buffer %s or in the executed secondary "
+                        "command buffers). If this is not the desired behavior, the event must be reset before it is set again.",
+                        state_tracker.FormatHandle(secondary_cb.VkHandle()).c_str(), state_tracker.FormatHandle(event).c_str(),
+                        state_tracker.FormatHandle(primary_cb.VkHandle()).c_str());
+                }
+            }
+            signaling_state[event] = signaling_info.signaled;
+        }
+        return skip;
+    }
+};
+}  // namespace
+
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                       const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
+    EventValidator event_validator(*this);
     const auto primary = GetRead<bp_state::CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         const auto secondary_cb = GetRead<bp_state::CommandBuffer>(pCommandBuffers[i]);
@@ -219,6 +259,7 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
                                    FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
             }
         }
+        skip |= event_validator.ValidateSecondaryCbSignalingState(*primary, *secondary_cb, cb_loc);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
@@ -261,5 +302,13 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
 
         primary->render_pass_state.numDrawCallsDepthEqualCompare += secondary->render_pass_state.numDrawCallsDepthEqualCompare;
         primary->render_pass_state.numDrawCallsDepthOnly += secondary->render_pass_state.numDrawCallsDepthOnly;
+
+        for (const auto& [event, secondary_info] : secondary->event_signaling_state) {
+            if (auto* primary_info = vvl::Find(primary->event_signaling_state, event)) {
+                primary_info->signaled = secondary_info.signaled;
+            } else {
+                primary->event_signaling_state.emplace(event, secondary_info);
+            }
+        }
     }
 }

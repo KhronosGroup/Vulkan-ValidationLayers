@@ -66,13 +66,50 @@ bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Loca
     return skip;
 }
 
+bool BestPractices::CheckEventSignalingState(const bp_state::CommandBuffer& command_buffer, VkEvent event,
+                                             const Location& cb_loc) const {
+    bool skip = false;
+    if (auto* signaling_info = vvl::Find(command_buffer.event_signaling_state, event); signaling_info && signaling_info->signaled) {
+        const LogObjectList objlist(command_buffer.VkHandle(), event);
+        skip |= LogWarning(kVUID_BestPractices_Event_SignalSignaledEvent, objlist, cb_loc,
+                           "%s sets event %s which was already set (in this command buffer or in the executed secondary command "
+                           "buffers). If this is not the desired behavior, the event must be reset before it is set again.",
+                           FormatHandle(command_buffer.VkHandle()).c_str(), FormatHandle(event).c_str());
+    }
+    return skip;
+}
+
+void BestPractices::RecordCmdSetEvent(bp_state::CommandBuffer& command_buffer, VkEvent event) {
+    if (auto* signaling_info = vvl::Find(command_buffer.event_signaling_state, event)) {
+        signaling_info->signaled = true;
+    } else {
+        command_buffer.event_signaling_state.emplace(event, bp_state::CommandBuffer::SignalingInfo(true));
+    }
+}
+
+void BestPractices::RecordCmdResetEvent(bp_state::CommandBuffer& command_buffer, VkEvent event) {
+    if (auto* signaling_info = vvl::Find(command_buffer.event_signaling_state, event)) {
+        signaling_info->signaled = false;
+    } else {
+        command_buffer.event_signaling_state.emplace(event, bp_state::CommandBuffer::SignalingInfo(false));
+    }
+}
+
 bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
-
+    auto cb_state = Get<bp_state::CommandBuffer>(commandBuffer);
+    skip |= CheckEventSignalingState(*cb_state, event, error_obj.location.dot(Field::commandBuffer));
     return skip;
+}
+
+void BestPractices::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                             const RecordObject& record_obj) {
+    ValidationStateTracker::PreCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
+    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    RecordCmdSetEvent(*cb_state, event);
 }
 
 bool BestPractices::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -82,16 +119,37 @@ bool BestPractices::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer
 
 bool BestPractices::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                 const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
-    return CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfo), *pDependencyInfo);
+    bool skip = false;
+    skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfo), *pDependencyInfo);
+    auto cb_state = Get<bp_state::CommandBuffer>(commandBuffer);
+    skip |= CheckEventSignalingState(*cb_state, event, error_obj.location.dot(Field::commandBuffer));
+    return skip;
+}
+
+void BestPractices::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                 const VkDependencyInfoKHR* pDependencyInfo, const RecordObject& record_obj) {
+    PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
+}
+
+void BestPractices::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
+                                              const RecordObject& record_obj) {
+    ValidationStateTracker::PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
+    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    RecordCmdSetEvent(*cb_state, event);
 }
 
 bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
-
     return skip;
+}
+
+void BestPractices::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                               const RecordObject& record_obj) {
+    ValidationStateTracker::PreCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
+    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    RecordCmdResetEvent(*cb_state, event);
 }
 
 bool BestPractices::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -102,10 +160,20 @@ bool BestPractices::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuff
 bool BestPractices::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
-
     return skip;
+}
+
+void BestPractices::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+                                                   const RecordObject& record_obj) {
+    PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
+}
+
+void BestPractices::PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                                const RecordObject& record_obj) {
+    ValidationStateTracker::PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
+    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    RecordCmdResetEvent(*cb_state, event);
 }
 
 bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
