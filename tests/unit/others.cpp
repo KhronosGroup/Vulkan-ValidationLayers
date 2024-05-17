@@ -533,9 +533,7 @@ TEST_F(VkLayerTest, SpecLinks) {
     CreateImageViewTest(*this, &imgViewInfo, "Vulkan-Docs/search");
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
-// Should be printing an error
-TEST_F(VkLayerTest, DISABLED_DeviceIDPropertiesExtensions) {
+TEST_F(VkLayerTest, DeviceIDPropertiesExtensions) {
     TEST_DESCRIPTION("VkPhysicalDeviceIDProperties can be enabled from 1 of 3 extensions");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
@@ -547,8 +545,10 @@ TEST_F(VkLayerTest, DISABLED_DeviceIDPropertiesExtensions) {
     }
 
     VkPhysicalDeviceIDProperties id_props =  vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&id_props);
-    vk::GetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&id_props);
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &props2);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {

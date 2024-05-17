@@ -96,7 +96,7 @@ TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
@@ -104,8 +104,8 @@ TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
     }
 
     VkPhysicalDeviceIDProperties id_props =  vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&id_props);
-    vk::GetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&id_props);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &props2);
 }
 
 TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
