@@ -1522,3 +1522,53 @@ TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
+    TEST_DESCRIPTION("Verify DebugPrintF can gracefully fail if not using Vulkan 1.1+");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+    VkValidationFeatureDisableEXT disables[] = {
+        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeaturesEXT features = vku::InitStructHelper();
+    features.enabledValidationFeatureCount = 1;
+    features.disabledValidationFeatureCount = 4;
+    features.pEnabledValidationFeatures = enables;
+    features.pDisabledValidationFeatures = disables;
+    RETURN_IF_SKIP(InitFramework(&features));
+
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Currently disabled for Portability";
+    }
+
+    m_errorMonitor->SetDesiredError("Debug Printf requires Vulkan 1.1 or later");
+    RETURN_IF_SKIP(InitState());
+    m_errorMonitor->VerifyFound();
+
+    // Still make sure we can use Vulkan as expected without errors
+
+    InitRenderTarget();
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+        )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}

@@ -388,8 +388,7 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
     // We can't do anything if there is only one.
     // Device probably not a legit Vulkan device, since there should be at least 4. Protect ourselves.
     if (adjusted_max_desc_sets == 1) {
-        ReportSetupProblem(device, loc, "Device can bind only a single descriptor set.");
-        aborted = true;
+        InternalError(device, loc, "Device can bind only a single descriptor set.");
         return;
     }
 
@@ -397,8 +396,7 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
 
     VkResult result = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address, &vmaAllocator);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Could not initialize VMA", true);
-        aborted = true;
+        InternalError(device, loc, "Could not initialize VMA", true);
         return;
     }
 
@@ -410,9 +408,8 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
 
     result = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, nullptr, &debug_desc_layout_);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "vkCreateDescriptorSetLayout failed for internal descriptor set");
+        InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal descriptor set");
         Cleanup();
-        aborted = true;
         return;
     }
 
@@ -420,9 +417,8 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
                                                                     0, nullptr};
     result = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, nullptr, &dummy_desc_layout_);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "vkCreateDescriptorSetLayout failed for internal dummy descriptor set");
+        InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal dummy descriptor set");
         Cleanup();
-        aborted = true;
         return;
     }
 
@@ -440,9 +436,8 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
                                                                    nullptr};
     result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, nullptr, &debug_pipeline_layout_);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "vkCreateDescriptorSetLayout failed for internal pipeline layout");
+        InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal pipeline layout");
         Cleanup();
-        aborted = true;
         return;
     }
 }
@@ -487,7 +482,7 @@ bool GpuShaderInstrumentor::ValidateCmdWaitEvents(VkCommandBuffer command_buffer
         error_msg << loc.Message()
                   << ": recorded with VK_PIPELINE_STAGE_HOST_BIT set. GPU-Assisted validation waits on queue completion. This wait "
                      "could block the host's signaling of this event, resulting in deadlock.";
-        ReportSetupProblem(command_buffer, loc, error_msg.str().c_str());
+        InternalError(command_buffer, loc, error_msg.str().c_str());
     }
     return false;
 }
@@ -527,16 +522,13 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
                                                               chassis::CreatePipelineLayout &chassis_state) {
-    if (aborted) {
-        return;
-    }
     if (chassis_state.modified_create_info.setLayoutCount >= adjusted_max_desc_sets) {
         std::ostringstream strm;
         strm << "Pipeline Layout conflict with validation's descriptor set at slot " << desc_set_bind_index << ". "
              << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
              << "Validation is not modifying the pipeline layout. "
              << "Instrumented shaders are replaced with non-instrumented shaders.";
-        ReportSetupProblem(device, record_obj.location, strm.str().c_str());
+        InternalError(device, record_obj.location, strm.str().c_str());
     } else {
         // Modify the pipeline layout by:
         // 1. Copying the caller's descriptor set desc_layouts
@@ -559,8 +551,8 @@ void GpuShaderInstrumentor::PostCallRecordCreatePipelineLayout(VkDevice device, 
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
-        ReportSetupProblem(device, record_obj.location, "Unable to create pipeline layout.  Device could become unstable.");
-        aborted = true;
+        InternalError(device, record_obj.location, "Unable to create pipeline layout.  Device could become unstable.");
+        return;
     }
     BaseClass::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
 }
@@ -569,9 +561,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                                                           const VkShaderCreateInfoEXT *pCreateInfos,
                                                           const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                                           const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
-    if (aborted) {
-        return;
-    }
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (chassis_state.instrumented_create_info->setLayoutCount >= adjusted_max_desc_sets) {
             std::ostringstream strm;
@@ -579,7 +568,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                  << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
                  << "Validation is not modifying the pipeline layout. "
                  << "Instrumented shaders are replaced with non-instrumented shaders.";
-            ReportSetupProblem(device, record_obj.location, strm.str().c_str());
+            InternalError(device, record_obj.location, strm.str().c_str());
         } else {
             // Modify the pipeline layout by:
             // 1. Copying the caller's descriptor set desc_layouts
@@ -604,7 +593,6 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
                                                            const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                               chassis_state);
-    if (aborted) return;
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         shader_map.insert_or_assign(chassis_state.unique_shader_ids[i], VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
@@ -626,7 +614,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                  chassis::CreateGraphicsPipelines &chassis_state) {
-    if (aborted) return;
     std::vector<vku::safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
@@ -639,7 +626,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                 const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                 chassis::CreateComputePipelines &chassis_state) {
-    if (aborted) return;
     std::vector<vku::safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
@@ -653,7 +639,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice de
                                                                      VkPipeline *pPipelines, const RecordObject &record_obj,
                                                                      PipelineStates &pipeline_states,
                                                                      chassis::CreateRayTracingPipelinesNV &chassis_state) {
-    if (aborted) return;
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
@@ -665,7 +650,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
-    if (aborted) return;
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
@@ -694,7 +678,6 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
                                                                   chassis::CreateGraphicsPipelines &chassis_state) {
     BaseClass::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                      pipeline_states, chassis_state);
-    if (aborted) return;
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
     PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
@@ -706,7 +689,6 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
                                                                  chassis::CreateComputePipelines &chassis_state) {
     BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     pipeline_states, chassis_state);
-    if (aborted) return;
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
     PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
@@ -717,7 +699,6 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesNV(
     PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesNV &chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                          record_obj, pipeline_states, chassis_state);
-    if (aborted) return;
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
     PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
@@ -728,7 +709,6 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, pipeline_states, chassis_state);
-    if (aborted) return;
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
     PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
@@ -842,9 +822,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
                 if (result == VK_SUCCESS) {
                     SetShaderModule(new_pipeline_ci, *stage.pipeline_create_info, shader_module, i);
                 } else {
-                    ReportSetupProblem(device, record_obj.location,
-                                       "Unable to replace instrumented shader with non-instrumented one.  "
-                                       "Device could become unstable.");
+                    InternalError(device, record_obj.location, "Unable to replace instrumented shader with non-instrumented one.");
                 }
             }
         } else {
@@ -947,4 +925,28 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreations(const uint32_t count
             }
         }
     }
+}
+
+void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message,
+                                          bool vma_fail) const {
+    aborted = true;
+    std::string error_message = specific_message;
+    if (vma_fail) {
+        char *stats_string;
+        vmaBuildStatsString(vmaAllocator, &stats_string, false);
+        error_message += " VMA statistics = ";
+        error_message += stats_string;
+        vmaFreeStatsString(vmaAllocator, stats_string);
+    }
+
+    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "Debug PrintF" : "GPU-AV";
+    char const *vuid =
+        container_type == LayerObjectTypeDebugPrintf ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
+
+    LogError(vuid, objlist, loc, "Internal Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
+
+    // Once we encounter an internal issue disconnect everything.
+    // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
+    // with errors making it hard to see the first error with the real source of the problem).
+    ReleaseDeviceDispatchObject(this->container_type);
 }

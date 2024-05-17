@@ -2234,6 +2234,7 @@ class ValidationObject {
     bool is_device_lost = false;
 
     std::vector<ValidationObject*> object_dispatch;
+    std::vector<ValidationObject*> aborted_object_dispatch;
     LayerObjectTypeId container_type;
     void ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const;
 

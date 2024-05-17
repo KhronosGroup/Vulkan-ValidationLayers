@@ -53,7 +53,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         pool_create_info.queueFamilyIndex = queueFamilyIndex;
         result = DispatchCreateCommandPool(shader_instrumentor_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
-            shader_instrumentor_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
+            shader_instrumentor_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
             barrier_command_pool_ = VK_NULL_HANDLE;
             return;
         }
@@ -64,7 +64,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         result = DispatchAllocateCommandBuffers(shader_instrumentor_.device, &buffer_alloc_info, &barrier_command_buffer_);
         if (result != VK_SUCCESS) {
-            shader_instrumentor_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
+            shader_instrumentor_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
             DispatchDestroyCommandPool(shader_instrumentor_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;
@@ -79,7 +79,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 
         result = DispatchCreateSemaphore(shader_instrumentor_.device, &semaphore_create_info, nullptr, &barrier_sem_);
         if (result != VK_SUCCESS) {
-            shader_instrumentor_.ReportSetupProblem(shader_instrumentor_.device, loc, "Unable to create barrier semaphore.");
+            shader_instrumentor_.InternalError(shader_instrumentor_.device, loc, "Unable to create barrier semaphore.");
             DispatchDestroyCommandPool(shader_instrumentor_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;

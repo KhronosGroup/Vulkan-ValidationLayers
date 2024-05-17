@@ -873,21 +873,3 @@ bool PreCopyBufferToImageResources::LogCustomValidationMessage(Validator &valida
     return error_logged;
 }
 }  // namespace gpuav
-
-void GpuShaderInstrumentor::ReportSetupProblem(LogObjectList objlist, const Location &loc, const char *const specific_message,
-                                               bool vma_fail) const {
-    std::string error_message = specific_message;
-    if (vma_fail) {
-        char *stats_string;
-        vmaBuildStatsString(vmaAllocator, &stats_string, false);
-        error_message += " VMA statistics = ";
-        error_message += stats_string;
-        vmaFreeStatsString(vmaAllocator, stats_string);
-    }
-
-    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "Debug PrintF" : "GPU-AV";
-    char const *vuid =
-        container_type == LayerObjectTypeDebugPrintf ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
-
-    LogError(vuid, objlist, loc, "Setup Error, %s is being disabled. Detail: (%s)", layer_name, error_message.c_str());
-}

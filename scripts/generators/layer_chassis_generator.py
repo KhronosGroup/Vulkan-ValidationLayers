@@ -432,6 +432,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool is_device_lost = false;
 
                 std::vector<ValidationObject*> object_dispatch;
+                std::vector<ValidationObject*> aborted_object_dispatch;
                 LayerObjectTypeId container_type;
                 void ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const;
 
@@ -863,7 +864,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
                             }
                         }
 
-                        delete object;
+                        // We can't destroy the object itself now as it might be unsafe (things are still being used)
+                        // If the rare case happens we need to release, we will cleanup later when we normally would have cleaned this up
+                        layer_data->aborted_object_dispatch.push_back(object);
                         break;
                     }
                 }
@@ -1211,6 +1214,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     intercept->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
                 }
 
+                // Before instance is destroyed, allow aborted objects to clean up
+                for (ValidationObject* intercept : layer_data->aborted_object_dispatch) {
+                    auto lock = intercept->WriteLock();
+                    intercept->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
+                }
+
                 layer_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
 
                 for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1226,6 +1235,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
                     delete *item;
                 }
+                for (auto item = layer_data->aborted_object_dispatch.begin(); item != layer_data->aborted_object_dispatch.end(); item++) {
+                    delete *item;
+                }
+
                 FreeLayerDataPtr(key, layer_data_map);
             }
 
@@ -1346,6 +1359,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     intercept->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
                 }
 
+                // Before device is destroyed, allow aborted objects to clean up
+                for (ValidationObject* intercept : layer_data->aborted_object_dispatch) {
+                    auto lock = intercept->WriteLock();
+                    intercept->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
+                }
+
                 layer_data->device_dispatch_table.DestroyDevice(device, pAllocator);
 
                 for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1359,6 +1378,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
                     delete *item;
                 }
+                for (auto item = layer_data->aborted_object_dispatch.begin(); item != layer_data->aborted_object_dispatch.end(); item++) {
+                    delete *item;
+                }
+
                 FreeLayerDataPtr(key, layer_data_map);
             }
 

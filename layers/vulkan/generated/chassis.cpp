@@ -188,7 +188,9 @@ void ValidationObject::ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) co
                 }
             }
 
-            delete object;
+            // We can't destroy the object itself now as it might be unsafe (things are still being used)
+            // If the rare case happens we need to release, we will cleanup later when we normally would have cleaned this up
+            layer_data->aborted_object_dispatch.push_back(object);
             break;
         }
     }
@@ -536,6 +538,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         intercept->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
+    // Before instance is destroyed, allow aborted objects to clean up
+    for (ValidationObject* intercept : layer_data->aborted_object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
+    }
+
     layer_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -551,6 +559,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
         delete *item;
     }
+    for (auto item = layer_data->aborted_object_dispatch.begin(); item != layer_data->aborted_object_dispatch.end(); item++) {
+        delete *item;
+    }
+
     FreeLayerDataPtr(key, layer_data_map);
 }
 
@@ -671,6 +683,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         intercept->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
+    // Before device is destroyed, allow aborted objects to clean up
+    for (ValidationObject* intercept : layer_data->aborted_object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
+    }
+
     layer_data->device_dispatch_table.DestroyDevice(device, pAllocator);
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -684,6 +702,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
         delete *item;
     }
+    for (auto item = layer_data->aborted_object_dispatch.begin(); item != layer_data->aborted_object_dispatch.end(); item++) {
+        delete *item;
+    }
+
     FreeLayerDataPtr(key, layer_data_map);
 }
 
