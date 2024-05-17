@@ -27,29 +27,30 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
     bool skip = false;
     skip |= ValidationStateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj,
                                                                           ads_state_data);
+    if (skip) return skip;
 
-    if (!skip) {
-        const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
-        // if the number of freed sets > 0, it implies they could be recycled instead if desirable
-        // this warning is specific to Arm
-        if (VendorCheckEnabled(kBPVendorArm) && pool_state && (pool_state->freed_count > 0)) {
-            skip |= LogPerformanceWarning(
-                kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse, device, error_obj.location,
-                "%s Descriptor set memory was allocated via vkAllocateDescriptorSets() for sets which were previously freed in the "
-                "same logical device. On some drivers or architectures it may be most optimal to re-use existing descriptor sets.",
-                VendorSpecificTag(kBPVendorArm));
-        }
+    const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
+    if (!pool_state) return skip;
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-            // Track number of descriptorSets allowable in this pool
-            if (pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
-                skip |= LogWarning(kVUID_BestPractices_EmptyDescriptorPool, pool_state->Handle(), error_obj.location,
-                                   "Unable to allocate %" PRIu32
-                                   " descriptorSets from %s"
-                                   ". This pool only has %" PRIu32 " descriptorSets remaining.",
-                                   pAllocateInfo->descriptorSetCount, FormatHandle(*pool_state).c_str(),
-                                   pool_state->GetAvailableSets());
-            }
+    // if the number of freed sets > 0, it implies they could be recycled instead if desirable
+    // this warning is specific to Arm
+    if (VendorCheckEnabled(kBPVendorArm) && (pool_state->freed_count > 0)) {
+        skip |= LogPerformanceWarning(
+            kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse, device, error_obj.location,
+            "%s Descriptor set memory was allocated via vkAllocateDescriptorSets() for sets which were previously freed in the "
+            "same logical device. On some drivers or architectures it may be most optimal to re-use existing descriptor sets.",
+            VendorSpecificTag(kBPVendorArm));
+    }
+
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+        // Track number of descriptorSets allowable in this pool
+        if (pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
+            skip |=
+                LogWarning(kVUID_BestPractices_EmptyDescriptorPool, pool_state->Handle(), error_obj.location,
+                           "Unable to allocate %" PRIu32
+                           " descriptorSets from %s"
+                           ". This pool only has %" PRIu32 " descriptorSets remaining.",
+                           pAllocateInfo->descriptorSetCount, FormatHandle(*pool_state).c_str(), pool_state->GetAvailableSets());
         }
     }
 
@@ -60,8 +61,7 @@ void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, 
                                                                VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
                                                                vvl::AllocateDescriptorSetsData& ads_state) {
     if (record_obj.result == VK_SUCCESS) {
-        auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
-        if (pool_state) {
+        if (auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool)) {
             // we record successful allocations by subtracting the allocation count from the last recorded free count
             const auto alloc_count = pAllocateInfo->descriptorSetCount;
             // clamp the unsigned subtraction to the range [0, last_free_count]
@@ -79,9 +79,8 @@ void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescript
     ValidationStateTracker::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets,
                                                              record_obj);
     if (record_obj.result == VK_SUCCESS) {
-        auto pool_state = Get<bp_state::DescriptorPool>(descriptorPool);
         // we want to track frees because we're interested in suggesting re-use
-        if (pool_state) {
+        if (auto pool_state = Get<bp_state::DescriptorPool>(descriptorPool)) {
             pool_state->freed_count += descriptorSetCount;
         }
     }

@@ -487,9 +487,8 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
     PipelineUsedInFrame(pipeline);
 
     if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-        auto pipeline_state = Get<bp_state::Pipeline>(pipeline);
         // check for depth/blend state tracking
-        if (pipeline_state) {
+        if (auto pipeline_state = Get<bp_state::Pipeline>(pipeline)) {
             auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
             assert(cb_state);
             auto& render_pass_state = cb_state->render_pass_state;
