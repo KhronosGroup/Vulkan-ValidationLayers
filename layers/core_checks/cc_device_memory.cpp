@@ -282,11 +282,9 @@ bool CoreChecks::ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::Ac
 //  IF a previous binding existed, output validation error
 //  Otherwise, add reference from objectInfo to memoryInfo
 //  Add reference off of objInfo
-bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindable &mem_binding, const Location &loc) const {
+bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, const vvl::Bindable &mem_binding,
+                                       const Location &loc) const {
     bool skip = false;
-    if (memory == VK_NULL_HANDLE) {
-        return skip;  // It's an error to bind an object to NULL memory
-    }
 
     const bool bind_2 = (loc.function != Func::vkBindBufferMemory) && (loc.function != Func::vkBindImageMemory);
     auto typed_handle = mem_binding.Handle();
@@ -303,29 +301,27 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindabl
         } else {
             assert(false);  // Unsupported object type
         }
-        const LogObjectList objlist(memory, typed_handle);
+        const LogObjectList objlist(memory_state.Handle(), typed_handle);
         skip |= LogError(vuid, objlist, loc,
                          "attempting to bind %s to %s which was created with sparse memory flags "
                          "(VK_%s_CREATE_SPARSE_*_BIT).",
-                         FormatHandle(memory).c_str(), FormatHandle(typed_handle).c_str(), handle_type);
+                         FormatHandle(memory_state.Handle()).c_str(), FormatHandle(typed_handle).c_str(), handle_type);
     }
 
-    if (Get<vvl::DeviceMemory>(memory)) {
-        const auto *prev_binding = mem_binding.MemState();
-        if (prev_binding) {
-            const char *vuid = nullptr;
-            if (typed_handle.type == kVulkanObjectTypeBuffer) {
-                vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-buffer-07459" : "VUID-vkBindBufferMemory-buffer-07459";
-            } else if (typed_handle.type == kVulkanObjectTypeImage) {
-                vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-07460" : "VUID-vkBindImageMemory-image-07460";
-            } else {
-                assert(false);  // Unsupported object type
-            }
-            const LogObjectList objlist(memory, typed_handle, prev_binding->Handle());
-            skip |= LogError(vuid, objlist, loc, "attempting to bind %s to %s which has already been bound to %s.",
-                             FormatHandle(memory).c_str(), FormatHandle(typed_handle).c_str(),
-                             FormatHandle(prev_binding->Handle()).c_str());
+    const auto *prev_binding = mem_binding.MemState();
+    if (prev_binding) {
+        const char *vuid = nullptr;
+        if (typed_handle.type == kVulkanObjectTypeBuffer) {
+            vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-buffer-07459" : "VUID-vkBindBufferMemory-buffer-07459";
+        } else if (typed_handle.type == kVulkanObjectTypeImage) {
+            vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-07460" : "VUID-vkBindImageMemory-image-07460";
+        } else {
+            assert(false);  // Unsupported object type
         }
+        const LogObjectList objlist(memory_state.Handle(), typed_handle, prev_binding->Handle());
+        skip |= LogError(vuid, objlist, loc, "attempting to bind %s to %s which has already been bound to %s.",
+                         FormatHandle(memory_state.Handle()).c_str(), FormatHandle(typed_handle).c_str(),
+                         FormatHandle(prev_binding->Handle()).c_str());
     }
     return skip;
 }
@@ -850,9 +846,6 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
     const bool bind_buffer_mem_2 = loc.function != Func::vkBindBufferMemory;
 
-    // Track objects tied to memory
-    skip |= ValidateSetMemBinding(memory, *buffer_state, loc);
-
     // Validate memory requirements alignment
     if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
         const char *vuid =
@@ -865,6 +858,9 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
     }
 
     if (auto mem_info = Get<vvl::DeviceMemory>(memory)) {
+        // Track objects tied to memory
+        skip |= ValidateSetMemBinding(*mem_info, *buffer_state, loc);
+
         // Validate VkExportMemoryAllocateInfo's VUs that can't be checked during vkAllocateMemory
         // because they require buffer information.
         if (mem_info->IsExport()) {
@@ -1504,11 +1500,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         const Location loc = bind_image_mem_2 ? error_obj.location.dot(Field::pBindInfos, i) : error_obj.location.function;
         const VkBindImageMemoryInfo &bind_info = pBindInfos[i];
         if (auto image_state = Get<vvl::Image>(bind_info.image)) {
-            // Track objects tied to memory
-            skip |= ValidateSetMemBinding(bind_info.memory, *image_state, loc);
+            auto mem_info = Get<vvl::DeviceMemory>(bind_info.memory);
+            if (mem_info) {
+                // Track objects tied to memory
+                skip |= ValidateSetMemBinding(*mem_info, *image_state, loc);
+            }
 
             const auto plane_info = vku::FindStructInPNextChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
-            auto mem_info = Get<vvl::DeviceMemory>(bind_info.memory);
 
             if (image_state->disjoint && plane_info == nullptr) {
                 const LogObjectList objlist(bind_info.image, bind_info.memory);

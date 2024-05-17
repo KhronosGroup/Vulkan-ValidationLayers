@@ -130,30 +130,29 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue
     return skip;
 }
 
-bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_loc, VkSemaphore semaphore, uint64_t value) {
+bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_loc, const vvl::Semaphore &semaphore_state,
+                                                 uint64_t value) {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
 
-    auto semaphore_state = core.Get<vvl::Semaphore>(semaphore);
-    if (!semaphore_state) return skip;
-
-    switch (semaphore_state->type) {
+    switch (semaphore_state.type) {
         case VK_SEMAPHORE_TYPE_BINARY:
-            skip |= ValidateBinaryWait(wait_semaphore_loc, queue, *semaphore_state);
+            skip |= ValidateBinaryWait(wait_semaphore_loc, queue, semaphore_state);
             break;
         case VK_SEMAPHORE_TYPE_TIMELINE: {
             uint64_t bad_value = 0;
             std::string where;
             TimelineMaxDiffCheck exceeds_max_diff(value, core.phys_dev_props_core12.maxTimelineSemaphoreValueDifference);
-            if (CheckSemaphoreValue(*semaphore_state, where, bad_value, exceeds_max_diff)) {
+            const VkSemaphore handle = semaphore_state.VkHandle();
+            if (CheckSemaphoreValue(semaphore_state, where, bad_value, exceeds_max_diff)) {
                 const auto &vuid = GetQueueSubmitVUID(wait_semaphore_loc, SubmitError::kTimelineSemMaxDiff);
-                skip |= core.LogError(vuid, semaphore, wait_semaphore_loc,
+                skip |= core.LogError(vuid, handle, wait_semaphore_loc,
                                       "value (%" PRIu64 ") exceeds limit regarding %s semaphore %s value (%" PRIu64 ").", value,
-                                      where.c_str(), core.FormatHandle(semaphore).c_str(), bad_value);
+                                      where.c_str(), core.FormatHandle(handle).c_str(), bad_value);
                 break;
             }
-            timeline_waits[semaphore] = value;
+            timeline_waits[handle] = value;
         } break;
         default:
             break;
@@ -161,21 +160,20 @@ bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_
     return skip;
 }
 
-bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaphore_loc, VkSemaphore semaphore, uint64_t value) {
+bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaphore_loc, const vvl::Semaphore &semaphore_state,
+                                                   uint64_t value) {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
-    LogObjectList objlist(semaphore, queue);
+    const VkSemaphore handle = semaphore_state.VkHandle();
+    LogObjectList objlist(handle, queue);
 
-    auto semaphore_state = core.Get<vvl::Semaphore>(semaphore);
-    if (!semaphore_state) return skip;
-
-    switch (semaphore_state->type) {
+    switch (semaphore_state.type) {
         case VK_SEMAPHORE_TYPE_BINARY: {
-            if ((semaphore_state->Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(semaphore))) {
+            if ((semaphore_state.Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(handle))) {
                 VkQueue other_queue = VK_NULL_HANDLE;
                 vvl::Func other_command = vvl::Func::Empty;
-                if (CannotSignalBinary(*semaphore_state, other_queue, other_command)) {
+                if (CannotSignalBinary(semaphore_state, other_queue, other_command)) {
                     std::stringstream initiator;
                     if (other_command != vvl::Func::Empty) {
                         initiator << String(other_command);
@@ -190,9 +188,9 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                     skip |= core.LogError(
                         "VUID-vkQueueSubmit-pCommandBuffers-00065", objlist, signal_semaphore_loc,
                         "(%s) is being signaled by %s, but it was previously signaled by %s and has not since been waited on",
-                        core.FormatHandle(semaphore).c_str(), core.FormatHandle(queue).c_str(), initiator.str().c_str());
+                        core.FormatHandle(handle).c_str(), core.FormatHandle(queue).c_str(), initiator.str().c_str());
                 } else {
-                    binary_signaling_state[semaphore] = true;
+                    binary_signaling_state[handle] = true;
                 }
             }
             break;
@@ -211,23 +209,23 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                 // exact value ordering cannot be determined until execution time
                 return !is_pending && value < payload;
             };
-            if (CheckSemaphoreValue(*semaphore_state, where, bad_value, must_be_greater)) {
+            if (CheckSemaphoreValue(semaphore_state, where, bad_value, must_be_greater)) {
                 const auto &vuid = GetQueueSubmitVUID(signal_semaphore_loc, SubmitError::kTimelineSemSmallValue);
                 skip |= core.LogError(
                     vuid, objlist, signal_semaphore_loc,
                     "signal value (0x%" PRIx64 ") in %s must be greater than %s timeline semaphore %s value (0x%" PRIx64 ")", value,
-                    core.FormatHandle(queue).c_str(), where.c_str(), core.FormatHandle(semaphore).c_str(), bad_value);
+                    core.FormatHandle(queue).c_str(), where.c_str(), core.FormatHandle(handle).c_str(), bad_value);
                 break;
             }
             TimelineMaxDiffCheck exceeds_max_diff(value, core.phys_dev_props_core12.maxTimelineSemaphoreValueDifference);
-            if (CheckSemaphoreValue(*semaphore_state, where, bad_value, exceeds_max_diff)) {
+            if (CheckSemaphoreValue(semaphore_state, where, bad_value, exceeds_max_diff)) {
                 const auto &vuid = GetQueueSubmitVUID(signal_semaphore_loc, SubmitError::kTimelineSemMaxDiff);
-                skip |= core.LogError(vuid, semaphore, signal_semaphore_loc,
+                skip |= core.LogError(vuid, objlist, signal_semaphore_loc,
                                       "value (%" PRIu64 ") exceeds limit regarding %s semaphore %s value (%" PRIu64 ").", value,
-                                      where.c_str(), core.FormatHandle(semaphore).c_str(), bad_value);
+                                      where.c_str(), core.FormatHandle(handle).c_str(), bad_value);
                 break;
             }
-            timeline_signals[semaphore] = value;
+            timeline_signals[handle] = value;
             break;
         }
         default:
@@ -293,7 +291,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pWaitSemaphoreValues[i];
         }
-        skip |= state.ValidateWaitSemaphore(wait_semaphore_loc, semaphore, value);
+        skip |= state.ValidateWaitSemaphore(wait_semaphore_loc, *semaphore_state, value);
     }
     for (uint32_t i = 0; i < submit.signalSemaphoreCount; ++i) {
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
@@ -323,7 +321,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pSignalSemaphoreValues[i];
         }
-        skip |= state.ValidateSignalSemaphore(signal_semaphore_loc, semaphore, value);
+        skip |= state.ValidateSignalSemaphore(signal_semaphore_loc, *semaphore_state, value);
     }
     return skip;
 }
@@ -337,10 +335,12 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         const LogObjectList objlist(wait_info.semaphore, state.queue);
         skip |= ValidatePipelineStage(objlist, wait_info_loc.dot(Field::stageMask), state.queue_flags, wait_info.stageMask);
         skip |= ValidateStageMaskHost(objlist, wait_info_loc.dot(Field::stageMask), wait_info.stageMask);
-        skip |= state.ValidateWaitSemaphore(wait_info_loc.dot(Field::semaphore), wait_info.semaphore, wait_info.value);
 
         auto semaphore_state = Get<vvl::Semaphore>(wait_info.semaphore);
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        if (!semaphore_state) continue;
+
+        skip |= state.ValidateWaitSemaphore(wait_info_loc.dot(Field::semaphore), *semaphore_state, wait_info.value);
+        if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             for (uint32_t sig_index = 0; sig_index < submit.signalSemaphoreInfoCount; sig_index++) {
                 const auto &sig_info = submit.pSignalSemaphoreInfos[sig_index];
                 if (wait_info.semaphore == sig_info.semaphore && wait_info.value >= sig_info.value) {
@@ -358,7 +358,9 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         const LogObjectList objlist(sem_info.semaphore, state.queue);
         skip |= ValidatePipelineStage(objlist, signal_info_loc.dot(Field::stageMask), state.queue_flags, sem_info.stageMask);
         skip |= ValidateStageMaskHost(objlist, signal_info_loc.dot(Field::stageMask), sem_info.stageMask);
-        skip |= state.ValidateSignalSemaphore(signal_info_loc.dot(Field::semaphore), sem_info.semaphore, sem_info.value);
+        if (auto semaphore_state = Get<vvl::Semaphore>(sem_info.semaphore)) {
+            skip |= state.ValidateSignalSemaphore(signal_info_loc.dot(Field::semaphore), *semaphore_state, sem_info.value);
+        }
     }
     return skip;
 }
@@ -398,7 +400,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pWaitSemaphoreValues[i];
         }
-        skip |= state.ValidateWaitSemaphore(wait_semaphore_loc, semaphore, value);
+        skip |= state.ValidateWaitSemaphore(wait_semaphore_loc, *semaphore_state, value);
     }
     for (uint32_t i = 0; i < submit.signalSemaphoreCount; ++i) {
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
@@ -428,7 +430,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pSignalSemaphoreValues[i];
         }
-        skip |= state.ValidateSignalSemaphore(signal_semaphore_loc, semaphore, value);
+        skip |= state.ValidateSignalSemaphore(signal_semaphore_loc, *semaphore_state, value);
     }
     return skip;
 }
