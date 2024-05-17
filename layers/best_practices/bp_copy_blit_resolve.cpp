@@ -553,7 +553,8 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
                                                       const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    auto dst = Get<bp_state::Image>(image);
+    auto dst_image = Get<bp_state::Image>(image);
+    if (!dst_image) return skip;
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
         skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_ClearImage, commandBuffer, error_obj.location,
@@ -562,7 +563,7 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
                                       VendorSpecificTag(kBPVendorAMD));
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        skip |= ValidateClearColor(commandBuffer, dst->create_info.format, *pColor, error_obj.location);
+        skip |= ValidateClearColor(commandBuffer, dst_image->create_info.format, *pColor, error_obj.location);
     }
 
     return skip;
