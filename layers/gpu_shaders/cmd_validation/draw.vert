@@ -31,7 +31,7 @@ layout(push_constant) uniform UniformInfo {
     uint push_constant_word_10;
 };
 
-#include "gpu_pre_action.h"
+#include "common.h"
 
 #define validation_select push_constant_word_0
 

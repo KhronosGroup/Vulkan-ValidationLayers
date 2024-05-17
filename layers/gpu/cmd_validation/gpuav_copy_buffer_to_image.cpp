@@ -18,7 +18,7 @@
 #include "gpu/gpu_subclasses.h"
 #include "gpu/gpu_validation.h"
 // Generated shaders
-#include "generated/gpu_pre_copy_buffer_to_image_comp.h"
+#include "generated/cmd_validation_copy_buffer_to_image_comp.h"
 
 namespace gpuav {
 
@@ -76,7 +76,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.height *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
     {
-        // Needs to be kept in sync with gpu_pre_copy_buffer_to_image.comp
+        // Needs to be kept in sync with copy_buffer_to_image.comp
         struct BufferImageCopy {
             uint32_t src_buffer_byte_offset;
             uint32_t start_layer;
@@ -295,8 +295,8 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
     }
 
     VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-    shader_module_ci.codeSize = gpu_pre_copy_buffer_to_image_comp_size * sizeof(uint32_t);
-    shader_module_ci.pCode = gpu_pre_copy_buffer_to_image_comp;
+    shader_module_ci.codeSize = cmd_validation_copy_buffer_to_image_comp_size * sizeof(uint32_t);
+    shader_module_ci.pCode = cmd_validation_copy_buffer_to_image_comp;
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
     if (result != VK_SUCCESS) {

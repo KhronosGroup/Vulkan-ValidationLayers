@@ -28,7 +28,7 @@
 
 #include "gpu_error_header.h"
 #include "gpu_shaders_constants.h"
-#include "gpu_inst_common_descriptor_sets.h"
+#include "common_descriptor_sets.h"
 
 // Represent a [begin, end) range, where end is one past the last element held in range
 struct Range {

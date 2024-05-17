@@ -43,7 +43,7 @@ layout(push_constant) uniform PushConstants {
     uint ray_query_depth_limit;
 };
 
-#include "gpu_pre_action.h"
+#include "common.h"
 
 void main() {
     if (indirect_data.ray_query_dimensions.width > ray_query_width_limit) {

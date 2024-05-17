@@ -18,7 +18,7 @@
 #include "gpu/gpu_subclasses.h"
 #include "gpu/gpu_validation.h"
 // Generated shaders
-#include "generated/gpu_pre_dispatch_comp.h"
+#include "generated/cmd_validation_dispatch_comp.h"
 
 namespace gpuav {
 
@@ -168,8 +168,8 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
         VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
         shader_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        shader_ci.codeSize = gpu_pre_dispatch_comp_size * sizeof(uint32_t);
-        shader_ci.pCode = gpu_pre_dispatch_comp;
+        shader_ci.codeSize = cmd_validation_dispatch_comp_size * sizeof(uint32_t);
+        shader_ci.pCode = cmd_validation_dispatch_comp;
         shader_ci.pName = "main";
         shader_ci.setLayoutCount = pipeline_layout_ci.setLayoutCount;
         shader_ci.pSetLayouts = pipeline_layout_ci.pSetLayouts;
@@ -183,8 +183,8 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
         }
     } else {
         VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-        shader_module_ci.codeSize = gpu_pre_dispatch_comp_size * sizeof(uint32_t);
-        shader_module_ci.pCode = gpu_pre_dispatch_comp;
+        shader_module_ci.codeSize = cmd_validation_dispatch_comp_size * sizeof(uint32_t);
+        shader_module_ci.pCode = cmd_validation_dispatch_comp;
         VkShaderModule validation_shader = VK_NULL_HANDLE;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
         if (result != VK_SUCCESS) {

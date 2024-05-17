@@ -38,12 +38,12 @@ target_sources(gpu_av_spirv PRIVATE
     pass.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/spirv_grammar_helper.cpp
 
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/inst_bindless_descriptor_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/inst_bindless_descriptor_comp.cpp
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/inst_buffer_device_address_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/inst_buffer_device_address_comp.cpp
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/inst_ray_query_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/inst_ray_query_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_bindless_descriptor_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_bindless_descriptor_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_buffer_device_address_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_buffer_device_address_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_ray_query_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_ray_query_comp.cpp
 
 )
 

@@ -17,12 +17,13 @@
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 
-#include "generated/inst_ray_query_comp.h"
+#include "generated/instrumentation_ray_query_comp.h"
 
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {inst_ray_query_comp, inst_ray_query_comp_size, LinkFunctions::inst_ray_query, 0, "inst_ray_query"};
+static LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, LinkFunctions::inst_ray_query, 0,
+                             "inst_ray_query"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t RayQueryPass::GetLinkFunctionId() {

@@ -367,21 +367,21 @@ def main(argv):
     # The shaders requires glslangvalidator, so they are updated manually with generate_spirv when needed
     verify_exclude = [
         '.clang-format',
-        'gpu_pre_dispatch_comp.cpp',
-        'gpu_pre_draw_vert.cpp',
-        'gpu_pre_trace_rays_rgen.cpp',
-        'gpu_pre_copy_buffer_to_image_comp.cpp',
-        'inst_buffer_device_address_comp.cpp',
-        'inst_bindless_descriptor_comp.cpp',
-        'inst_ray_query_comp.cpp',
-        'gpu_pre_dispatch_comp.h',
-        'gpu_pre_draw_vert.h',
-        'gpu_pre_trace_rays_rgen.h',
-        'gpu_pre_copy_buffer_to_image_comp.h',
-        'inst_buffer_device_address_comp.h',
-        'inst_bindless_descriptor_comp.h',
-        'inst_ray_query_comp.h',
-        'gpu_inst_shader_hash.h'
+        'cmd_validation_dispatch_comp.h',
+        'cmd_validation_dispatch_comp.cpp',
+        'cmd_validation_draw_vert.h',
+        'cmd_validation_draw_vert.cpp',
+        'cmd_validation_trace_rays_rgen.h',
+        'cmd_validation_trace_rays_rgen.cpp',
+        'cmd_validation_copy_buffer_to_image_comp.h',
+        'cmd_validation_copy_buffer_to_image_comp.cpp',
+        'instrumentation_buffer_device_address_comp.h',
+        'instrumentation_buffer_device_address_comp.cpp',
+        'instrumentation_bindless_descriptor_comp.h',
+        'instrumentation_bindless_descriptor_comp.cpp',
+        'instrumentation_ray_query_comp.h',
+        'instrumentation_ray_query_comp.cpp',
+        'gpu_av_shader_hash.h'
     ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')

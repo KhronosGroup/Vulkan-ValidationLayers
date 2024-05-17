@@ -2,30 +2,30 @@
 // See generate_spirv.py for modifications
 
 /***************************************************************************
-*
-* Copyright (c) 2021-2024 The Khronos Group Inc.
-* Copyright (c) 2021-2024 Valve Corporation
-* Copyright (c) 2021-2024 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-****************************************************************************/
+ *
+ * Copyright (c) 2021-2024 The Khronos Group Inc.
+ * Copyright (c) 2021-2024 Valve Corporation
+ * Copyright (c) 2021-2024 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ****************************************************************************/
 
-#include "gpu_pre_trace_rays_rgen.h"
+#include "cmd_validation_trace_rays_rgen.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-[[maybe_unused]] const uint32_t gpu_pre_trace_rays_rgen_size = 1252;
-[[maybe_unused]] const uint32_t gpu_pre_trace_rays_rgen[1252] = {
+[[maybe_unused]] const uint32_t cmd_validation_trace_rays_rgen_size = 1252;
+[[maybe_unused]] const uint32_t cmd_validation_trace_rays_rgen[1252] = {
     0x07230203, 0x00010500, 0x0008000b, 0x000000af, 0x00000000, 0x00020011, 0x0000117f, 0x00020011, 0x000014e3, 0x0006000a,
     0x5f565053, 0x5f52484b, 0x5f796172, 0x63617274, 0x00676e69, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e,
     0x00000000, 0x0003000e, 0x000014e4, 0x00000001, 0x000a000f, 0x000014c1, 0x00000004, 0x6e69616d, 0x00000000, 0x00000017,

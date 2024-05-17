@@ -17,7 +17,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
 
-#include "gpu_pre_action.h"
+#include "common.h"
 
 layout(push_constant) uniform UniformInfo {
     uint limit_x;

@@ -20,7 +20,7 @@
 #include "state_tracker/render_pass_state.h"
 // Generated shaders
 #include "gpu_shaders/gpu_error_header.h"
-#include "generated/gpu_pre_draw_vert.h"
+#include "generated/cmd_validation_draw_vert.h"
 
 namespace gpuav {
 
@@ -265,8 +265,8 @@ PreDrawResources::SharedResources *Validator::GetSharedDrawIndirectValidationRes
         VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
         shader_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
         shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        shader_ci.codeSize = gpu_pre_draw_vert_size * sizeof(uint32_t);
-        shader_ci.pCode = gpu_pre_draw_vert;
+        shader_ci.codeSize = cmd_validation_draw_vert_size * sizeof(uint32_t);
+        shader_ci.pCode = cmd_validation_draw_vert;
         shader_ci.pName = "main";
         shader_ci.setLayoutCount = 1u;
         shader_ci.pSetLayouts = &shared_resources->ds_layout;
@@ -280,8 +280,8 @@ PreDrawResources::SharedResources *Validator::GetSharedDrawIndirectValidationRes
         }
     } else {
         VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-        shader_module_ci.codeSize = gpu_pre_draw_vert_size * sizeof(uint32_t);
-        shader_module_ci.pCode = gpu_pre_draw_vert;
+        shader_module_ci.codeSize = cmd_validation_draw_vert_size * sizeof(uint32_t);
+        shader_module_ci.pCode = cmd_validation_draw_vert;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &shared_resources->shader_module);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, loc, "Unable to create shader module. Aborting GPU-AV");
