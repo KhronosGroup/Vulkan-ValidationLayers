@@ -235,9 +235,10 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
 
         std::ifstream file_stream(instrumented_shader_cache_path, std::ifstream::in | std::ifstream::binary);
         if (file_stream) {
-            char inst_shader_hash[sizeof(INST_SHADER_GIT_HASH)];
+            ShaderCacheHash shader_cache_hash(gpuav_settings);
+            char inst_shader_hash[sizeof(shader_cache_hash)];
             file_stream.read(inst_shader_hash, sizeof(inst_shader_hash));
-            if (!strncmp(inst_shader_hash, INST_SHADER_GIT_HASH, sizeof(INST_SHADER_GIT_HASH))) {
+            if (std::memcmp(inst_shader_hash, reinterpret_cast<char *>(&shader_cache_hash), sizeof(shader_cache_hash)) == 0) {
                 uint32_t num_shaders = 0;
                 file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(uint32_t));
                 for (uint32_t i = 0; i < num_shaders; ++i) {

@@ -179,7 +179,8 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders.empty()) {
         std::ofstream file_stream(instrumented_shader_cache_path, std::ofstream::out | std::ofstream::binary);
         if (file_stream) {
-            file_stream.write(INST_SHADER_GIT_HASH, sizeof(INST_SHADER_GIT_HASH));
+            ShaderCacheHash shader_cache_hash(gpuav_settings);
+            file_stream.write(reinterpret_cast<const char *>(&shader_cache_hash), sizeof(shader_cache_hash));
             uint32_t datasize = static_cast<uint32_t>(instrumented_shaders.size());
             file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
             for (auto &record : instrumented_shaders) {
