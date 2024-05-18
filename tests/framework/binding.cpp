@@ -1804,6 +1804,8 @@ void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
     vk::CmdCopyBuffer(handle(), src.handle(), dst.handle(), 1, &region);
 }
 
+void CommandBuffer::ExecuteCommands(const CommandBuffer &secondary) { vk::CmdExecuteCommands(handle(), 1, &secondary.handle()); }
+
 void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
 }

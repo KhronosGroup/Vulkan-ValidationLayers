@@ -1081,6 +1081,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     }
 
     void Copy(const Buffer &src, const Buffer &dst);
+    void ExecuteCommands(const CommandBuffer &secondary);
 
   private:
     VkDevice dev_handle_;

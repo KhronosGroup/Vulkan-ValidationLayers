@@ -20,28 +20,23 @@
 #include "../framework/thread_helper.h"
 #include "best_practices/best_practices_error_enums.h"
 
-void VkBestPracticesLayerTest::InitBestPracticesFramework() {
-    // Enable all vendor-specific checks
-    InitBestPracticesFramework("");
-}
-
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
     // Enable the vendor-specific checks spcified by vendor_checks_to_enable
-    const char * input_values[] = {vendor_checks_to_enable};
-    const VkLayerSettingEXT settings[] = {
-        {
-            OBJECT_LAYER_NAME, "enables",
-            VK_LAYER_SETTING_TYPE_STRING_EXT, static_cast<uint32_t>(std::size(input_values)), input_values
-        }
-    };
+    const char *input_values[] = {vendor_checks_to_enable};
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT,
+                                           static_cast<uint32_t>(std::size(input_values)), input_values}};
 
-    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{
-        VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-        static_cast<uint32_t>(std::size(settings)), settings};
+    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
+                                                                  static_cast<uint32_t>(std::size(settings)), settings};
 
     features_.pNext = &layer_settings_create_info;
 
     InitFramework(&features_);
+}
+
+void VkBestPracticesLayerTest::InitBestPractices(const char *ValidationChecksToEnable) {
+    RETURN_IF_SKIP(InitBestPracticesFramework(ValidationChecksToEnable));
+    RETURN_IF_SKIP(InitState());
 }
 
 TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
@@ -2410,4 +2405,171 @@ TEST_F(VkBestPracticesLayerTest, IgnoreResolveImageView) {
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetSignaledEvent) {
+    TEST_DESCRIPTION("Signal event two times");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.end();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetSignaledEvent2) {
+    TEST_DESCRIPTION("Signal event two times using CmdSetEvent2 api");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+    barrier.dstAccessMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.memoryBarrierCount = 1;
+    dep_info.pMemoryBarriers = &barrier;
+
+    m_command_buffer.begin();
+    vk::CmdSetEvent2(m_command_buffer.handle(), event, &dep_info);
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    vk::CmdSetEvent2(m_command_buffer.handle(), event, &dep_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.end();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetEventSignaledByHost) {
+    TEST_DESCRIPTION("Set event that was previously set be the host");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+    vk::SetEvent(*m_device, event);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits) {
+    TEST_DESCRIPTION("Set event from different submits");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.begin();
+    cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    cb2.end();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_default_queue->Submit(cb2);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits2) {
+    TEST_DESCRIPTION("Set event from multiple submits using QueueSubmit2 api");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+    m_default_queue->Submit2(m_command_buffer);
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.begin();
+    cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    cb2.end();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_default_queue->Submit2(cb2);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary) {
+    TEST_DESCRIPTION("Set event in the primary command buffer and then one more time in the secondary");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb.begin();
+    secondary_cb.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    secondary_cb.end();
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_command_buffer.ExecuteCommands(secondary_cb);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.end();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary2) {
+    TEST_DESCRIPTION("Set event in different secondary command buffers");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    cb.begin();
+    cb.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    cb.end();
+    const VkCommandBuffer secondary_cbs[2] = {cb.handle(), cb.handle()};
+
+    m_command_buffer.begin();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 2, secondary_cbs);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.end();
+}
+
+TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary3) {
+    TEST_DESCRIPTION("Set event in the secondary command buffer and in the primary from different submissions");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb.begin();
+    secondary_cb.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    secondary_cb.end();
+
+    m_command_buffer.begin();
+    m_command_buffer.ExecuteCommands(secondary_cb);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.begin();
+    cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    cb2.end();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_default_queue->Submit(cb2);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
 }
