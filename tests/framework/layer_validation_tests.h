@@ -237,8 +237,8 @@ class VkPositiveLayerTest : public VkLayerTest {
 
 class VkBestPracticesLayerTest : public VkLayerTest {
   public:
-    void InitBestPracticesFramework();
-    void InitBestPracticesFramework(const char* ValidationChecksToEnable);
+    void InitBestPracticesFramework(const char *ValidationChecksToEnable = "");
+    void InitBestPractices(const char *ValidationChecksToEnable = "");
 
   protected:
     VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};

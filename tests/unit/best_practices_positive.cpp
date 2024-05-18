@@ -298,3 +298,100 @@ TEST_F(VkPositiveBestPracticesLayerTest, VertexBufferNotForAllDraws) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, SetDifferentEvents) {
+    TEST_DESCRIPTION("Signal different events");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+    vkt::Event event2(*m_device);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.SetEvent(event2, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+}
+
+TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSet) {
+    TEST_DESCRIPTION("Set event two times with reset in between");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+}
+
+TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits) {
+    TEST_DESCRIPTION("Set event two times with reset in between from multiple submits");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.begin();
+    cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    cb2.end();
+    m_default_queue->Submit(cb2);
+    m_default_queue->Wait();
+}
+
+TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits2) {
+    TEST_DESCRIPTION("Set event two times with reset in between using single submit with two batches");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.begin();
+    cb2.ResetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    cb2.end();
+
+    VkSubmitInfo submits[2];
+    submits[0] = vku::InitStructHelper();
+    submits[0].commandBufferCount = 1;
+    submits[0].pCommandBuffers = &m_command_buffer.handle();
+    submits[1] = vku::InitStructHelper();
+    submits[1].commandBufferCount = 1;
+    submits[1].pCommandBuffers = &cb2.handle();
+
+    vk::QueueSubmit(m_default_queue->handle(), 2, submits, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+}
+
+TEST_F(VkPositiveBestPracticesLayerTest, ResetEventFromSecondary) {
+    TEST_DESCRIPTION("Set event two times with reset in between executed from a secondary command buffer");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb.begin();
+    secondary_cb.ResetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    secondary_cb.end();
+
+    m_command_buffer.begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.ExecuteCommands(secondary_cb);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.end();
+}
