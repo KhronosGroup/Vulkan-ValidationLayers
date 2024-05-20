@@ -371,7 +371,7 @@ to setup another build of the validation layer to validate Vulkan calls make by 
 ### Code Structure and Relationship to the Core Validation Layer
 
 The GPU Assisted Validation code is largely contained in one
-[file](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/layers/gpu_validation.cpp), with "hooks" in
+[file](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/layers/gpuav.cpp), with "hooks" in
 the other validation code that call functions in this file.
 These hooks in the validation code look something like this:
 

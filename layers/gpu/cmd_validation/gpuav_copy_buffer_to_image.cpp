@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-#include "gpu/gpu_subclasses.h"
-#include "gpu/gpu_validation.h"
+#include "gpu/core/gpuav.h"
+#include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
+#include "gpu/resources/gpuav_subclasses.h"
 // Generated shaders
 #include "generated/cmd_validation_copy_buffer_to_image_comp.h"
 
@@ -328,6 +329,41 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
     assert(elt.second);
 
     return reinterpret_cast<PreCopyBufferToImageResources::SharedResources *>(elt.first->second.get());
+}
+
+void PreCopyBufferToImageResources::SharedResources::Destroy(Validator &validator) {
+    if (ds_layout != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
+        ds_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
+        pipeline_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline != VK_NULL_HANDLE) {
+        DispatchDestroyPipeline(validator.device, pipeline, nullptr);
+        pipeline = VK_NULL_HANDLE;
+    }
+    if (copy_regions_pool != VK_NULL_HANDLE) {
+        vmaDestroyPool(validator.vmaAllocator, copy_regions_pool);
+        copy_regions_pool = VK_NULL_HANDLE;
+    }
+}
+
+void PreCopyBufferToImageResources::Destroy(Validator &validator) {
+    if (desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, desc_set);
+        desc_set = VK_NULL_HANDLE;
+        desc_pool = VK_NULL_HANDLE;
+    }
+
+    if (copy_src_regions_buffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(validator.vmaAllocator, copy_src_regions_buffer, copy_src_regions_allocation);
+        copy_src_regions_buffer = VK_NULL_HANDLE;
+        copy_src_regions_allocation = VK_NULL_HANDLE;
+    }
+
+    CommandResources::Destroy(validator);
 }
 
 }  // namespace gpuav

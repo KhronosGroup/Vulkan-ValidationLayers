@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "gpu_vuids.h"
+#include "gpu/error_message/gpuav_vuids.h"
+
+namespace gpuav {
 
 // clang-format off
-struct GpuVuidsCmdDraw : gpuav::GpuVuid {
+struct GpuVuidsCmdDraw : GpuVuid {
     GpuVuidsCmdDraw() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDraw-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDraw-storageBuffers-06936";
@@ -27,7 +29,7 @@ struct GpuVuidsCmdDraw : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMultiEXT : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMultiEXT : GpuVuid {
     GpuVuidsCmdDrawMultiEXT() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMultiEXT-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMultiEXT-storageBuffers-06936";
@@ -37,7 +39,7 @@ struct GpuVuidsCmdDrawMultiEXT : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndexed : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawIndexed : GpuVuid {
     GpuVuidsCmdDrawIndexed() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawIndexed-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawIndexed-storageBuffers-06936";
@@ -47,7 +49,7 @@ struct GpuVuidsCmdDrawIndexed : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMultiIndexedEXT : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMultiIndexedEXT : GpuVuid {
     GpuVuidsCmdDrawMultiIndexedEXT() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMultiIndexedEXT-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMultiIndexedEXT-storageBuffers-06936";
@@ -57,7 +59,7 @@ struct GpuVuidsCmdDrawMultiIndexedEXT : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndirect : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawIndirect : GpuVuid {
     GpuVuidsCmdDrawIndirect() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawIndirect-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawIndirect-storageBuffers-06936";
@@ -68,7 +70,7 @@ struct GpuVuidsCmdDrawIndirect : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndexedIndirect : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawIndexedIndirect : GpuVuid {
     GpuVuidsCmdDrawIndexedIndirect() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawIndexedIndirect-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawIndexedIndirect-storageBuffers-06936";
@@ -79,7 +81,7 @@ struct GpuVuidsCmdDrawIndexedIndirect : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDispatch : gpuav::GpuVuid {
+struct GpuVuidsCmdDispatch : GpuVuid {
     GpuVuidsCmdDispatch() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDispatch-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDispatch-storageBuffers-06936";
@@ -89,7 +91,7 @@ struct GpuVuidsCmdDispatch : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDispatchIndirect : gpuav::GpuVuid {
+struct GpuVuidsCmdDispatchIndirect : GpuVuid {
     GpuVuidsCmdDispatchIndirect() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDispatchIndirect-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDispatchIndirect-storageBuffers-06936";
@@ -103,7 +105,7 @@ struct GpuVuidsCmdDispatchIndirect : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndirectCount : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawIndirectCount : GpuVuid {
     GpuVuidsCmdDrawIndirectCount() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawIndirectCount-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawIndirectCount-storageBuffers-06936";
@@ -116,7 +118,7 @@ struct GpuVuidsCmdDrawIndirectCount : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndexedIndirectCount : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawIndexedIndirectCount : GpuVuid {
     GpuVuidsCmdDrawIndexedIndirectCount() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawIndexedIndirectCount-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawIndexedIndirectCount-storageBuffers-06936";
@@ -129,7 +131,7 @@ struct GpuVuidsCmdDrawIndexedIndirectCount : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdTraceRaysNV : gpuav::GpuVuid {
+struct GpuVuidsCmdTraceRaysNV : GpuVuid {
     GpuVuidsCmdTraceRaysNV() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdTraceRaysNV-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysNV-storageBuffers-06936";
@@ -139,7 +141,7 @@ struct GpuVuidsCmdTraceRaysNV : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdTraceRaysKHR : gpuav::GpuVuid {
+struct GpuVuidsCmdTraceRaysKHR : GpuVuid {
     GpuVuidsCmdTraceRaysKHR() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdTraceRaysKHR-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysKHR-storageBuffers-06936";
@@ -149,7 +151,7 @@ struct GpuVuidsCmdTraceRaysKHR : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdTraceRaysIndirectKHR : gpuav::GpuVuid {
+struct GpuVuidsCmdTraceRaysIndirectKHR : GpuVuid {
     GpuVuidsCmdTraceRaysIndirectKHR() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdTraceRaysIndirectKHR-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysIndirectKHR-storageBuffers-06936";
@@ -162,7 +164,7 @@ struct GpuVuidsCmdTraceRaysIndirectKHR : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdTraceRaysIndirect2KHR : gpuav::GpuVuid {
+struct GpuVuidsCmdTraceRaysIndirect2KHR : GpuVuid {
     GpuVuidsCmdTraceRaysIndirect2KHR() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdTraceRaysIndirect2KHR-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysIndirect2KHR-storageBuffers-06936";
@@ -172,7 +174,7 @@ struct GpuVuidsCmdTraceRaysIndirect2KHR : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksNV : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksNV : GpuVuid {
     GpuVuidsCmdDrawMeshTasksNV() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMeshTasksNV-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksNV-storageBuffers-06936";
@@ -182,7 +184,7 @@ struct GpuVuidsCmdDrawMeshTasksNV : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksIndirectNV : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksIndirectNV : GpuVuid {
     GpuVuidsCmdDrawMeshTasksIndirectNV() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMeshTasksIndirectNV-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectNV-storageBuffers-06936";
@@ -200,7 +202,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectNV : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : GpuVuid {
     GpuVuidsCmdDrawMeshTasksIndirectCountNV() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-storageBuffers-06936";
@@ -221,7 +223,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksEXT : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksEXT : GpuVuid {
     GpuVuidsCmdDrawMeshTasksEXT() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMeshTasksEXT-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksEXT-storageBuffers-06936";
@@ -231,7 +233,7 @@ struct GpuVuidsCmdDrawMeshTasksEXT : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksIndirectEXT : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksIndirectEXT : GpuVuid {
     GpuVuidsCmdDrawMeshTasksIndirectEXT() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMeshTasksIndirectEXT-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectEXT-storageBuffers-06936";
@@ -249,7 +251,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectEXT : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawMeshTasksIndirectCountEXT : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawMeshTasksIndirectCountEXT : GpuVuid {
     GpuVuidsCmdDrawMeshTasksIndirectCountEXT() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-storageBuffers-06936";
@@ -270,7 +272,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectCountEXT : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDrawIndirectByteCountEXT : gpuav::GpuVuid {
+struct GpuVuidsCmdDrawIndirectByteCountEXT : GpuVuid {
     GpuVuidsCmdDrawIndirectByteCountEXT() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDrawIndirectByteCountEXT-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDrawIndirectByteCountEXT-storageBuffers-06936";
@@ -280,7 +282,7 @@ struct GpuVuidsCmdDrawIndirectByteCountEXT : gpuav::GpuVuid {
     }
 };
 
-struct GpuVuidsCmdDispatchBase : gpuav::GpuVuid {
+struct GpuVuidsCmdDispatchBase : GpuVuid {
     GpuVuidsCmdDispatchBase() : GpuVuid() {
         uniform_access_oob_06935 = "VUID-vkCmdDispatchBase-uniformBuffers-06935";
         storage_access_oob_06936 = "VUID-vkCmdDispatchBase-storageBuffers-06936";
@@ -292,7 +294,7 @@ struct GpuVuidsCmdDispatchBase : gpuav::GpuVuid {
 
 using Func = vvl::Func;
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
-static const std::map<Func, gpuav::GpuVuid> gpu_vuid = {
+static const std::map<Func, GpuVuid> gpu_vuid = {
     {Func::vkCmdDraw, GpuVuidsCmdDraw()},
     {Func::vkCmdDrawMultiEXT, GpuVuidsCmdDrawMultiEXT()},
     {Func::vkCmdDrawIndexed, GpuVuidsCmdDrawIndexed()},
@@ -319,10 +321,10 @@ static const std::map<Func, gpuav::GpuVuid> gpu_vuid = {
     {Func::vkCmdDispatchBase, GpuVuidsCmdDispatchBase()},
     {Func::vkCmdDispatchBaseKHR, GpuVuidsCmdDispatchBase()},
     // Used if invalid function is used
-    {Func::Empty, gpuav::GpuVuid()}
+    {Func::Empty, GpuVuid()}
 };
 
-const gpuav::GpuVuid &gpuav::GetGpuVuid(Func command) {
+const GpuVuid &GetGpuVuid(Func command) {
     if (gpu_vuid.find(command) != gpu_vuid.cend()) {
         return gpu_vuid.at(command);
     }
@@ -331,3 +333,4 @@ const gpuav::GpuVuid &gpuav::GetGpuVuid(Func command) {
     }
 }
 // clang-format on
+}  // namespace gpuav

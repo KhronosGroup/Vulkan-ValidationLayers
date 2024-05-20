@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-#include "gpu/gpu_subclasses.h"
-#include "gpu/gpu_validation.h"
+#include "gpu/core/gpuav.h"
+#include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
+#include "gpu/resources/gpuav_subclasses.h"
 // Generated shaders
 #include "generated/cmd_validation_trace_rays_rgen.h"
 
@@ -249,5 +250,32 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
 
     return reinterpret_cast<PreTraceRaysResources::SharedResources *>(elt.first->second.get());
 }
+
+void PreTraceRaysResources::SharedResources::Destroy(Validator &validator) {
+    if (ds_layout != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
+        ds_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
+        pipeline_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline != VK_NULL_HANDLE) {
+        DispatchDestroyPipeline(validator.device, pipeline, nullptr);
+        pipeline = VK_NULL_HANDLE;
+    }
+    if (sbt_buffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(validator.vmaAllocator, sbt_buffer, sbt_allocation);
+        sbt_buffer = VK_NULL_HANDLE;
+        sbt_allocation = VK_NULL_HANDLE;
+        sbt_address = 0;
+    }
+    if (sbt_pool) {
+        vmaDestroyPool(validator.vmaAllocator, sbt_pool);
+        sbt_pool = VK_NULL_HANDLE;
+    }
+}
+
+void PreTraceRaysResources::Destroy(Validator &validator) { CommandResources::Destroy(validator); }
 
 }  // namespace gpuav

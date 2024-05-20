@@ -20,14 +20,14 @@
 #include <vector>
 #include <mutex>
 
-#include "gpu/gpu_descriptor_set.h"
-#include "gpu/gpu_state_tracker.h"
-#include "gpu/gpu_resources.h"
+#include "gpu/core/gpuav_state_tracker.h"
+#include "gpu/resources/gpuav_descriptor_set.h"
+#include "gpu/resources/gpuav_resources.h"
 #include "generated/vk_object_types.h"
 #include "gpu_shaders/gpu_shaders_constants.h"
 
 // We pull in most the core state tracking files
-// gpu_subclasses.h should NOT be included by any other header file
+// gpuav_subclasses.h should NOT be included by any other header file
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -227,16 +227,6 @@ class AccelerationStructureNV : public vvl::AccelerationStructureNV {
 };
 
 namespace glsl {
-
-struct AccelerationStructureBuildValidationBuffer {
-    uint32_t instances_to_validate;
-    uint32_t replacement_handle_bits_0;
-    uint32_t replacement_handle_bits_1;
-    uint32_t invalid_handle_found;
-    uint32_t invalid_handle_bits_0;
-    uint32_t invalid_handle_bits_1;
-    uint32_t valid_handles_count;
-};
 
 struct DescriptorSetRecord {
     VkDeviceAddress layout_data;

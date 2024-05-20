@@ -217,32 +217,35 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/cmd_validation_draw_vert.cpp
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.h
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.cpp
-    gpu/debug_printf.cpp
-    gpu/debug_printf.h
-    gpu/gpu_constants.h
-    gpu/gpu_descriptor_set.cpp
-    gpu/gpu_descriptor_set.h
-    gpu/gpu_error_message.cpp
-    gpu/gpu_error_message.h
-    gpu/gpu_image_layout.cpp
-    gpu/gpu_shader_instrumentor.cpp
-    gpu/gpu_shader_instrumentor.h
-    gpu/gpu_state_tracker.cpp
-    gpu/gpu_state_tracker.h
-    gpu/gpu_subclasses.cpp
-    gpu/gpu_subclasses.h
-    gpu/gpu_record.cpp
-    gpu/gpu_resources.h
-    gpu/gpu_settings.h
-    gpu/gpu_setup.cpp
-    gpu/gpu_validation.cpp
+    gpu/core/gpu_settings.h
+    gpu/core/gpuav_constants.h
+    gpu/cmd_validation/gpuav_cmd_validation_common.h
+    gpu/cmd_validation/gpuav_cmd_validation_common.cpp
+    gpu/cmd_validation/gpuav_draw.cpp
     gpu/cmd_validation/gpuav_draw.cpp
     gpu/cmd_validation/gpuav_dispatch.cpp
     gpu/cmd_validation/gpuav_trace_rays.cpp
     gpu/cmd_validation/gpuav_copy_buffer_to_image.cpp
-    gpu/gpu_validation.h
-    gpu/gpu_vuids.cpp
-    gpu/gpu_vuids.h
+    gpu/core/gpuav.h
+    gpu/core/gpuav.cpp
+    gpu/core/gpuav_state_tracker.cpp
+    gpu/core/gpuav_state_tracker.h
+    gpu/core/gpuav_record.cpp
+    gpu/core/gpuav_setup.cpp
+    gpu/core/gpuav_image_layout.cpp
+    gpu/debug_printf/debug_printf.cpp
+    gpu/debug_printf/debug_printf.h
+    gpu/error_message/gpuav_error_message.cpp
+    gpu/error_message/gpuav_error_message.h
+    gpu/error_message/gpuav_vuids.cpp
+    gpu/error_message/gpuav_vuids.h
+    gpu/instrumentation/gpuav_shader_instrumentor.cpp
+    gpu/instrumentation/gpuav_shader_instrumentor.h
+    gpu/resources/gpuav_descriptor_set.cpp
+    gpu/resources/gpuav_descriptor_set.h
+    gpu/resources/gpuav_subclasses.cpp
+    gpu/resources/gpuav_subclasses.h
+    gpu/resources/gpuav_resources.h
     gpu_shaders/gpu_error_codes.h
     gpu_shaders/gpu_error_header.h
     gpu_shaders/gpu_shaders_constants.h

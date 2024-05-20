@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-#include "gpu/gpu_error_message.h"
-#include "gpu/gpu_validation.h"
-#include "gpu/gpu_subclasses.h"
-#include "gpu/gpu_vuids.h"
+#include "gpu/core/gpuav.h"
+#include "gpu/error_message/gpuav_error_message.h"
+#include "gpu/error_message/gpuav_vuids.h"
+#include "gpu/resources/gpuav_subclasses.h"
 #include "spirv-tools/instrument.hpp"
 #include "state_tracker/shader_instruction.h"
 #include "gpu_shaders/gpu_error_header.h"

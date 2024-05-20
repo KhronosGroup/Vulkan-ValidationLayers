@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include "gpu/gpu_state_tracker.h"
-#include "gpu/gpu_shader_instrumentor.h"
-#include "gpu/gpu_error_message.h"
+#include "gpu/core/gpuav_state_tracker.h"
+#include "gpu/error_message/gpuav_error_message.h"
+#include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 
 namespace debug_printf {
 

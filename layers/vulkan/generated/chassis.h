@@ -53,7 +53,7 @@
 #include "utils/vk_layer_utils.h"
 #include "vk_dispatch_table_helper.h"
 #include "vk_extension_helper.h"
-#include "gpu/gpu_settings.h"
+#include "gpu/core/gpu_settings.h"
 
 extern std::atomic<uint64_t> global_unique_id;
 
