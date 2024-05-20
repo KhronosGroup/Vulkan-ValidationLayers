@@ -195,10 +195,10 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
 
         // Any line topology
-        if (pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
-            pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
-            pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-            pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY) {
+        const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
+        if (IsValueIn(topology,
+                      {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+                       VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
                                               vuid.dynamic_line_width_07833);
             const auto *line_state = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(rp_state);
@@ -360,9 +360,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     if ((pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) ||
         (!pipeline_state && vertex_shader_bound)) {
         if (!enabled_features.primitiveTopologyListRestart && cb_state.dynamic_state_value.primitive_restart_enable) {
-            VkPrimitiveTopology topology = pipeline_state
-                                               ? pipeline_state->InputAssemblyState()->topology
-                                               : last_bound_state.GetShaderState(ShaderObjectStage::VERTEX)->GetTopology();
+            const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
             if (IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                                      VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
                                      VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
@@ -693,9 +691,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         !phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization &&
         (!pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
          cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY])) {
-        const VkPrimitiveTopology topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)
-                                                 ? cb_state.dynamic_state_value.primitive_topology
-                                                 : pipeline.topology_at_rasterizer;
+        const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
         if (IsValueIn(topology,
                       {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
                        VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
@@ -926,7 +922,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
         !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
         bool compatible_topology = false;
-        const VkPrimitiveTopology pipeline_topology = pipeline.InputAssemblyState()->topology;
+        const VkPrimitiveTopology pipeline_topology = pipeline.topology_at_rasterizer;
         const VkPrimitiveTopology dynamic_topology = cb_state.dynamic_state_value.primitive_topology;
         switch (pipeline_topology) {
             case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
