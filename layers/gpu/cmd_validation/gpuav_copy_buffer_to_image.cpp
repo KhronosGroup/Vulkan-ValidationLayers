@@ -40,8 +40,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
 
     auto image_state = Get<vvl::Image>(copy_buffer_to_img_info->dstImage);
     if (!image_state) {
-        ReportSetupProblem(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image");
-        aborted = true;
+        InternalError(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image");
         return nullptr;
     }
 
@@ -53,8 +52,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer");
-        aborted = true;
+        InternalError(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer");
         return nullptr;
     }
 
@@ -110,9 +108,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
             vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &copy_buffer_to_img_resources->copy_src_regions_buffer,
                             &copy_buffer_to_img_resources->copy_src_regions_allocation, nullptr);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(cmd_buffer, loc, "Unable to allocate device memory for GPU copy of pRegions. Aborting GPU-AV.",
-                               true);
-            aborted = true;
+            InternalError(cmd_buffer, loc, "Unable to allocate device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
             return nullptr;
         }
 
@@ -121,8 +117,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
                               reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(cmd_buffer, loc, "Unable to map device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
-            aborted = true;
+            InternalError(cmd_buffer, loc, "Unable to map device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
             return nullptr;
         }
 
@@ -191,9 +186,8 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
         VkResult result = desc_set_manager->GetDescriptorSet(&copy_buffer_to_img_resources->desc_pool, shared_resources->ds_layout,
                                                              &copy_buffer_to_img_resources->desc_set);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(cmd_buffer, loc,
-                               "Unable to allocate descriptor set for copy buffer to image validation. Aborting GPU-AV");
-            aborted = true;
+            InternalError(cmd_buffer, loc,
+                          "Unable to allocate descriptor set for copy buffer to image validation. Aborting GPU-AV");
             return nullptr;
         }
 
@@ -258,8 +252,7 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
     ds_layout_ci.pBindings = bindings.data();
     result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &shared_resources->ds_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -279,8 +272,7 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
     pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
     result = vmaCreatePool(vmaAllocator, &pool_create_info, &shared_resources->copy_regions_pool);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create VMA memory pool for buffer to image copies validation. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create VMA memory pool for buffer to image copies validation. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -290,8 +282,7 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
     pipeline_layout_ci.pSetLayouts = set_layouts.data();
     result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &shared_resources->pipeline_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -301,8 +292,7 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create shader module. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create shader module. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -318,7 +308,7 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
 
     result = DispatchCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &shared_resources->pipeline);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Failed to create compute pipeline for copy buffer to image validation. Aborting GPU-AV.");
+        InternalError(device, loc, "Failed to create compute pipeline for copy buffer to image validation. Aborting GPU-AV.");
     }
 
     DispatchDestroyShaderModule(device, validation_shader, nullptr);
