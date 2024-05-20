@@ -1015,7 +1015,15 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             # Dependent on enabled extension
             extension = self.vk.extensions[ext_name]
             extension_check = ''
-            if extension.device:
+            if len(struct.extensions) > 1:
+                # There are very few edge cases that get here with multiple extensions, so just handle by hand
+                if struct.name == 'VkPipelineShaderStageRequiredSubgroupSizeCreateInfo':
+                    extension_check = 'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_VK_EXT_subgroup_size_control)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_subgroup_size_control))) {'
+                elif struct.name == 'VkPhysicalDeviceIDProperties':
+                    extension_check = 'if (!IsExtEnabled(instance_extensions.vk_khr_external_fence_capabilities) && !IsExtEnabled(instance_extensions.vk_khr_external_memory_capabilities) && !IsExtEnabled(instance_extensions.vk_khr_external_semaphore_capabilities)) {'
+                else:
+                    print(f'WARNING - special case not handled for {extension.name} - {struct.name}')
+            elif extension.device:
                 extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
             else:
                 extension_check = f'if (!IsExtEnabled(instance_extensions.{extension.name.lower()})) {{'

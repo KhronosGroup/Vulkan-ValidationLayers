@@ -91,7 +91,7 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     vk::FreeMemory(device(), buffer_memory, NULL);
 }
 
-TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
+TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensionsFence) {
     TEST_DESCRIPTION("VkPhysicalDeviceIDProperties can be enabled from 1 of 3 extensions");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
@@ -104,6 +104,40 @@ TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
     }
 
     VkPhysicalDeviceIDProperties id_props =  vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&id_props);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &props2);
+}
+
+TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensionsMemory) {
+    TEST_DESCRIPTION("VkPhysicalDeviceIDProperties can be enabled from 1 of 3 extensions");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        GTEST_SKIP() << "Tests for 1.0 only";
+    }
+
+    VkPhysicalDeviceIDProperties id_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&id_props);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &props2);
+}
+
+TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensionsSemaphore) {
+    TEST_DESCRIPTION("VkPhysicalDeviceIDProperties can be enabled from 1 of 3 extensions");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        GTEST_SKIP() << "Tests for 1.0 only";
+    }
+
+    VkPhysicalDeviceIDProperties id_props = vku::InitStructHelper();
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&id_props);
     vk::GetPhysicalDeviceProperties2KHR(gpu(), &props2);
 }

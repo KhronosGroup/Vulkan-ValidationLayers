@@ -4184,7 +4184,9 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
         // Validation code for VkPhysicalDeviceIDProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES: {  // Covers VUID-VkPhysicalDeviceIDProperties-sType-sType
 
-            if (!IsExtEnabled(instance_extensions.vk_khr_external_fence_capabilities)) {
+            if (!IsExtEnabled(instance_extensions.vk_khr_external_fence_capabilities) &&
+                !IsExtEnabled(instance_extensions.vk_khr_external_memory_capabilities) &&
+                !IsExtEnabled(instance_extensions.vk_khr_external_semaphore_capabilities)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES), but "
                                  "its parent extension "
