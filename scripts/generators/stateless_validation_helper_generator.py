@@ -343,7 +343,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     if (entry.get('comment') is None or 'typo' not in entry.get('comment')):
                         alias = entry.get('alias')
                         if (alias is not None and promotedToCore):
-                            self.stype_version_dict[alias] = extensionName
+                            if (alias not in self.stype_version_dict.keys()):
+                                self.stype_version_dict[alias] = set()
+                            self.stype_version_dict[alias].add(extensionName)
 
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
@@ -977,6 +979,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             lines.append('// No xml-driven validation\n')
         return lines
 
+    # Joins strings in English fashion
+    # TODO: move to some utility library
+    def englishJoin(self, strings, conjunction: str):
+        strings_list = list(strings)
+        if len(strings_list) <= 1:
+            return strings_list[0]
+        else: # len > 1
+            return f'{", ".join(strings_list[:-1])}, {conjunction} {strings_list[-1]}'
+
+
     # This logic was broken into its own function because we need to fill multiple functions with these structs
     def genStructBody(self, struct: Struct, non_prop_feature: bool):
         pnext_case = '\n'
@@ -1001,7 +1013,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 '''
 
         elif struct.sType in self.stype_version_dict.keys():
-            ext_name = self.stype_version_dict[struct.sType]
+            ext_names = self.stype_version_dict[struct.sType]
 
             # Skip extensions that are not in the target API
             # This check is needed because parts of the base generator code bypass the
@@ -1009,22 +1021,30 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             # may attempt to generate code for extensions which are not supported in the
             # target API variant, thus this check needs to happen even if any specific
             # target API variant may not specifically need it
-            if ext_name not in self.vk.extensions:
+            ext_names.intersection(self.vk.extensions.keys())
+            if len(ext_names) == 0:
                 return ""
 
+            ext_names = sorted(list(ext_names)) # make the order deterministic
+
             # Dependent on enabled extension
-            extension = self.vk.extensions[ext_name]
-            extension_check = ''
-            if extension.device:
-                extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
-            else:
-                extension_check = f'if (!IsExtEnabled(instance_extensions.{extension.name.lower()})) {{'
+            extension_conditinals = list()
+            for ext_name in ext_names:
+                extension = self.vk.extensions[ext_name]
+                if extension.device:
+                    extension_conditinals.append( f'((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()})))' )
+                else:
+                    extension_conditinals.append( f'!IsExtEnabled(instance_extensions.{extension.name.lower()})' )
+            if len(extension_conditinals) == 1 and extension_conditinals[0][0] == '(' and extension_conditinals[0][-1] == ')':
+                extension_conditinals[0] = extension_conditinals[0][1:-1]# strip extraneous parentheses
+
+            extension_check = f'if ({" && ".join(extension_conditinals)}) {{'
             pnext_check += f'''
                     {extension_check}
                         skip |= LogError(
                             pnext_vuid, instance, loc.dot(Field::pNext),
                             "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
-                            "{extension.name} has not been enabled.");
+                            "{self.englishJoin(ext_names, "or")} has not been enabled.");
                     }}
                 '''
 
