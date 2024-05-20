@@ -688,6 +688,7 @@ struct LastBound {
     bool IsRasterizationDisabled() const;
     VkColorComponentFlags GetColorWriteMask(uint32_t i) const;
     bool IsColorWriteEnabled(uint32_t i) const;
+    VkPrimitiveTopology GetPrimitiveTopology() const;
 
     bool ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const;
     VkShaderEXT GetShader(ShaderObjectStage stage) const;
