@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include "gpu/gpu_shader_instrumentor.h"
-#include "gpu/gpu_error_message.h"
-#include "gpu/gpu_descriptor_set.h"
-#include "gpu/gpu_resources.h"
+#include "gpu/error_message/gpuav_error_message.h"
+#include "gpu/resources/gpuav_descriptor_set.h"
+#include "gpu/resources/gpuav_resources.h"
+#include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 
 #include <typeinfo>
 #include <unordered_map>
@@ -39,37 +39,9 @@ class CommandBuffer;
 class ImageView;
 class Queue;
 class Sampler;
-
 class DescriptorSet;
 struct DescSetState;
 struct CmdIndirectState;
-
-struct GpuVuid {
-    const char* uniform_access_oob_06935 = kVUIDUndefined;
-    const char* storage_access_oob_06936 = kVUIDUndefined;
-    const char* uniform_access_oob_08612 = kVUIDUndefined;
-    const char* storage_access_oob_08613 = kVUIDUndefined;
-    const char* invalid_descriptor = kVUIDUndefined;
-    const char* count_exceeds_bufsize_1 = kVUIDUndefined;
-    const char* count_exceeds_bufsize = kVUIDUndefined;
-    const char* count_exceeds_device_limit = kVUIDUndefined;
-    const char* first_instance_not_zero = kVUIDUndefined;
-    const char* group_exceeds_device_limit_x = kVUIDUndefined;
-    const char* group_exceeds_device_limit_y = kVUIDUndefined;
-    const char* group_exceeds_device_limit_z = kVUIDUndefined;
-    const char* mesh_group_count_exceeds_max_x = kVUIDUndefined;
-    const char* mesh_group_count_exceeds_max_y = kVUIDUndefined;
-    const char* mesh_group_count_exceeds_max_z = kVUIDUndefined;
-    const char* mesh_group_count_exceeds_max_total = kVUIDUndefined;
-    const char* task_group_count_exceeds_max_x = kVUIDUndefined;
-    const char* task_group_count_exceeds_max_y = kVUIDUndefined;
-    const char* task_group_count_exceeds_max_z = kVUIDUndefined;
-    const char* task_group_count_exceeds_max_total = kVUIDUndefined;
-    // vkCmdTraceRaysIndirectKHR
-    const char* trace_rays_width_exceeds_device_limit = kVUIDUndefined;
-    const char* trace_rays_height_exceeds_device_limit = kVUIDUndefined;
-    const char* trace_rays_depth_exceeds_device_limit = kVUIDUndefined;
-};
 }  // namespace gpuav
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)
@@ -98,7 +70,7 @@ class Validator : public GpuShaderInstrumentor {
         force_buffer_device_address = true;
     }
 
-    // gpu_validation.cpp
+    // gpuav.cpp
     // ------------------
   public:
     VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer, const Location& loc) const;
@@ -173,7 +145,7 @@ class Validator : public GpuShaderInstrumentor {
     PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources(
         VkDescriptorSetLayout error_output_set_layout, const Location& loc);
 
-    // gpu_error_message.cpp
+    // gpuav_error_message.cpp
     // ---------------------
   public:
     // Return true iff a error has been found
@@ -190,7 +162,7 @@ class Validator : public GpuShaderInstrumentor {
                                            bool& out_oob_access) const;
     bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg) const;
 
-    // gpu_setup.cpp
+    // gpuav_setup.cpp
     // -------------
   public:
     std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) final;
@@ -210,7 +182,7 @@ class Validator : public GpuShaderInstrumentor {
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
-    // gpu_record.cpp
+    // gpuav_record.cpp
     // --------------
   public:
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
@@ -360,7 +332,7 @@ class Validator : public GpuShaderInstrumentor {
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
                                                     const RecordObject& record_obj) override;
 
-    // gpu_image_layout.cpp
+    // gpuav_image_layout.cpp
     // --------------------
 
     void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const vku::safe_VkAttachmentReference2& ref);
@@ -492,24 +464,6 @@ class Validator : public GpuShaderInstrumentor {
     bool bda_validation_possible = false;
 
     std::optional<DescriptorHeap> desc_heap{};  // optional only to defer construction
-};
-
-struct RestorablePipelineState {
-    VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    std::vector<std::pair<VkDescriptorSet, uint32_t>> descriptor_sets;
-    std::vector<std::vector<uint32_t>> dynamic_offsets;
-    uint32_t push_descriptor_set_index = 0;
-    std::vector<vku::safe_VkWriteDescriptorSet> push_descriptor_set_writes;
-    std::vector<uint8_t> push_constants_data;
-    PushConstantRangesId push_constants_ranges;
-    std::vector<vvl::ShaderObject*> shader_objects;
-
-    RestorablePipelineState(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
-
-    void Create(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point);
-    void Restore(VkCommandBuffer command_buffer) const;
 };
 
 }  // namespace gpuav

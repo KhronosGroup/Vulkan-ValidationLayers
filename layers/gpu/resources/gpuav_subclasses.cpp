@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#include "gpu_subclasses.h"
-#include "gpu_validation.h"
-#include "gpu_vuids.h"
+#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/core/gpuav.h"
+#include "gpu/error_message/gpuav_vuids.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "spirv-tools/instrument.hpp"
 #include "gpu_shaders/gpu_error_header.h"
-#include "gpu/gpu_constants.h"
+#include "gpu/core/gpuav_constants.h"
 
 namespace gpuav {
 
@@ -489,7 +489,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         for (auto &di_info : di_input_buffer_list) {
             Location draw_loc(vvl::Func::vkCmdDraw);
             // For each descriptor set ...
-            for (uint32_t i = 0;  i < di_info.descriptor_set_buffers.size(); i++) {
+            for (uint32_t i = 0; i < di_info.descriptor_set_buffers.size(); i++) {
                 auto &set = di_info.descriptor_set_buffers[i];
                 if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
                     // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be

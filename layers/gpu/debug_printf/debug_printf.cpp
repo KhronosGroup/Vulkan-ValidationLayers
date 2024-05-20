@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "gpu/debug_printf.h"
+#include "gpu/debug_printf/debug_printf.h"
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
 #include "generated/layer_chassis_dispatch.h"
@@ -380,11 +380,11 @@ void debug_printf::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_
                                       common_message);
             UtilGenerateSourceMessages(instructions, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
-                std::cout << "WARNING-DEBUG-PRINTF " << common_message.c_str() << " "
-                          << shader_message.str().c_str() << " " << filename_message.c_str() << " " << source_message.c_str();
+                std::cout << "WARNING-DEBUG-PRINTF " << common_message.c_str() << " " << shader_message.str().c_str() << " "
+                          << filename_message.c_str() << " " << source_message.c_str();
             } else {
-                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s %s %s%s", common_message.c_str(),
-                        shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
+                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s %s %s%s", common_message.c_str(), shader_message.str().c_str(),
+                        filename_message.c_str(), source_message.c_str());
             }
         } else {
             if (use_stdout) {

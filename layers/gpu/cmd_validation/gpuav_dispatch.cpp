@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-#include "gpu/gpu_subclasses.h"
-#include "gpu/gpu_validation.h"
+#include "gpu/core/gpuav.h"
+#include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
+#include "gpu/resources/gpuav_subclasses.h"
 // Generated shaders
 #include "generated/cmd_validation_dispatch_comp.h"
 
@@ -219,6 +220,35 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
     assert(elt.second);
 
     return reinterpret_cast<PreDispatchResources::SharedResources *>(elt.first->second.get());
+}
+
+void PreDispatchResources::SharedResources::Destroy(Validator &validator) {
+    if (ds_layout != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
+        ds_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
+        pipeline_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline != VK_NULL_HANDLE) {
+        DispatchDestroyPipeline(validator.device, pipeline, nullptr);
+        pipeline = VK_NULL_HANDLE;
+    }
+    if (shader_object != VK_NULL_HANDLE) {
+        DispatchDestroyShaderEXT(validator.device, shader_object, nullptr);
+        shader_object = VK_NULL_HANDLE;
+    }
+}
+
+void PreDispatchResources::Destroy(Validator &validator) {
+    if (indirect_buffer_desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, indirect_buffer_desc_set);
+        indirect_buffer_desc_set = VK_NULL_HANDLE;
+        desc_pool = VK_NULL_HANDLE;
+    }
+
+    CommandResources::Destroy(validator);
 }
 
 }  // namespace gpuav

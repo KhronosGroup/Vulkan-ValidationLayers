@@ -67,12 +67,12 @@ class APISpecific:
                         'enabled': 'enables[best_practices]'
                     },
                     {
-                        'include': 'gpu/gpu_validation.h',
+                        'include': 'gpu/core/gpuav.h',
                         'class': 'gpuav::Validator',
                         'enabled': 'enables[gpu_validation]'
                     },
                     {
-                        'include': 'gpu/debug_printf.h',
+                        'include': 'gpu/debug_printf/debug_printf.h',
                         'class': 'debug_printf::Validator',
                         'enabled': 'enables[debug_printf_validation]'
                     },
@@ -316,7 +316,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include "utils/vk_layer_utils.h"
             #include "vk_dispatch_table_helper.h"
             #include "vk_extension_helper.h"
-            #include "gpu/gpu_settings.h"
+            #include "gpu/core/gpu_settings.h"
 
             extern std::atomic<uint64_t> global_unique_id;
 

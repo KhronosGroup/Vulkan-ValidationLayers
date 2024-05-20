@@ -57,8 +57,8 @@ bool wrap_handles = true;
 #include "object_tracker/object_lifetime_validation.h"
 #include "core_checks/core_validation.h"
 #include "best_practices/best_practices_validation.h"
-#include "gpu/gpu_validation.h"
-#include "gpu/debug_printf.h"
+#include "gpu/core/gpuav.h"
+#include "gpu/debug_printf/debug_printf.h"
 #include "sync/sync_validation.h"
 
 // This header file must be included after the above validation object class definitions

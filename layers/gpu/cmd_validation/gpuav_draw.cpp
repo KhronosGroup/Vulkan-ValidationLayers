@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-#include "gpu/gpu_subclasses.h"
-#include "gpu/gpu_validation.h"
+#include "gpu/core/gpuav.h"
+#include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
+#include "gpu/resources/gpuav_subclasses.h"
 #include "state_tracker/render_pass_state.h"
 // Generated shaders
 #include "gpu_shaders/gpu_error_header.h"
@@ -352,6 +353,40 @@ VkPipeline Validator::GetDrawValidationPipeline(PreDrawResources::SharedResource
 
     shared_draw_resources.renderpass_to_pipeline.insert(render_pass, validation_pipeline);
     return validation_pipeline;
+}
+
+void PreDrawResources::SharedResources::Destroy(Validator &validator) {
+    if (shader_module != VK_NULL_HANDLE) {
+        DispatchDestroyShaderModule(validator.device, shader_module, nullptr);
+        shader_module = VK_NULL_HANDLE;
+    }
+    if (ds_layout != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
+        ds_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
+        pipeline_layout = VK_NULL_HANDLE;
+    }
+    auto to_destroy = renderpass_to_pipeline.snapshot();
+    for (auto &entry : to_destroy) {
+        DispatchDestroyPipeline(validator.device, entry.second, nullptr);
+        renderpass_to_pipeline.erase(entry.first);
+    }
+    if (shader_object != VK_NULL_HANDLE) {
+        DispatchDestroyShaderEXT(validator.device, shader_object, nullptr);
+        shader_object = VK_NULL_HANDLE;
+    }
+}
+
+void PreDrawResources::Destroy(Validator &validator) {
+    if (buffer_desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, buffer_desc_set);
+        buffer_desc_set = VK_NULL_HANDLE;
+        desc_pool = VK_NULL_HANDLE;
+    }
+
+    CommandResources::Destroy(validator);
 }
 
 }  // namespace gpuav

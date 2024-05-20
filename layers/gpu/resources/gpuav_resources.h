@@ -86,7 +86,8 @@ class CommandResources {
     VkDescriptorPool instrumentation_desc_pool = VK_NULL_HANDLE;
 
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
-    bool uses_robustness = false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
+    bool uses_robustness =
+        false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
 
     // desc_binding list and index are only used to help generate an error message
     uint32_t desc_binding_index = vvl::kU32Max;

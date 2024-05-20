@@ -460,7 +460,7 @@ def main(argv):
         'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
         'layers/state_tracker/descriptor_sets.cpp',
         'layers/state_tracker/video_session_state.cpp',
-        'layers/gpu/error_message/gpu_vuids.h',
+        'layers/gpu/error_message/gpuav_vuids.h',
         'layers/stateless/stateless_validation.h',
         f'layers/{args.api}/generated/stateless_validation_helper.cpp',
         f'layers/{args.api}/generated/object_tracker.cpp',
