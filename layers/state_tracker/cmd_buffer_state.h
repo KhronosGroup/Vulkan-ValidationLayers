@@ -186,13 +186,20 @@ class CommandBuffer : public RefcountedStateObject {
 
     // Track status of all vkCmdSet* calls, if 1, means it was set
     struct DynamicStateStatus {
-        CBDynamicFlags cb;        // for lifetime of CommandBuffer
+        CBDynamicFlags cb;        // for lifetime of CommandBuffer (invalidated if static pipeline is bound)
         CBDynamicFlags pipeline;  // for lifetime since last bound pipeline
+
+        CBDynamicFlags history;  // for lifetime of CommandBuffer, regardless if invalidated, used for better error messages
 
         // There is currently only a single non-graphics dynamic state, for now manage manually to save memory
         bool rtx_stack_size_cb;        // for lifetime of CommandBuffer
         bool rtx_stack_size_pipeline;  // for lifetime since last bound pipeline
     } dynamic_state_status;
+
+    // used to mark which pipeline invalidated dynamic state so error message knows
+    // Note that index zero is not used due to the enum size being bitset friendly
+    VkPipeline invalidated_state_pipe[CB_DYNAMIC_STATE_STATUS_NUM];
+    std::string DescribeInvalidatedState(CBDynamicState dynamic_state) const;
 
     // Return true if the corresponding vkCmdSet* call has occured in the command buffer.
     // Used to know if the DynamicStateValue will be valid or not to read.
@@ -314,31 +321,57 @@ class CommandBuffer : public RefcountedStateObject {
 
         // When the Command Buffer resets, the value most things in this struct don't matter because if they are read without
         // setting the state, it will fail in ValidateDynamicStateIsSet() for us. Some values (ex. the bitset) are tracking in
-        // replacement for static_status/dynamic_status so this needs to reset along with those
-        void reset() {
+        // replacement for static_status/dynamic_status so this needs to reset along with those.
+        //
+        // The only time this is reset is when the command buffer is reset, and vkCmdBindPipeline for static state
+        void reset(CBDynamicFlags mask) {
+            // Mask tells which things to reset
+            if (mask[CB_DYNAMIC_STATE_VIEWPORT]) {
+                viewports.clear();
+            }
+            if (mask[CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT]) {
+                discard_rectangles.reset();
+            }
+            if (mask[CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT]) {
+                color_blend_enable_attachments.reset();
+                color_blend_enabled.reset();
+            }
+            if (mask[CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT]) {
+                color_blend_equation_attachments.reset();
+                color_blend_equations.clear();
+            }
+            if (mask[CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT]) {
+                color_write_mask_attachments.reset();
+                color_write_masks.clear();
+            }
+            if (mask[CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT]) {
+                color_blend_advanced_attachments.reset();
+            }
+            if (mask[CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT]) {
+                color_write_enabled.reset();
+                color_write_enable_attachment_count = 0u;
+            }
+            if (mask[CB_DYNAMIC_STATE_VERTEX_INPUT_EXT]) {
+                vertex_binding_descriptions_divisor.clear();
+                vertex_attribute_descriptions.clear();
+            }
+            if (mask[CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV]) {
+                viewport_w_scalings.clear();
+            }
+            if (mask[CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV]) {
+                exclusive_scissor_enables.clear();
+            }
+            if (mask[CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV]) {
+                exclusive_scissors.clear();
+            }
+
             // There are special because the Secondary CB Inheritance is tracking these defaults
-            viewport_count = 0u;
-            scissor_count = 0u;
-
-            depth_bias_enable = false;
-
-            viewports.clear();
-            discard_rectangles.reset();
-            color_blend_enable_attachments.reset();
-            color_blend_enabled.reset();
-            color_blend_equation_attachments.reset();
-            color_write_mask_attachments.reset();
-            color_blend_advanced_attachments.reset();
-            color_write_enabled.reset();
-            color_blend_equations.clear();
-            color_write_masks.clear();
-            vertex_binding_descriptions_divisor.clear();
-            vertex_attribute_descriptions.clear();
-            viewport_w_scalings.clear();
-            exclusive_scissor_enables.clear();
-            exclusive_scissors.clear();
-
-            color_write_enable_attachment_count = 0u;
+            if (mask[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT]) {
+                viewport_count = 0u;
+            }
+            if (mask[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
+                scissor_count = 0u;
+            }
         }
     } dynamic_state_value;
 

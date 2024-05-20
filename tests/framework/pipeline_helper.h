@@ -215,3 +215,15 @@ class SimpleGPL {
 };
 
 }  // namespace vkt
+
+static inline VkPipelineColorBlendAttachmentState DefaultColorBlendAttachmentState() {
+    VkPipelineColorBlendAttachmentState state = {};
+    state.blendEnable = VK_TRUE;
+    state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+    state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    state.colorBlendOp = VK_BLEND_OP_ADD;
+    state.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    state.alphaBlendOp = VK_BLEND_OP_ADD;
+    return state;
+}

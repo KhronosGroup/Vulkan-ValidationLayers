@@ -358,33 +358,6 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     m_commandBuffer->end();
 }
 
-TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
-    TEST_DESCRIPTION("Validate binding a non-dynamic pipeline doesn't trigger dynamic static errors");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT);
-    pipe.CreateGraphicsPipeline();
-
-    CreatePipelineHelper pipe_no_dynamic(*this);
-    pipe_no_dynamic.CreateGraphicsPipeline();
-
-    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
-    command_buffer.begin();
-    vk::CmdSetPrimitiveRestartEnableEXT(command_buffer.handle(), VK_TRUE);
-    command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_no_dynamic.Handle());
-    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(command_buffer.handle(), 1, 1, 0, 0);
-    vk::CmdEndRenderPass(command_buffer.handle());
-    command_buffer.end();
-}
-
 TEST_F(PositiveDynamicState, SetBeforePipeline) {
     TEST_DESCRIPTION("Pipeline set state, but prior to last bound pipeline that had it");
 
@@ -1037,6 +1010,36 @@ TEST_F(PositiveDynamicState, PrimitiveTopology) {
     vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDynamicState, ColorBlendEquationMultipleAttachments) {
+    TEST_DESCRIPTION("Only update some of the dynamic color blend equations");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget(2);
+
+    VkPipelineColorBlendAttachmentState color_blend[2] = {};
+    color_blend[0] = DefaultColorBlendAttachmentState();
+    color_blend[1] = DefaultColorBlendAttachmentState();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.cb_ci_.attachmentCount = 2;
+    pipe.cb_ci_.pAttachments = color_blend;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    const VkColorBlendEquationEXT equation = {VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
+                                              VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0, 1, &equation);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 1, 1, &equation);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
