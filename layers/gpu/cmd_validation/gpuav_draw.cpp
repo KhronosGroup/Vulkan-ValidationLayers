@@ -197,8 +197,8 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationRe
         static_assert(sizeof(push_constants) <= 128, "push_constants buffer size >128, need to consider maxPushConstantsSize.");
         DispatchCmdPushConstants(cmd_buffer, shared_resources->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                                  static_cast<uint32_t>(sizeof(push_constants)), push_constants);
-        BindDiagnosticCallsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_resources->pipeline_layout,
-                                         cb_node->draw_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
+        BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_resources->pipeline_layout,
+                                        cb_node->draw_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_resources->pipeline_layout,
                                       glsl::kDiagPerCmdDescriptorSet, 1, &draw_resources->buffer_desc_set, 0, nullptr);
         DispatchCmdDraw(cmd_buffer, 3, 1, 0, 0);

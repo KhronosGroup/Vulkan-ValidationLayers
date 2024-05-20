@@ -71,8 +71,8 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
         push_constants[4] = static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
 
         DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_resources->pipeline);
-        BindDiagnosticCallsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_resources->pipeline_layout,
-                                         cb_node->trace_rays_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
+        BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_resources->pipeline_layout,
+                                        cb_node->trace_rays_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
         DispatchCmdPushConstants(cmd_buffer, shared_resources->pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0,
                                  sizeof(push_constants), push_constants);
         VkStridedDeviceAddressRegionKHR ray_gen_sbt{};

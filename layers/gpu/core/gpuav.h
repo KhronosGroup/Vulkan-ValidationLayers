@@ -22,7 +22,6 @@
 #include "gpu/resources/gpuav_resources.h"
 #include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 
-#include <typeinfo>
 #include <unordered_map>
 #include <memory>
 
@@ -85,9 +84,9 @@ class Validator : public GpuShaderInstrumentor {
                              const Location& loc);
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, const Location& loc);
 
-    void BindDiagnosticCallsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard>& cmd_buffer_state,
-                                          VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
-                                          uint32_t resource_index);
+    void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard>& cmd_buffer_state,
+                                         VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
+                                         uint32_t resource_index);
 
     // Should only be used by action commands.
     // Allocate per action (draw, dispatch, trace rays) command validation resources,
