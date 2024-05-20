@@ -89,7 +89,7 @@ bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
     spvtools::ValidatorOptions val_options;
-    AdjustValidatorOptions(device_extensions, enabled_features, val_options);
+    AdjustValidatorOptions(device_extensions, enabled_features, val_options, nullptr);
     spvtools::OptimizerOptions opt_options;
     opt_options.set_run_validator(true);
     opt_options.set_validator_options(val_options);

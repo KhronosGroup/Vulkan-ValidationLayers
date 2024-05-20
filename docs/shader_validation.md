@@ -12,6 +12,14 @@ VUIDs that can be validated on a single shader module and require no runtime inf
 
 All of these validations are passed off to `spirv-val` in [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools/).
 
+## Validation Cache
+
+To improve performance from run-to-run we make use of the `VK_EXT_validation_cache` extension.
+
+During `vkCreateShaderModule` time the user can pass in a `VkShaderModuleValidationCacheCreateInfoEXT` object. Realistically, most apps will not do this, so the Validation Layers do this for apps. At `vkCreateDevice`/`vkDestroyDevice` we load/save a `uint32_t` hash of every `VkShaderModuleCreateInfo::pCode`. Before running validation on it, we check if it is a known/valid shader and if so, skip checking it again.
+
+There are a few settings in `spirv-val` (ex. you can use `--allow-localsizeid` with `VK_KHR_maintenance4`) that change if the `SPIR-V` is legal or not. Because of this, we use both the `SPIRV-Tools` commit version, as well as the device features/extensions, to determine if the cache is valid or not. In practice, it will not matter too much for real apps as they normally don't toggle these few features on/off between runs.
+
 ## spirv-opt
 
 There are a few special places where `spirv-opt` is run to reduce recreating work already done in `SPIRV-Tools`.
@@ -24,8 +32,8 @@ Currently these are
   - Some checks require the runtime spec constant values
 - Flatten OpGroupDecorations
   - Detects if group decorations were used; however, group decorations were [deprecated](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpGroupDecorate) early on in the development of the SPIR-v specification.
-- GPU-AV and Debug Printf
-  - instruments the shaders - see [GPU-Assisted Validation](gpu_validation.md) and [GPU-AV Shader Instrumentation](gpu_av_shader_instrumentation.md).
+- Debug Printf
+  - instruments the shaders to write the `printf` values out to a buffer
 
 ## Different sections
 

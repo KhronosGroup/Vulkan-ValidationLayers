@@ -25,6 +25,7 @@
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
 #include "containers/qfo_transfer.h"
+#include <spirv-tools/libspirv.hpp>
 
 typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
@@ -55,6 +56,12 @@ class CoreChecks : public ValidationStateTracker {
     GlobalQFOTransferBarrierMap<QFOBufferTransferBarrier> qfo_release_buffer_barrier_map;
     VkValidationCacheEXT core_validation_cache = VK_NULL_HANDLE;
     std::string validation_cache_path;
+
+    // The options are set from extensions/features only, so only need ot create once.
+    // This also is needed for shader caching (You can have the same SPIR-V, but different Vulkan features making it legal/illegal
+    // the second time).
+    spvtools::ValidatorOptions spirv_val_options;
+    uint32_t spirv_val_option_hash;
 
     CoreChecks() { container_type = LayerObjectTypeCoreValidation; }
 

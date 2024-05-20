@@ -34,6 +34,7 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"
+#include <spirv-tools/libspirv.h>
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location &loc, const char *vuid,
                                            bool optional = false) const {
@@ -437,7 +438,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
 }
 
 void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    // The state tracker sets up the device state
+    // The state tracker sets up the device state (also if extension and/or features are enabled)
     StateTracker::CreateDevice(pCreateInfo, loc);
 
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
@@ -447,6 +448,8 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locat
         [](vvl::CommandBuffer *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
+
+    AdjustValidatorOptions(device_extensions, enabled_features, spirv_val_options, &spirv_val_option_hash);
 
     // Allocate shader validation cache
     if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_validation_cache) {
@@ -660,7 +663,7 @@ VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) 
 VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator,
                                                        VkValidationCacheEXT *pValidationCache) {
-    *pValidationCache = ValidationCache::Create(pCreateInfo);
+    *pValidationCache = ValidationCache::Create(pCreateInfo, spirv_val_option_hash);
     return *pValidationCache ? VK_SUCCESS : VK_ERROR_INITIALIZATION_FAILED;
 }
 
