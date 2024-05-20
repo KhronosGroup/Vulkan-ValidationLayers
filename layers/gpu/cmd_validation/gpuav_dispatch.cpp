@@ -29,8 +29,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
                                                                                             VkDeviceSize indirect_offset) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-        aborted = true;
+        InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return nullptr;
     }
 
@@ -65,8 +64,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
         result = desc_set_manager->GetDescriptorSet(&dispatch_resources->desc_pool, shared_resources->ds_layout,
                                                     &dispatch_resources->indirect_buffer_desc_set);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor set. Aborting GPU-AV");
-            aborted = true;
+            InternalError(cmd_buffer, loc, "Unable to allocate descriptor set. Aborting GPU-AV");
             return nullptr;
         }
 
@@ -142,8 +140,7 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
     ds_layout_ci.pBindings = bindings.data();
     result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &shared_resources->ds_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -160,8 +157,7 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
     pipeline_layout_ci.pSetLayouts = set_layouts.data();
     result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &shared_resources->pipeline_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -178,8 +174,7 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
         shader_ci.pPushConstantRanges = pipeline_layout_ci.pPushConstantRanges;
         result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &shared_resources->shader_object);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc, "Unable to create shader object. Aborting GPU-AV");
-            aborted = true;
+            InternalError(device, loc, "Unable to create shader object. Aborting GPU-AV");
             return nullptr;
         }
     } else {
@@ -189,8 +184,7 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
         VkShaderModule validation_shader = VK_NULL_HANDLE;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc, "Unable to create shader module. Aborting GPU-AV");
-            aborted = true;
+            InternalError(device, loc, "Unable to create shader module. Aborting GPU-AV");
             return nullptr;
         }
 
@@ -209,7 +203,7 @@ PreDispatchResources::SharedResources *Validator::GetSharedDispatchIndirectValid
         DispatchDestroyShaderModule(device, validation_shader, nullptr);
 
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, loc, "Failed to create compute pipeline for pre dispatch validation.");
+            InternalError(device, loc, "Failed to create compute pipeline for pre dispatch validation.");
             return nullptr;
         }
     }

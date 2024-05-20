@@ -28,8 +28,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
                                                                                      VkDeviceAddress indirect_data_address) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-        aborted = true;
+        InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return nullptr;
     }
 
@@ -121,8 +120,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     pipeline_layout_ci.pSetLayouts = &error_output_desc_layout;
     result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &shared_resources->pipeline_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -132,8 +130,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create ray tracing shader module. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create ray tracing shader module. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -163,8 +160,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     DispatchDestroyShaderModule(device, validation_shader, nullptr);
 
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Failed to create ray tracing pipeline for pre trace rays validation. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Failed to create ray tracing pipeline for pre trace rays validation. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -180,8 +176,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     result = DispatchGetRayTracingShaderGroupHandlesKHR(device, shared_resources->pipeline, 0, rt_pipeline_create_info.groupCount,
                                                         sbt_size, sbt_host_storage.data());
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Failed to call vkGetRayTracingShaderGroupHandlesKHR. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Failed to call vkGetRayTracingShaderGroupHandlesKHR. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -202,8 +197,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
     result = vmaCreatePool(vmaAllocator, &pool_create_info, &shared_resources->sbt_pool);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to create VMA memory pool for SBT. Aborting GPU-AV");
-        aborted = true;
+        InternalError(device, loc, "Unable to create VMA memory pool for SBT. Aborting GPU-AV");
         return nullptr;
     }
 
@@ -211,8 +205,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &shared_resources->sbt_buffer,
                              &shared_resources->sbt_allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to allocate device memory for shader binding table. Aborting GPU-AV.", true);
-        aborted = true;
+        InternalError(device, loc, "Unable to allocate device memory for shader binding table. Aborting GPU-AV.", true);
         return nullptr;
     }
 
@@ -220,9 +213,8 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     result = vmaMapMemory(vmaAllocator, shared_resources->sbt_allocation, reinterpret_cast<void **>(&mapped_sbt));
 
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(
-            device, loc, "Failed to map shader binding table when creating trace rays validation resources. Aborting GPU-AV", true);
-        aborted = true;
+        InternalError(device, loc,
+                      "Failed to map shader binding table when creating trace rays validation resources. Aborting GPU-AV", true);
         return nullptr;
     }
 
@@ -236,8 +228,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     const VkDeviceAddress sbt_address = GetBufferDeviceAddress(shared_resources->sbt_buffer, loc);
     assert(sbt_address != 0);
     if (sbt_address == 0) {
-        ReportSetupProblem(device, loc, "Retrieved SBT buffer device address is null. Aborting GPU-AV.");
-        aborted = true;
+        InternalError(device, loc, "Retrieved SBT buffer device address is null. Aborting GPU-AV.");
         return nullptr;
     }
     assert(sbt_address == Align(sbt_address, static_cast<VkDeviceAddress>(rt_pipeline_props.shaderGroupBaseAlignment)));

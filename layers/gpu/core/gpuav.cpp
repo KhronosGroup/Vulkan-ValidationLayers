@@ -101,7 +101,6 @@ static bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRe
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
                                  const uint32_t unique_shader_id, const Location &loc) {
-    if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
 
     const spvtools::MessageConsumer gpu_console_message_consumer =
@@ -169,7 +168,7 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
             std::ostringstream strm;
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
                  << instrumented_error << " Proceeding with non instrumented shader.";
-            ReportSetupProblem(device, loc, strm.str().c_str());
+            InternalError(device, loc, strm.str().c_str());
             assert(false);
             return false;
         }
@@ -184,8 +183,8 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
         // Call CreateAggressiveDCEPass with preserve_interface == true
         dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
         if (!dce_pass.Run(instrumented_spirv.data(), instrumented_spirv.size(), &instrumented_spirv, opt_options)) {
-            ReportSetupProblem(device, loc,
-                               "Failure to run spirv-opt DCE on instrumented shader.  Proceeding with non-instrumented shader.");
+            InternalError(device, loc,
+                          "Failure to run spirv-opt DCE on instrumented shader.  Proceeding with non-instrumented shader.");
             assert(false);
             return false;
         }
@@ -249,21 +248,18 @@ void Validator::UpdateInstrumentationBuffer(CommandBuffer *cb_node) {
 
 void Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                     const Location &loc) {
-    if (aborted) return;
     if (!gpuav_settings.validate_descriptors) return;
 
     auto cb_node = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_node) {
-        ReportSetupProblem(commandBuffer, loc, "Unrecognized command buffer");
-        aborted = true;
+        InternalError(commandBuffer, loc, "Unrecognized command buffer");
         return;
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     auto const &last_bound = cb_node->lastBound[lv_bind_point];
     // Should have just been updated
     if (!last_bound.pipeline_state) {
-        ReportSetupProblem(pipeline, loc, "Unrecognized pipeline");
-        aborted = true;
+        InternalError(pipeline, loc, "Unrecognized pipeline");
         return;
     }
 
@@ -292,11 +288,9 @@ void Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBin
 }
 
 void Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, const Location &loc) {
-    if (aborted) return;
     auto cb_node = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_node) {
-        ReportSetupProblem(commandBuffer, loc, "Unrecognized command buffer");
-        aborted = true;
+        InternalError(commandBuffer, loc, "Unrecognized command buffer");
         return;
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
@@ -320,16 +314,14 @@ void Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipeline
         VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_buffers.bindless_state_buffer,
                                           &di_buffers.bindless_state_buffer_allocation, nullptr);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(commandBuffer, loc, "Unable to allocate device memory. Device could become unstable.", true);
-            aborted = true;
+            InternalError(commandBuffer, loc, "Unable to allocate device memory. Device could become unstable.", true);
             return;
         }
         glsl::BindlessStateBuffer *bindless_state{nullptr};
         result =
             vmaMapMemory(vmaAllocator, di_buffers.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(commandBuffer, loc, "Unable to map device memory. Device could become unstable.", true);
-            aborted = true;
+            InternalError(commandBuffer, loc, "Unable to map device memory. Device could become unstable.", true);
             return;
         }
         memset(bindless_state, 0, static_cast<size_t>(buffer_info.size));
@@ -391,16 +383,12 @@ CommandResources Validator::AllocateActionCommandResources(const LockedSharedPtr
         return CommandResources();
     }
 
-    if (aborted) return CommandResources();
-
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto const &last_bound = cmd_buffer->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
-        ReportSetupProblem(cmd_buffer->VkHandle(), loc,
-                           "Neither pipeline state nor shader object states were found, aborting GPU-AV");
-        aborted = true;
+        InternalError(cmd_buffer->VkHandle(), loc, "Neither pipeline state nor shader object states were found, aborting GPU-AV");
         return CommandResources();
     }
 
@@ -410,9 +398,8 @@ CommandResources Validator::AllocateActionCommandResources(const LockedSharedPtr
         &instrumentation_desc_pool, cmd_buffer->GetInstrumentationDescriptorSetLayout(), &instrumentation_desc_set);
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(cmd_buffer->VkHandle(), loc,
-                           "Unable to allocate instrumentation descriptor sets. Device could become unstable.");
-        aborted = true;
+        InternalError(cmd_buffer->VkHandle(), loc,
+                      "Unable to allocate instrumentation descriptor sets. Device could become unstable.");
         return CommandResources();
     }
 
@@ -557,9 +544,7 @@ CommandResources Validator::AllocateActionCommandResources(const LockedSharedPtr
     }
 
     if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
-        ReportSetupProblem(cmd_buffer->Handle(), loc,
-                           "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
-        aborted = true;
+        InternalError(cmd_buffer->Handle(), loc, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
         return CommandResources();
     }
 
@@ -586,8 +571,7 @@ CommandResources Validator::AllocateActionCommandResources(VkCommandBuffer cmd_b
                                                            const CmdIndirectState *indirect_state /*= nullptr*/) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-        aborted = true;
+        InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return CommandResources();
     }
     return AllocateActionCommandResources(cb_node, bind_point, loc, indirect_state);
@@ -602,9 +586,7 @@ bool Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location 
     alloc_info.pool = output_buffer_pool;
     VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_mem.buffer, &output_mem.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, loc, "Unable to allocate device memory for error output buffer. Device could become unstable.",
-                           true);
-        aborted = true;
+        InternalError(device, loc, "Unable to allocate device memory for error output buffer. Device could become unstable.", true);
         return false;
     }
 
@@ -617,9 +599,8 @@ bool Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location 
         }
         vmaUnmapMemory(vmaAllocator, output_mem.allocation);
     } else {
-        ReportSetupProblem(device, loc,
-                           "Unable to map device memory allocated for error output buffer. Device could become unstable.", true);
-        aborted = true;
+        InternalError(device, loc, "Unable to map device memory allocated for error output buffer. Device could become unstable.",
+                      true);
         return false;
     }
 
@@ -628,13 +609,11 @@ bool Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location 
 
 void Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
                                       const Location &loc) {
-    if (aborted) return;
     if (!command_resources) return;
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
-        aborted = true;
+        InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return;
     }
 
