@@ -103,8 +103,8 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
         push_constants[3] = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
         DispatchCmdPushConstants(cmd_buffer, shared_resources->pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                                  sizeof(push_constants), push_constants);
-        BindDiagnosticCallsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
-                                         cb_node->compute_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
+        BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
+                                        cb_node->compute_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
                                       glsl::kDiagPerCmdDescriptorSet, 1, &dispatch_resources->indirect_buffer_desc_set, 0, nullptr);
         DispatchCmdDispatch(cmd_buffer, 1, 1, 1);

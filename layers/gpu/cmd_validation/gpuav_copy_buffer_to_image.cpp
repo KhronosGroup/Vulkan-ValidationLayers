@@ -224,8 +224,8 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
     // Insert diagnostic dispatch
     DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline);
 
-    BindDiagnosticCallsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout, 0,
-                                     static_cast<uint32_t>(cb_node->per_command_resources.size()));
+    BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout, 0,
+                                    static_cast<uint32_t>(cb_node->per_command_resources.size()));
     DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &copy_buffer_to_img_resources->desc_set, 0, nullptr);
     // correct_count == max texelsCount?

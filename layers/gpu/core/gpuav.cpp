@@ -130,7 +130,6 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
                          static_cast<std::streamsize>(binaries[0].size() * sizeof(uint32_t)));
     }
 
-    using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
 
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
@@ -177,6 +176,7 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
     }
     // Run Dead Code elimination
     {
+        using namespace spvtools;
         OptimizerOptions opt_options;
         opt_options.set_run_validator(false);
         Optimizer dce_pass(target_env);
@@ -368,9 +368,9 @@ void Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipeline
     }
 }
 
-void Validator::BindDiagnosticCallsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
-                                                 VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
-                                                 uint32_t cmd_index, uint32_t resource_index) {
+void Validator::BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
+                                                VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
+                                                uint32_t cmd_index, uint32_t resource_index) {
     assert(cmd_index < cst::indices_count);
     assert(resource_index < cst::indices_count);
     std::array<uint32_t, 2> dynamic_offsets = {
