@@ -2182,10 +2182,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
     if (module_state.static_data_.has_specialization_constants) {
-        // both spirv-opt and spirv-val will use the same flags
-        spvtools::ValidatorOptions options;
-        AdjustValidatorOptions(device_extensions, enabled_features, options);
-
         // setup the call back if the optimizer fails
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
@@ -2294,12 +2290,12 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
         // Apply the specialization-constant values and revalidate the shader module is valid.
         std::vector<uint32_t> specialized_spirv;
         auto const optimized =
-            optimizer.Run(module_state.words_.data(), module_state.words_.size(), &specialized_spirv, options, true);
+            optimizer.Run(module_state.words_.data(), module_state.words_.size(), &specialized_spirv, spirv_val_options, true);
         if (optimized) {
             spv_context ctx = spvContextCreate(spirv_environment);
             spv_const_binary_t binary{specialized_spirv.data(), specialized_spirv.size()};
             spv_diagnostic diag = nullptr;
-            auto const spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
+            auto const spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
                 const char *vuid = stage_create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
                                                               : "VUID-VkShaderCreateInfoEXT-pCode-08460";
@@ -2510,9 +2506,7 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
     spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
     spv_context ctx = spvContextCreate(spirv_environment);
     spv_diagnostic diag = nullptr;
-    spvtools::ValidatorOptions options;
-    AdjustValidatorOptions(device_extensions, enabled_features, options);
-    const spv_result_t spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
+    const spv_result_t spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
     if (spv_valid != SPV_SUCCESS) {
         const char *vuid = loc.function == Func::vkCreateShaderModule ? "VUID-VkShaderModuleCreateInfo-pCode-08737"
                                                                       : "VUID-VkShaderCreateInfoEXT-pCode-08737";
@@ -2571,6 +2565,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
 
     spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
     skip |= RunSpirvValidation(binary, create_info_loc);
+    // No point to cache anything that is not valid
     if (!skip && cache) {
         cache->Insert(hash);
     }

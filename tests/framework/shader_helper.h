@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "spirv-tools/libspirv.h"
-#include "glslang/Public/ShaderLang.h"
+#include <spirv-tools/libspirv.hpp>
+#include <glslang/Public/ShaderLang.h>
 
 #include "render.h"
 #include "test_framework.h"

@@ -2268,3 +2268,40 @@ TEST_F(NegativeShaderSpirv, FPFastMathMode) {
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, ScalarBlockLayoutShaderCache) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8031");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddDisabledFeature(vkt::Feature::scalarBlockLayout);  // will NOT set --scalar-block-layout
+    RETURN_IF_SKIP(Init());
+
+    // Matches glsl from other ScalarBlockLayoutShaderCache test
+    char const *cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_buffer_reference : require
+        #extension GL_EXT_scalar_block_layout : require
+
+        struct Transform {
+            mat3x3 rotScaMatrix; //  0, 36
+            vec3 pos;            // 36, 12
+            vec3 pos_err;        // 48, 12
+            float padding;       // 60, 4
+        };
+
+        layout(scalar, buffer_reference, buffer_reference_align = 64) readonly buffer Transforms {
+            Transform transforms[];
+        };
+        layout(std430, push_constant) uniform PushConstant {
+            Transforms pTransforms;
+        };
+
+        void main() {
+            Transform transform = pTransforms.transforms[0];
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}

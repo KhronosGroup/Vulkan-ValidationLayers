@@ -22,11 +22,8 @@
 
 #include "vulkan/vulkan.h"
 #include "utils/vk_layer_utils.h"
-#include "generated/spirv_tools_commit_id.h"
 
-#include <spirv/unified1/spirv.hpp>
-#include <spirv-tools/libspirv.h>
-#include <spirv-tools/optimizer.hpp>
+#include <spirv-tools/libspirv.hpp>
 #include <vulkan/utility/vk_safe_struct.hpp>
 
 struct DeviceFeatures;
@@ -138,74 +135,15 @@ using StageStateVec = std::vector<PipelineStageState>;
 
 class ValidationCache {
   public:
-    static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
-        auto cache = new ValidationCache();
+    static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo, uint32_t spirv_val_option_hash) {
+        auto cache = new ValidationCache(spirv_val_option_hash);
         cache->Load(pCreateInfo);
         return VkValidationCacheEXT(cache);
     }
 
-    void Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
-        const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;
-        auto size = headerSize;
-        if (!pCreateInfo->pInitialData || pCreateInfo->initialDataSize < size) return;
-
-        uint32_t const *data = (uint32_t const *)pCreateInfo->pInitialData;
-        if (data[0] != size) return;
-        if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT) return;
-        uint8_t expected_uuid[VK_UUID_SIZE];
-        Sha1ToVkUuid(SPIRV_TOOLS_COMMIT_ID, expected_uuid);
-        if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0) return;  // different version
-
-        data = (uint32_t const *)(reinterpret_cast<uint8_t const *>(data) + headerSize);
-
-        auto guard = WriteLock();
-        for (; size < pCreateInfo->initialDataSize; data++, size += sizeof(uint32_t)) {
-            good_shader_hashes_.insert(*data);
-        }
-    }
-
-    void Write(size_t *pDataSize, void *pData) {
-        const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
-        if (!pData) {
-            *pDataSize = headerSize + good_shader_hashes_.size() * sizeof(uint32_t);
-            return;
-        }
-
-        if (*pDataSize < headerSize) {
-            *pDataSize = 0;
-            return;  // Too small for even the header!
-        }
-
-        uint32_t *out = (uint32_t *)pData;
-        size_t actualSize = headerSize;
-
-        // Write the header
-        *out++ = headerSize;
-        *out++ = VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT;
-        Sha1ToVkUuid(SPIRV_TOOLS_COMMIT_ID, reinterpret_cast<uint8_t *>(out));
-        out = (uint32_t *)(reinterpret_cast<uint8_t *>(out) + VK_UUID_SIZE);
-
-        {
-            auto guard = ReadLock();
-            for (auto it = good_shader_hashes_.begin(); it != good_shader_hashes_.end() && actualSize < *pDataSize;
-                 it++, out++, actualSize += sizeof(uint32_t)) {
-                *out = *it;
-            }
-        }
-
-        *pDataSize = actualSize;
-    }
-
-    void Merge(ValidationCache const *other) {
-        // self-merging is invalid, but avoid deadlock below just in case.
-        if (other == this) {
-            return;
-        }
-        auto other_guard = other->ReadLock();
-        auto guard = WriteLock();
-        good_shader_hashes_.reserve(good_shader_hashes_.size() + other->good_shader_hashes_.size());
-        for (auto h : other->good_shader_hashes_) good_shader_hashes_.insert(h);
-    }
+    void Load(VkValidationCacheCreateInfoEXT const *pCreateInfo);
+    void Write(size_t *pDataSize, void *pData);
+    void Merge(ValidationCache const *other);
 
     bool Contains(uint32_t hash) {
         auto guard = ReadLock();
@@ -218,28 +156,15 @@ class ValidationCache {
     }
 
   private:
-    ValidationCache() {}
+    ValidationCache(uint32_t spirv_val_option_hash) : spirv_val_option_hash_(spirv_val_option_hash) {}
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    void Sha1ToVkUuid(const char *sha1_str, uint8_t *uuid) {
-        // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
-        // output, so pad with zeroes if the input string is shorter than that, and truncate
-        // if it's longer.
-#if defined(__GNUC__) && (__GNUC__ > 8)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-#endif
-        char padded_sha1_str[2 * VK_UUID_SIZE + 1] = {};  // 2 hex digits == 1 byte
-        std::strncpy(padded_sha1_str, sha1_str, 2 * VK_UUID_SIZE);
-#if defined(__GNUC__) && (__GNUC__ > 8)
-#pragma GCC diagnostic pop
-#endif
-        for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
-            const char byte_str[] = {padded_sha1_str[2 * i + 0], padded_sha1_str[2 * i + 1], '\0'};
-            uuid[i] = static_cast<uint8_t>(std::strtoul(byte_str, nullptr, 16));
-        }
-    }
+    void GetUUID(uint8_t *uuid);
+
+    // Can hit cases where error appear/disappear if spirv-val settings are adjusted
+    // see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8031
+    uint32_t spirv_val_option_hash_;
 
     // hashes of shaders that have passed validation before, and can be skipped.
     // we don't store negative results, as we would have to also store what was
@@ -252,7 +177,7 @@ class ValidationCache {
 spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
 
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spvtools::ValidatorOptions &options);
+                            spvtools::ValidatorOptions &out_options, uint32_t *out_hash);
 
 void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
 ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states);
