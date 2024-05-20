@@ -3389,6 +3389,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
         if (enabled_features.primitiveFragmentShadingRate) {
             skip |= ValidateGraphicsPipelineShaderDynamicState(*pipeline, cb_state, loc, vuid);
         }
+
+        if (!pipeline->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && cb_state.activeRenderPass->UsesDynamicRendering()) {
+            const auto msrtss_info = vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
+                cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
+            if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
+                msrtss_info->rasterizationSamples != pipeline->MultisampleState()->rasterizationSamples) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
+                skip |=
+                    LogError(vuid.rasterization_samples_07935, objlist, loc,
+                             "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE, but "
+                             "the rasterizationSamples (%" PRIu32 ") is not equal to rasterizationSamples (%" PRIu32
+                             ") of the the currently bound pipeline.",
+                             msrtss_info->rasterizationSamples, pipeline->MultisampleState()->rasterizationSamples);
+            }
+        }
     }
 
     if (pipeline && pipeline->IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&

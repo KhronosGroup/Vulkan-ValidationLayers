@@ -227,11 +227,15 @@ void CommandBuffer::ResetCBState() {
     command_count = 0;
     submitCount = 0;
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
+
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
     dynamic_state_status.rtx_stack_size_cb = false;
     dynamic_state_status.rtx_stack_size_pipeline = false;
-    dynamic_state_value.reset();
+    CBDynamicFlags all;
+    dynamic_state_value.reset(all.set());
+    memset(&invalidated_state_pipe, 0, sizeof(VkPipeline) * CB_DYNAMIC_STATE_STATUS_NUM);
+
     inheritedViewportDepths.clear();
     usedViewportScissorCount = 0;
     pipelineStaticViewportCount = 0;
@@ -1483,6 +1487,7 @@ void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
 void CommandBuffer::RecordDynamicState(CBDynamicState state) {
     dynamic_state_status.cb.set(state);
     dynamic_state_status.pipeline.set(state);
+    dynamic_state_status.history.set(state);
 }
 
 void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2) {
@@ -1858,6 +1863,19 @@ std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &l
         debug_region += label_name;
     }
     return debug_region;
+}
+
+std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state) const {
+    std::stringstream ss;
+    if (dynamic_state_status.history[dynamic_state]) {
+        ss << " (There was a call to vkCmdBindPipeline";
+        if (auto pipeline = dev_data.Get<vvl::Pipeline>(invalidated_state_pipe[dynamic_state])) {
+            ss << " with " << dev_data.FormatHandle(*pipeline);
+        }
+        ss << " that didn't have the dynamic state and invalidated the prior " << DescribeDynamicStateCommand(dynamic_state)
+           << " call)";
+    }
+    return ss.str();
 }
 
 }  // namespace vvl

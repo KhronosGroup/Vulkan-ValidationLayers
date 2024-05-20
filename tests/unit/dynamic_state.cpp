@@ -95,6 +95,73 @@ TEST_F(NegativeDynamicState, LineStippleNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicState, InvalidateStaticPipeline) {
+    TEST_DESCRIPTION("We track which pipeline has caused the dynamic state to be invalidated, make sure it is working correctly.");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LineStippleEnable);
+    AddRequiredFeature(vkt::Feature::stippledBresenhamLines);
+    AddRequiredFeature(vkt::Feature::bresenhamLines);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineRasterizationLineStateCreateInfoKHR line_state = vku::InitStructHelper();
+    line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR;
+    line_state.stippledLineEnable = VK_TRUE;
+    line_state.lineStippleFactor = 1;
+    line_state.lineStipplePattern = 0;
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+
+    CreatePipelineHelper pipe_0(*this);
+    pipe_0.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_KHR);
+    pipe_0.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+    pipe_0.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipe_0.rs_state_ci_.pNext = &line_state;
+    pipe_0.CreateGraphicsPipeline();
+    name_info.objectHandle = (uint64_t)pipe_0.Handle();
+    name_info.pObjectName = "Both Dynamic";
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    CreatePipelineHelper pipe_1(*this);
+    pipe_1.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+    pipe_1.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipe_1.rs_state_ci_.pNext = &line_state;
+    pipe_1.CreateGraphicsPipeline();
+    name_info.objectHandle = (uint64_t)pipe_1.Handle();
+    name_info.pObjectName = "Single Dynamic";
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    CreatePipelineHelper pipe_2(*this);
+    pipe_2.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipe_2.rs_state_ci_.pNext = &line_state;
+    pipe_2.CreateGraphicsPipeline();
+    name_info.objectHandle = (uint64_t)pipe_2.Handle();
+    name_info.pObjectName = "No Dynamic";
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdSetLineStippleKHR(m_commandBuffer->handle(), 1, 0);
+    vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_0.Handle());
+    // Invalidate one dynamic state at a time
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1.Handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.Handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_0.Handle());
+
+    m_errorMonitor->SetDesiredError("No Dynamic");      // VUID-vkCmdDraw-None-07638
+    m_errorMonitor->SetDesiredError("Single Dynamic");  // VUID-vkCmdDraw-None-07849
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeDynamicState, ViewportNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Viewport dynamic state is required but not correctly bound.");
@@ -986,6 +1053,36 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
     }
 }
 
+TEST_F(NegativeDynamicState, ExtendedDynamicState2InvalidateStaticPipeline) {
+    TEST_DESCRIPTION("Validate binding a non-dynamic pipeline trigger dynamic static errors");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_static(*this);
+    pipe_static.CreateGraphicsPipeline();
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.begin();
+    vk::CmdSetPrimitiveRestartEnableEXT(command_buffer.handle(), VK_TRUE);
+    command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static.Handle());
+    vk::CmdDraw(command_buffer.handle(), 1, 1, 0, 0);
+    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04879");
+    vk::CmdDraw(command_buffer.handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndRenderPass(command_buffer.handle());
+    command_buffer.end();
+}
+
 TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 PatchControlPoints VUs");
 
@@ -1695,7 +1792,6 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendEquation) {
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07628");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07477");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-dualSrcBlend-07357");
@@ -1709,6 +1805,83 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendEquation) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
 
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, ColorBlendEquationMultipleAttachments) {
+    TEST_DESCRIPTION("Only update some of the dynamic color blend equations");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget(2);
+
+    VkPipelineColorBlendAttachmentState color_blend[2] = {};
+    color_blend[0] = DefaultColorBlendAttachmentState();
+    color_blend[1] = DefaultColorBlendAttachmentState();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.cb_ci_.attachmentCount = 2;
+    pipe.cb_ci_.pAttachments = color_blend;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    const VkColorBlendEquationEXT equation = {VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
+                                              VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
+
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 1, 1, &equation);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07477");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, ColorBlendEquationInvalidateStaticPipeline) {
+    TEST_DESCRIPTION("Only update some of the dynamic color blend equations");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget(2);
+
+    VkPipelineColorBlendAttachmentState color_blend[2] = {};
+    color_blend[0] = DefaultColorBlendAttachmentState();
+    color_blend[1] = DefaultColorBlendAttachmentState();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.cb_ci_.attachmentCount = 2;
+    pipe.cb_ci_.pAttachments = color_blend;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_static(*this);
+    pipe_static.cb_ci_.attachmentCount = 2;
+    pipe_static.cb_ci_.pAttachments = color_blend;
+    pipe_static.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    const VkColorBlendEquationEXT equation = {VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
+                                              VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
+
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0, 1, &equation);
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 1, 1, &equation);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static.Handle());
+    // never reset index 1
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0, 1, &equation);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07477");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -2451,14 +2624,8 @@ TEST_F(NegativeDynamicState, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
     VkShaderObj fs(this, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // This is all ignored, but checking it will be ignored
-    VkPipelineColorBlendAttachmentState cb_attachments = {};
-    cb_attachments.blendEnable = VK_TRUE;
+    VkPipelineColorBlendAttachmentState cb_attachments = DefaultColorBlendAttachmentState();
     cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad, but ignored
-    cb_attachments.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-    cb_attachments.colorBlendOp = VK_BLEND_OP_ADD;
-    cb_attachments.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
 
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.pAttachments = &cb_attachments;
@@ -2521,20 +2688,8 @@ TEST_F(NegativeDynamicState, ColorWriteNotSet) {
     InitRenderTarget(2);
 
     VkPipelineColorBlendAttachmentState color_blend[2] = {};
-    color_blend[0].blendEnable = VK_TRUE;
-    color_blend[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-    color_blend[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-    color_blend[0].colorBlendOp = VK_BLEND_OP_ADD;
-    color_blend[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    color_blend[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    color_blend[0].alphaBlendOp = VK_BLEND_OP_ADD;
-    color_blend[1].blendEnable = VK_TRUE;
-    color_blend[1].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-    color_blend[1].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-    color_blend[1].colorBlendOp = VK_BLEND_OP_ADD;
-    color_blend[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    color_blend[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    color_blend[1].alphaBlendOp = VK_BLEND_OP_ADD;
+    color_blend[0] = DefaultColorBlendAttachmentState();
+    color_blend[1] = DefaultColorBlendAttachmentState();
 
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.attachmentCount = 2;
@@ -2558,6 +2713,37 @@ TEST_F(NegativeDynamicState, ColorWriteNotSet) {
 
     vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, color_write_enable);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, ColorWriteInvalidateStaticPipeline) {
+    TEST_DESCRIPTION("Set the dynamic state, but then invalidate it with a static state pipeline");
+    AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::colorWriteEnable);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe_dynamic(*this);
+    pipe_dynamic.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
+    pipe_dynamic.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_static(*this);
+    pipe_static.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkBool32 color_write_enable[] = {VK_FALSE};
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
+    // invalidate
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static.Handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_dynamic.Handle());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07749");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -2623,6 +2809,39 @@ TEST_F(NegativeDynamicState, ColorWriteEnableFeature) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetColorWriteEnableEXT-None-04803");
     vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, DiscardRectanglesInvalidateStaticPipeline) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rect_ci = vku::InitStructHelper();
+    discard_rect_ci.discardRectangleMode = VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT;
+    discard_rect_ci.discardRectangleCount = 2;
+
+    CreatePipelineHelper pipe(*this, &discard_rect_ci);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_static(*this);
+    pipe_static.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    VkRect2D discard_rectangles[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 2, discard_rectangles);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static.Handle());
+    // only fill back in the first one
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, discard_rectangles);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07751");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -4520,7 +4739,7 @@ TEST_F(NegativeDynamicState, ColorBlendStateIgnored) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
 
-    VkPipelineColorBlendAttachmentState att_state = {};
+    VkPipelineColorBlendAttachmentState att_state = DefaultColorBlendAttachmentState();
     att_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     att_state.blendEnable = VK_TRUE;
     pipe.cb_attachments_ = att_state;

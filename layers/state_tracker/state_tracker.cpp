@@ -2256,6 +2256,27 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
         cb_state->dynamic_state_status.pipeline.reset();
 
+        // Make a copy and then xor the new change
+        // This gives us which state has been invalidated, allows us to save time for most cases where nothing changes
+        CBDynamicFlags invalidated_state = cb_state->dynamic_state_status.cb;
+
+        // Spec: "[dynamic state] made invalid by another pipeline bind with that state specified as static"
+        // So unset the bitmask for the command buffer lifetime tracking
+        cb_state->dynamic_state_status.cb &= pipe_state->dynamic_state;
+
+        invalidated_state ^= cb_state->dynamic_state_status.cb;
+        if (invalidated_state.any()) {
+            // Reset dynamic state values
+            cb_state->dynamic_state_value.reset(invalidated_state);
+
+            for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
+                CBDynamicState status = static_cast<CBDynamicState>(index);
+                if (invalidated_state[status]) {
+                    cb_state->invalidated_state_pipe[index] = pipeline;
+                }
+            }
+        }
+
         if (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
             !pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipe_state->vertex_input_state) {
             for (const auto &description : pipe_state->vertex_input_state->binding_descriptions) {
@@ -2293,6 +2314,9 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         }
     } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         cb_state->dynamic_state_status.rtx_stack_size_pipeline = false;
+        if (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
+            cb_state->dynamic_state_status.rtx_stack_size_cb = false;  // invalidated
+        }
     }
 
     cb_state->BindPipeline(ConvertToLvlBindPoint(pipelineBindPoint), pipe_state.get());
