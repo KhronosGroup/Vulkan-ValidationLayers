@@ -22,8 +22,10 @@
 #include "utils/shader_utils.h"
 #include "chassis/chassis_modification_state.h"
 
+namespace debug_printf {
+
 // Perform initializations that can be done at Create Device time.
-void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     if (enabled[gpu_validation]) {
         InternalError(device, loc, "Debug Printf cannot be enabled when gpu assisted validation is enabled.");
         return;
@@ -66,7 +68,7 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
 }
 
 // Free the device memory and descriptor set associated with a command buffer.
-void debug_printf::Validator::DestroyBuffer(BufferInfo &buffer_info) {
+void Validator::DestroyBuffer(BufferInfo &buffer_info) {
     vmaDestroyBuffer(vmaAllocator, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
     if (buffer_info.desc_set != VK_NULL_HANDLE) {
         desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
@@ -74,8 +76,8 @@ void debug_printf::Validator::DestroyBuffer(BufferInfo &buffer_info) {
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
-                                               uint32_t unique_shader_id, const Location &loc) {
+bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
+                                 uint32_t unique_shader_id, const Location &loc) {
     if (input[0] != spv::MagicNumber) return false;
 
     // Load original shader SPIR-V
@@ -116,10 +118,9 @@ bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &
     return pass;
 }
 // Create the instrumented shader data to provide to the driver.
-void debug_printf::Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              VkShaderModule *pShaderModule, const RecordObject &record_obj,
-                                                              chassis::CreateShaderModule &chassis_state) {
+void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
                                                             chassis_state);
     chassis_state.unique_shader_id = unique_shader_module_id++;
@@ -131,10 +132,9 @@ void debug_printf::Validator::PreCallRecordCreateShaderModule(VkDevice device, c
     }
 }
 
-void debug_printf::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                            const VkShaderCreateInfoEXT *pCreateInfos,
-                                                            const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                            const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
+void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
+                                              const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                              const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                                           chassis_state);
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
@@ -151,11 +151,11 @@ void debug_printf::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uin
     }
 }
 
-static debug_printf::vartype vartype_lookup(char intype) {
+static vartype vartype_lookup(char intype) {
     switch (intype) {
         case 'd':
         case 'i':
-            return debug_printf::varsigned;
+            return varsigned;
             break;
 
         case 'f':
@@ -166,19 +166,19 @@ static debug_printf::vartype vartype_lookup(char intype) {
         case 'E':
         case 'g':
         case 'G':
-            return debug_printf::varfloat;
+            return varfloat;
             break;
 
         case 'u':
         case 'x':
         case 'o':
         default:
-            return debug_printf::varunsigned;
+            return varunsigned;
             break;
     }
 }
 
-std::vector<debug_printf::Substring> debug_printf::Validator::ParseFormatString(const std::string &format_string) {
+std::vector<Substring> Validator::ParseFormatString(const std::string &format_string) {
     const char types[] = {'d', 'i', 'o', 'u', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', 'v', '\0'};
     std::vector<Substring> parsed_strings;
     size_t pos = 0;
@@ -253,7 +253,7 @@ std::vector<debug_printf::Substring> debug_printf::Validator::ParseFormatString(
     return parsed_strings;
 }
 
-std::string debug_printf::Validator::FindFormatString(const std::vector<spirv::Instruction> &instructions, uint32_t string_id) {
+std::string Validator::FindFormatString(const std::vector<spirv::Instruction> &instructions, uint32_t string_id) {
     std::string format_string;
     for (const spirv::Instruction &insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Word(1) == string_id) {
@@ -271,9 +271,8 @@ std::string debug_printf::Validator::FindFormatString(const std::vector<spirv::I
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 
-void debug_printf::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo &buffer_info,
-                                                        uint32_t operation_index, uint32_t *const debug_output_buffer,
-                                                        const Location &loc) {
+void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo &buffer_info,
+                                          uint32_t operation_index, uint32_t *const debug_output_buffer, const Location &loc) {
     // Word         Content
     //    0         Must be zero
     //    1         Size of output record, including this word
@@ -404,8 +403,8 @@ void debug_printf::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void debug_printf::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
-    auto *device_state = static_cast<debug_printf::Validator *>(&dev_data);
+void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
+    auto *device_state = static_cast<Validator *>(&dev_data);
     if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
         auto &gpu_buffer_list = buffer_infos;
         uint32_t draw_index = 0;
@@ -442,189 +441,180 @@ void debug_printf::CommandBuffer::PostProcess(VkQueue queue, const Location &loc
 #pragma GCC diagnostic pop
 #endif
 
-void debug_printf::Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                                   uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
+                                     uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                           const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
-                                                           uint32_t firstInstance, uint32_t stride,
-                                                           const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                             const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount, uint32_t firstInstance,
+                                             uint32_t stride, const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount,
-                                                          uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
-                                                          uint32_t firstInstance, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+                                            uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
+                                            const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                                  const VkMultiDrawIndexedInfoEXT *pIndexInfo,
-                                                                  uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
-                                                                  const int32_t *pVertexOffset, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                    const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
+                                                    uint32_t firstInstance, uint32_t stride, const int32_t *pVertexOffset,
+                                                    const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                           uint32_t count, uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                             uint32_t stride, const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                  VkDeviceSize offset, uint32_t count, uint32_t stride,
-                                                                  const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    uint32_t count, uint32_t stride, const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
-                                                       const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
+                                         const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                               const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                           uint32_t groupCountZ, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                             uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                             const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX,
-                                                              uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX,
-                                                              uint32_t groupCountY, uint32_t groupCountZ,
-                                                              const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                uint32_t groupCountZ, const RecordObject &record_obj) {
     PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
                                  record_obj);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                   VkDeviceSize offset, VkBuffer countBuffer,
-                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                   uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                     uint32_t stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                       record_obj);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                                uint32_t maxDrawCount, uint32_t stride,
-                                                                const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                  uint32_t stride, const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                               maxDrawCount, stride, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                          VkDeviceSize offset, VkBuffer countBuffer,
-                                                                          VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                          uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                            uint32_t maxDrawCount, uint32_t stride,
+                                                            const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                              record_obj);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                       VkDeviceSize offset, VkBuffer countBuffer,
-                                                                       VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                       uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                         uint32_t maxDrawCount, uint32_t stride, const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                      maxDrawCount, stride, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
-                                                                       uint32_t firstInstance, VkBuffer counterBuffer,
-                                                                       VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                                       uint32_t vertexStride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                         uint32_t firstInstance, VkBuffer counterBuffer,
+                                                         VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                         uint32_t vertexStride, const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
                                                                      counterBufferOffset, counterOffset, vertexStride, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
-                                                              const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+                                                const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                      VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
-                                                                      const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                        uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                           VkDeviceSize offset, VkBuffer countBuffer,
-                                                                           VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                           uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                             uint32_t maxDrawCount, uint32_t stride,
+                                                             const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer,
                                                                          countBufferOffset, maxDrawCount, stride, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX,
-                                                               uint32_t groupCountY, uint32_t groupCountZ,
-                                                               const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                                 uint32_t groupCountZ, const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                       VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
-                                                                       const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                         uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                            VkDeviceSize offset, VkBuffer countBuffer,
-                                                                            VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                            uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                              uint32_t maxDrawCount, uint32_t stride,
+                                                              const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer,
                                                                           countBufferOffset, maxDrawCount, stride, record_obj);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdTraceRaysNV(
-    VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer, VkDeviceSize raygenShaderBindingOffset,
-    VkBuffer missShaderBindingTableBuffer, VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-    VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset, VkDeviceSize hitShaderBindingStride,
-    VkBuffer callableShaderBindingTableBuffer, VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-    uint32_t width, uint32_t height, uint32_t depth, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                            VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                            VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                            VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                            VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                            VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                            uint32_t width, uint32_t height, uint32_t depth, const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                                           const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                                           const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                                           const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                           const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                           uint32_t width, uint32_t height, uint32_t depth,
-                                                           const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                             const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                             uint32_t height, uint32_t depth, const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdTraceRaysIndirectKHR(
-    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-    const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress,
-    const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                     const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                     const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                     const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                     const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                     VkDeviceAddress indirectDeviceAddress, const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 
-void debug_printf::Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
-                                                                    VkDeviceAddress indirectDeviceAddress,
-                                                                    const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
+                                                      const RecordObject &record_obj) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 
-void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
-                                                           const Location &loc) {
+void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
+                                             const Location &loc) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         return;
@@ -642,7 +632,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     VkDescriptorBufferInfo output_desc_buffer_info = {};
     output_desc_buffer_info.range = output_buffer_byte_size;
 
-    auto cb_node = GetWrite<debug_printf::CommandBuffer>(cmd_buffer);
+    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer.");
         return;
@@ -716,34 +706,35 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     cb_node->buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point);
 }
 
-std::shared_ptr<vvl::CommandBuffer> debug_printf::Validator::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                                  const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                                                  const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<vvl::CommandBuffer>(
-        std::make_shared<debug_printf::CommandBuffer>(*this, handle, pCreateInfo, pool));
+std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
+                                                                    const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                    const vvl::CommandPool *pool) {
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, pCreateInfo, pool));
 }
 
-debug_printf::CommandBuffer::CommandBuffer(debug_printf::Validator &dp, VkCommandBuffer handle,
-                                           const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
+CommandBuffer::CommandBuffer(Validator &dp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
+                             const vvl::CommandPool *pool)
     : gpu_tracker::CommandBuffer(dp, handle, pCreateInfo, pool) {}
 
-debug_printf::CommandBuffer::~CommandBuffer() { Destroy(); }
+CommandBuffer::~CommandBuffer() { Destroy(); }
 
-void debug_printf::CommandBuffer::Destroy() {
+void CommandBuffer::Destroy() {
     ResetCBState();
     vvl::CommandBuffer::Destroy();
 }
 
-void debug_printf::CommandBuffer::Reset() {
+void CommandBuffer::Reset() {
     vvl::CommandBuffer::Reset();
     ResetCBState();
 }
 
-void debug_printf::CommandBuffer::ResetCBState() {
-    auto debug_printf = static_cast<debug_printf::Validator *>(&dev_data);
+void CommandBuffer::ResetCBState() {
+    auto debug_printf = static_cast<Validator *>(&dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (auto &buffer_info : buffer_infos) {
         debug_printf->DestroyBuffer(buffer_info);
     }
     buffer_infos.clear();
 }
+
+}  // namespace debug_printf
