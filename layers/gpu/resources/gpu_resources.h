@@ -17,13 +17,39 @@
 
 #pragma once
 
+#include "containers/custom_containers.h"
+#include "error_message/logging.h"
+#include "generated/error_location_helper.h"
 #include "vma/vma.h"
 
 #include <vector>
+#include <vulkan/vulkan.h>
 
-namespace gpuav {
-class Validator;
-struct DescBindingInfo;
+namespace gpu {
+
+class DescriptorSetManager {
+  public:
+    DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
+    ~DescriptorSetManager();
+
+    VkResult GetDescriptorSet(VkDescriptorPool *out_desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *out_desc_sets);
+    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
+                               std::vector<VkDescriptorSet> *out_desc_sets);
+    void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
+
+  private:
+    std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
+
+    static const uint32_t kItemsPerChunk = 512;
+    struct PoolTracker {
+        uint32_t size;
+        uint32_t used;
+    };
+    VkDevice device;
+    uint32_t num_bindings_in_set;
+    vvl::unordered_map<VkDescriptorPool, PoolTracker> desc_pool_map_;
+    mutable std::mutex lock_;
+};
 
 struct DeviceMemoryBlock {
     VkBuffer buffer = VK_NULL_HANDLE;
@@ -38,6 +64,12 @@ struct DeviceMemoryBlock {
     bool IsNull() { return buffer == VK_NULL_HANDLE; }
 };
 
+}  // namespace gpu
+
+namespace gpuav {
+class Validator;
+struct DescBindingInfo;
+
 class GpuResourcesManager {
   public:
     void AddPipeline(VkPipeline);
@@ -46,7 +78,7 @@ class GpuResourcesManager {
     std::vector<VkPipeline> pipelines_;
     std::vector<VkDescriptorPool> descriptor_pools_;
     std::vector<VkDescriptorSet> descriptor_sets_;
-    std::vector<DeviceMemoryBlock> buffers_;
+    std::vector<gpu::DeviceMemoryBlock> buffers_;
     std::vector<VkShaderModule> shader_modules_;
     std::vector<VkDescriptorSetLayout> descriptor_set_layouts_;
     std::vector<VkPipelineLayout> pipeline_layouts_;

@@ -18,13 +18,15 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
 
+namespace gpu {
 class GpuShaderInstrumentor;
+}
 
 namespace gpu_tracker {
 
 class Queue : public vvl::Queue {
   public:
-    Queue(GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
           const VkQueueFamilyProperties &queueFamilyProperties);
     virtual ~Queue();
 
@@ -34,7 +36,7 @@ class Queue : public vvl::Queue {
     void SubmitBarrier(const Location &loc, uint64_t seq);
     void Retire(vvl::QueueSubmission &) override;
 
-    GpuShaderInstrumentor &shader_instrumentor_;
+    gpu::GpuShaderInstrumentor &shader_instrumentor_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
@@ -43,7 +45,7 @@ class Queue : public vvl::Queue {
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    CommandBuffer(GpuShaderInstrumentor &shader_instrumentor_, VkCommandBuffer handle,
+    CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkCommandBuffer handle,
                   const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
 
     virtual bool PreProcess() = 0;

@@ -19,7 +19,7 @@
 
 #include "gpu/error_message/gpuav_error_message.h"
 #include "gpu/resources/gpuav_descriptor_set.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpu_resources.h"
 #include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 
 #include <unordered_map>
@@ -53,7 +53,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
 
-class Validator : public GpuShaderInstrumentor {
+class Validator : public gpu::GpuShaderInstrumentor {
     using BaseClass = GpuShaderInstrumentor;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
@@ -94,7 +94,7 @@ class Validator : public GpuShaderInstrumentor {
     [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(VkCommandBuffer cmd_buffer,
                                                                               VkPipelineBindPoint bind_point, const Location& loc);
     // Allocate memory for the output block that the gpu will use to return any error information
-    [[nodiscard]] bool AllocateOutputMem(DeviceMemoryBlock& output_mem, const Location& loc);
+    [[nodiscard]] bool AllocateOutputMem(gpu::DeviceMemoryBlock& output_mem, const Location& loc);
 
   private:
     void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,

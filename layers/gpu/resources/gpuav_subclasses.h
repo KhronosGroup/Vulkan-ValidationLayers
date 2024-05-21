@@ -22,7 +22,7 @@
 
 #include "gpu/core/gpuav_state_tracker.h"
 #include "gpu/resources/gpuav_descriptor_set.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpu_resources.h"
 #include "generated/vk_object_types.h"
 #include "gpu_shaders/gpu_shaders_constants.h"
 
@@ -114,7 +114,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
         return cmd_errors_counts_buffer_.buffer;
     }
 
-    const DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
+    const gpu::DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
     void ClearCmdErrorsCountsBuffer() const;
 
@@ -138,12 +138,12 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 
     // Buffer storing GPU-AV errors
-    DeviceMemoryBlock error_output_buffer_ = {};
+    gpu::DeviceMemoryBlock error_output_buffer_ = {};
     // Buffer storing an error count per validated commands.
     // Used to limit the number of errors a single command can emit.
-    DeviceMemoryBlock cmd_errors_counts_buffer_ = {};
+    gpu::DeviceMemoryBlock cmd_errors_counts_buffer_ = {};
     // Buffer storing a snapshot of buffer device address ranges
-    DeviceMemoryBlock bda_ranges_snapshot_ = {};
+    gpu::DeviceMemoryBlock bda_ranges_snapshot_ = {};
     uint32_t bda_ranges_snapshot_version_ = 0;
 };
 

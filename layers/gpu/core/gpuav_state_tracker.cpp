@@ -20,11 +20,11 @@
 
 namespace gpu_tracker {
 
-CommandBuffer::CommandBuffer(GpuShaderInstrumentor &shader_instrumentor, VkCommandBuffer handle,
+CommandBuffer::CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor, VkCommandBuffer handle,
                              const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
     : vvl::CommandBuffer(shader_instrumentor, handle, pCreateInfo, pool) {}
 
-Queue::Queue(GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
              const VkQueueFamilyProperties &queueFamilyProperties)
     : vvl::Queue(shader_instrumentor, q, index, flags, queueFamilyProperties), shader_instrumentor_(shader_instrumentor) {}
 

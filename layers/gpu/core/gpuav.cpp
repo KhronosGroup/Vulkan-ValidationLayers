@@ -575,7 +575,7 @@ CommandResources Validator::SetupShaderInstrumentationResources(VkCommandBuffer 
     return SetupShaderInstrumentationResources(cb_node, bind_point, loc);
 }
 
-bool Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location &loc) {
+bool Validator::AllocateOutputMem(gpu::DeviceMemoryBlock &output_mem, const Location &loc) {
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = output_buffer_byte_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
