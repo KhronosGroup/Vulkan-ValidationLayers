@@ -2466,14 +2466,6 @@ bool CoreChecks::GroupHasValidIndex(const vvl::Pipeline &pipeline, uint32_t grou
     return false;
 }
 
-static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
-    const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
-    if (validation_cache_ci) {
-        return CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache);
-    }
-    return nullptr;
-}
-
 // This is done in PreCallRecord to help with the interaction with GPU-AV
 // See diagram on https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6230
 void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
@@ -2550,7 +2542,10 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         return skip;  // if pCode is garbage, don't pass along to spirv-val
     }
 
-    ValidationCache *cache = GetValidationCacheInfo(pCreateInfo);
+    const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
+    ValidationCache *cache =
+        validation_cache_ci ? CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache) : nullptr;
+
     uint32_t hash = 0;
     // If app isn't using a shader validation cache, use the default one from CoreChecks
     if (!cache) {
