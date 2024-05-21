@@ -228,8 +228,8 @@ target_sources(vvl PRIVATE
     gpu/cmd_validation/gpuav_copy_buffer_to_image.cpp
     gpu/core/gpuav.h
     gpu/core/gpuav.cpp
-    gpu/core/gpuav_state_tracker.cpp
-    gpu/core/gpuav_state_tracker.h
+    gpu/core/gpu_state_tracker.cpp
+    gpu/core/gpu_state_tracker.h
     gpu/core/gpuav_record.cpp
     gpu/core/gpuav_setup.cpp
     gpu/core/gpuav_image_layout.cpp
@@ -241,6 +241,8 @@ target_sources(vvl PRIVATE
     gpu/error_message/gpuav_vuids.h
     gpu/instrumentation/gpu_shader_instrumentor.cpp
     gpu/instrumentation/gpu_shader_instrumentor.h
+    gpu/instrumentation/gpuav_instrumentation.h
+    gpu/instrumentation/gpuav_instrumentation.cpp
     gpu/resources/gpuav_descriptor_set.cpp
     gpu/resources/gpuav_descriptor_set.h
     gpu/resources/gpuav_subclasses.cpp

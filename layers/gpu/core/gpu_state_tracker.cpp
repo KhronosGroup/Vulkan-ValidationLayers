@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "gpu/core/gpuav_state_tracker.h"
+#include "gpu/core/gpu_state_tracker.h"
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"
 
 namespace gpu_tracker {

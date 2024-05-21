@@ -16,7 +16,7 @@
  */
 #pragma once
 #include "generated/chassis.h"
-#include "gpu/core/gpuav_state_tracker.h"
+#include "gpu/core/gpu_state_tracker.h"
 #include "gpu/resources/gpu_resources.h"
 #include "vma/vma.h"
 

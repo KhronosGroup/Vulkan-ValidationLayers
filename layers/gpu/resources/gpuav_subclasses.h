@@ -20,7 +20,7 @@
 #include <vector>
 #include <mutex>
 
-#include "gpu/core/gpuav_state_tracker.h"
+#include "gpu/core/gpu_state_tracker.h"
 #include "gpu/resources/gpuav_descriptor_set.h"
 #include "gpu/resources/gpu_resources.h"
 #include "generated/vk_object_types.h"
