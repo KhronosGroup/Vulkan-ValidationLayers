@@ -17,32 +17,10 @@
 #pragma once
 #include "generated/chassis.h"
 #include "gpu/core/gpuav_state_tracker.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpu_resources.h"
 #include "vma/vma.h"
 
-class DescriptorSetManager {
-  public:
-    DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
-    ~DescriptorSetManager();
-
-    VkResult GetDescriptorSet(VkDescriptorPool *out_desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *out_desc_sets);
-    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
-                               std::vector<VkDescriptorSet> *out_desc_sets);
-    void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
-
-  private:
-    std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
-
-    static const uint32_t kItemsPerChunk = 512;
-    struct PoolTracker {
-        uint32_t size;
-        uint32_t used;
-    };
-    VkDevice device;
-    uint32_t num_bindings_in_set;
-    vvl::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
-    mutable std::mutex lock_;
-};
+namespace gpu {
 
 struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
@@ -184,7 +162,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
 
-    gpuav::DeviceMemoryBlock indices_buffer{};
+    DeviceMemoryBlock indices_buffer{};
 
   private:
     void Cleanup();
@@ -194,3 +172,5 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     VkDescriptorSetLayout debug_desc_layout_ = VK_NULL_HANDLE;
     VkPipelineLayout debug_pipeline_layout_ = VK_NULL_HANDLE;
 };
+
+}  // namespace gpu

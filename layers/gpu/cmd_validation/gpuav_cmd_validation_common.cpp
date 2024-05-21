@@ -18,7 +18,7 @@
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
 
 #include "gpu/core/gpuav.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpu_resources.h"
 
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"

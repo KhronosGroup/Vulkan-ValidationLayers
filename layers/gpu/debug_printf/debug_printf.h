@@ -78,9 +78,9 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf::CommandBuffer, vvl::CommandBuffer)
 
 namespace debug_printf {
-class Validator : public GpuShaderInstrumentor {
+class Validator : public gpu::GpuShaderInstrumentor {
   public:
-    using BaseClass = GpuShaderInstrumentor;
+    using BaseClass = gpu::GpuShaderInstrumentor;
     Validator() {
         container_type = LayerObjectTypeDebugPrintf;
         desired_features.vertexPipelineStoresAndAtomics = true;

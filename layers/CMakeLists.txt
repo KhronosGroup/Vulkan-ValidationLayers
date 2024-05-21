@@ -245,7 +245,8 @@ target_sources(vvl PRIVATE
     gpu/resources/gpuav_descriptor_set.h
     gpu/resources/gpuav_subclasses.cpp
     gpu/resources/gpuav_subclasses.h
-    gpu/resources/gpuav_resources.h
+    gpu/resources/gpu_resources.h
+    gpu/resources/gpu_resources.cpp
     gpu_shaders/gpu_error_codes.h
     gpu_shaders/gpu_error_header.h
     gpu_shaders/gpu_shaders_constants.h
