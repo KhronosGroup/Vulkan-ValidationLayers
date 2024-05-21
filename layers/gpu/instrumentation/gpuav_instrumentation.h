@@ -16,3 +16,11 @@
  */
 
 #pragma once
+
+#include "vma/vma.h"
+
+namespace gpuav {
+class CommandBuffer;
+
+void UpdateInstrumentationBuffer(CommandBuffer& cb_node, VmaAllocator vmaAllocator);
+}  // namespace gpuav

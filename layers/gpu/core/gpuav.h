@@ -78,7 +78,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
                           uint32_t unique_shader_id, const Location& loc) override;
     bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, chassis::CreateShaderModule& chassis_state);
     bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, chassis::ShaderObject& chassis_state);
-    void UpdateInstrumentationBuffer(CommandBuffer& cb_node);
 
     void UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                              const Location& loc);

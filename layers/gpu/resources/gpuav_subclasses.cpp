@@ -16,12 +16,13 @@
  */
 
 #include "gpu/resources/gpuav_subclasses.h"
+
 #include "gpu/core/gpuav.h"
-#include "gpu/error_message/gpuav_vuids.h"
-#include "drawdispatch/descriptor_validator.h"
-#include "spirv-tools/instrument.hpp"
-#include "gpu_shaders/gpu_error_header.h"
 #include "gpu/core/gpuav_constants.h"
+#include "gpu/error_message/gpuav_vuids.h"
+#include "gpu/instrumentation/gpuav_instrumentation.h"
+#include "drawdispatch/descriptor_validator.h"
+#include "gpu_shaders/gpu_error_header.h"
 
 namespace gpuav {
 
@@ -412,7 +413,7 @@ void CommandBuffer::ClearCmdErrorsCountsBuffer() const {
 }
 
 bool CommandBuffer::PreProcess() {
-    state_.UpdateInstrumentationBuffer(*this);
+    gpuav::UpdateInstrumentationBuffer(*this, state_.vmaAllocator);
     const bool succeeded = UpdateBdaRangesBuffer();
     if (!succeeded) {
         return false;
