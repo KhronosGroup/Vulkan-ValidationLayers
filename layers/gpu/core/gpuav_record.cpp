@@ -357,7 +357,7 @@ void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t ver
     BaseClass::PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
 
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -369,7 +369,7 @@ void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint
                                             record_obj);
     for (uint32_t i = 0; i < drawCount; i++) {
         CommandResources cmd_resources =
-            AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+            SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
     }
@@ -381,7 +381,7 @@ void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint3
     BaseClass::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
                                            record_obj);
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -394,7 +394,7 @@ void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffe
                                                    pVertexOffset, record_obj);
     for (uint32_t i = 0; i < drawCount; i++) {
         CommandResources cmd_resources =
-            AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+            SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
     }
@@ -443,7 +443,7 @@ void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer command
     BaseClass::PreCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
                                                         counterBufferOffset, counterOffset, vertexStride, record_obj);
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -471,7 +471,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u
                                                 const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -499,7 +499,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, 
                                                  uint32_t groupCountZ, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -527,7 +527,7 @@ void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t
                                          const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDispatch(commandBuffer, x, y, z, record_obj);
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -547,7 +547,7 @@ void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint
                                             groupCountZ, record_obj);
 
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -573,7 +573,7 @@ void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuf
                                            callableShaderBindingStride, width, height, depth, record_obj);
 
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -588,7 +588,7 @@ void Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                             pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth, record_obj);
 
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }
@@ -612,7 +612,7 @@ void Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuf
     BaseClass::PreCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, record_obj);
 
     CommandResources cmd_resources =
-        AllocateActionCommandResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        SetupShaderInstrumentationResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
     StoreCommandResources(commandBuffer, std::move(cmd_resources_ptr), record_obj.location);
 }

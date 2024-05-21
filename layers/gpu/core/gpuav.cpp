@@ -223,8 +223,8 @@ bool Validator::CheckForCachedInstrumentedShader(uint32_t index, uint32_t shader
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-void Validator::UpdateInstrumentationBuffer(CommandBuffer *cb_node) {
-    for (auto &cmd_info : cb_node->di_input_buffer_list) {
+void Validator::UpdateInstrumentationBuffer(CommandBuffer &cb_node) {
+    for (auto &cmd_info : cb_node.di_input_buffer_list) {
         glsl::BindlessStateBuffer *bindless_state{nullptr};
         [[maybe_unused]] VkResult result;
         result = vmaMapMemory(vmaAllocator, cmd_info.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
@@ -374,9 +374,8 @@ void Validator::BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuf
 
 // Common resource allocations functions
 
-CommandResources Validator::AllocateActionCommandResources(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer,
-                                                           VkPipelineBindPoint bind_point, const Location &loc,
-                                                           const CmdIndirectState *indirect_state /*= nullptr*/) {
+CommandResources Validator::SetupShaderInstrumentationResources(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer,
+                                                                VkPipelineBindPoint bind_point, const Location &loc) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         assert(false);
@@ -566,15 +565,14 @@ CommandResources Validator::AllocateActionCommandResources(const LockedSharedPtr
     return cmd_resources;
 }
 
-CommandResources Validator::AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
-                                                           const Location &loc,
-                                                           const CmdIndirectState *indirect_state /*= nullptr*/) {
+CommandResources Validator::SetupShaderInstrumentationResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
+                                                                const Location &loc) {
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return CommandResources();
     }
-    return AllocateActionCommandResources(cb_node, bind_point, loc, indirect_state);
+    return SetupShaderInstrumentationResources(cb_node, bind_point, loc);
 }
 
 bool Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location &loc) {

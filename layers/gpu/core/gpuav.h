@@ -78,7 +78,7 @@ class Validator : public GpuShaderInstrumentor {
                           uint32_t unique_shader_id, const Location& loc) override;
     bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, chassis::CreateShaderModule& chassis_state);
     bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, chassis::ShaderObject& chassis_state);
-    void UpdateInstrumentationBuffer(CommandBuffer* cb_node);
+    void UpdateInstrumentationBuffer(CommandBuffer& cb_node);
 
     void UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                              const Location& loc);
@@ -88,15 +88,11 @@ class Validator : public GpuShaderInstrumentor {
                                          VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
                                          uint32_t resource_index);
 
-    // Should only be used by action commands.
-    // Allocate per action (draw, dispatch, trace rays) command validation resources,
-    // and bind descriptor sets needed for shader instrumentation.
-    [[nodiscard]] gpuav::CommandResources AllocateActionCommandResources(
+    [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(
         const LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard>& cmd_buffer, VkPipelineBindPoint bind_point,
-        const Location& loc, const CmdIndirectState* indirect_state = nullptr);
-    [[nodiscard]] gpuav::CommandResources AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
-                                                                         const Location& loc,
-                                                                         const CmdIndirectState* indirect_state = nullptr);
+        const Location& loc);
+    [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(VkCommandBuffer cmd_buffer,
+                                                                              VkPipelineBindPoint bind_point, const Location& loc);
     // Allocate memory for the output block that the gpu will use to return any error information
     [[nodiscard]] bool AllocateOutputMem(DeviceMemoryBlock& output_mem, const Location& loc);
 

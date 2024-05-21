@@ -34,7 +34,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
     }
 
     if (!gpuav_settings.validate_indirect_dispatches_buffers) {
-        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
@@ -107,7 +107,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
                                       glsl::kDiagPerCmdDescriptorSet, 1, &dispatch_resources->indirect_buffer_desc_set, 0, nullptr);
         DispatchCmdDispatch(cmd_buffer, 1, 1, 1);
 
-        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
         if (aborted) {
             return nullptr;
         }
