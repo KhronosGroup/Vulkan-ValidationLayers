@@ -212,18 +212,6 @@ void Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipeline
     }
 }
 
-void Validator::BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
-                                                VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
-                                                uint32_t cmd_index, uint32_t resource_index) {
-    assert(cmd_index < cst::indices_count);
-    assert(resource_index < cst::indices_count);
-    std::array<uint32_t, 2> dynamic_offsets = {
-        {cmd_index * static_cast<uint32_t>(sizeof(uint32_t)), resource_index * static_cast<uint32_t>(sizeof(uint32_t))}};
-    DispatchCmdBindDescriptorSets(cmd_buffer_state->VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
-                                  &cmd_buffer_state->GetValidationCmdCommonDescriptorSet(),
-                                  static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
-}
-
 bool Validator::AllocateOutputMem(gpu::DeviceMemoryBlock &output_mem, const Location &loc) {
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = output_buffer_byte_size;

@@ -18,12 +18,27 @@
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
 
 #include "gpu/core/gpuav.h"
+#include "gpu/core/gpuav_constants.h"
+#include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/resources/gpu_resources.h"
+#include "gpu_shaders/gpu_shaders_constants.h"
 
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
 
 namespace gpuav {
+
+void Validator::BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
+                                                VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
+                                                uint32_t cmd_index, uint32_t resource_index) {
+    assert(cmd_index < cst::indices_count);
+    assert(resource_index < cst::indices_count);
+    std::array<uint32_t, 2> dynamic_offsets = {
+        {cmd_index * static_cast<uint32_t>(sizeof(uint32_t)), resource_index * static_cast<uint32_t>(sizeof(uint32_t))}};
+    DispatchCmdBindDescriptorSets(cmd_buffer_state->VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
+                                  &cmd_buffer_state->GetValidationCmdCommonDescriptorSet(),
+                                  static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+}
 
 void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point) {
     pipeline_bind_point = bind_point;
