@@ -194,6 +194,10 @@ class CommandBuffer : public RefcountedStateObject {
         bool rtx_stack_size_pipeline;  // for lifetime since last bound pipeline
     } dynamic_state_status;
 
+    // Return true if the corresponding vkCmdSet* call has occured in the command buffer.
+    // Used to know if the DynamicStateValue will be valid or not to read.
+    bool IsDynamicStateSet(CBDynamicState state) const { return dynamic_state_status.cb[state]; }
+
     // These are values that are being set with vkCmdSet* tied to a command buffer
     struct DynamicStateValue {
         // VK_DYNAMIC_STATE_STENCIL_WRITE_MASK

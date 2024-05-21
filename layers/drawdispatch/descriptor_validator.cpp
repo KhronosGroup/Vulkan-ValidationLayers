@@ -565,7 +565,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                     depth_feedback_loop = false;
                     stencil_feedback_loop = false;
                 }
-            } else if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT]) {
+            } else if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT)) {
                 if ((cb_state.dynamic_state_value.attachment_feedback_loop_enable & VK_IMAGE_ASPECT_COLOR_BIT) == 0) {
                     color_feedback_loop = false;
                 }

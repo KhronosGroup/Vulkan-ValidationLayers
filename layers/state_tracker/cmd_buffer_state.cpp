@@ -1202,7 +1202,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
     }
 
     if (pipe->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
-        dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+        IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         SetActiveSubpassRasterizationSampleCount(dynamic_state_value.rasterization_samples);
     }
 
@@ -1706,7 +1706,7 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
 }
 bool CommandBuffer::HasDynamicDualSourceBlend(uint32_t attachmentCount) const {
     if (dynamic_state_value.color_blend_enabled.any()) {
-        if (dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT]) {
+        if (IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
             for (uint32_t i = 0; i < dynamic_state_value.color_blend_equations.size() && i < attachmentCount; ++i) {
                 const auto &color_blend_equation = dynamic_state_value.color_blend_equations[i];
                 if (IsSecondaryColorInputBlendFactor(color_blend_equation.srcColorBlendFactor) ||
