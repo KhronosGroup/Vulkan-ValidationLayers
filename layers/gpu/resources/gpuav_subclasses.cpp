@@ -412,7 +412,7 @@ void CommandBuffer::ClearCmdErrorsCountsBuffer() const {
 }
 
 bool CommandBuffer::PreProcess() {
-    state_.UpdateInstrumentationBuffer(this);
+    state_.UpdateInstrumentationBuffer(*this);
     const bool succeeded = UpdateBdaRangesBuffer();
     if (!succeeded) {
         return false;

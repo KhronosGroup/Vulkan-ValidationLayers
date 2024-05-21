@@ -33,7 +33,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
     }
 
     if (!gpuav_settings.validate_indirect_trace_rays_buffers) {
-        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
@@ -83,7 +83,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
         VkStridedDeviceAddressRegionKHR empty_sbt{};
         DispatchCmdTraceRaysKHR(cmd_buffer, &ray_gen_sbt, &empty_sbt, &empty_sbt, &empty_sbt, 1, 1, 1);
 
-        CommandResources cmd_resources = AllocateActionCommandResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
         if (aborted) {
             return nullptr;
         }
