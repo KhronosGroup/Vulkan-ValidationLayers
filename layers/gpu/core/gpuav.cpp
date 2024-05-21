@@ -54,28 +54,6 @@ VkDeviceAddress Validator::GetBufferDeviceAddress(VkBuffer buffer, const Locatio
     return 0;
 }
 
-bool Validator::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
-    // If no features are enabled, descriptor indexing is not being used actually
-    bool result =
-        enabled_features.descriptorIndexing || enabled_features.shaderInputAttachmentArrayDynamicIndexing ||
-        enabled_features.shaderUniformTexelBufferArrayDynamicIndexing ||
-        enabled_features.shaderStorageTexelBufferArrayDynamicIndexing ||
-        enabled_features.shaderUniformBufferArrayNonUniformIndexing || enabled_features.shaderSampledImageArrayNonUniformIndexing ||
-        enabled_features.shaderStorageBufferArrayNonUniformIndexing || enabled_features.shaderStorageImageArrayNonUniformIndexing ||
-        enabled_features.shaderInputAttachmentArrayNonUniformIndexing ||
-        enabled_features.shaderUniformTexelBufferArrayNonUniformIndexing ||
-        enabled_features.shaderStorageTexelBufferArrayNonUniformIndexing ||
-        enabled_features.descriptorBindingUniformBufferUpdateAfterBind ||
-        enabled_features.descriptorBindingSampledImageUpdateAfterBind ||
-        enabled_features.descriptorBindingStorageImageUpdateAfterBind ||
-        enabled_features.descriptorBindingStorageBufferUpdateAfterBind ||
-        enabled_features.descriptorBindingUniformTexelBufferUpdateAfterBind ||
-        enabled_features.descriptorBindingStorageTexelBufferUpdateAfterBind ||
-        enabled_features.descriptorBindingUpdateUnusedWhilePending || enabled_features.descriptorBindingPartiallyBound ||
-        enabled_features.descriptorBindingVariableDescriptorCount || enabled_features.runtimeDescriptorArray;
-    return result;
-}
-
 bool Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, chassis::CreateShaderModule &chassis_state) {
     auto it = instrumented_shaders.find(shader_hash);
     if (it != instrumented_shaders.end()) {

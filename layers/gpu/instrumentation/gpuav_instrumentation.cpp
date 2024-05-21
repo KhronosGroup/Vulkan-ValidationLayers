@@ -166,8 +166,6 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
     return true;
 }
 
-// Common resource allocations functions
-
 CommandResources Validator::SetupShaderInstrumentationResources(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer,
                                                                 VkPipelineBindPoint bind_point, const Location &loc) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&

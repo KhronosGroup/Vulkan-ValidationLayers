@@ -73,7 +73,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     // ------------------
   public:
     VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer, const Location& loc) const;
-    bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& instrumented_spirv,
                           uint32_t unique_shader_id, const Location& loc) override;
     bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, chassis::CreateShaderModule& chassis_state);
