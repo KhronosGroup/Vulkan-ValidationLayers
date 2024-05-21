@@ -239,8 +239,8 @@ target_sources(vvl PRIVATE
     gpu/error_message/gpuav_error_message.h
     gpu/error_message/gpuav_vuids.cpp
     gpu/error_message/gpuav_vuids.h
-    gpu/instrumentation/gpuav_shader_instrumentor.cpp
-    gpu/instrumentation/gpuav_shader_instrumentor.h
+    gpu/instrumentation/gpu_shader_instrumentor.cpp
+    gpu/instrumentation/gpu_shader_instrumentor.h
     gpu/resources/gpuav_descriptor_set.cpp
     gpu/resources/gpuav_descriptor_set.h
     gpu/resources/gpuav_subclasses.cpp
