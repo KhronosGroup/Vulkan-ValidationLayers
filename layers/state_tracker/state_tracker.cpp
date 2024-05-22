@@ -2277,8 +2277,8 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
             }
         }
 
-        if (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-            !pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipe_state->vertex_input_state) {
+        if (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+            !pipe_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipe_state->vertex_input_state) {
             for (const auto &description : pipe_state->vertex_input_state->binding_descriptions) {
                 cb_state->current_vertex_buffer_binding_info[description.binding].stride = description.stride;
             }
@@ -2287,8 +2287,8 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         // Used to calculate vvl::CommandBuffer::usedViewportScissorCount upon draw command with this graphics pipeline.
         // If rasterization disabled (no viewport/scissors used), or the actual number of viewports/scissors is dynamic (unknown at
         // this time), then these are set to 0 to disable this checking.
-        const auto has_dynamic_viewport_count = pipe_state->IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-        const auto has_dynamic_scissor_count = pipe_state->IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        const auto has_dynamic_viewport_count = pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        const auto has_dynamic_scissor_count = pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
         cb_state->pipelineStaticViewportCount =
             has_dynamic_viewport_count || !rasterization_enabled ? 0 : viewport_state->viewportCount;
         cb_state->pipelineStaticScissorCount =
@@ -2300,21 +2300,21 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         // I am taking the latter interpretation based on the implementation details of NVIDIA's Vulkan driver.
         if (!has_dynamic_viewport_count) {
             cb_state->trashedViewportCount = true;
-            if (rasterization_enabled && (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_VIEWPORT))) {
+            if (rasterization_enabled && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT))) {
                 cb_state->trashedViewportMask |= (uint32_t(1) << viewport_state->viewportCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
         if (!has_dynamic_scissor_count) {
             cb_state->trashedScissorCount = true;
-            if (rasterization_enabled && (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_SCISSOR))) {
+            if (rasterization_enabled && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR))) {
                 cb_state->trashedScissorMask |= (uint32_t(1) << viewport_state->scissorCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
     } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         cb_state->dynamic_state_status.rtx_stack_size_pipeline = false;
-        if (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
+        if (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
             cb_state->dynamic_state_status.rtx_stack_size_cb = false;  // invalidated
         }
     }
@@ -5236,7 +5236,7 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
+    if (pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
         cb_state->RecordDynamicState(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
 

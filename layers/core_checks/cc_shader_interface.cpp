@@ -165,7 +165,7 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, 
                                                  const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
     const auto *ms_state = pipeline.MultisampleState();
-    if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) && ms_state && ms_state->alphaToCoverageEnable) {
+    if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) && ms_state && ms_state->alphaToCoverageEnable) {
         // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
         // Currently lack support to test each index.
         if (!entrypoint.has_alpha_to_coverage_variable && !pipeline.DualSourceBlending()) {
@@ -211,7 +211,7 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
     bool skip = false;
 
     if (!create_info.pipeline || !create_info.pipeline->pre_raster_state || !create_info.pipeline->InputAssemblyState() ||
-        entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT || create_info.pipeline->IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+        entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT || create_info.pipeline->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         return skip;
     }
 
@@ -851,7 +851,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
     if (skip) return true;
 
     if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->spirv_state &&
-        !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+        !pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         skip |=
             ValidateInterfaceVertexInput(pipeline, *vertex_stage->spirv_state.get(), *vertex_stage->entrypoint, create_info_loc);
     }

@@ -1396,7 +1396,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info
                ((pipeline.create_info_shaders & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) ==
                 0) &&
                pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        const bool ignore_topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+        const bool ignore_topology = pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
                                      phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
         if (!entrypoint.written_builtin_point_size && !ignore_topology && !maintenance5) {
             skip |= LogError(
@@ -1422,7 +1422,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const StageCreateInfo &create_
     const auto viewport_state = pipeline.ViewportState();
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
         (pipeline.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && viewport_state->viewportCount > 1 &&
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && viewport_state->viewportCount > 1 &&
             entrypoint.written_builtin_primitive_shading_rate_khr) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
                              module_state.handle(), loc,
@@ -2096,7 +2096,7 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
         if (module_state.static_data_.has_shader_tile_image_depth_read) {
             const auto *ds_state = pipeline.DepthStencilState();
             const bool write_enabled =
-                !pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
             if (mode_early_fragment_test && write_enabled) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-08711", module_state.handle(), loc,
                                  "SPIR-V (Fragment stage) contains OpDepthAttachmentReadEXT, and depthWriteEnable is not false.");
@@ -2105,7 +2105,7 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
 
         if (module_state.static_data_.has_shader_tile_image_stencil_read) {
             const auto *ds_state = pipeline.DepthStencilState();
-            const bool is_write_mask_set = !pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK) &&
+            const bool is_write_mask_set = !pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK) &&
                                            (ds_state && (ds_state->front.writeMask != 0 || ds_state->back.writeMask != 0));
             if (mode_early_fragment_test && is_write_mask_set) {
                 skip |= LogError(
