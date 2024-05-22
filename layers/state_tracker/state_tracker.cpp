@@ -21,6 +21,7 @@
 #include <algorithm>
 
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "containers/custom_containers.h"
@@ -39,6 +40,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/device_generated_commands_state.h"
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
 
@@ -1004,6 +1006,8 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance7, &phys_dev_props->maintenance7_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_device_generated_commands,
+                                   &phys_dev_props->device_generated_commands_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_map_memory_placed, &phys_dev_props->map_memory_placed_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_pipeline_binary, &phys_dev_props->pipeline_binary_props);
@@ -4800,6 +4804,20 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuf
     cb_state->UpdateTraceRayCmd(record_obj.location.function);
 }
 
+void ValidationStateTracker::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                                          const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
+                                                                          const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        cb_state->UpdateDrawCmd(record_obj.location.function);
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+        cb_state->UpdateDispatchCmd(record_obj.location.function);
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        cb_state->UpdateTraceRayCmd(record_obj.location.function);
+    }
+}
+
 void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                              const RecordObject &record_obj,
@@ -5694,4 +5712,57 @@ void ValidationStateTracker::PostCallRecordLatencySleepNV(VkDevice device, VkSwa
     if (auto semaphore_state = Get<vvl::Semaphore>(pSleepInfo->signalSemaphore)) {
         semaphore_state->RetireWait(nullptr, pSleepInfo->value, record_obj.location);
     }
+}
+
+void ValidationStateTracker::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
+                                                                         const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo,
+                                                                         const VkAllocationCallbacks *pAllocator,
+                                                                         VkIndirectExecutionSetEXT *pIndirectExecutionSet,
+                                                                         const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+
+    std::shared_ptr<vvl::IndirectExecutionSet> indirect_execution_state =
+        std::make_shared<vvl::IndirectExecutionSet>(*this, *pIndirectExecutionSet, pCreateInfo);
+
+    if (indirect_execution_state->is_pipeline && pCreateInfo->info.pPipelineInfo) {
+        const VkIndirectExecutionSetPipelineInfoEXT &pipeline_info = *pCreateInfo->info.pPipelineInfo;
+        indirect_execution_state->initial_pipeline = Get<vvl::Pipeline>(pipeline_info.initialPipeline);
+        indirect_execution_state->shader_stage_flags = indirect_execution_state->initial_pipeline->active_shaders;
+    } else if (indirect_execution_state->is_shader_objects && pCreateInfo->info.pShaderInfo) {
+        const VkIndirectExecutionSetShaderInfoEXT &shader_info = *pCreateInfo->info.pShaderInfo;
+        for (uint32_t i = 0; i < shader_info.shaderCount; i++) {
+            const VkShaderEXT shader_handle = shader_info.pInitialShaders[i];
+            const auto shader_object = Get<vvl::ShaderObject>(shader_handle);
+            ASSERT_AND_CONTINUE(shader_object);
+            indirect_execution_state->shader_stage_flags |= shader_object->create_info.stage;
+            if (shader_object->create_info.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                indirect_execution_state->initial_fragment_shader_object = shader_object;
+            }
+        }
+    }
+
+    Add(std::move(indirect_execution_state));
+}
+
+void ValidationStateTracker::PostCallRecordDestroyIndirectExecutionSetEXT(VkDevice device,
+                                                                          VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                                          const VkAllocationCallbacks *pAllocator,
+                                                                          const RecordObject &record_obj) {
+    Destroy<vvl::IndirectExecutionSet>(indirectExecutionSet);
+}
+
+void ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device,
+                                                                           const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo,
+                                                                           const VkAllocationCallbacks *pAllocator,
+                                                                           VkIndirectCommandsLayoutEXT *pIndirectCommandsLayout,
+                                                                           const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+    Add(std::make_shared<vvl::IndirectCommandsLayout>(*this, *pIndirectCommandsLayout, pCreateInfo));
+}
+
+void ValidationStateTracker::PostCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device,
+                                                                            VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                                            const VkAllocationCallbacks *pAllocator,
+                                                                            const RecordObject &record_obj) {
+    Destroy<vvl::IndirectCommandsLayout>(indirectCommandsLayout);
 }

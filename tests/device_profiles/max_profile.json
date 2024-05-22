@@ -83,6 +83,10 @@
                 "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV": {
                     "deviceGeneratedCommands": true
                 },
+                "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT": {
+                    "deviceGeneratedCommandsEXT": true,
+                    "dynamicGeneratedPipelineLayout": true
+                },
                 "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV": {
                     "deviceGeneratedCompute": true,
                     "deviceGeneratedComputePipelines": true,
@@ -1136,6 +1140,64 @@
                     "maxIndirectCommandsTokenOffset": 4294967000,
                     "maxIndirectCommandsStreamStride": 4294967000
                 },
+                "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT": {
+                    "maxIndirectPipelineCount": 4096,
+                    "maxIndirectShaderObjectCount": 4096,
+                    "maxIndirectSequenceCount": 4096,
+                    "maxIndirectCommandsTokenCount": 16,
+                    "maxIndirectCommandsTokenOffset": 2048,
+                    "maxIndirectCommandsIndirectStride": 2048,
+                    "supportedIndirectCommandsShaderStages": [
+                        "VK_SHADER_STAGE_VERTEX_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT",
+                        "VK_SHADER_STAGE_GEOMETRY_BIT",
+                        "VK_SHADER_STAGE_FRAGMENT_BIT",
+                        "VK_SHADER_STAGE_COMPUTE_BIT",
+                        "VK_SHADER_STAGE_RAYGEN_BIT_KHR",
+                        "VK_SHADER_STAGE_ANY_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_MISS_BIT_KHR",
+                        "VK_SHADER_STAGE_INTERSECTION_BIT_KHR",
+                        "VK_SHADER_STAGE_CALLABLE_BIT_KHR",
+                        "VK_SHADER_STAGE_TASK_BIT_EXT",
+                        "VK_SHADER_STAGE_MESH_BIT_EXT"
+                    ],
+                    "supportedIndirectCommandsShaderStagesPipelineBinding": [
+                        "VK_SHADER_STAGE_VERTEX_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT",
+                        "VK_SHADER_STAGE_GEOMETRY_BIT",
+                        "VK_SHADER_STAGE_FRAGMENT_BIT",
+                        "VK_SHADER_STAGE_COMPUTE_BIT",
+                        "VK_SHADER_STAGE_RAYGEN_BIT_KHR",
+                        "VK_SHADER_STAGE_ANY_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_MISS_BIT_KHR",
+                        "VK_SHADER_STAGE_INTERSECTION_BIT_KHR",
+                        "VK_SHADER_STAGE_CALLABLE_BIT_KHR",
+                        "VK_SHADER_STAGE_TASK_BIT_EXT",
+                        "VK_SHADER_STAGE_MESH_BIT_EXT"
+                    ],
+                    "supportedIndirectCommandsShaderStagesShaderBinding": [
+                        "VK_SHADER_STAGE_VERTEX_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT",
+                        "VK_SHADER_STAGE_GEOMETRY_BIT",
+                        "VK_SHADER_STAGE_FRAGMENT_BIT",
+                        "VK_SHADER_STAGE_COMPUTE_BIT",
+                        "VK_SHADER_STAGE_RAYGEN_BIT_KHR",
+                        "VK_SHADER_STAGE_ANY_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_MISS_BIT_KHR",
+                        "VK_SHADER_STAGE_INTERSECTION_BIT_KHR",
+                        "VK_SHADER_STAGE_CALLABLE_BIT_KHR",
+                        "VK_SHADER_STAGE_TASK_BIT_EXT",
+                        "VK_SHADER_STAGE_MESH_BIT_EXT"
+                    ],
+                    "deviceGeneratedCommandsTransformFeedback": true,
+                    "deviceGeneratedCommandsMultiDrawIndirectCount": true
+                },
                 "VkPhysicalDeviceMultiDrawPropertiesEXT": {
                     "maxMultiDrawCount": 1024
                 },
@@ -1891,6 +1953,7 @@
                 "VK_EXT_descriptor_indexing": 1,
                 "VK_EXT_device_address_binding_report": 1,
                 "VK_EXT_device_fault": 1,
+                "VK_EXT_device_generated_commands": 1,
                 "VK_EXT_device_memory_report": 1,
                 "VK_EXT_direct_mode_display": 1,
                 "VK_EXT_directfb_surface": 1,

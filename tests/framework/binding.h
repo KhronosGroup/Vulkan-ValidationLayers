@@ -80,6 +80,8 @@ class DescriptorSetPool;
 class DescriptorSet;
 class CommandBuffer;
 class CommandPool;
+class IndirectCommandsLayout;
+class IndirectExecutionSet;
 
 std::vector<VkLayerProperties> GetGlobalLayers();
 std::vector<VkExtensionProperties> GetGlobalExtensions();
@@ -1413,5 +1415,27 @@ inline VkCopyDescriptorSet Device::copy_descriptor_set(const DescriptorSet &src_
 
     return copy;
 }
+
+class IndirectCommandsLayout : public internal::NonDispHandle<VkIndirectCommandsLayoutEXT> {
+  public:
+    ~IndirectCommandsLayout() noexcept;
+    void destroy() noexcept;
+
+    explicit IndirectCommandsLayout() : NonDispHandle() {}
+    explicit IndirectCommandsLayout(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info) { Init(dev, info); }
+    void Init(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info);
+};
+
+class IndirectExecutionSet : public internal::NonDispHandle<VkIndirectExecutionSetEXT> {
+  public:
+    ~IndirectExecutionSet() noexcept;
+    void destroy() noexcept;
+
+    explicit IndirectExecutionSet() : NonDispHandle() {}
+    explicit IndirectExecutionSet(const Device &dev, const VkIndirectExecutionSetCreateInfoEXT &info) { Init(dev, info); }
+    explicit IndirectExecutionSet(const Device &dev, VkPipeline init_pipeline, uint32_t max_pipelines);
+    explicit IndirectExecutionSet(const Device &dev, const VkIndirectExecutionSetShaderInfoEXT &shader_info);
+    void Init(const Device &dev, const VkIndirectExecutionSetCreateInfoEXT &info);
+};
 
 }  // namespace vkt

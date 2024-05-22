@@ -252,6 +252,15 @@ bool StatelessValidation::ValidateCreateGraphicsPipelinesFlags(const VkPipelineC
         }
     }
 
+    if ((flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT) != 0) {
+        if (!enabled_features.deviceGeneratedCommands) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-11000", device, flags_loc,
+                             "(%s) contains VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT, but "
+                             "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT::deviceGeneratedCommands is not enabled.",
+                             string_VkPipelineCreateFlags2KHR(flags).c_str());
+        }
+    }
+
     if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
         if (!enabled_features.graphicsPipelineLibrary) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device, flags_loc,
@@ -1246,6 +1255,14 @@ bool StatelessValidation::ValidateCreateComputePipelinesFlags(const VkPipelineCr
         skip |= LogError("VUID-VkComputePipelineCreateInfo-flags-07996", device, flags_loc,
                          "(%s) must not include VK_PIPELINE_CREATE_RAY_TRACING_DISPLACEMENT_MICROMAP_BIT_NV.",
                          string_VkPipelineCreateFlags2KHR(flags).c_str());
+    }
+    if ((flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT) != 0) {
+        if (!enabled_features.deviceGeneratedCommands) {
+            skip |= LogError("VUID-VkComputePipelineCreateInfo-flags-11007", device, flags_loc,
+                             "(%s) contains VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT, but "
+                             "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT::deviceGeneratedCommands is not enabled.",
+                             string_VkPipelineCreateFlags2KHR(flags).c_str());
+        }
     }
     return skip;
 }

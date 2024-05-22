@@ -536,6 +536,8 @@ struct EntryPoint {
                const AccessChainVariableMap &access_chain_map, const VariableAccessMap &variable_access_map,
                const DebugNameMap &debug_name_map);
 
+    bool HasBuiltIn(spv::BuiltIn built_in) const;
+
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
     static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint,

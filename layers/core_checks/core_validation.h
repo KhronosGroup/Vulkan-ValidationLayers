@@ -2503,6 +2503,61 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                    const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
                                                    uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
+
+    bool PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
+                                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         const ErrorObject& error_obj) const override;
+
+    bool ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info,
+                                                  const Location& pipeline_info_loc) const;
+    bool ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutionSetShaderInfoEXT& shader_info,
+                                                const Location& shader_info_loc) const;
+    bool PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       const ErrorObject& error_obj) const override;
+
+    bool PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                       const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                       const ErrorObject& error_obj) const override;
+    bool ValidateGeneratedCommandsInitialShaderState(const vvl::CommandBuffer& cb_state,
+                                                     const vvl::IndirectCommandsLayout& indirect_commands_layout,
+                                                     const vvl::IndirectExecutionSet& indirect_execution_set,
+                                                     VkShaderStageFlags shader_stage_flags, const LogObjectList& objlist,
+                                                     const Location cb_loc) const;
+    bool ValidatePreprocessGeneratedCommandsStateCommandBuffer(const vvl::CommandBuffer& command_buffer,
+                                                               const vvl::CommandBuffer& state_command_buffer,
+                                                               const vvl::IndirectCommandsLayout& indirect_commands_layout,
+                                                               const VkGeneratedCommandsInfoEXT& generated_commands_info,
+                                                               const Location loc) const;
+    bool PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                                          const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                          VkCommandBuffer stateCommandBuffer,
+                                                          const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
+                                                                  const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
+                                                                  VkMemoryRequirements2* pMemoryRequirements,
+                                                                  const ErrorObject& error_obj) const override;
+    bool PreCallValidateUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                              uint32_t executionSetWriteCount,
+                                                              const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites,
+                                                              const ErrorObject& error_obj) const override;
+    bool PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                            uint32_t executionSetWriteCount,
+                                                            const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
+                                                            const ErrorObject& error_obj) const override;
+    bool ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_state,
+                                       const vvl::IndirectCommandsLayout& indirect_commands_layout,
+                                       const VkGeneratedCommandsInfoEXT& generated_commands_info, bool preprocessed,
+                                       const Location& info_loc) const;
+
     bool ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR& location_info,
                                                  const LogObjectList objlist, const Location& loc_info) const;
     bool PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,

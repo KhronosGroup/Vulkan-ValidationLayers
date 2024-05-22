@@ -26304,6 +26304,9 @@ bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCom
                                        pGeneratedCommandsInfo->indirectCommandsLayout);
     }
     skip |= ValidateRequiredHandle(loc.dot(Field::stateCommandBuffer), stateCommandBuffer);
+    if (!skip)
+        skip |= manual_PreCallValidateCmdPreprocessGeneratedCommandsEXT(commandBuffer, pGeneratedCommandsInfo, stateCommandBuffer,
+                                                                        error_obj);
     return skip;
 }
 
@@ -26328,6 +26331,9 @@ bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkComman
         skip |= ValidateRequiredHandle(pGeneratedCommandsInfo_loc.dot(Field::indirectCommandsLayout),
                                        pGeneratedCommandsInfo->indirectCommandsLayout);
     }
+    if (!skip)
+        skip |=
+            manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, error_obj);
     return skip;
 }
 
@@ -26384,6 +26390,9 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevic
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pIndirectCommandsLayout), pIndirectCommandsLayout,
                                     "VUID-vkCreateIndirectCommandsLayoutEXT-pIndirectCommandsLayout-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateCreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
+                                                                      error_obj);
     return skip;
 }
 
@@ -26425,6 +26434,9 @@ bool StatelessValidation::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice 
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pIndirectExecutionSet), pIndirectExecutionSet,
                                     "VUID-vkCreateIndirectExecutionSetEXT-pIndirectExecutionSet-parameter");
+    if (!skip)
+        skip |=
+            manual_PreCallValidateCreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator, pIndirectExecutionSet, error_obj);
     return skip;
 }
 

@@ -26,6 +26,7 @@
 #include "utils/shader_utils.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/shader_stage_state.h"
+#include "utils/vk_layer_utils.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {
@@ -739,6 +740,7 @@ struct LastBound {
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
     std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaders();
     bool IsAnyGraphicsShaderBound() const;
+    VkShaderStageFlags GetAllActiveBoundStages() const;
 
     bool IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
     bool IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
@@ -810,6 +812,19 @@ static VkPipelineBindPoint inline ConvertToPipelineBindPoint(VkShaderStageFlagBi
     return VK_PIPELINE_BIND_POINT_MAX_ENUM;
 }
 
+static VkPipelineBindPoint inline ConvertToPipelineBindPoint(VkShaderStageFlags stage) {
+    // Assumes the call has checked stages have not been mixed
+    if (stage & kShaderStageAllGraphics) {
+        return VK_PIPELINE_BIND_POINT_GRAPHICS;
+    } else if (stage & VK_SHADER_STAGE_COMPUTE_BIT) {
+        return VK_PIPELINE_BIND_POINT_COMPUTE;
+    } else if (stage & kShaderStageAllRayTracing) {
+        return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+    } else {
+        assert(false);
+        return VK_PIPELINE_BIND_POINT_MAX_ENUM;
+    }
+}
 static LvlBindPoint inline ConvertToLvlBindPoint(VkShaderStageFlagBits stage) {
     switch (stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:

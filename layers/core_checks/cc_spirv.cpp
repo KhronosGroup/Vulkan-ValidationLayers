@@ -1844,11 +1844,18 @@ bool CoreChecks::ValidateTransformFeedbackPipeline(const spirv::Module &module_s
                              string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
         }
 
-        if (pipeline.pre_raster_state && (entrypoint.stage != pipeline.pre_raster_state->last_stage)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02318", module_state.handle(), loc,
-                             "SPIR-V has OpExecutionMode of Xfb in %s, but %s is the last last pre-rasterization shader stage.",
-                             string_VkShaderStageFlagBits(entrypoint.stage),
-                             string_VkShaderStageFlagBits(pipeline.pre_raster_state->last_stage));
+        if (pipeline.pre_raster_state) {
+            if (entrypoint.stage != pipeline.pre_raster_state->last_stage) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02318", module_state.handle(), loc,
+                                 "SPIR-V has OpExecutionMode of Xfb in %s, but %s is the last last pre-rasterization shader stage.",
+                                 string_VkShaderStageFlagBits(entrypoint.stage),
+                                 string_VkShaderStageFlagBits(pipeline.pre_raster_state->last_stage));
+            }
+            if ((pipeline.create_flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT) != 0) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-11001", module_state.handle(), loc,
+                                 "SPIR-V has OpExecutionMode of Xfb but this pipeline is being created with "
+                                 "VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT.");
+            }
         }
     }
 

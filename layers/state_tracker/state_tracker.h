@@ -65,6 +65,8 @@ class Pipeline;
 class DeviceMemory;
 class AccelerationStructureNV;
 class AccelerationStructureKHR;
+class IndirectExecutionSet;
+class IndirectCommandsLayout;
 class QueryPool;
 struct DedicatedBinding;
 struct ShaderModule;
@@ -247,6 +249,8 @@ VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureKHR, vvl::AccelerationStructur
 VALSTATETRACK_STATE_OBJECT(VkSurfaceKHR, vvl::Surface)
 VALSTATETRACK_STATE_OBJECT(VkDisplayModeKHR, vvl::DisplayMode)
 VALSTATETRACK_STATE_OBJECT(VkPhysicalDevice, vvl::PhysicalDevice)
+VALSTATETRACK_STATE_OBJECT(VkIndirectExecutionSetEXT, vvl::IndirectExecutionSet)
+VALSTATETRACK_STATE_OBJECT(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLayout)
 
 class ValidationStateTracker : public ValidationObject {
     using Func = vvl::Func;
@@ -1173,6 +1177,9 @@ class ValidationStateTracker : public ValidationObject {
                                                VkDeviceAddress indirectDeviceAddress, const RecordObject& record_obj) override;
     void PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                 const RecordObject& record_obj) override;
+    void PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                      const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                      const RecordObject& record_obj) override;
     void PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
@@ -1649,6 +1656,21 @@ class ValidationStateTracker : public ValidationObject {
                                                           const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                           const RecordObject& record_obj) override;
 
+    void PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                     const RecordObject& record_obj) override;
+    void PostCallRecordDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      const RecordObject& record_obj) override;
+    void PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
+                                                       const RecordObject& record_ob) override;
+    void PostCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        const RecordObject& record_obj) override;
+
     template <bool init = true, typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
         assert(ext_prop);
@@ -1825,6 +1847,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceNestedCommandBufferPropertiesEXT nested_command_buffer_props;
         VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props;
         VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT descriptor_buffer_density_props;
+        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props;
         VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_copy_props;
         VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props;
         VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_memory_placed_props;
@@ -1924,6 +1947,8 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionKHR, vvl::VideoSession, video_session_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionParametersKHR, vvl::VideoSessionParameters, video_session_parameters_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, vvl::AccelerationStructureKHR, acceleration_structure_khr_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkIndirectExecutionSetEXT, vvl::IndirectExecutionSet, indirect_execution_set_ext_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLayout, indirect_commands_layout_ext_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, vvl::Surface, surface_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, vvl::DisplayMode, display_mode_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)

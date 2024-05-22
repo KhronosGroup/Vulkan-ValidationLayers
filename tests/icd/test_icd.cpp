@@ -1594,6 +1594,12 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice ph
     if (video_maintenance1_features) {
         video_maintenance1_features->videoMaintenance1 = VK_TRUE;
     }
+    auto device_generated_commands_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT>(pFeatures->pNext);
+    if (device_generated_commands_features) {
+        device_generated_commands_features->deviceGeneratedCommands = VK_TRUE;
+        device_generated_commands_features->dynamicGeneratedPipelineLayout = VK_TRUE;
+    }
     const auto* desc_idx_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>(pFeatures->pNext);
     if (desc_idx_features) {
         const auto bool_size = sizeof(VkPhysicalDeviceDescriptorIndexingFeaturesEXT) -
@@ -1709,6 +1715,27 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         fragment_density_map2_props->subsampledCoarseReconstructionEarlyAccess = VK_FALSE;
         fragment_density_map2_props->maxSubsampledArrayLayers = 2;
         fragment_density_map2_props->maxDescriptorSetSubsampledSamplers = 1;
+    }
+
+    auto* device_generated_commands_props =
+        vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT>(pProperties->pNext);
+    if (device_generated_commands_props) {
+        device_generated_commands_props->maxIndirectPipelineCount = 4096;
+        device_generated_commands_props->maxIndirectShaderObjectCount = 4096;
+        device_generated_commands_props->maxIndirectSequenceCount = 4096;
+        device_generated_commands_props->maxIndirectCommandsTokenCount = 16;
+        device_generated_commands_props->maxIndirectCommandsTokenOffset = 2048;
+        device_generated_commands_props->maxIndirectCommandsIndirectStride = 2048;
+        device_generated_commands_props->supportedIndirectCommandsInputModes =
+            VK_INDIRECT_COMMANDS_INPUT_MODE_VULKAN_INDEX_BUFFER_EXT;
+        device_generated_commands_props->supportedIndirectCommandsShaderStages =
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+        device_generated_commands_props->supportedIndirectCommandsShaderStagesPipelineBinding =
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+        device_generated_commands_props->supportedIndirectCommandsShaderStagesShaderBinding =
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+        device_generated_commands_props->deviceGeneratedCommandsTransformFeedback = VK_TRUE;
+        device_generated_commands_props->deviceGeneratedCommandsMultiDrawIndirectCount = VK_TRUE;
     }
 
     const uint32_t num_copy_layouts = 5;
@@ -2125,7 +2152,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkPipelineBinaryHandlesInfoKHR* pBinaries) {
     unique_lock_t lock(global_lock);
-    
+
     pBinaries->pipelineBinaryCount = 1;
 
     if (pBinaries->pPipelineBinaries != nullptr) {
