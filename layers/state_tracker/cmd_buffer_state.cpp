@@ -1201,11 +1201,11 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
     // Update the consumed viewport/scissor count.
     {
         usedViewportScissorCount = std::max({usedViewportScissorCount, pipelineStaticViewportCount, pipelineStaticScissorCount});
-        usedDynamicViewportCount |= pipe->IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-        usedDynamicScissorCount |= pipe->IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        usedDynamicViewportCount |= pipe->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        usedDynamicScissorCount |= pipe->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     }
 
-    if (pipe->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+    if (pipe->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
         IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         SetActiveSubpassRasterizationSampleCount(dynamic_state_value.rasterization_samples);
     }
@@ -1479,7 +1479,7 @@ void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
     RecordDynamicState(state);
 
     vvl::Pipeline *pipeline = GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (pipeline && !pipeline->IsDynamic(ConvertToDynamicState(state))) {
+    if (pipeline && !pipeline->IsDynamic(state)) {
         dirtyStaticState = true;
     }
 }

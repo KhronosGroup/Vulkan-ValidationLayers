@@ -448,10 +448,10 @@ static bool IgnoreColorAttachments(const ValidationStateTracker &state_data, Pip
     // According to the spec, pAttachments is to be ignored if the pipeline is created with
     // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
     // and VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic states set
-    return pipe_state.ColorBlendState() && (pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-                                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
-                                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
-                                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
+    return pipe_state.ColorBlendState() && (pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+                                            pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
+                                            pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
+                                            pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
 }
 
 static bool UsesShaderModuleId(const Pipeline &pipe_state) {
@@ -833,7 +833,7 @@ void LastBound::Reset() {
 }
 
 bool LastBound::IsDepthTestEnable() const {
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
         return cb_state.dynamic_state_value.depth_test_enable;
     } else {
         if (pipeline_state->DepthStencilState()) {
@@ -844,7 +844,7 @@ bool LastBound::IsDepthTestEnable() const {
 }
 
 bool LastBound::IsDepthBoundTestEnable() const {
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
         return cb_state.dynamic_state_value.depth_bounds_test_enable;
     } else {
         if (pipeline_state->DepthStencilState()) {
@@ -859,12 +859,12 @@ bool LastBound::IsDepthWriteEnable() const {
     if (!IsDepthTestEnable()) {
         return false;
     }
-    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ? cb_state.dynamic_state_value.depth_write_enable
+    return pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ? cb_state.dynamic_state_value.depth_write_enable
                                                                           : pipeline_state->DepthStencilState()->depthWriteEnable;
 }
 
 bool LastBound::IsStencilTestEnable() const {
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
         return cb_state.dynamic_state_value.stencil_test_enable;
     } else {
         if (pipeline_state->DepthStencilState()) {
@@ -876,10 +876,10 @@ bool LastBound::IsStencilTestEnable() const {
 
 VkStencilOpState LastBound::GetStencilOpStateFront() const {
     VkStencilOpState front = pipeline_state->DepthStencilState()->front;
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
         front.writeMask = cb_state.dynamic_state_value.write_mask_front;
     }
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
         front.failOp = cb_state.dynamic_state_value.fail_op_front;
         front.passOp = cb_state.dynamic_state_value.pass_op_front;
         front.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_front;
@@ -889,10 +889,10 @@ VkStencilOpState LastBound::GetStencilOpStateFront() const {
 
 VkStencilOpState LastBound::GetStencilOpStateBack() const {
     VkStencilOpState back = pipeline_state->DepthStencilState()->back;
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
         back.writeMask = cb_state.dynamic_state_value.write_mask_back;
     }
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
         back.failOp = cb_state.dynamic_state_value.fail_op_back;
         back.passOp = cb_state.dynamic_state_value.pass_op_back;
         back.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_back;
@@ -903,7 +903,7 @@ VkStencilOpState LastBound::GetStencilOpStateBack() const {
 VkSampleCountFlagBits LastBound::GetRasterizationSamples() const {
     // For given pipeline, return number of MSAA samples, or one if MSAA disabled
     VkSampleCountFlagBits rasterization_samples = VK_SAMPLE_COUNT_1_BIT;
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         rasterization_samples = cb_state.dynamic_state_value.rasterization_samples;
     } else {
         const auto ms_state = pipeline_state->MultisampleState();
@@ -915,13 +915,13 @@ VkSampleCountFlagBits LastBound::GetRasterizationSamples() const {
 }
 
 bool LastBound::IsRasterizationDisabled() const {
-    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+    return pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)
                ? cb_state.dynamic_state_value.rasterizer_discard_enable
                : pipeline_state->RasterizationDisabled();
 }
 
 VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         if (i < cb_state.dynamic_state_value.color_write_masks.size()) {
             return cb_state.dynamic_state_value.color_write_masks[i];
         }
@@ -934,7 +934,7 @@ VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
 }
 
 bool LastBound::IsColorWriteEnabled(uint32_t i) const {
-    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
         return cb_state.dynamic_state_value.color_write_enabled[i];
     } else {
         if (pipeline_state->ColorBlendState()) {
@@ -951,7 +951,7 @@ bool LastBound::IsColorWriteEnabled(uint32_t i) const {
 VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
     if (!pipeline_state) {
         return GetShaderState(ShaderObjectStage::VERTEX)->GetTopology();
-    } else if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+    } else if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         return cb_state.dynamic_state_value.primitive_topology;
     } else {
         return pipeline_state->topology_at_rasterizer;

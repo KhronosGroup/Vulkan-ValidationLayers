@@ -161,8 +161,8 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const vvl::Pipeline &pipeli
                          "(portability error): VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN is not supported.");
     }
 
-    if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-        !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+    if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+        !pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
         // Validate vertex inputs
         for (const auto &desc : pipeline.vertex_input_state->binding_descriptions) {
             const uint32_t min_alignment = phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment;
@@ -443,10 +443,10 @@ bool CoreChecks::ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline &p
         return skip;
     }
 
-    const bool ignore_vertex_input_state = pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    const bool ignore_vertex_input_state = pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     const bool ignore_input_assembly_state = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) &&
-                                             pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) &&
-                                             pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+                                             pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) &&
+                                             pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
                                              phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
 
     if (!ignore_vertex_input_state) {
@@ -541,7 +541,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08901", device, create_info_loc,
                              "Attempting to link pipeline libraries without a pre-rasterization shader state (did you forget to "
                              "add VK_PIPELINE_CREATE_LIBRARY_BIT_KHR to your intermediate pipeline?).");
-        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
+        } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
                    !pipeline.RasterizationState()->rasterizerDiscardEnable) {
             if (!pipeline.fragment_shader_state) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08909", device, create_info_loc,
@@ -736,7 +736,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 continue;
             }
 
-            if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) &&
+            if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) &&
                 pipeline.RasterizationState()->rasterizerDiscardEnable) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06683", device,
                                  create_info_loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags),
@@ -1226,7 +1226,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
             return false;
         }
 
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && multisample_state) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && multisample_state) {
             if (multisample_state->rasterizationSamples != VK_SAMPLE_COUNT_1_BIT) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09313", device,
                                  create_info_loc.dot(Field::pMultisampleState).dot(Field::rasterizationSamples),
@@ -1235,7 +1235,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
             }
         }
 
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) && color_blend_state) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) && color_blend_state) {
             for (uint32_t i = 0; i < color_blend_state->attachmentCount; i++) {
                 if (color_blend_state->pAttachments[i].blendEnable) {
                     skip |=
@@ -1247,7 +1247,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
             }
         }
 
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
             if (fragment_shading_rate->fragmentSize.width != 1) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09315", device,
                                  create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize)
@@ -1295,7 +1295,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
             }
         }
 
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && multisample_state) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && multisample_state) {
             if (multisample_state->rasterizationSamples != VK_SAMPLE_COUNT_1_BIT) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09304", device,
                                  create_info_loc.dot(Field::pMultisampleState).dot(Field::rasterizationSamples),
@@ -1304,7 +1304,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
             }
         }
 
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) && color_blend_state) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) && color_blend_state) {
             for (uint32_t i = 0; i < color_blend_state->attachmentCount; i++) {
                 if (color_blend_state->pAttachments[i].blendEnable) {
                     skip |=
@@ -1315,7 +1315,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
             }
         }
 
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
             if (fragment_shading_rate->fragmentSize.width != 1) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09306", device,
                                  create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize)
@@ -1388,9 +1388,9 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline 
             if (rasterization_conservative_state_ci &&
                 rasterization_conservative_state_ci->conservativeRasterizationMode !=
                     VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT &&
-                (!pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
+                (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
                  !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted)) {
-                std::string msg = !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)
+                std::string msg = !pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)
                                       ? "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY is not enabled"
                                       : "dynamicPrimitiveTopologyUnrestricted is not supported";
                 skip |= LogError(
@@ -1402,7 +1402,7 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline 
         }
     }
 
-    const bool ignore_topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+    const bool ignore_topology = pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
                                  phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
     // pre_raster has tessellation stage, vertex input has topology
     // Both are needed for these checks
@@ -1431,7 +1431,7 @@ bool CoreChecks::ValidateGraphicsPipelineTessellationState(const vvl::Pipeline &
 
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) &&
         (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)) {
-        if (!pipeline.TessellationState() && (!pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
+        if (!pipeline.TessellationState() && (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
                                               !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3))) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
                              "includes a tessellation control shader stage, but pTessellationState is NULL.");
@@ -1666,10 +1666,10 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pi
 }
 
 bool CoreChecks::IsColorBlendStateAttachmentCountIgnore(const vvl::Pipeline &pipeline) const {
-    return pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-           pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
-           pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
-           (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) || !enabled_features.advancedBlendCoherentOperations);
+    return pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+           pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
+           pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
+           (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) || !enabled_features.advancedBlendCoherentOperations);
 }
 
 bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pipeline,
@@ -1795,7 +1795,7 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
                          raster_loc.dot(Field::depthClampEnable), "is VK_TRUE, but the depthClamp feature was not enabled.");
     }
 
-    if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS) && (raster_state->depthBiasClamp != 0.0) &&
+    if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS) && (raster_state->depthBiasClamp != 0.0) &&
         (!enabled_features.depthBiasClamp)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00754", device, raster_loc.dot(Field::depthBiasClamp),
                          "is %f, but the depthBiasClamp feature was not enabled", raster_state->depthBiasClamp);
@@ -1843,7 +1843,7 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
                     }
 
                     if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
-                        !pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS)) {
+                        !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS)) {
                         const float minDepthBounds = ds_state->minDepthBounds;
                         const float maxDepthBounds = ds_state->maxDepthBounds;
                         if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
@@ -1965,8 +1965,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
             }
         }
     } else {
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) &&
-            !pipeline.IsDynamic(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
+        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) &&
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-09639", device, raster_loc.dot(Field::pNext),
                              "is missing VkPipelineRasterizationConservativeStateCreateInfoEXT which it needs because this "
                              "pipeline has VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT but not "
@@ -2025,7 +2025,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         };
 
         const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
                   IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
                   (enabled_features.multisampledRenderToSingleSampled))) {
@@ -2261,8 +2261,8 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
             vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
         if (sample_location_state != nullptr) {
             if ((sample_location_state->sampleLocationsEnable == VK_TRUE) &&
-                (pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) == false) &&
-                (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) == false)) {
+                (pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) == false) &&
+                (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) == false)) {
                 const VkSampleLocationsInfoEXT sample_location_info = sample_location_state->sampleLocationsInfo;
                 const Location sample_info_loc = ms_loc.pNext(Struct::VkPipelineSampleLocationsStateCreateInfoEXT, Field::sampleLocationsInfo);
                 skip |= ValidateSampleLocationsInfo(sample_location_info, sample_info_loc.dot(Field::sampleLocationsInfo));
@@ -2309,7 +2309,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
 
             if ((subpass_desc->flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
                 if ((raster_samples != subpass_input_attachment_samples) &&
-                    !pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+                    !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
                     skip |=
                         LogError("VUID-VkGraphicsPipelineCreateInfo-rasterizationSamples-04899", device, ms_loc.dot(Field::rasterizationSamples),
                                  "%s is different then pSubpasses[%" PRIu32 "] input attachment samples (%" PRIu32 ") but flags include VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM.",
@@ -2338,10 +2338,10 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
     if (!pipeline_ci.pMultisampleState && pipeline.OwnsSubState(pipeline.fragment_output_state)) {
         // Don't need to check for VK_EXT_extended_dynamic_state3 since it would be on if using these VkDynamicState
         const bool dynamic_alpha_to_one =
-            pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.alphaToOne;
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
-            !pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT) ||
-            !pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) || !dynamic_alpha_to_one) {
+            pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.alphaToOne;
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ||
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) || !dynamic_alpha_to_one) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device, ms_loc, "is NULL.");
         }
     }
@@ -2429,31 +2429,31 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
 
     bool skip = false;
     if (pipeline.create_info_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) {
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065", device,
                              create_info_loc.dot(Field::pDynamicState)
                                  .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)),
                              "is VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, but the pipeline contains a mesh shader.");
-        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+        } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065", device,
                              create_info_loc.dot(Field::pDynamicState)
                                  .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)),
                              "is VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, but the pipeline contains a mesh shader.");
         }
 
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066", device,
                              create_info_loc.dot(Field::pDynamicState)
                                  .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)),
                              "is VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, but the pipeline contains a mesh shader.");
-        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
+        } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066", device,
                              create_info_loc.dot(Field::pDynamicState)
                                  .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)),
                              "is VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, but the pipeline contains a mesh shader.");
         }
 
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067", device,
                              create_info_loc.dot(Field::pDynamicState)
                                  .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)),
@@ -2462,31 +2462,31 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (api_version < VK_API_VERSION_1_3 && !enabled_features.extendedDynamicState &&
-        (pipeline.IsDynamic(VK_DYNAMIC_STATE_CULL_MODE) || pipeline.IsDynamic(VK_DYNAMIC_STATE_FRONT_FACE) ||
-         pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) || pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ||
-         pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) ||
-         pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) ||
-         pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) || pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ||
-         pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) || pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE) ||
-         pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE) || pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP))) {
+        (pipeline.IsDynamic(CB_DYNAMIC_STATE_CULL_MODE) || pipeline.IsDynamic(CB_DYNAMIC_STATE_FRONT_FACE) ||
+         pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) || pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ||
+         pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) ||
+         pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) ||
+         pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE) || pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ||
+         pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_COMPARE_OP) || pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE) ||
+         pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE) || pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP))) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378", device, create_info_loc.dot(Field::pDynamicState),
             "contains dynamic states from VK_EXT_extended_dynamic_state, but the extendedDynamicState feature was not enabled.");
     }
 
     if (api_version < VK_API_VERSION_1_3 && !enabled_features.extendedDynamicState2) {
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)),
                          "is VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, but the extendedDynamicState2 feature was not enabled.");
-        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
+        } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868", device,
                              create_info_loc.dot(Field::pDynamicState)
                                  .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)),
                              "is VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, but the extendedDynamicState2 feature was not enabled.");
-        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+        } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868", device,
                          create_info_loc.dot(Field::pDynamicState)
@@ -2495,7 +2495,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
         }
     }
 
-    if (!enabled_features.extendedDynamicState2LogicOp && pipeline.IsDynamic(VK_DYNAMIC_STATE_LOGIC_OP_EXT)) {
+    if (!enabled_features.extendedDynamicState2LogicOp && pipeline.IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04869", device,
             create_info_loc.dot(Field::pDynamicState).dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_LOGIC_OP_EXT)),
@@ -2503,7 +2503,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState2PatchControlPoints &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04870", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)),
@@ -2512,7 +2512,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3TessellationDomainOrigin &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3TessellationDomainOrigin-07370", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT)),
@@ -2520,7 +2520,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                          "extendedDynamicState3TessellationDomainOrigin feature was not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3DepthClampEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
+    if (!enabled_features.extendedDynamicState3DepthClampEnable && pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClampEnable-07371", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2528,7 +2528,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
             "is VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, but the extendedDynamicState3DepthClampEnable feature was not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3PolygonMode && pipeline.IsDynamic(VK_DYNAMIC_STATE_POLYGON_MODE_EXT)) {
+    if (!enabled_features.extendedDynamicState3PolygonMode && pipeline.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3PolygonMode-07372", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_POLYGON_MODE_EXT)),
@@ -2536,7 +2536,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3RasterizationSamples &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationSamples-07373", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)),
@@ -2544,7 +2544,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                          "is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3SampleMask && pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
+    if (!enabled_features.extendedDynamicState3SampleMask && pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleMask-07374", device,
             create_info_loc.dot(Field::pDynamicState).dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)),
@@ -2552,7 +2552,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3AlphaToCoverageEnable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToCoverageEnable-07375", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)),
@@ -2560,7 +2560,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                          "feature is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3AlphaToOneEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
+    if (!enabled_features.extendedDynamicState3AlphaToOneEnable && pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToOneEnable-07376", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2568,7 +2568,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
             "is VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT but the extendedDynamicState3AlphaToOneEnable feature is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3LogicOpEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
+    if (!enabled_features.extendedDynamicState3LogicOpEnable && pipeline.IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
         skip |=
             LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LogicOpEnable-07377", device,
                      create_info_loc.dot(Field::pDynamicState)
@@ -2576,7 +2576,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                      "is VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT but the extendedDynamicState3LogicOpEnable feature is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3ColorBlendEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
+    if (!enabled_features.extendedDynamicState3ColorBlendEnable && pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEnable-07378", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2585,7 +2585,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3ColorBlendEquation &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEquation-07379", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2593,7 +2593,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
             "is VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT but the extendedDynamicState3ColorBlendEquation feature is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3ColorWriteMask && pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+    if (!enabled_features.extendedDynamicState3ColorWriteMask && pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorWriteMask-07380", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2602,7 +2602,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3RasterizationStream &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationStream-07381", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)),
@@ -2611,7 +2611,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3ConservativeRasterizationMode &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ConservativeRasterizationMode-07382", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)),
@@ -2620,7 +2620,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3ExtraPrimitiveOverestimationSize &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ExtraPrimitiveOverestimationSize-07383", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)),
@@ -2628,7 +2628,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                          "extendedDynamicState3ExtraPrimitiveOverestimationSize feature is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3DepthClipEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT)) {
+    if (!enabled_features.extendedDynamicState3DepthClipEnable && pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipEnable-07384", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2637,7 +2637,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3SampleLocationsEnable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleLocationsEnable-07385", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)),
@@ -2646,7 +2646,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3ColorBlendAdvanced &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendAdvanced-07386", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2655,7 +2655,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3ProvokingVertexMode &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ProvokingVertexMode-07387", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT)),
@@ -2664,7 +2664,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3LineRasterizationMode &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineRasterizationMode-07388", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)),
@@ -2672,7 +2672,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                          "feature is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3LineStippleEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
+    if (!enabled_features.extendedDynamicState3LineStippleEnable && pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineStippleEnable-07389", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2681,7 +2681,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3DepthClipNegativeOneToOne &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipNegativeOneToOne-07390", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT)),
@@ -2690,7 +2690,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3ViewportWScalingEnable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportWScalingEnable-07391", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)),
@@ -2698,7 +2698,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                          "feature is not enabled.");
     }
 
-    if (!enabled_features.extendedDynamicState3ViewportSwizzle && pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
+    if (!enabled_features.extendedDynamicState3ViewportSwizzle && pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportSwizzle-07392", device,
             create_info_loc.dot(Field::pDynamicState)
@@ -2707,7 +2707,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3CoverageToColorEnable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorEnable-07393", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)),
@@ -2716,7 +2716,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3CoverageToColorLocation &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorLocation-07394", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)),
@@ -2725,7 +2725,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3CoverageModulationMode &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationMode-07395", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)),
@@ -2734,7 +2734,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3CoverageModulationTableEnable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTableEnable-07396", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)),
@@ -2743,7 +2743,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3CoverageModulationTable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTable-07397", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV)),
@@ -2752,7 +2752,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3CoverageReductionMode &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageReductionMode-07398", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV)),
@@ -2761,7 +2761,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3RepresentativeFragmentTestEnable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RepresentativeFragmentTestEnable-07399", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV)),
@@ -2770,7 +2770,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     }
 
     if (!enabled_features.extendedDynamicState3ShadingRateImageEnable &&
-        pipeline.IsDynamic(VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ShadingRateImageEnable-07400", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)),
@@ -2778,14 +2778,14 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
                          "feature is not enabled.");
     }
 
-    if (!enabled_features.vertexInputDynamicState && pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+    if (!enabled_features.vertexInputDynamicState && pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04807", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)),
                          "is VK_DYNAMIC_STATE_VERTEX_INPUT_EXT but the vertexInputDynamicState feature is not enabled.");
     }
 
-    if (!enabled_features.colorWriteEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+    if (!enabled_features.colorWriteEnable && pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04800", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)),
@@ -2801,7 +2801,7 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pip
     const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
     const auto *fragment_shading_rate_state =
         vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_ci.pNext);
-    if (!fragment_shading_rate_state || pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
+    if (!fragment_shading_rate_state || pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
         return skip;
     }
     const Location fragment_loc =
@@ -3094,8 +3094,8 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
         return skip;
     }
 
-    bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) || pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);
-    bool dyn_scissor = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) || pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR);
+    bool dyn_viewport = pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) || pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT);
+    bool dyn_scissor = pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) || pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR);
     if (!dyn_viewport || !dyn_scissor) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
         skip |= LogError("VUID-vkCmdBindPipeline-commandBuffer-04808", objlist, loc,
@@ -3105,8 +3105,8 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
     const auto *discard_rectangle_state =
         vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline_ci.pNext);
     if ((discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) ||
-        (pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
+        (pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
             std::stringstream msg;
             if (discard_rectangle_state) {
                 msg << "VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount = "
@@ -3137,7 +3137,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const vvl::Pipeline 
             continue;
         }
         if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-            pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
+            pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
             if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
                 skip |= LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), loc,
                                  "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
@@ -3186,7 +3186,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
         }
         if (primitives_generated_query) {
             bool rasterizer_discard_enabled = false;
-            if (pipeline && !pipeline->IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+            if (pipeline && !pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
                 rasterizer_discard_enabled = pipeline->RasterizationState()->rasterizerDiscardEnable;
             } else {
                 rasterizer_discard_enabled = cb_state.dynamic_state_value.rasterizer_discard_enable;
@@ -3245,7 +3245,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
 
         for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
             // Only validate the bindings from the last bound pipeline (unlesss it used VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)
-            if (!pipeline->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+            if (!pipeline->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
                 bound_pipeline_bindings.find(vertex_buffer_binding.first) == bound_pipeline_bindings.end()) {
                 continue;
             }
@@ -3327,8 +3327,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
                                      string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
                 }
 
-                const bool dynamic_line_raster_mode = pipeline->IsDynamic(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
-                const bool dynamic_line_stipple_enable = pipeline->IsDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+                const bool dynamic_line_raster_mode = pipeline->IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+                const bool dynamic_line_stipple_enable = pipeline->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
                 if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {
                     const auto raster_line_state =
                         vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(raster_state->pNext);
@@ -3390,7 +3390,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
             skip |= ValidateGraphicsPipelineShaderDynamicState(*pipeline, cb_state, loc, vuid);
         }
 
-        if (!pipeline->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && cb_state.activeRenderPass->UsesDynamicRendering()) {
+        if (!pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && cb_state.activeRenderPass->UsesDynamicRendering()) {
             const auto msrtss_info = vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
                 cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
             if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
@@ -3406,7 +3406,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
         }
     }
 
-    if (pipeline && pipeline->IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
+    if (pipeline && pipeline->IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
         cb_state.dynamic_state_value.alpha_to_coverage_enable) {
         if (pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_entry_point) {
             // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
@@ -4057,21 +4057,21 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                 }
             }
 
-            if (pipeline->IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+            if (pipeline->IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
                 cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {
                 skip |= LogError(vuid.external_format_resolve_09364, objlist, loc,
                                  "pipeline externalFormat is %" PRIu64
                                  ", but dynamic blend enable for attachment zero was set to VK_TRUE.",
                                  pipeline_external_format);
             }
-            if (pipeline->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+            if (pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
                 cb_state.dynamic_state_value.rasterization_samples != VK_SAMPLE_COUNT_1_BIT) {
                 skip |= LogError(vuid.external_format_resolve_09365, objlist, loc,
                                  "pipeline externalFormat is %" PRIu64 ", but dynamic rasterization samples set to %s.",
                                  pipeline_external_format,
                                  string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
             }
-            if (pipeline->IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
+            if (pipeline->IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
                 if (cb_state.dynamic_state_value.fragment_size.width != 1) {
                     skip |= LogError(vuid.external_format_resolve_09368, objlist, loc,
                                      "pipeline externalFormat is %" PRIu64 ", but dynamic fragment size width is %" PRIu32 ".",
@@ -4414,7 +4414,7 @@ bool CoreChecks::ValidateVertexAttribute(const vvl::CommandBuffer &cb_state, con
         return skip;
     }
 
-    const auto &vertex_attribute_descriptions = pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+    const auto &vertex_attribute_descriptions = pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
                                                     ? cb_state.dynamic_state_value.vertex_attribute_descriptions
                                                     : pipeline.vertex_input_state->vertex_attribute_descriptions;
     // Verify vertex attribute address alignment
@@ -4448,7 +4448,7 @@ bool CoreChecks::ValidateVertexAttribute(const vvl::CommandBuffer &cb_state, con
         const VkDeviceSize attribute_offset = attribute_description.offset;
         const VkFormat attribute_format = attribute_description.format;
         const VkDeviceSize vertex_buffer_stride = vertex_binding_map_it->second.stride;
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
+        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
             const VkDeviceSize attribute_binding_extent = attribute_offset + vkuFormatElementSize(attribute_format);
             if (vertex_buffer_stride != 0 && vertex_buffer_stride < attribute_binding_extent) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
