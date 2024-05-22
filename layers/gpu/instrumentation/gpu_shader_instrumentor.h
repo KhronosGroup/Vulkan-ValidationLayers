@@ -33,13 +33,13 @@ class SpirvCache {
   public:
     void Add(uint32_t hash, std::vector<uint32_t> spirv);
     std::vector<uint32_t> *Get(uint32_t spirv_hash);
-    bool IsEmpty() { return spirv_shaders.empty(); }
+    bool IsEmpty() { return spirv_shaders_.empty(); }
     bool IsSpirvCached(uint32_t spirv_hash, chassis::CreateShaderModule &chassis_state) const;
     bool IsSpirvCached(uint32_t index, uint32_t spirv_hash, chassis::ShaderObject &chassis_state) const;
 
   private:
     friend class gpuav::Validator;
-    vvl::unordered_map<uint32_t, std::vector<uint32_t>> spirv_shaders{};
+    vvl::unordered_map<uint32_t, std::vector<uint32_t>> spirv_shaders_{};
 };
 
 struct GpuAssistedShaderTracker {
@@ -165,23 +165,23 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     // If we are deep into a call stack, we can use this to return up to the chassis call.
     // It should only be used after calls that might abort, not to be used for guarding a function (unless a case is found that make
     // sense too)
-    mutable bool aborted = false;
+    mutable bool aborted_ = false;
 
-    bool force_buffer_device_address;
-    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
-    VkPhysicalDeviceFeatures supported_features{};
-    VkPhysicalDeviceFeatures desired_features{};
-    uint32_t adjusted_max_desc_sets = 0;
-    std::atomic<uint32_t> unique_shader_module_id = 1;  // zero represents no shader module found
-    uint32_t output_buffer_byte_size = 0;
-    uint32_t desc_set_bind_index = 0;
-    VmaAllocator vmaAllocator = {};
-    VmaPool output_buffer_pool = VK_NULL_HANDLE;
-    std::unique_ptr<DescriptorSetManager> desc_set_manager;
-    vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
+    bool force_buffer_device_address_;
+    PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
+    VkPhysicalDeviceFeatures supported_features_{};
+    VkPhysicalDeviceFeatures desired_features_{};
+    uint32_t adjusted_max_desc_sets_ = 0;
+    std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
+    uint32_t output_buffer_byte_size_ = 0;
+    uint32_t desc_set_bind_index_ = 0;
+    VmaAllocator vma_allocator_ = {};
+    VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
+    std::unique_ptr<DescriptorSetManager> desc_set_manager_;
+    vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     SpirvCache instrumented_shaders_cache_;
-    DeviceMemoryBlock indices_buffer{};
+    DeviceMemoryBlock indices_buffer_{};
 
   private:
     void Cleanup();

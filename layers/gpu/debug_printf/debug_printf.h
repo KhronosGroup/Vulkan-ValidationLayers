@@ -83,8 +83,8 @@ class Validator : public gpu::GpuShaderInstrumentor {
     using BaseClass = gpu::GpuShaderInstrumentor;
     Validator() {
         container_type = LayerObjectTypeDebugPrintf;
-        desired_features.vertexPipelineStoresAndAtomics = true;
-        desired_features.fragmentStoresAndAtomics = true;
+        desired_features_.vertexPipelineStoresAndAtomics = true;
+        desired_features_.fragmentStoresAndAtomics = true;
     }
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;

@@ -28,7 +28,7 @@
 
 namespace gpuav {
 
-static bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout,
+static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout,
                               spv_target_env target_env, std::string &error) {
     // Use SPIRV-Tools validator to try and catch any issues with the module
     spv_context ctx = spvContextCreate(target_env);
@@ -76,7 +76,7 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
 
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
-    spirv::Module module(binaries[0], unique_shader_id, desc_set_bind_index);
+    spirv::Module module(binaries[0], unique_shader_id, desc_set_bind_index_);
 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.validate_descriptors) {
@@ -163,7 +163,7 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
 
     VkDescriptorSet instrumentation_desc_set = VK_NULL_HANDLE;
     VkDescriptorPool instrumentation_desc_pool = VK_NULL_HANDLE;
-    VkResult result = desc_set_manager->GetDescriptorSet(
+    VkResult result = desc_set_manager_->GetDescriptorSet(
         &instrumentation_desc_pool, cmd_buffer->GetInstrumentationDescriptorSetLayout(), &instrumentation_desc_set);
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
@@ -199,7 +199,7 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
         VkDescriptorBufferInfo indices_desc_buffer_info = {};
         {
             indices_desc_buffer_info.range = sizeof(uint32_t);
-            indices_desc_buffer_info.buffer = indices_buffer.buffer;
+            indices_desc_buffer_info.buffer = indices_buffer_.buffer;
             indices_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -256,7 +256,7 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
 
         // BDA snapshot buffer
         VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-        if (bda_validation_possible) {
+        if (bda_validation_possible_) {
             bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
             bda_input_desc_buffer_info.buffer = cmd_buffer->GetBdaRangesSnapshot().buffer;
             bda_input_desc_buffer_info.offset = 0;
@@ -299,15 +299,15 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
     const std::array<uint32_t, 2> dynamic_offsets = {
         {cmd_resources.operation_index * static_cast<uint32_t>(sizeof(uint32_t)),
          static_cast<uint32_t>(cmd_buffer->per_command_resources.size()) * static_cast<uint32_t>(sizeof(uint32_t))}};
-    if ((pipeline_layout && pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
+    if ((pipeline_layout && pipeline_layout->set_layouts.size() <= desc_set_bind_index_) &&
         pipeline_layout_handle != VK_NULL_HANDLE) {
-        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, pipeline_layout_handle, desc_set_bind_index, 1,
+        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, pipeline_layout_handle, desc_set_bind_index_, 1,
                                       &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, GetDebugPipelineLayout(), desc_set_bind_index, 1,
+        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, GetDebugPipelineLayout(), desc_set_bind_index_, 1,
                                       &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     }

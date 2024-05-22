@@ -77,7 +77,7 @@ DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *
 DescriptorSet::~DescriptorSet() {
     Destroy();
     Validator *gv_dev = static_cast<Validator *>(state_data_);
-    vmaDestroyBuffer(gv_dev->vmaAllocator, layout_.buffer, layout_.allocation);
+    vmaDestroyBuffer(gv_dev->vma_allocator_, layout_.buffer, layout_.allocation);
 }
 
 VkDeviceAddress DescriptorSet::GetLayoutState() {
@@ -95,12 +95,12 @@ VkDeviceAddress DescriptorSet::GetLayoutState() {
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     VkResult result =
-        vmaCreateBuffer(gv_dev->vmaAllocator, &buffer_info, &alloc_info, &layout_.buffer, &layout_.allocation, nullptr);
+        vmaCreateBuffer(gv_dev->vma_allocator_, &buffer_info, &alloc_info, &layout_.buffer, &layout_.allocation, nullptr);
     if (result != VK_SUCCESS) {
         return 0;
     }
     glsl::BindingLayout *layout_data;
-    result = vmaMapMemory(gv_dev->vmaAllocator, layout_.allocation, reinterpret_cast<void **>(&layout_data));
+    result = vmaMapMemory(gv_dev->vma_allocator_, layout_.allocation, reinterpret_cast<void **>(&layout_data));
     assert(result == VK_SUCCESS);
     memset(layout_data, 0, static_cast<size_t>(buffer_info.size));
 
@@ -149,10 +149,10 @@ VkDeviceAddress DescriptorSet::GetLayoutState() {
     }
     assert(layout_.device_addr != 0);
 
-    result = vmaFlushAllocation(gv_dev->vmaAllocator, layout_.allocation, 0, VK_WHOLE_SIZE);
+    result = vmaFlushAllocation(gv_dev->vma_allocator_, layout_.allocation, 0, VK_WHOLE_SIZE);
     // No good way to handle this error, we should still try to unmap.
     assert(result == VK_SUCCESS);
-    vmaUnmapMemory(gv_dev->vmaAllocator, layout_.allocation);
+    vmaUnmapMemory(gv_dev->vma_allocator_, layout_.allocation);
 
     return layout_.device_addr;
 }
@@ -284,7 +284,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState() {
     auto next_state = std::make_shared<State>();
     next_state->set = VkHandle();
     next_state->version = cur_version;
-    next_state->allocator = gv_dev->vmaAllocator;
+    next_state->allocator = gv_dev->vma_allocator_;
 
     uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
     if (GetBindingCount() > 0) {
@@ -384,7 +384,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState() {
     auto next_state = std::make_shared<State>();
     next_state->set = VkHandle();
     next_state->version = cur_version;
-    next_state->allocator = gv_dev->vmaAllocator;
+    next_state->allocator = gv_dev->vma_allocator_;
 
     uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
     for (const auto &binding : *this) {
@@ -492,7 +492,7 @@ void DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &copy_desc, cons
 }
 
 DescriptorHeap::DescriptorHeap(Validator &gpu_dev, uint32_t max_descriptors)
-    : max_descriptors_(max_descriptors), allocator_(gpu_dev.vmaAllocator) {
+    : max_descriptors_(max_descriptors), allocator_(gpu_dev.vma_allocator_) {
     // If max_descriptors_ is 0, GPU-AV aborted during vkCreateDevice(). We still need to
     // support calls into this class as no-ops if this happens.
     if (max_descriptors_ == 0) {

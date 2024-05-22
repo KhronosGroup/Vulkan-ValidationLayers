@@ -61,10 +61,10 @@ class Validator : public gpu::GpuShaderInstrumentor {
   public:
     Validator() {
         container_type = LayerObjectTypeGpuAssisted;
-        desired_features.vertexPipelineStoresAndAtomics = true;
-        desired_features.fragmentStoresAndAtomics = true;
-        desired_features.shaderInt64 = true;
-        force_buffer_device_address = true;
+        desired_features_.vertexPipelineStoresAndAtomics = true;
+        desired_features_.fragmentStoresAndAtomics = true;
+        desired_features_.shaderInt64 = true;
+        force_buffer_device_address_ = true;
     }
 
     // gpuav.cpp
@@ -87,7 +87,7 @@ class Validator : public gpu::GpuShaderInstrumentor {
     [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(VkCommandBuffer cmd_buffer,
                                                                               VkPipelineBindPoint bind_point, const Location& loc);
     // Allocate memory for the output block that the gpu will use to return any error information
-    [[nodiscard]] bool AllocateOutputMem(gpu::DeviceMemoryBlock& output_mem, const Location& loc);
+    [[nodiscard]] bool AllocateErrorLogsBuffer(gpu::DeviceMemoryBlock& error_logs_mem, const Location& loc);
 
   private:
     void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
@@ -439,19 +439,14 @@ class Validator : public gpu::GpuShaderInstrumentor {
                            bool* error) const override;
 
   private:
-    VkPipeline GetDrawValidationPipeline(VkRenderPass render_pass);
-
     template <typename RangeFactory>
     bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
                                 VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& loc,
                                 const char* mismatch_layout_vuid, bool* error) const;
 
-    VkBool32 shaderInt64 = false;
-    std::string instrumented_shader_cache_path{};
-
-    bool bda_validation_possible = false;
-
-    std::optional<DescriptorHeap> desc_heap{};  // optional only to defer construction
+    std::string instrumented_shader_cache_path_{};
+    bool bda_validation_possible_ = false;
+    std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
 };
 
 }  // namespace gpuav

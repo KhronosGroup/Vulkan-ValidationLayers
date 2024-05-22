@@ -128,19 +128,19 @@ static VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical
     return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
-void SpirvCache::Add(uint32_t hash, std::vector<uint32_t> spirv) { spirv_shaders.emplace(hash, std::move(spirv)); }
+void SpirvCache::Add(uint32_t hash, std::vector<uint32_t> spirv) { spirv_shaders_.emplace(hash, std::move(spirv)); }
 
 std::vector<uint32_t> *SpirvCache::Get(uint32_t spirv_hash) {
-    auto it = spirv_shaders.find(spirv_hash);
-    if (it != spirv_shaders.end()) {
+    auto it = spirv_shaders_.find(spirv_hash);
+    if (it != spirv_shaders_.end()) {
         return &it->second;
     }
     return nullptr;
 }
 
 bool SpirvCache::IsSpirvCached(uint32_t spirv_hash, chassis::CreateShaderModule &chassis_state) const {
-    auto it = spirv_shaders.find(spirv_hash);
-    if (it != spirv_shaders.end()) {
+    auto it = spirv_shaders_.find(spirv_hash);
+    if (it != spirv_shaders_.end()) {
         const std::vector<uint32_t> &spirv = it->second;
         chassis_state.instrumented_create_info.codeSize = spirv.size() * sizeof(uint32_t);
         chassis_state.instrumented_create_info.pCode = spirv.data();
@@ -152,8 +152,8 @@ bool SpirvCache::IsSpirvCached(uint32_t spirv_hash, chassis::CreateShaderModule 
 }
 
 bool SpirvCache::IsSpirvCached(uint32_t index, uint32_t spirv_hash, chassis::ShaderObject &chassis_state) const {
-    auto it = spirv_shaders.find(spirv_hash);
-    if (it != spirv_shaders.end()) {
+    auto it = spirv_shaders_.find(spirv_hash);
+    if (it != spirv_shaders_.end()) {
         const std::vector<uint32_t> &spirv = it->second;
         chassis_state.instrumented_create_info[index].codeSize = spirv.size() * sizeof(uint32_t);
         chassis_state.instrumented_create_info[index].pCode = spirv.data();
@@ -204,14 +204,14 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice gpu, cons
         if (features2) features = &features2->features;
     }
     VkPhysicalDeviceFeatures new_features = {};
-    VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features);
+    VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features_);
     VkBool32 *feature_ptr;
     if (features) {
         feature_ptr = reinterpret_cast<VkBool32 *>(features);
     } else {
         feature_ptr = reinterpret_cast<VkBool32 *>(&new_features);
     }
-    VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features);
+    VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features_);
     for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures); i += (sizeof(VkBool32))) {
         if (*supported && *desired) {
             *feature_ptr = true;
@@ -226,7 +226,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice gpu, cons
     }
 
     auto add_missing_features = [this, modified_create_info]() {
-        if (force_buffer_device_address) {
+        if (force_buffer_device_address_) {
             // Add buffer device address feature
             auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
@@ -257,7 +257,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice gpu, cons
             vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext));
         if (features12) {
             features12->timelineSemaphore = VK_TRUE;
-            if (force_buffer_device_address) {
+            if (force_buffer_device_address_) {
                 features12->bufferDeviceAddress = VK_TRUE;
             }
         } else {
@@ -291,7 +291,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice gpu, cons
 
         add_missing_features();
     } else {
-        force_buffer_device_address = false;
+        force_buffer_device_address_ = false;
     }
 }
 
@@ -307,29 +307,30 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
     auto chain_info = GetChainInfo(pCreateInfo, VK_LOADER_DATA_CALLBACK);
     assert(chain_info->u.pfnSetDeviceLoaderData);
-    vkSetDeviceLoaderData = chain_info->u.pfnSetDeviceLoaderData;
+    vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
 
     // Some devices have extremely high limits here, so set a reasonable max because we have to pad
     // the pipeline layout with dummy descriptor set layouts.
-    adjusted_max_desc_sets = phys_dev_props.limits.maxBoundDescriptorSets;
-    adjusted_max_desc_sets = std::min(33U, adjusted_max_desc_sets);
+    adjusted_max_desc_sets_ = phys_dev_props.limits.maxBoundDescriptorSets;
+    adjusted_max_desc_sets_ = std::min(33U, adjusted_max_desc_sets_);
 
     // We can't do anything if there is only one.
     // Device probably not a legit Vulkan device, since there should be at least 4. Protect ourselves.
-    if (adjusted_max_desc_sets == 1) {
+    if (adjusted_max_desc_sets_ == 1) {
         InternalError(device, loc, "Device can bind only a single descriptor set.");
         return;
     }
 
-    desc_set_bind_index = adjusted_max_desc_sets - 1;
+    desc_set_bind_index_ = adjusted_max_desc_sets_ - 1;
 
-    VkResult result = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address, &vmaAllocator);
+    VkResult result = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address_, &vma_allocator_);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Could not initialize VMA", true);
         return;
     }
 
-    desc_set_manager = std::make_unique<gpu::DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
+    desc_set_manager_ =
+        std::make_unique<gpu::DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
 
     const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, 0,
                                                                     static_cast<uint32_t>(instrumentation_bindings_.size()),
@@ -352,7 +353,7 @@ void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, 
     }
 
     std::vector<VkDescriptorSetLayout> debug_layouts;
-    for (uint32_t j = 0; j < adjusted_max_desc_sets - 1; ++j) {
+    for (uint32_t j = 0; j < adjusted_max_desc_sets_ - 1; ++j) {
         debug_layouts.push_back(dummy_desc_layout_);
     }
     debug_layouts.push_back(debug_desc_layout_);
@@ -388,19 +389,19 @@ void GpuShaderInstrumentor::Cleanup() {
 
 void GpuShaderInstrumentor::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                                        const RecordObject &record_obj) {
-    indices_buffer.Destroy(vmaAllocator);
+    indices_buffer_.Destroy(vma_allocator_);
 
     Cleanup();
 
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
-    if (output_buffer_pool) {
-        vmaDestroyPool(vmaAllocator, output_buffer_pool);
+    if (output_buffer_pool_) {
+        vmaDestroyPool(vma_allocator_, output_buffer_pool_);
     }
-    if (vmaAllocator) {
-        vmaDestroyAllocator(vmaAllocator);
+    if (vma_allocator_) {
+        vmaDestroyAllocator(vma_allocator_);
     }
-    desc_set_manager.reset();
+    desc_set_manager_.reset();
 }
 
 // Just gives a warning about a possible deadlock.
@@ -451,9 +452,9 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
                                                               chassis::CreatePipelineLayout &chassis_state) {
-    if (chassis_state.modified_create_info.setLayoutCount >= adjusted_max_desc_sets) {
+    if (chassis_state.modified_create_info.setLayoutCount >= adjusted_max_desc_sets_) {
         std::ostringstream strm;
-        strm << "Pipeline Layout conflict with validation's descriptor set at slot " << desc_set_bind_index << ". "
+        strm << "Pipeline Layout conflict with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
              << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
              << "Validation is not modifying the pipeline layout. "
              << "Instrumented shaders are replaced with non-instrumented shaders.";
@@ -463,15 +464,15 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
         // 1. Copying the caller's descriptor set desc_layouts
         // 2. Fill in dummy descriptor layouts up to the max binding
         // 3. Fill in with the debug descriptor layout at the max binding slot
-        chassis_state.new_layouts.reserve(adjusted_max_desc_sets);
+        chassis_state.new_layouts.reserve(adjusted_max_desc_sets_);
         chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), &pCreateInfo->pSetLayouts[0],
                                          &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
-        for (uint32_t i = pCreateInfo->setLayoutCount; i < adjusted_max_desc_sets - 1; ++i) {
+        for (uint32_t i = pCreateInfo->setLayoutCount; i < adjusted_max_desc_sets_ - 1; ++i) {
             chassis_state.new_layouts.push_back(dummy_desc_layout_);
         }
         chassis_state.new_layouts.push_back(debug_desc_layout_);
         chassis_state.modified_create_info.pSetLayouts = chassis_state.new_layouts.data();
-        chassis_state.modified_create_info.setLayoutCount = adjusted_max_desc_sets;
+        chassis_state.modified_create_info.setLayoutCount = adjusted_max_desc_sets_;
     }
     BaseClass::PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
 }
@@ -491,9 +492,9 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                                                           const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                                           const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (chassis_state.instrumented_create_info->setLayoutCount >= adjusted_max_desc_sets) {
+        if (chassis_state.instrumented_create_info->setLayoutCount >= adjusted_max_desc_sets_) {
             std::ostringstream strm;
-            strm << "Descriptor Set Layout conflict with validation's descriptor set at slot " << desc_set_bind_index << ". "
+            strm << "Descriptor Set Layout conflict with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
                  << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
                  << "Validation is not modifying the pipeline layout. "
                  << "Instrumented shaders are replaced with non-instrumented shaders.";
@@ -503,15 +504,15 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             // 1. Copying the caller's descriptor set desc_layouts
             // 2. Fill in dummy descriptor layouts up to the max binding
             // 3. Fill in with the debug descriptor layout at the max binding slot
-            chassis_state.new_layouts.reserve(adjusted_max_desc_sets);
+            chassis_state.new_layouts.reserve(adjusted_max_desc_sets_);
             chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), pCreateInfos[i].pSetLayouts,
                                              &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
-            for (uint32_t j = pCreateInfos[i].setLayoutCount; j < adjusted_max_desc_sets - 1; ++j) {
+            for (uint32_t j = pCreateInfos[i].setLayoutCount; j < adjusted_max_desc_sets_ - 1; ++j) {
                 chassis_state.new_layouts.push_back(dummy_desc_layout_);
             }
             chassis_state.new_layouts.push_back(debug_desc_layout_);
             chassis_state.instrumented_create_info->pSetLayouts = chassis_state.new_layouts.data();
-            chassis_state.instrumented_create_info->setLayoutCount = adjusted_max_desc_sets;
+            chassis_state.instrumented_create_info->setLayoutCount = adjusted_max_desc_sets_;
         }
     }
 }
@@ -524,16 +525,16 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
                                               chassis_state);
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        shader_map.insert_or_assign(chassis_state.unique_shader_ids[i], VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
-                                    chassis_state.instrumented_spirv[i]);
+        shader_map_.insert_or_assign(chassis_state.unique_shader_ids[i], VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
+                                     chassis_state.instrumented_spirv[i]);
     }
 }
 
 void GpuShaderInstrumentor::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader,
                                                           const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    auto to_erase = shader_map.snapshot([shader](const GpuAssistedShaderTracker &entry) { return entry.shader_object == shader; });
+    auto to_erase = shader_map_.snapshot([shader](const GpuAssistedShaderTracker &entry) { return entry.shader_object == shader; });
     for (const auto &entry : to_erase) {
-        shader_map.erase(entry.first);
+        shader_map_.erase(entry.first);
     }
     BaseClass::PreCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
 }
@@ -645,9 +646,9 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
 // Remove all the shader trackers associated with this destroyed pipeline.
 void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    auto to_erase = shader_map.snapshot([pipeline](const GpuAssistedShaderTracker &entry) { return entry.pipeline == pipeline; });
+    auto to_erase = shader_map_.snapshot([pipeline](const GpuAssistedShaderTracker &entry) { return entry.pipeline == pipeline; });
     for (const auto &entry : to_erase) {
-        shader_map.erase(entry.first);
+        shader_map_.erase(entry.first);
     }
     BaseClass::PreCallRecordDestroyPipeline(device, pipeline, pAllocator, record_obj);
 }
@@ -728,13 +729,13 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
         auto new_pipeline_ci = std::get<SafeCreateInfo>(pipe->create_info);
 
         bool replace_shaders = false;
-        if (pipe->active_slots.find(desc_set_bind_index) != pipe->active_slots.end()) {
+        if (pipe->active_slots.find(desc_set_bind_index_) != pipe->active_slots.end()) {
             replace_shaders = true;
         }
         // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
         // already instrumented shaders need to be replaced with uninstrumented shaders
         const auto pipeline_layout = pipe->PipelineLayoutState();
-        if (pipeline_layout && pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets) {
+        if (pipeline_layout && pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets_) {
             replace_shaders = true;
         }
 
@@ -787,7 +788,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
                                 cached = true;
                             }
                         } else {
-                            unique_shader_id = unique_shader_module_id++;
+                            unique_shader_id = unique_shader_module_id_++;
                         }
                         if (!cached) {
                             pass = InstrumentShader(module_state->spirv->words_, instrumented_spirv, unique_shader_id,
@@ -832,8 +833,8 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreations(const uint32_t count
             for (auto &stage_state : pipeline_state->stage_states) {
                 auto &module_state = stage_state.module_state;
 
-                if (pipeline_state->active_slots.find(desc_set_bind_index) != pipeline_state->active_slots.end() ||
-                    (pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets)) {
+                if (pipeline_state->active_slots.find(desc_set_bind_index_) != pipeline_state->active_slots.end() ||
+                    (pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets_)) {
                     auto *modified_ci = reinterpret_cast<const CreateInfo *>(modified_create_infos[pipeline].ptr());
                     auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.GetStage());
                     assert(uninstrumented_module != module_state->VkHandle());
@@ -847,8 +848,8 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreations(const uint32_t count
                 // the pipeline is used, so we have to keep another copy.
                 if (module_state && module_state->spirv) code = module_state->spirv->words_;
 
-                shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->VkHandle(),
-                                            module_state->VkHandle(), VK_NULL_HANDLE, std::move(code));
+                shader_map_.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->VkHandle(),
+                                             module_state->VkHandle(), VK_NULL_HANDLE, std::move(code));
             }
         }
     }
@@ -856,14 +857,14 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreations(const uint32_t count
 
 void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message,
                                           bool vma_fail) const {
-    aborted = true;
+    aborted_ = true;
     std::string error_message = specific_message;
     if (vma_fail) {
         char *stats_string;
-        vmaBuildStatsString(vmaAllocator, &stats_string, false);
+        vmaBuildStatsString(vma_allocator_, &stats_string, false);
         error_message += " VMA statistics = ";
         error_message += stats_string;
-        vmaFreeStatsString(vmaAllocator, stats_string);
+        vmaFreeStatsString(vma_allocator_, stats_string);
     }
 
     char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "Debug PrintF" : "GPU-AV";

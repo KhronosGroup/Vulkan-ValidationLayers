@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 
+#include "gpu/core/gpuav.h"
+
+#include "gpu/core/gpuav_constants.h"
+#include "gpu/resources/gpuav_subclasses.h"
+
 #include <cmath>
 #include <fstream>
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <unistd.h>
 #endif
-#include "chassis/chassis_modification_state.h"
-#include "containers/custom_containers.h"
-#include "generated/layer_chassis_dispatch.h"
-#include "gpu/core/gpuav_constants.h"
-#include "gpu/core/gpuav.h"
-#include "gpu/resources/gpuav_subclasses.h"
 
 namespace gpuav {
 
@@ -54,27 +53,28 @@ VkDeviceAddress Validator::GetBufferDeviceAddress(VkBuffer buffer, const Locatio
     return 0;
 }
 
-bool Validator::AllocateOutputMem(gpu::DeviceMemoryBlock &output_mem, const Location &loc) {
+bool Validator::AllocateErrorLogsBuffer(gpu::DeviceMemoryBlock &error_logs_mem, const Location &loc) {
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = output_buffer_byte_size;
+    buffer_info.size = output_buffer_byte_size_;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    alloc_info.pool = output_buffer_pool;
-    VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_mem.buffer, &output_mem.allocation, nullptr);
+    alloc_info.pool = output_buffer_pool_;
+    VkResult result =
+        vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &error_logs_mem.buffer, &error_logs_mem.allocation, nullptr);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to allocate device memory for error output buffer. Device could become unstable.", true);
         return false;
     }
 
     uint32_t *output_buffer_ptr;
-    result = vmaMapMemory(vmaAllocator, output_mem.allocation, reinterpret_cast<void **>(&output_buffer_ptr));
+    result = vmaMapMemory(vma_allocator_, error_logs_mem.allocation, reinterpret_cast<void **>(&output_buffer_ptr));
     if (result == VK_SUCCESS) {
-        memset(output_buffer_ptr, 0, output_buffer_byte_size);
+        memset(output_buffer_ptr, 0, output_buffer_byte_size_);
         if (gpuav_settings.validate_descriptors) {
             output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
         }
-        vmaUnmapMemory(vmaAllocator, output_mem.allocation);
+        vmaUnmapMemory(vma_allocator_, error_logs_mem.allocation);
     } else {
         InternalError(device, loc, "Unable to map device memory allocated for error output buffer. Device could become unstable.",
                       true);

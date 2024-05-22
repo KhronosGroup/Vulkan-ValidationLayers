@@ -66,8 +66,8 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationRe
             }
         }
         VkResult result = VK_SUCCESS;
-        result = desc_set_manager->GetDescriptorSet(&draw_resources->desc_pool, shared_resources->ds_layout,
-                                                    &draw_resources->buffer_desc_set);
+        result = desc_set_manager_->GetDescriptorSet(&draw_resources->desc_pool, shared_resources->ds_layout,
+                                                     &draw_resources->buffer_desc_set);
         if (result != VK_SUCCESS) {
             InternalError(cmd_buffer, loc, "Unable to allocate descriptor set. Aborting GPU-AV");
             return nullptr;
@@ -200,7 +200,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationRe
         DispatchCmdDraw(cmd_buffer, 3, 1, 0, 0);
 
         CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
-        if (aborted) {
+        if (aborted_) {
             return nullptr;
         }
         CommandResources &base = *draw_resources;
@@ -372,7 +372,7 @@ void PreDrawResources::SharedResources::Destroy(Validator &validator) {
 
 void PreDrawResources::Destroy(Validator &validator) {
     if (buffer_desc_set != VK_NULL_HANDLE) {
-        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, buffer_desc_set);
+        validator.desc_set_manager_->PutBackDescriptorSet(desc_pool, buffer_desc_set);
         buffer_desc_set = VK_NULL_HANDLE;
         desc_pool = VK_NULL_HANDLE;
     }
