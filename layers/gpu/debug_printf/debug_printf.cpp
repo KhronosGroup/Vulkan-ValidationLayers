@@ -31,7 +31,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         return;
     }
 
-    output_buffer_byte_size = printf_settings.buffer_size;
+    output_buffer_byte_size_ = printf_settings.buffer_size;
     verbose = printf_settings.verbose;
     use_stdout = printf_settings.to_stdout;
 
@@ -56,12 +56,12 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         return;
     }
 
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
-    if (!supported_features.fragmentStoresAndAtomics) {
+    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features_);
+    if (!supported_features_.fragmentStoresAndAtomics) {
         InternalError(device, loc, "Debug Printf requires fragmentStoresAndAtomics.");
         return;
     }
-    if (!supported_features.vertexPipelineStoresAndAtomics) {
+    if (!supported_features_.vertexPipelineStoresAndAtomics) {
         InternalError(device, loc, "Debug Printf requires vertexPipelineStoresAndAtomics.");
         return;
     }
@@ -69,9 +69,9 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
 
 // Free the device memory and descriptor set associated with a command buffer.
 void Validator::DestroyBuffer(BufferInfo &buffer_info) {
-    vmaDestroyBuffer(vmaAllocator, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
+    vmaDestroyBuffer(vma_allocator_, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
     if (buffer_info.desc_set != VK_NULL_HANDLE) {
-        desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
+        desc_set_manager_->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
     }
 }
 
@@ -110,7 +110,7 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
         }
     };
     optimizer.SetMessageConsumer(debug_printf_console_message_consumer);
-    optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_id));
+    optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index_, unique_shader_id));
     const bool pass = optimizer.Run(instrumented_spirv.data(), instrumented_spirv.size(), &instrumented_spirv, opt_options);
     if (!pass) {
         InternalError(device, loc, "Failure to instrument shader in spirv-opt. Proceeding with non-instrumented shader.");
@@ -123,7 +123,7 @@ void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderM
                                                 const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
                                                             chassis_state);
-    chassis_state.unique_shader_id = unique_shader_module_id++;
+    chassis_state.unique_shader_id = unique_shader_module_id_++;
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
                                        chassis_state.instrumented_spirv, chassis_state.unique_shader_id, record_obj.location);
     if (pass) {
@@ -140,7 +140,7 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                              chassis_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        chassis_state.unique_shader_ids[i] = unique_shader_module_id++;
+        chassis_state.unique_shader_ids[i] = unique_shader_module_id_++;
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
             chassis_state.instrumented_spirv[i], chassis_state.unique_shader_ids[i], record_obj.location);
@@ -295,8 +295,8 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[index]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
-        auto it = shader_map.find(debug_record->shader_id);
-        if (it != shader_map.end()) {
+        auto it = shader_map_.find(debug_record->shader_id);
+        if (it != shader_map_.end()) {
             shader_module_handle = it->second.shader_module;
             pipeline_handle = it->second.pipeline;
             shader_object_handle = it->second.shader_object;
@@ -428,10 +428,10 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
                 assert(false);
             }
 
-            VkResult result = vmaMapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&data);
+            VkResult result = vmaMapMemory(device_state->vma_allocator_, buffer_info.output_mem_block.allocation, (void **)&data);
             if (result == VK_SUCCESS) {
                 device_state->AnalyzeAndGenerateMessage(VkHandle(), queue, buffer_info, operation_index, (uint32_t *)data, loc);
-                vmaUnmapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation);
+                vmaUnmapMemory(device_state->vma_allocator_, buffer_info.output_mem_block.allocation);
             }
         }
     }
@@ -623,14 +623,14 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
 
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    result = desc_set_manager->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);
+    result = desc_set_manager_->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);
     if (result != VK_SUCCESS) {
         InternalError(cmd_buffer, loc, "Unable to allocate descriptor sets.");
         return;
     }
 
     VkDescriptorBufferInfo output_desc_buffer_info = {};
-    output_desc_buffer_info.range = output_buffer_byte_size;
+    output_desc_buffer_info.range = output_buffer_byte_size_;
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
@@ -650,11 +650,11 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     // Allocate memory for the output block that the gpu will use to return values for printf
     DeviceMemoryBlock output_block = {};
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = output_buffer_byte_size;
+    buffer_info.size = output_buffer_byte_size_;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
+    result = vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
         InternalError(cmd_buffer, loc, "Unable to allocate device memory.");
         return;
@@ -662,10 +662,10 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
 
     // Clear the output block to zeros so that only printf values from the gpu will be present
     uint32_t *data;
-    result = vmaMapMemory(vmaAllocator, output_block.allocation, reinterpret_cast<void **>(&data));
+    result = vmaMapMemory(vma_allocator_, output_block.allocation, reinterpret_cast<void **>(&data));
     if (result == VK_SUCCESS) {
-        memset(data, 0, output_buffer_byte_size);
-        vmaUnmapMemory(vmaAllocator, output_block.allocation);
+        memset(data, 0, output_buffer_byte_size_);
+        vmaUnmapMemory(vma_allocator_, output_block.allocation);
     }
 
     VkWriteDescriptorSet desc_writes = vku::InitStructHelper();
@@ -692,15 +692,15 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
         // null handle.
         const auto pipeline_layout_handle =
             (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
-        if (pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(),
+        if (pipeline_layout->set_layouts.size() <= desc_set_bind_index_) {
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index_, 1, desc_sets.data(),
                                           0, nullptr);
         }
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, GetDebugPipelineLayout(), desc_set_bind_index, 1, desc_sets.data(), 0,
-                                      nullptr);
+        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, GetDebugPipelineLayout(), desc_set_bind_index_, 1, desc_sets.data(),
+                                      0, nullptr);
     }
     // Record buffer and memory info in CB state tracking
     cb_node->buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point);

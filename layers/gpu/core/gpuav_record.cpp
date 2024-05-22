@@ -122,7 +122,7 @@ void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderM
         }
         shader_id = shader_hash;
     } else {
-        shader_id = unique_shader_module_id++;
+        shader_id = unique_shader_module_id_++;
     }
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
                                        chassis_state.instrumented_spirv, shader_id, record_obj.location);
@@ -150,7 +150,7 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
             }
             chassis_state.unique_shader_ids[i] = shader_hash;
         } else {
-            chassis_state.unique_shader_ids[i] = unique_shader_module_id++;
+            chassis_state.unique_shader_ids[i] = unique_shader_module_id_++;
         }
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
@@ -168,19 +168,19 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
 // Clean up device-related resources
 void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                            const RecordObject &record_obj) {
-    desc_heap.reset();
+    desc_heap_.reset();
     for (auto &[key, shared_resources] : shared_validation_resources_map) {
         shared_resources->Destroy(*this);
     }
 
     if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders_cache_.IsEmpty()) {
-        std::ofstream file_stream(instrumented_shader_cache_path, std::ofstream::out | std::ofstream::binary);
+        std::ofstream file_stream(instrumented_shader_cache_path_, std::ofstream::out | std::ofstream::binary);
         if (file_stream) {
             ShaderCacheHash shader_cache_hash(gpuav_settings);
             file_stream.write(reinterpret_cast<const char *>(&shader_cache_hash), sizeof(shader_cache_hash));
-            uint32_t datasize = static_cast<uint32_t>(instrumented_shaders_cache_.spirv_shaders.size());
+            uint32_t datasize = static_cast<uint32_t>(instrumented_shaders_cache_.spirv_shaders_.size());
             file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
-            for (auto &record : instrumented_shaders_cache_.spirv_shaders) {
+            for (auto &record : instrumented_shaders_cache_.spirv_shaders_) {
                 // Hash of shader
                 file_stream.write(reinterpret_cast<const char *>(&record.first), sizeof(uint32_t));
                 const size_t spirv_dwords_count = record.second.size();

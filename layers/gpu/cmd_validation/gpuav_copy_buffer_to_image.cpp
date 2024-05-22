@@ -25,7 +25,7 @@ namespace gpuav {
 
 std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidationResources(
     const Location &loc, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
-    if (aborted) {
+    if (aborted_) {
         return nullptr;
     }
 
@@ -101,11 +101,11 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
         uint32_t mem_type_index = 0;
-        vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &buffer_info, &alloc_info, &mem_type_index);
+        vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
 
         alloc_info.pool = shared_resources->copy_regions_pool;
         VkResult result =
-            vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &copy_buffer_to_img_resources->copy_src_regions_buffer,
+            vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &copy_buffer_to_img_resources->copy_src_regions_buffer,
                             &copy_buffer_to_img_resources->copy_src_regions_allocation, nullptr);
         if (result != VK_SUCCESS) {
             InternalError(cmd_buffer, loc, "Unable to allocate device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
@@ -113,7 +113,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
         }
 
         uint32_t *gpu_regions_u32_ptr = nullptr;
-        result = vmaMapMemory(vmaAllocator, copy_buffer_to_img_resources->copy_src_regions_allocation,
+        result = vmaMapMemory(vma_allocator_, copy_buffer_to_img_resources->copy_src_regions_allocation,
                               reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
         if (result != VK_SUCCESS) {
@@ -164,7 +164,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
 
         if (gpu_regions_count == 0) {
             // Nothing to validate
-            vmaUnmapMemory(vmaAllocator, copy_buffer_to_img_resources->copy_src_regions_allocation);
+            vmaUnmapMemory(vma_allocator_, copy_buffer_to_img_resources->copy_src_regions_allocation);
             copy_buffer_to_img_resources->Destroy(*this);
             return nullptr;
         }
@@ -178,13 +178,13 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
         gpu_regions_u32_ptr[6] = 0;
         gpu_regions_u32_ptr[7] = 0;
 
-        vmaUnmapMemory(vmaAllocator, copy_buffer_to_img_resources->copy_src_regions_allocation);
+        vmaUnmapMemory(vma_allocator_, copy_buffer_to_img_resources->copy_src_regions_allocation);
     }
 
     // Update descriptor set
     {
-        VkResult result = desc_set_manager->GetDescriptorSet(&copy_buffer_to_img_resources->desc_pool, shared_resources->ds_layout,
-                                                             &copy_buffer_to_img_resources->desc_set);
+        VkResult result = desc_set_manager_->GetDescriptorSet(&copy_buffer_to_img_resources->desc_pool, shared_resources->ds_layout,
+                                                              &copy_buffer_to_img_resources->desc_set);
         if (result != VK_SUCCESS) {
             InternalError(cmd_buffer, loc,
                           "Unable to allocate descriptor set for copy buffer to image validation. Aborting GPU-AV");
@@ -264,13 +264,13 @@ PreCopyBufferToImageResources::SharedResources *Validator::GetSharedCopyBufferTo
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
     uint32_t mem_type_index = 0;
-    vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &buffer_info, &alloc_info, &mem_type_index);
+    vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
     VmaPoolCreateInfo pool_create_info = {};
     pool_create_info.memoryTypeIndex = mem_type_index;
     pool_create_info.blockSize = 0;
     pool_create_info.maxBlockCount = 0;
     pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
-    result = vmaCreatePool(vmaAllocator, &pool_create_info, &shared_resources->copy_regions_pool);
+    result = vmaCreatePool(vma_allocator_, &pool_create_info, &shared_resources->copy_regions_pool);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to create VMA memory pool for buffer to image copies validation. Aborting GPU-AV");
         return nullptr;
@@ -335,20 +335,20 @@ void PreCopyBufferToImageResources::SharedResources::Destroy(Validator &validato
         pipeline = VK_NULL_HANDLE;
     }
     if (copy_regions_pool != VK_NULL_HANDLE) {
-        vmaDestroyPool(validator.vmaAllocator, copy_regions_pool);
+        vmaDestroyPool(validator.vma_allocator_, copy_regions_pool);
         copy_regions_pool = VK_NULL_HANDLE;
     }
 }
 
 void PreCopyBufferToImageResources::Destroy(Validator &validator) {
     if (desc_set != VK_NULL_HANDLE) {
-        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, desc_set);
+        validator.desc_set_manager_->PutBackDescriptorSet(desc_pool, desc_set);
         desc_set = VK_NULL_HANDLE;
         desc_pool = VK_NULL_HANDLE;
     }
 
     if (copy_src_regions_buffer != VK_NULL_HANDLE) {
-        vmaDestroyBuffer(validator.vmaAllocator, copy_src_regions_buffer, copy_src_regions_allocation);
+        vmaDestroyBuffer(validator.vma_allocator_, copy_src_regions_buffer, copy_src_regions_allocation);
         copy_src_regions_buffer = VK_NULL_HANDLE;
         copy_src_regions_allocation = VK_NULL_HANDLE;
     }

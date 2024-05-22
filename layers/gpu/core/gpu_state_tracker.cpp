@@ -87,7 +87,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         }
 
         // Hook up command buffer dispatch
-        shader_instrumentor_.vkSetDeviceLoaderData(shader_instrumentor_.device, barrier_command_buffer_);
+        shader_instrumentor_.vk_set_device_loader_data_(shader_instrumentor_.device, barrier_command_buffer_);
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo barrier_cmd_buffer_begin_info = vku::InitStructHelper();

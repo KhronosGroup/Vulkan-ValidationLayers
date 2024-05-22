@@ -38,23 +38,23 @@
 namespace gpuav {
 
 std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *pCreateInfo) {
-    return std::make_shared<Buffer>(*this, handle, pCreateInfo, *desc_heap);
+    return std::make_shared<Buffer>(*this, handle, pCreateInfo, *desc_heap_);
 }
 
 std::shared_ptr<vvl::BufferView> Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
                                                                   const VkBufferViewCreateInfo *ci,
                                                                   VkFormatFeatureFlags2KHR buf_ff) {
-    return std::make_shared<BufferView>(bf, bv, ci, buf_ff, *desc_heap);
+    return std::make_shared<BufferView>(bf, bv, ci, buf_ff, *desc_heap_);
 }
 
 std::shared_ptr<vvl::ImageView> Validator::CreateImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv,
                                                                 const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
                                                                 const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
-    return std::make_shared<ImageView>(image_state, iv, ci, ff, cubic_props, *desc_heap);
+    return std::make_shared<ImageView>(image_state, iv, ci, ff, cubic_props, *desc_heap_);
 }
 
 std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
-    return std::make_shared<Sampler>(s, ci, *desc_heap);
+    return std::make_shared<Sampler>(s, ci, *desc_heap_);
 }
 
 std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet set, vvl::DescriptorPool *pool,
@@ -85,7 +85,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         });
 
     // Set up a stub implementation of the descriptor heap in case we abort.
-    desc_heap.emplace(*this, 0);
+    desc_heap_.emplace(*this, 0);
 
     instrumentation_bindings_ = {
         // Error output buffer
@@ -111,17 +111,17 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         return;
     }
 
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
-    if (!supported_features.fragmentStoresAndAtomics || !supported_features.vertexPipelineStoresAndAtomics) {
+    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features_);
+    if (!supported_features_.fragmentStoresAndAtomics || !supported_features_.vertexPipelineStoresAndAtomics) {
         InternalError(device, loc, "GPU-Assisted validation requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.");
         return;
     }
 
-    shaderInt64 = supported_features.shaderInt64;
-    bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-                                IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                               shaderInt64 && enabled_features.bufferDeviceAddress);
-    if (!bda_validation_possible) {
+    const VkBool32 shaderInt64 = supported_features_.shaderInt64;
+    bda_validation_possible_ = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+                                 IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+                                shaderInt64 && enabled_features.bufferDeviceAddress);
+    if (!bda_validation_possible_) {
         if (gpuav_settings.validate_bda) {
             if (!shaderInt64) {
                 LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
@@ -161,9 +161,9 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
                    "Use of descriptor buffers will result in no descriptor checking");
     }
 
-    output_buffer_byte_size = glsl::kErrorBufferByteSize;
+    output_buffer_byte_size_ = glsl::kErrorBufferByteSize;
 
-    if (gpuav_settings.validate_descriptors && !force_buffer_device_address) {
+    if (gpuav_settings.validate_descriptors && !force_buffer_device_address_) {
         gpuav_settings.validate_descriptors = false;
         LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                    "Buffer Device Address + feature is not available.  No descriptor checking will be attempted");
@@ -186,17 +186,17 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
             num_descs = glsl::kDebugInputBindlessMaxDescriptors;
         }
 
-        desc_heap.emplace(*this, num_descs);
+        desc_heap_.emplace(*this, num_descs);
     }
 
     VkBufferCreateInfo output_buffer_create_info = vku::InitStructHelper();
-    output_buffer_create_info.size = output_buffer_byte_size;
+    output_buffer_create_info.size = output_buffer_byte_size_;
     output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_create_info = {};
     alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     uint32_t mem_type_index;
     VkResult result =
-        vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
+        vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to find memory type index");
         return;
@@ -208,7 +208,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
     if (gpuav_settings.vma_linear_output) {
         pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
     }
-    result = vmaCreatePool(vmaAllocator, &pool_create_info, &output_buffer_pool);
+    result = vmaCreatePool(vma_allocator_, &pool_create_info, &output_buffer_pool_);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to create VMA memory pool");
         return;
@@ -216,13 +216,13 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
 
     if (gpuav_settings.cache_instrumented_shaders) {
         auto tmp_path = GetTempFilePath();
-        instrumented_shader_cache_path = tmp_path + "/instrumented_shader_cache";
+        instrumented_shader_cache_path_ = tmp_path + "/instrumented_shader_cache";
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-        instrumented_shader_cache_path += "-" + std::to_string(getuid());
+        instrumented_shader_cache_path_ += "-" + std::to_string(getuid());
 #endif
-        instrumented_shader_cache_path += ".bin";
+        instrumented_shader_cache_path_ += ".bin";
 
-        std::ifstream file_stream(instrumented_shader_cache_path, std::ifstream::in | std::ifstream::binary);
+        std::ifstream file_stream(instrumented_shader_cache_path_, std::ifstream::in | std::ifstream::binary);
         if (file_stream) {
             ShaderCacheHash shader_cache_hash(gpuav_settings);
             char inst_shader_hash[sizeof(shader_cache_hash)];
@@ -251,18 +251,18 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         buffer_info.size = cst::indices_count * sizeof(uint32_t);
         VmaAllocationCreateInfo alloc_info = {};
-        assert(output_buffer_pool);
-        alloc_info.pool = output_buffer_pool;
+        assert(output_buffer_pool_);
+        alloc_info.pool = output_buffer_pool_;
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        result =
-            vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &indices_buffer.buffer, &indices_buffer.allocation, nullptr);
+        result = vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &indices_buffer_.buffer, &indices_buffer_.allocation,
+                                 nullptr);
         if (result != VK_SUCCESS) {
             InternalError(device, loc, "Unable to allocate device memory for command indices.", true);
             return;
         }
 
         uint32_t *indices_ptr = nullptr;
-        result = vmaMapMemory(vmaAllocator, indices_buffer.allocation, reinterpret_cast<void **>(&indices_ptr));
+        result = vmaMapMemory(vma_allocator_, indices_buffer_.allocation, reinterpret_cast<void **>(&indices_ptr));
         if (result != VK_SUCCESS) {
             InternalError(device, loc, "Unable to map device memory for command indices buffer.");
             return;
@@ -272,7 +272,7 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
             indices_ptr[i] = i;
         }
 
-        vmaUnmapMemory(vmaAllocator, indices_buffer.allocation);
+        vmaUnmapMemory(vma_allocator_, indices_buffer_.allocation);
     }
 }
 

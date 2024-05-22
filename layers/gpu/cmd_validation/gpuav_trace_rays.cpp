@@ -84,7 +84,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
         DispatchCmdTraceRaysKHR(cmd_buffer, &ray_gen_sbt, &empty_sbt, &empty_sbt, &empty_sbt, 1, 1, 1);
 
         CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
-        if (aborted) {
+        if (aborted_) {
             return nullptr;
         }
         CommandResources &base = *trace_rays_resources;
@@ -189,20 +189,20 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
     uint32_t mem_type_index = 0;
-    vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &buffer_info, &alloc_info, &mem_type_index);
+    vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
     VmaPoolCreateInfo pool_create_info = {};
     pool_create_info.memoryTypeIndex = mem_type_index;
     pool_create_info.blockSize = 0;
     pool_create_info.maxBlockCount = 0;
     pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
-    result = vmaCreatePool(vmaAllocator, &pool_create_info, &shared_resources->sbt_pool);
+    result = vmaCreatePool(vma_allocator_, &pool_create_info, &shared_resources->sbt_pool);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to create VMA memory pool for SBT. Aborting GPU-AV");
         return nullptr;
     }
 
     alloc_info.pool = shared_resources->sbt_pool;
-    result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &shared_resources->sbt_buffer,
+    result = vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &shared_resources->sbt_buffer,
                              &shared_resources->sbt_allocation, nullptr);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to allocate device memory for shader binding table. Aborting GPU-AV.", true);
@@ -210,7 +210,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     }
 
     uint8_t *mapped_sbt = nullptr;
-    result = vmaMapMemory(vmaAllocator, shared_resources->sbt_allocation, reinterpret_cast<void **>(&mapped_sbt));
+    result = vmaMapMemory(vma_allocator_, shared_resources->sbt_allocation, reinterpret_cast<void **>(&mapped_sbt));
 
     if (result != VK_SUCCESS) {
         InternalError(device, loc,
@@ -220,7 +220,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
 
     std::memcpy(mapped_sbt, sbt_host_storage.data(), rt_pipeline_props.shaderGroupHandleSize);
 
-    vmaUnmapMemory(vmaAllocator, shared_resources->sbt_allocation);
+    vmaUnmapMemory(vma_allocator_, shared_resources->sbt_allocation);
 
     shared_resources->shader_group_handle_size_aligned = shader_group_size_aligned;
 
@@ -256,13 +256,13 @@ void PreTraceRaysResources::SharedResources::Destroy(Validator &validator) {
         pipeline = VK_NULL_HANDLE;
     }
     if (sbt_buffer != VK_NULL_HANDLE) {
-        vmaDestroyBuffer(validator.vmaAllocator, sbt_buffer, sbt_allocation);
+        vmaDestroyBuffer(validator.vma_allocator_, sbt_buffer, sbt_allocation);
         sbt_buffer = VK_NULL_HANDLE;
         sbt_allocation = VK_NULL_HANDLE;
         sbt_address = 0;
     }
     if (sbt_pool) {
-        vmaDestroyPool(validator.vmaAllocator, sbt_pool);
+        vmaDestroyPool(validator.vma_allocator_, sbt_pool);
         sbt_pool = VK_NULL_HANDLE;
     }
 }

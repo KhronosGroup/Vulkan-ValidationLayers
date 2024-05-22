@@ -594,8 +594,8 @@ bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue qu
 
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
-        auto it = shader_map.find(error_record[glsl::kHeaderShaderIdOffset]);
-        if (it != shader_map.end()) {
+        auto it = shader_map_.find(error_record[glsl::kHeaderShaderIdOffset]);
+        if (it != shader_map_.end()) {
             shader_module_handle = it->second.shader_module;
             pipeline_handle = it->second.pipeline;
             shader_object_handle = it->second.shader_object;

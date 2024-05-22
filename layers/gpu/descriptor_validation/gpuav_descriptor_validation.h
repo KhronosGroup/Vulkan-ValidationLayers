@@ -22,5 +22,5 @@
 namespace gpuav {
 class CommandBuffer;
 
-void UpdateBindlessStateBuffer(CommandBuffer& cb_node, VmaAllocator vmaAllocator);
+void UpdateBindlessStateBuffer(CommandBuffer& cmd_buffer, VmaAllocator vma_allocator);
 }  // namespace gpuav
