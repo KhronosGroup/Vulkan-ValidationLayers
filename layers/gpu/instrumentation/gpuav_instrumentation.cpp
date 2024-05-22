@@ -17,6 +17,7 @@
 
 #include "gpu/instrumentation/gpuav_instrumentation.h"
 
+#include "chassis/chassis_modification_state.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/spirv/module.h"
