@@ -2491,8 +2491,17 @@ void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createI
     }
 }
 
-bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &loc) const {
+bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &loc, ValidationCache *cache) const {
     bool skip = false;
+
+    uint32_t hash = 0;
+    if (cache) {
+        hash = hash_util::ShaderHash((void *)binary.code, binary.wordCount * sizeof(uint32_t));
+        if (cache->Contains(hash)) {
+            return skip;
+        }
+    }
+
     // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
     // the default values will be used during validation.
     spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
@@ -2509,6 +2518,9 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
             skip |= LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s",
                              diag && diag->error ? diag->error : "(no error text)");
         }
+    } else if (cache) {
+        // No point to cache anything that is not valid, or it will get supressed on the next run
+        cache->Insert(hash);
     }
 
     spvDiagnosticDestroy(diag);
@@ -2545,25 +2557,13 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
     ValidationCache *cache =
         validation_cache_ci ? CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache) : nullptr;
-
-    uint32_t hash = 0;
     // If app isn't using a shader validation cache, use the default one from CoreChecks
     if (!cache) {
         cache = CastFromHandle<ValidationCache *>(core_validation_cache);
     }
-    if (cache) {
-        hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
-        if (cache->Contains(hash)) {
-            return false;
-        }
-    }
 
     spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
-    skip |= RunSpirvValidation(binary, create_info_loc);
-    // No point to cache anything that is not valid
-    if (!skip && cache) {
-        cache->Insert(hash);
-    }
+    skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
     return skip;
 }
