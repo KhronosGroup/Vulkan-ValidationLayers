@@ -91,8 +91,8 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
     DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address,
-                           VmaAllocator *pAllocator) {
+static VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device,
+                                  bool use_buffer_device_address, VmaAllocator *pAllocator) {
     VmaVulkanFunctions functions;
     VmaAllocatorCreateInfo allocator_info = {};
     allocator_info.instance = instance;
@@ -126,6 +126,40 @@ VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device
     allocator_info.pVulkanFunctions = &functions;
 
     return vmaCreateAllocator(&allocator_info, pAllocator);
+}
+
+void SpirvCache::Add(uint32_t hash, std::vector<uint32_t> spirv) { spirv_shaders.emplace(hash, std::move(spirv)); }
+
+std::vector<uint32_t> *SpirvCache::Get(uint32_t spirv_hash) {
+    auto it = spirv_shaders.find(spirv_hash);
+    if (it != spirv_shaders.end()) {
+        return &it->second;
+    }
+    return nullptr;
+}
+
+bool SpirvCache::IsSpirvCached(uint32_t spirv_hash, chassis::CreateShaderModule &chassis_state) const {
+    auto it = spirv_shaders.find(spirv_hash);
+    if (it != spirv_shaders.end()) {
+        const std::vector<uint32_t> &spirv = it->second;
+        chassis_state.instrumented_create_info.codeSize = spirv.size() * sizeof(uint32_t);
+        chassis_state.instrumented_create_info.pCode = spirv.data();
+        chassis_state.instrumented_spirv = spirv;
+        chassis_state.unique_shader_id = spirv_hash;
+        return true;
+    }
+    return false;
+}
+
+bool SpirvCache::IsSpirvCached(uint32_t index, uint32_t spirv_hash, chassis::ShaderObject &chassis_state) const {
+    auto it = spirv_shaders.find(spirv_hash);
+    if (it != spirv_shaders.end()) {
+        const std::vector<uint32_t> &spirv = it->second;
+        chassis_state.instrumented_create_info[index].codeSize = spirv.size() * sizeof(uint32_t);
+        chassis_state.instrumented_create_info[index].pCode = spirv.data();
+        return true;
+    }
+    return false;
 }
 
 ReadLockGuard GpuShaderInstrumentor::ReadLock() const {
@@ -748,9 +782,8 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
                         if (gpuav_settings.cache_instrumented_shaders) {
                             unique_shader_id =
                                 hash_util::ShaderHash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
-                            auto it = instrumented_shaders.find(unique_shader_id);
-                            if (it != instrumented_shaders.end()) {
-                                instrumented_spirv = it->second.second;
+                            if (const auto spirv = instrumented_shaders_cache_.Get(unique_shader_id)) {
+                                instrumented_spirv = *spirv;
                                 cached = true;
                             }
                         } else {
@@ -768,8 +801,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
                                 sm_ci->SetCode(instrumented_spirv);
                             }
                             if (gpuav_settings.cache_instrumented_shaders && !cached) {
-                                instrumented_shaders.emplace(unique_shader_id,
-                                                             std::make_pair(instrumented_spirv.size(), instrumented_spirv));
+                                instrumented_shaders_cache_.Add(unique_shader_id, instrumented_spirv);
                             }
                         }
 

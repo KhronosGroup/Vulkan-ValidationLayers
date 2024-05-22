@@ -54,28 +54,6 @@ VkDeviceAddress Validator::GetBufferDeviceAddress(VkBuffer buffer, const Locatio
     return 0;
 }
 
-bool Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, chassis::CreateShaderModule &chassis_state) {
-    auto it = instrumented_shaders.find(shader_hash);
-    if (it != instrumented_shaders.end()) {
-        chassis_state.instrumented_create_info.codeSize = it->second.first * sizeof(uint32_t);
-        chassis_state.instrumented_create_info.pCode = it->second.second.data();
-        chassis_state.instrumented_spirv = it->second.second;
-        chassis_state.unique_shader_id = shader_hash;
-        return true;
-    }
-    return false;
-}
-
-bool Validator::CheckForCachedInstrumentedShader(uint32_t index, uint32_t shader_hash, chassis::ShaderObject &chassis_state) {
-    auto it = instrumented_shaders.find(shader_hash);
-    if (it != instrumented_shaders.end()) {
-        chassis_state.instrumented_create_info[index].codeSize = it->second.first * sizeof(uint32_t);
-        chassis_state.instrumented_create_info[index].pCode = it->second.second.data();
-        return true;
-    }
-    return false;
-}
-
 void Validator::UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                     const Location &loc) {
     if (!gpuav_settings.validate_descriptors) return;

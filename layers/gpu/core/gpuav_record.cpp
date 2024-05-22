@@ -117,7 +117,7 @@ void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderM
     uint32_t shader_id;
     if (gpuav_settings.cache_instrumented_shaders) {
         const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
-        if (gpuav_settings.cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, chassis_state)) {
+        if (gpuav_settings.cache_instrumented_shaders && instrumented_shaders_cache_.IsSpirvCached(shader_hash, chassis_state)) {
             return;
         }
         shader_id = shader_hash;
@@ -131,8 +131,7 @@ void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderM
         chassis_state.instrumented_create_info.codeSize = chassis_state.instrumented_spirv.size() * sizeof(uint32_t);
         chassis_state.unique_shader_id = shader_id;
         if (gpuav_settings.cache_instrumented_shaders) {
-            instrumented_shaders.emplace(shader_id,
-                                         std::make_pair(chassis_state.instrumented_spirv.size(), chassis_state.instrumented_spirv));
+            instrumented_shaders_cache_.Add(shader_id, chassis_state.instrumented_spirv);
         }
     }
 }
@@ -146,7 +145,7 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
         if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;
         if (gpuav_settings.cache_instrumented_shaders) {
             const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
-            if (CheckForCachedInstrumentedShader(i, chassis_state.unique_shader_ids[i], chassis_state)) {
+            if (instrumented_shaders_cache_.IsSpirvCached(i, chassis_state.unique_shader_ids[i], chassis_state)) {
                 continue;
             }
             chassis_state.unique_shader_ids[i] = shader_hash;
@@ -160,9 +159,7 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
             chassis_state.instrumented_create_info[i].pCode = chassis_state.instrumented_spirv[i].data();
             chassis_state.instrumented_create_info[i].codeSize = chassis_state.instrumented_spirv[i].size() * sizeof(uint32_t);
             if (gpuav_settings.cache_instrumented_shaders) {
-                instrumented_shaders.emplace(
-                    chassis_state.unique_shader_ids[i],
-                    std::make_pair(chassis_state.instrumented_spirv[i].size(), chassis_state.instrumented_spirv[i]));
+                instrumented_shaders_cache_.Add(chassis_state.unique_shader_ids[i], chassis_state.instrumented_spirv[i]);
             }
         }
     }
@@ -176,21 +173,19 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
         shared_resources->Destroy(*this);
     }
 
-    if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders.empty()) {
+    if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders_cache_.IsEmpty()) {
         std::ofstream file_stream(instrumented_shader_cache_path, std::ofstream::out | std::ofstream::binary);
         if (file_stream) {
             ShaderCacheHash shader_cache_hash(gpuav_settings);
             file_stream.write(reinterpret_cast<const char *>(&shader_cache_hash), sizeof(shader_cache_hash));
-            uint32_t datasize = static_cast<uint32_t>(instrumented_shaders.size());
+            uint32_t datasize = static_cast<uint32_t>(instrumented_shaders_cache_.spirv_shaders.size());
             file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
-            for (auto &record : instrumented_shaders) {
+            for (auto &record : instrumented_shaders_cache_.spirv_shaders) {
                 // Hash of shader
                 file_stream.write(reinterpret_cast<const char *>(&record.first), sizeof(uint32_t));
-                // Size of vector of code
-                auto vector_size = record.second.first;
-                file_stream.write(reinterpret_cast<const char *>(&vector_size), sizeof(uint32_t));
-                // Vector contents
-                file_stream.write(reinterpret_cast<const char *>(record.second.second.data()), vector_size * sizeof(uint32_t));
+                const size_t spirv_dwords_count = record.second.size();
+                file_stream.write(reinterpret_cast<const char *>(&spirv_dwords_count), sizeof(uint32_t));
+                file_stream.write(reinterpret_cast<const char *>(record.second.data()), spirv_dwords_count * sizeof(uint32_t));
             }
             file_stream.close();
         }

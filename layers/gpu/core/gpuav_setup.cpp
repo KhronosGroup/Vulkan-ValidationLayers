@@ -232,13 +232,13 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
                 file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(uint32_t));
                 for (uint32_t i = 0; i < num_shaders; ++i) {
                     uint32_t hash;
-                    uint32_t shader_length;
+                    uint32_t spirv_dwords_count;
                     std::vector<uint32_t> shader_code;
                     file_stream.read(reinterpret_cast<char *>(&hash), sizeof(uint32_t));
-                    file_stream.read(reinterpret_cast<char *>(&shader_length), sizeof(uint32_t));
-                    shader_code.resize(shader_length);
-                    file_stream.read(reinterpret_cast<char *>(shader_code.data()), 4 * shader_length);
-                    instrumented_shaders.emplace(hash, std::make_pair(shader_length, std::move(shader_code)));
+                    file_stream.read(reinterpret_cast<char *>(&spirv_dwords_count), sizeof(uint32_t));
+                    shader_code.resize(spirv_dwords_count);
+                    file_stream.read(reinterpret_cast<char *>(shader_code.data()), 4 * spirv_dwords_count);
+                    instrumented_shaders_cache_.Add(hash, std::move(shader_code));
                 }
             }
             file_stream.close();

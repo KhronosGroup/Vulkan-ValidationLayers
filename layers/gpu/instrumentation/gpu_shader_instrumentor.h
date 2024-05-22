@@ -15,12 +15,32 @@
  * limitations under the License.
  */
 #pragma once
+
+#include "containers/custom_containers.h"
 #include "generated/chassis.h"
 #include "gpu/core/gpu_state_tracker.h"
 #include "gpu/resources/gpu_resources.h"
 #include "vma/vma.h"
 
+#include <vector>
+
+namespace gpuav {
+class Validator;
+}
+
 namespace gpu {
+class SpirvCache {
+  public:
+    void Add(uint32_t hash, std::vector<uint32_t> spirv);
+    std::vector<uint32_t> *Get(uint32_t spirv_hash);
+    bool IsEmpty() { return spirv_shaders.empty(); }
+    bool IsSpirvCached(uint32_t spirv_hash, chassis::CreateShaderModule &chassis_state) const;
+    bool IsSpirvCached(uint32_t index, uint32_t spirv_hash, chassis::ShaderObject &chassis_state) const;
+
+  private:
+    friend class gpuav::Validator;
+    vvl::unordered_map<uint32_t, std::vector<uint32_t>> spirv_shaders{};
+};
 
 struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
@@ -148,7 +168,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     mutable bool aborted = false;
 
     bool force_buffer_device_address;
-    vvl::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     VkPhysicalDeviceFeatures supported_features{};
     VkPhysicalDeviceFeatures desired_features{};
@@ -161,7 +180,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     std::unique_ptr<DescriptorSetManager> desc_set_manager;
     vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
-
+    SpirvCache instrumented_shaders_cache_;
     DeviceMemoryBlock indices_buffer{};
 
   private:
