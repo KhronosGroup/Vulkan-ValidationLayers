@@ -288,16 +288,8 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         }
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
 
-        const uint32_t hash = cache ? hash_util::ShaderHash(create_info.pCode, create_info.codeSize) : 0;
-        if (!cache || !cache->Contains(hash)) {
-            spv_const_binary_t binary{static_cast<const uint32_t*>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)};
-            skip |= RunSpirvValidation(binary, create_info_loc);
-        }
-
-        // No point to cache anything that is not valid
-        if (!skip && cache) {
-            cache->Insert(hash);
-        }
+        spv_const_binary_t binary{static_cast<const uint32_t*>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)};
+        skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
         const StageCreateInfo stage_create_info(pCreateInfos[i]);
         const auto spirv = std::make_shared<spirv::Module>(create_info.codeSize, static_cast<const uint32_t*>(create_info.pCode));
