@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "gpu/resources/gpuav_descriptor_set.h"
+#include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"

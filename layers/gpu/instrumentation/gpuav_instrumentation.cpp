@@ -28,29 +28,6 @@
 
 namespace gpuav {
 
-// For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-void UpdateInstrumentationBuffer(CommandBuffer &cb_node, VmaAllocator vmaAllocator) {
-    for (auto &cmd_info : cb_node.di_input_buffer_list) {
-        glsl::BindlessStateBuffer *bindless_state{nullptr};
-        [[maybe_unused]] VkResult result;
-        result = vmaMapMemory(vmaAllocator, cmd_info.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
-        assert(result == VK_SUCCESS);
-        for (size_t i = 0; i < cmd_info.descriptor_set_buffers.size(); i++) {
-            auto &set_buffer = cmd_info.descriptor_set_buffers[i];
-            bindless_state->desc_sets[i].layout_data = set_buffer.state->GetLayoutState();
-            if (!set_buffer.gpu_state) {
-                set_buffer.gpu_state = set_buffer.state->GetCurrentState();
-                bindless_state->desc_sets[i].in_data = set_buffer.gpu_state->device_addr;
-            }
-            if (!set_buffer.output_state) {
-                set_buffer.output_state = set_buffer.state->GetOutputState();
-                bindless_state->desc_sets[i].out_data = set_buffer.output_state->device_addr;
-            }
-        }
-        vmaUnmapMemory(vmaAllocator, cmd_info.bindless_state_buffer_allocation);
-    }
-}
-
 static bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout,
                               spv_target_env target_env, std::string &error) {
     // Use SPIRV-Tools validator to try and catch any issues with the module
