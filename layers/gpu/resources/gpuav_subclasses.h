@@ -21,7 +21,7 @@
 #include <mutex>
 
 #include "gpu/core/gpu_state_tracker.h"
-#include "gpu/resources/gpuav_descriptor_set.h"
+#include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpu/resources/gpu_resources.h"
 #include "generated/vk_object_types.h"
 #include "gpu_shaders/gpu_shaders_constants.h"
@@ -83,6 +83,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 
     bool PreProcess() final;
     void PostProcess(VkQueue queue, const Location &loc) final;
+    void ValidateBindlessDescriptorSets();
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
