@@ -26,8 +26,6 @@
 #include <unordered_map>
 #include <memory>
 
-typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
-
 namespace chassis {
 struct ShaderObject;
 }  // namespace chassis
