@@ -981,4 +981,32 @@ void Validator::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBu
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 
+void Validator::PreCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                            const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
+                                                            const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdExecuteGeneratedCommandsEXT(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, record_obj);
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
+    PreCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
+};
+
+void Validator::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                             const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
+                                                             const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdExecuteGeneratedCommandsEXT(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, record_obj);
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
+    PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
+}
+
 }  // namespace gpuav

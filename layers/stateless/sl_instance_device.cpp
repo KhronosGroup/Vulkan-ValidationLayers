@@ -412,6 +412,13 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_device_generated_commands)) {
+        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&device_generated_commands_props);
+        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        phys_dev_ext_props.device_generated_commands_props = device_generated_commands_props;
+    }
+
      if (IsExtEnabled(device_extensions.vk_arm_render_pass_striped)) {
         VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&renderpass_striped_props);

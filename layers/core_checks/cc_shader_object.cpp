@@ -219,6 +219,12 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
                 "VUID-VkShaderCreateInfoEXT-flags-09405", device, create_info_loc.dot(Field::flags),
                 "contains VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but computeFullSubgroups feature is not enabled.");
         }
+        if ((create_info.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) != 0 &&
+            enabled_features.deviceGeneratedCommands == VK_FALSE) {
+            skip |= LogError(
+                " VUID-VkShaderCreateInfoEXT-flags-11005", device, create_info_loc.dot(Field::flags),
+                "contains VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT, but deviceGeneratedCommands feature is not enabled.");
+        }
     }
 
     if (linked_stage != invalid && non_linked_graphics_stage != invalid) {

@@ -80,3 +80,9 @@
     }
     return ss.str();
 }
+
+[[maybe_unused]] static std::string string_VkPushConstantRange(VkPushConstantRange range) {
+    std::stringstream ss;
+    ss << "[" << range.offset << ", " << (range.offset + range.size) << "]";
+    return ss.str();
+}

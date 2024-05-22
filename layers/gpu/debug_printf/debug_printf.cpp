@@ -568,6 +568,13 @@ void Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuf
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 
+void Validator::PreCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                            const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
+                                                            const RecordObject &record_obj) {
+    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
+    AllocateDebugPrintfResources(commandBuffer, bind_point, record_obj.location);
+};
+
 void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
                                              const Location &loc) {
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||

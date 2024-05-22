@@ -62,6 +62,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
         VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
+        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props;
         VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
@@ -1171,6 +1172,43 @@ class StatelessValidation : public ValidationObject {
                                                                       const ErrorObject &error_obj) const;
     bool manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                VkFence fence, const ErrorObject &error_obj) const;
+
+    bool ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecutionSetPipelineInfoEXT &pipeline_info,
+                                                  const Location &pipeline_info_loc) const;
+    bool ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutionSetShaderInfoEXT &shader_info,
+                                                const Location &shader_info_loc) const;
+    bool manual_PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device,
+                                                             const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator,
+                                                             VkIndirectExecutionSetEXT *pIndirectExecutionSet,
+                                                             const ErrorObject &error_obj) const;
+    bool ValidateIndirectCommandsPushConstantToken(const VkIndirectCommandsPushConstantTokenEXT &push_constant_token,
+                                                   VkIndirectCommandsTokenTypeEXT token_type,
+                                                   const Location &push_constant_token_loc) const;
+    bool ValidateIndirectCommandsIndexBufferToken(const VkIndirectCommandsIndexBufferTokenEXT &index_buffer_token,
+                                                  const Location &index_buffer_token_loc) const;
+    bool ValidateIndirectCommandsExecutionSetToken(const VkIndirectCommandsExecutionSetTokenEXT &exe_set_token,
+                                                   const Location &exe_set_token_loc) const;
+    bool ValidateIndirectCommandsLayoutToken(const VkIndirectCommandsLayoutTokenEXT &token, const Location &token_loc) const;
+    bool ValidateIndirectCommandsLayoutStage(const VkIndirectCommandsLayoutTokenEXT &token, const Location &token_loc,
+                                             VkShaderStageFlags shader_stages, bool has_stage_graphics, bool has_stage_compute,
+                                             bool has_stage_ray_tracing, bool has_stage_mesh) const;
+    bool manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
+                                                               const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               VkIndirectCommandsLayoutEXT *pIndirectCommandsLayout,
+                                                               const ErrorObject &error_obj) const;
+    bool ValidateGeneratedCommandsInfo(VkCommandBuffer command_buffer, const VkGeneratedCommandsInfoEXT &generated_commands_info,
+                                       const Location &info_loc) const;
+
+    bool manual_PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                                                 const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
+                                                                 VkCommandBuffer stateCommandBuffer,
+                                                                 const ErrorObject &error_obj) const;
+
+    bool manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                              const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
+                                                              const ErrorObject &error_obj) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool manual_PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo,

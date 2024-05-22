@@ -298,6 +298,12 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                                const RecordObject& record_obj) final;
     void PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                 const RecordObject& record_obj) final;
+    void PreCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                     const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                     const RecordObject& record_obj) final;
+    void PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                      const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                      const RecordObject& record_obj) final;
 
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,

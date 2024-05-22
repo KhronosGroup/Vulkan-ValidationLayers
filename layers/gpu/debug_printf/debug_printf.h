@@ -149,6 +149,9 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                               VkDeviceAddress indirectDeviceAddress, const RecordObject& record_obj) override;
     void PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                const RecordObject& record_obj) override;
+    void PreCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                     const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                     const RecordObject& record_obj) override;
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, const Location& loc);
 
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,

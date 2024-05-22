@@ -1903,4 +1903,31 @@ void SamplerYcbcrConversion::destroy() noexcept {
 
 SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept { destroy(); }
 
+NON_DISPATCHABLE_HANDLE_DTOR(IndirectCommandsLayout, vk::DestroyIndirectCommandsLayoutEXT)
+void IndirectCommandsLayout::Init(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateIndirectCommandsLayoutEXT, dev, &info);
+}
+
+NON_DISPATCHABLE_HANDLE_DTOR(IndirectExecutionSet, vk::DestroyIndirectExecutionSetEXT)
+void IndirectExecutionSet::Init(const Device &dev, const VkIndirectExecutionSetCreateInfoEXT &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateIndirectExecutionSetEXT, dev, &info);
+}
+
+IndirectExecutionSet::IndirectExecutionSet(const Device &dev, VkPipeline init_pipeline, uint32_t max_pipelines) {
+    VkIndirectExecutionSetPipelineInfoEXT exe_set_pipeline_info = vku::InitStructHelper();
+    exe_set_pipeline_info.initialPipeline = init_pipeline;
+    exe_set_pipeline_info.maxPipelineCount = max_pipelines;
+
+    VkIndirectExecutionSetCreateInfoEXT exe_set_ci = vku::InitStructHelper();
+    exe_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT;
+    exe_set_ci.info.pPipelineInfo = &exe_set_pipeline_info;
+    Init(dev, exe_set_ci);
+}
+IndirectExecutionSet::IndirectExecutionSet(const Device &dev, const VkIndirectExecutionSetShaderInfoEXT &shader_info) {
+    VkIndirectExecutionSetCreateInfoEXT exe_set_ci = vku::InitStructHelper();
+    exe_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT;
+    exe_set_ci.info.pShaderInfo = &shader_info;
+    Init(dev, exe_set_ci);
+}
+
 }  // namespace vkt

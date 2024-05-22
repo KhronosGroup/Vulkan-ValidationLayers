@@ -1277,6 +1277,39 @@ bool LastBound::IsAnyGraphicsShaderBound() const {
         IsValidShaderBound(ShaderObjectStage::MESH);
 }
 
+VkShaderStageFlags LastBound::GetAllActiveBoundStages() const {
+    if (pipeline_state) {
+        return pipeline_state->active_shaders;
+    }
+    // else shader object
+    VkShaderStageFlags stages = 0;
+    if (IsValidShaderBound(ShaderObjectStage::VERTEX)) {
+        stages |= VK_SHADER_STAGE_VERTEX_BIT;
+    }
+    if (IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
+        stages |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    }
+    if (IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
+        stages |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    }
+    if (IsValidShaderBound(ShaderObjectStage::GEOMETRY)) {
+        stages |= VK_SHADER_STAGE_GEOMETRY_BIT;
+    }
+    if (IsValidShaderBound(ShaderObjectStage::FRAGMENT)) {
+        stages |= VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+    if (IsValidShaderBound(ShaderObjectStage::COMPUTE)) {
+        stages |= VK_SHADER_STAGE_COMPUTE_BIT;
+    }
+    if (IsValidShaderBound(ShaderObjectStage::TASK)) {
+        stages |= VK_SHADER_STAGE_TASK_BIT_EXT;
+    }
+    if (IsValidShaderBound(ShaderObjectStage::MESH)) {
+        stages |= VK_SHADER_STAGE_MESH_BIT_EXT;
+    }
+    return stages;
+}
+
 bool LastBound::IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const {
     if ((set >= per_set.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
         return false;

@@ -72,6 +72,9 @@ const char* unimplementable_validation[] = {
     "VUID-VkPipelineCacheHeaderVersionOne-headerVersion-04968",
     "VUID-VkPipelineCacheHeaderVersionOne-headerSize-08990",
 
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6639#note_468463
+    "VUID-VkIndirectCommandsVertexBufferTokenEXT-vertexBindingUnit-11134",
+
     // These implicit VUs ask to check for a valid structure that has no sType,
     // there is nothing that can actually be validated
     //

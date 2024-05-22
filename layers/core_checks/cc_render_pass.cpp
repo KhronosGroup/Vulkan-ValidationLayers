@@ -5060,7 +5060,7 @@ bool CoreChecks::ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttach
 
             if (unique.find(location) != unique.end()) {
                 skip |= LogError("VUID-VkRenderingAttachmentLocationInfoKHR-pColorAttachmentLocations-09513", objlist, loc,
-                                 "= %" PRIu32 " have same value as pColorAttachmentLocations[%" PRIu32 "] = %" PRIu32, location,
+                                 "= %" PRIu32 " has same value as pColorAttachmentLocations[%" PRIu32 "] = %" PRIu32, location,
                                  unique[location], location);
             } else
                 unique[location] = i;
@@ -5164,7 +5164,7 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInp
                 skip |=
                     LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09522", objlist,
                              loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pColorAttachmentInputIndices, i),
-                             "= %" PRIu32 " have same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32, index,
+                             "= %" PRIu32 " has same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32, index,
                              unique[index], index_info.pColorAttachmentInputIndices[unique[index]]);
             } else
                 unique[index] = i;
@@ -5173,7 +5173,7 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInp
             unique.find(*index_info.pDepthInputAttachmentIndex) != unique.end()) {
             const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pDepthInputAttachmentIndex, 0);
             skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09523", objlist, loc,
-                             "= %" PRIu32 " have same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
+                             "= %" PRIu32 " has same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
                              *index_info.pDepthInputAttachmentIndex, unique[*index_info.pDepthInputAttachmentIndex],
                              index_info.pColorAttachmentInputIndices[unique[*index_info.pDepthInputAttachmentIndex]]);
         }
@@ -5182,7 +5182,7 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInp
             const Location loc =
                 loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pStencilInputAttachmentIndex, 0);
             skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09524", objlist, loc,
-                             "= %" PRIu32 " have same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
+                             "= %" PRIu32 " has same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
                              *index_info.pStencilInputAttachmentIndex, unique[*index_info.pStencilInputAttachmentIndex],
                              index_info.pColorAttachmentInputIndices[unique[*index_info.pStencilInputAttachmentIndex]]);
         }

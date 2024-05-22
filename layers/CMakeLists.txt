@@ -157,6 +157,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_descriptor.cpp
     core_checks/cc_device.cpp
     core_checks/cc_device_memory.cpp
+    core_checks/cc_device_generated_commands.cpp
     core_checks/cc_drawdispatch.cpp
     core_checks/cc_external_object.cpp
     core_checks/cc_image.cpp
@@ -266,6 +267,8 @@ target_sources(vvl PRIVATE
     state_tracker/cmd_buffer_state.h
     state_tracker/descriptor_sets.cpp
     state_tracker/descriptor_sets.h
+    state_tracker/device_generated_commands_state.cpp
+    state_tracker/device_generated_commands_state.h
     state_tracker/device_memory_state.cpp
     state_tracker/device_memory_state.h
     state_tracker/device_state.cpp
@@ -311,6 +314,7 @@ target_sources(vvl PRIVATE
     stateless/sl_cmd_buffer_dynamic.cpp
     stateless/sl_cmd_buffer.cpp
     stateless/sl_descriptor.cpp
+    stateless/sl_device_generated_commands.cpp
     stateless/sl_device_memory.cpp
     stateless/sl_external_object.cpp
     stateless/sl_framebuffer.cpp

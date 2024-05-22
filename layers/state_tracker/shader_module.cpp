@@ -446,6 +446,15 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
     return false;
 }
 
+bool EntryPoint::HasBuiltIn(spv::BuiltIn built_in) const {
+    for (const auto* variable : built_in_variables) {
+        if (variable->decorations.builtin == built_in) {
+            return true;
+        }
+    }
+    return false;
+}
+
 vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
     vvl::unordered_set<uint32_t> result_ids;
 

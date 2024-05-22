@@ -300,6 +300,11 @@ class ExternalMemorySyncTest : public VkLayerTest {
 #endif
 };
 
+class DeviceGeneratedCommandsTest : public VkLayerTest {
+  public:
+    void InitBasicDeviceGeneratedCommands();
+};
+
 class GraphicsLibraryTest : public VkLayerTest {
   public:
     void InitBasicGraphicsLibrary();
