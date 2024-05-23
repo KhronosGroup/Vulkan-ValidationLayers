@@ -104,7 +104,11 @@ class CoreChecks : public ValidationStateTracker {
                                                  const Location& loc, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                    const Location& loc, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawPrimitivesGeneratedQuery(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid,
+                                              const Location& loc) const;
+    bool ValidateDrawProtectedMemory(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid,
+                                     const Location& loc) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
                                VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const vvl::DeviceMemory& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
@@ -479,12 +483,26 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePrimaryCommandBufferState(const Location& loc, const vvl::CommandBuffer& cb_state, uint32_t current_submit_count,
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
-    bool ValidatePipelineRenderpassDraw(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidatePipelineDynamicRenderpassDraw(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidatePipelineDrawtimeState(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidateShaderObjectDrawtimeState(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidateShaderObjectGraphicsDrawtimeState(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidatePipelineRenderpassDraw(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                        const Location& loc) const;
+    bool ValidatePipelineDynamicRenderpassDraw(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                               const Location& loc) const;
+    bool ValidatePipelineDynamicRenderpassSampleCount(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                      const Location& loc) const;
+    bool ValidatePipelineDraw(const LastBound& last_bound_state, const vvl::Pipeline& pipeline, const Location& loc) const;
+    bool ValidateShaderObjectBoundShader(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
+                                         const Location& loc) const;
+    bool ValidateShaderObjectDraw(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateShaderObjectDrawMesh(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateActionState(const vvl::CommandBuffer& cb_state, const VkPipelineBindPoint bind_point, const Location& loc) const;
+    bool ValidateActionStateDescriptors(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
+                                        const vvl::Pipeline* pipeline, const vvl::DrawDispatchVuid& vuid,
+                                        const Location& loc) const;
+    bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
+                                         const vvl::DrawDispatchVuid& vuid, const Location& loc) const;
+    bool ValidateActionStateProtectedMemory(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
+                                            const vvl::Pipeline* pipeline, const vvl::DrawDispatchVuid& vuid,
+                                            const Location& loc) const;
     static bool ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::CommandBuffer& cb_state, size_t eventCount,
                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
                                            const EventMap& local_event_signal_info, VkQueue waiting_queue, const Location& loc);
@@ -500,7 +518,7 @@ class CoreChecks : public ValidationStateTracker {
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const vvl::DescriptorSet& descriptor_set, uint32_t set_index, const BindingVariableMap& bindings,
                            const std::vector<uint32_t>& dynamic_offsets, const vvl::CommandBuffer& cb_state, const Location& loc,
-                           const vvl::DrawDispatchVuid& vuids) const;
+                           const vvl::DrawDispatchVuid& vuid) const;
 
     bool VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout& layout_dsl,
                                       const vvl::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
@@ -553,8 +571,8 @@ class CoreChecks : public ValidationStateTracker {
                                            const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineRenderPass(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineShaderDynamicState(const vvl::Pipeline& pipeline, const vvl::CommandBuffer& cb_state,
-                                                    const Location& loc, const vvl::DrawDispatchVuid& vuids) const;
+    bool ValidateGraphicsPipelineFragmentShadingRateDraw(const vvl::Pipeline& pipeline, const vvl::CommandBuffer& cb_state,
+                                                         const Location& loc, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineTessellationState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;

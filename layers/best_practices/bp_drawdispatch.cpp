@@ -207,6 +207,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto& last_bound = cmd_state.lastBound[lv_bind_point];
     const auto* pipeline_state = last_bound.pipeline_state;
+    if (!pipeline_state) return skip;
 
     const auto* ia_state = pipeline_state->InputAssemblyState();
     if (ia_state) {
@@ -214,7 +215,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     }
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
-    if (ib_mem && last_bound.IsUsing()) {
+    if (ib_mem) {
         const uint32_t scan_stride = GetIndexAlignment(ib_type);
         const uint8_t* scan_begin = static_cast<const uint8_t*>(ib_mem) + firstIndex * scan_stride;
         const uint8_t* scan_end = scan_begin + indexCount * scan_stride;

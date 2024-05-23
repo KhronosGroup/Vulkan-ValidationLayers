@@ -1606,7 +1606,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     return skip;
 }
 
-bool CoreChecks::ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const {
+bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
