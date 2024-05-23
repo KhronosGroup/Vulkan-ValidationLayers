@@ -1347,7 +1347,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
                 dispatch_key key = GetDispatchKey(device);
                 auto layer_data = GetLayerDataPtr(key, layer_data_map);
-                ErrorObject error_obj(vvl::Func::vkCreateDevice, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+                ErrorObject error_obj(vvl::Func::vkDestroyDevice, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->ReadLock();
                     intercept->PreCallValidateDestroyDevice(device, pAllocator, error_obj);
