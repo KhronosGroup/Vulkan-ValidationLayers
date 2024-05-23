@@ -1869,43 +1869,6 @@ bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
-                                            const vvl::DrawDispatchVuid &vuid) const {
-    bool skip = false;
-    // Verify attachments for unprotected/protected command buffer.
-    if (enabled_features.protectedMemory == VK_TRUE) {
-        for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
-            const auto *view_state = cb_state.active_attachments[i].image_view;
-            const auto &subpass = cb_state.active_subpasses[i];
-            if (subpass.used && view_state && !view_state->Destroyed()) {
-                std::string image_desc = "Image is ";
-                image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
-                // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
-                // Some Functions could not be protected. See VUID 02711.
-                if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT && vuid.protected_command_buffer_02712 != kVUIDUndefined) {
-                    skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, vuid.loc(),
-                                                     vuid.protected_command_buffer_02712, image_desc.c_str());
-                }
-                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, vuid.loc(),
-                                               vuid.unprotected_command_buffer_02707, image_desc.c_str());
-            }
-        }
-    }
-
-    for (auto &stage_state : pipeline.stage_states) {
-        const VkShaderStageFlagBits stage = stage_state.GetStage();
-        if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_layer &&
-            cb_state.activeFramebuffer->create_info.layers == 1) {
-            LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogUndefinedValue("Undefined-Layer-Written", objlist, vuid.loc(),
-                                      "Shader stage %s writes to Layer (gl_Layer) but the framebuffer was created with "
-                                      "VkFramebufferCreateInfo::layer of 1, this write will have an undefined value set to it.",
-                                      string_VkShaderStageFlags(stage).c_str());
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
