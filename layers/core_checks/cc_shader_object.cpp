@@ -17,7 +17,9 @@
 #include "core_validation.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_module.h"
+#include "state_tracker/render_pass_state.h"
 #include "generated/spirv_grammar_helper.h"
+#include "drawdispatch/drawdispatch_vuids.h"
 
 VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, VkShaderStageFlagBits stage) {
     constexpr uint32_t graphicsStagesCount = 5;
@@ -523,6 +525,266 @@ bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShader
     if (enabled_features.shaderObject == VK_FALSE) {
         skip |= LogError("VUID-vkGetShaderBinaryDataEXT-None-08461", device, error_obj.location,
                          "the shaderObject feature was not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderObjectBoundShader(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
+                                                 const Location& loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
+
+    if (!last_bound_state.ValidShaderObjectCombination(bind_point, enabled_features)) {
+        skip |= LogError(vuid.pipeline_or_shaders_bound_08607, cb_state.Handle(), loc,
+                         "A valid %s pipeline must be bound with vkCmdBindPipeline or shader objects with "
+                         "vkCmdBindShadersEXT before calling this command.",
+                         string_VkPipelineBindPoint(bind_point));
+    }
+
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) {
+            skip |= LogError(vuid.vertex_shader_08684, cb_state.Handle(), loc,
+                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                             "VK_SHADER_STAGE_VERTEX_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_VERTEX_BIT shader.");
+        }
+        if (enabled_features.tessellationShader &&
+            !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
+            skip |= LogError(vuid.tessellation_control_shader_08685, cb_state.Handle(), loc,
+                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                             "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT and either VK_NULL_HANDLE or a valid "
+                             "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT shader.");
+        }
+        if (enabled_features.tessellationShader &&
+            !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
+            skip |= LogError(vuid.tessellation_evaluation_shader_08686, cb_state.Handle(), loc,
+                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                             "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT and either VK_NULL_HANDLE or a valid "
+                             "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT shader.");
+        }
+        if (enabled_features.geometryShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY)) {
+            skip |=
+                LogError(vuid.geometry_shader_08687, cb_state.Handle(), loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_GEOMETRY_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_GEOMETRY_BIT shader.");
+        }
+        if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) {
+            skip |=
+                LogError(vuid.fragment_shader_08688, cb_state.Handle(), loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_FRAGMENT_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_FRAGMENT_BIT shader.");
+        }
+        if (enabled_features.taskShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TASK)) {
+            skip |= LogError(vuid.task_shader_08689, cb_state.Handle(), loc,
+                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                             "VK_SHADER_STAGE_TASK_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_TASK_BIT shader.");
+        }
+        if (enabled_features.meshShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH)) {
+            skip |= LogError(vuid.mesh_shader_08690, cb_state.Handle(), loc,
+                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                             "VK_SHADER_STAGE_MESH_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_MESH_BIT shader.");
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderObjectDraw(const LastBound& last_bound_state, const Location& loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const LogObjectList objlist(cb_state.Handle());
+    const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
+
+    if (!cb_state.activeRenderPass->UsesDynamicRendering()) {
+        skip |= LogError(vuid.render_pass_began_08876, cb_state.Handle(), loc,
+                         "Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.",
+                         FormatHandle(cb_state.activeRenderPass->Handle()).c_str());
+    }
+
+    bool validVertShader = last_bound_state.GetShader(ShaderObjectStage::VERTEX);
+    bool validTaskShader = last_bound_state.GetShader(ShaderObjectStage::TASK);
+    bool validMeshShader = last_bound_state.GetShader(ShaderObjectStage::MESH);
+
+    if (enabled_features.taskShader || enabled_features.meshShader) {
+        if ((validVertShader && validMeshShader) || (!validVertShader && !validMeshShader)) {
+            const std::string msg = validVertShader ? "Both vertex shader and mesh shader are bound"
+                                                    : "Neither vertex shader nor mesh shader are bound";
+            skip |= LogError(vuid.vert_mesh_shader_08693, objlist, loc, "%s.", msg.c_str());
+        }
+    }
+    if (enabled_features.taskShader && enabled_features.meshShader) {
+        if (validMeshShader &&
+            (last_bound_state.GetShaderState(ShaderObjectStage::MESH)->create_info.flags &
+             VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) == 0 &&
+            !validTaskShader) {
+            skip |=
+                LogError(vuid.task_mesh_shader_08694, objlist, loc,
+                         "Mesh shader %s was created without VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but no task shader is bound.",
+                         debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
+        } else if (validMeshShader &&
+                   (last_bound_state.GetShaderState(ShaderObjectStage::MESH)->create_info.flags &
+                    VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0 &&
+                   validTaskShader) {
+            skip |= LogError(vuid.task_mesh_shader_08695, objlist, loc,
+                             "Mesh shader %s was created with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but a task shader is bound.",
+                             debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
+        }
+    }
+    if (validVertShader && (validTaskShader || validMeshShader)) {
+        std::stringstream msg;
+        if (validTaskShader && validMeshShader) {
+            msg << "task shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::TASK))
+                << "and mesh shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH))
+                << " are bound as well";
+        } else if (validTaskShader) {
+            msg << "task shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::TASK))
+                << " is bound as well";
+        } else if (validMeshShader) {
+            msg << "mesh shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH))
+                << " is bound as well";
+        }
+        skip |=
+            LogError(vuid.vert_task_mesh_shader_08696, objlist, loc, "Vertex shader %s is bound, but %s.",
+                     debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str(), msg.str().c_str());
+    }
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
+        if (i != static_cast<uint32_t>(ShaderObjectStage::COMPUTE) && last_bound_state.shader_object_states[i]) {
+            for (const auto& linkedShader : last_bound_state.shader_object_states[i]->linked_shaders) {
+                bool found = false;
+                for (uint32_t j = 0; j < kShaderObjectStageCount; ++j) {
+                    if (linkedShader == last_bound_state.GetShader(static_cast<ShaderObjectStage>(j))) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    const auto missingShader = Get<vvl::ShaderObject>(linkedShader);
+                    skip |=
+                        LogError(vuid.linked_shaders_08698, objlist, loc,
+                                 "Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
+                                 "shader (%s) is not bound.",
+                                 debug_report->FormatHandle(last_bound_state.GetShader(static_cast<ShaderObjectStage>(i))).c_str(),
+                                 string_VkShaderStageFlagBits(last_bound_state.shader_object_states[i]->create_info.stage),
+                                 debug_report->FormatHandle(linkedShader).c_str(),
+                                 string_VkShaderStageFlagBits(missingShader->create_info.stage));
+                    break;
+                }
+            }
+        }
+    }
+    const VkShaderStageFlagBits graphics_stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                                     VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderStageFlagBits prev_stage = VK_SHADER_STAGE_ALL;
+    VkShaderStageFlagBits next_stage = VK_SHADER_STAGE_ALL;
+    for (const auto stage : graphics_stages) {
+        const auto state = last_bound_state.GetShaderState(VkShaderStageToShaderObjectStage(stage));
+        if (state && next_stage != VK_SHADER_STAGE_ALL && state->create_info.stage != next_stage) {
+            skip |= LogError(vuid.linked_shaders_08699, objlist, loc,
+                             "Shaders %s and %s were created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT without intermediate "
+                             "stage %s linked, but %s shader is bound.",
+                             string_VkShaderStageFlagBits(prev_stage), string_VkShaderStageFlagBits(next_stage),
+                             string_VkShaderStageFlagBits(stage), string_VkShaderStageFlagBits(stage));
+            break;
+        }
+        if (state) {
+            next_stage = VK_SHADER_STAGE_ALL;
+            if (!state->linked_shaders.empty()) {
+                prev_stage = stage;
+                for (const auto& linked_shader : state->linked_shaders) {
+                    const auto& linked_state = Get<vvl::ShaderObject>(linked_shader);
+                    if (linked_state && linked_state->create_info.stage == state->create_info.nextStage) {
+                        next_stage = static_cast<VkShaderStageFlagBits>(state->create_info.nextStage);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    const vvl::ShaderObject* first = nullptr;
+    for (const auto shader_state : last_bound_state.shader_object_states) {
+        if (!shader_state || !shader_state->IsGraphicsShaderState()) {
+            continue;
+        }
+        if (!first) {
+            first = shader_state;
+        } else {
+            bool pushConstsDifferent =
+                first->create_info.pushConstantRangeCount != shader_state->create_info.pushConstantRangeCount;
+            if (!pushConstsDifferent) {
+                bool found = false;
+                for (uint32_t i = 0; i < shader_state->create_info.pushConstantRangeCount; ++i) {
+                    for (uint32_t j = 0; j < first->create_info.pushConstantRangeCount; ++j) {
+                        if (shader_state->create_info.pPushConstantRanges[i] == first->create_info.pPushConstantRanges[j]) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        pushConstsDifferent = true;
+                        break;
+                    }
+                }
+            }
+            if (pushConstsDifferent) {
+                skip |= LogError(vuid.shaders_push_constants_08878, objlist, loc,
+                                 "Shaders %s and %s have different push constant ranges.",
+                                 string_VkShaderStageFlagBits(first->create_info.stage),
+                                 string_VkShaderStageFlagBits(shader_state->create_info.stage));
+            }
+            bool descriptorLayoutsDifferent = first->create_info.setLayoutCount != shader_state->create_info.setLayoutCount;
+            if (!descriptorLayoutsDifferent) {
+                bool found = false;
+                for (uint32_t i = 0; i < shader_state->create_info.setLayoutCount; ++i) {
+                    for (uint32_t j = 0; j < first->create_info.setLayoutCount; ++j) {
+                        if (shader_state->create_info.pSetLayouts[i] == first->create_info.pSetLayouts[j]) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        descriptorLayoutsDifferent = true;
+                        break;
+                    }
+                }
+            }
+            if (descriptorLayoutsDifferent) {
+                skip |= LogError(vuid.shaders_descriptor_layouts_08879, objlist, loc,
+                                 "Shaders %s and %s have different descriptor set layouts.",
+                                 string_VkShaderStageFlagBits(first->create_info.stage),
+                                 string_VkShaderStageFlagBits(shader_state->create_info.stage));
+            }
+        }
+    }
+
+    skip |= ValidateShaderObjectDrawMesh(last_bound_state, loc);
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderObjectDrawMesh(const LastBound& last_bound_state, const Location& loc) const {
+    bool skip = false;
+    if (IsValueIn(loc.function,
+                  {Func::vkCmdDrawMeshTasksNV, Func::vkCmdDrawMeshTasksIndirectNV, Func::vkCmdDrawMeshTasksIndirectCountNV,
+                   Func::vkCmdDrawMeshTasksEXT, Func::vkCmdDrawMeshTasksIndirectEXT, Func::vkCmdDrawMeshTasksIndirectCountEXT})) {
+        return skip;
+    }
+
+    const bool task_shader = last_bound_state.GetShader(ShaderObjectStage::TASK);
+    const bool mesh_shader = last_bound_state.GetShader(ShaderObjectStage::MESH);
+    if (task_shader || mesh_shader) {
+        std::stringstream msg;
+        if (task_shader && mesh_shader) {
+            msg << "Task and mesh shaders are bound.";
+        } else if (mesh_shader) {
+            msg << "Task shader is bound.";
+        } else {
+            msg << "Mesh shader is bound.";
+        }
+        const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
+        skip |= LogError(vuid.draw_shaders_no_task_mesh_08885, last_bound_state.cb_state.Handle(), loc, "%s", msg.str().c_str());
     }
 
     return skip;

@@ -309,6 +309,23 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativePipeline, NoPipelineDynamicState) {
+    TEST_DESCRIPTION("Call vkCmdDraw when there are no shaders or pipeline bound.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08606");
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativePipeline, ShaderStageName) {
     TEST_DESCRIPTION("Create Pipelines with invalid state set");
 

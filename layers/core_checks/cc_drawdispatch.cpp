@@ -1513,44 +1513,56 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
-    const auto *last_pipeline = last_bound_state.pipeline_state;
-    const bool has_last_pipeline = last_pipeline && last_pipeline->VkHandle() != VK_NULL_HANDLE;
+    const vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
 
     bool skip = false;
 
-    if (!last_pipeline || !last_pipeline->VkHandle()) {
-        if (enabled_features.shaderObject == VK_FALSE) {
-            return LogError(vuid.pipeline_bound_08606, cb_state.GetObjectList(bind_point), loc,
-                            "A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.",
-                            string_VkPipelineBindPoint(bind_point));
-        } else if (!last_bound_state.ValidShaderObjectCombination(bind_point, enabled_features)) {
-            skip |= LogError(vuid.pipeline_or_shaders_bound_08607, cb_state.GetObjectList(bind_point), loc,
-                             "A valid %s pipeline must be bound with vkCmdBindPipeline or shader objects with "
-                             "vkCmdBindShadersEXT before calling this command.",
-                             string_VkPipelineBindPoint(bind_point));
-        }
+    // Quick verify that if there is no pipeine, the shade object is being used
+    if (!pipeline && !enabled_features.shaderObject) {
+        return LogError(vuid.pipeline_bound_08606, cb_state.GetObjectList(bind_point), loc,
+                        "A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.",
+                        string_VkPipelineBindPoint(bind_point));
+    }
+
+    if (!pipeline) {
+        skip |= ValidateShaderObjectBoundShader(last_bound_state, bind_point, loc);
     }
 
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         skip |= ValidateDrawDynamicState(last_bound_state, loc);
-        skip |= ValidatePipelineDrawtimeState(last_bound_state, loc);
+        skip |= ValidateDrawPrimitivesGeneratedQuery(last_bound_state, vuid, loc);
+        skip |= ValidateDrawProtectedMemory(last_bound_state, vuid, loc);
 
-        if (enabled_features.shaderObject && !has_last_pipeline) {
-            skip |= ValidateShaderObjectDrawtimeState(last_bound_state, loc);
+        if (pipeline) {
+            skip |= ValidatePipelineDraw(last_bound_state, *pipeline, loc);
+        } else {
+            skip |= ValidateShaderObjectDraw(last_bound_state, loc);
         }
 
-        if (cb_state.activeFramebuffer && has_last_pipeline) {
-            skip |= ValidateCmdDrawFramebuffer(cb_state, *last_pipeline, vuid, loc);
-        }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-        skip |= ValidateRayTracingDynamicStateSetStatus(last_bound_state, loc);
+        skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, loc);
         if (!cb_state.unprotected) {
             skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.GetObjectList(bind_point), loc,
                              "called in a protected command buffer.");
         }
     }
 
-    const vvl::Pipeline *pipeline = last_pipeline;
+    skip |= ValidateActionStateDescriptors(last_bound_state, bind_point, pipeline, vuid, loc);
+    skip |= ValidateActionStatePushConstant(last_bound_state, pipeline, vuid, loc);
+
+    if (!cb_state.unprotected) {
+        skip |= ValidateActionStateProtectedMemory(last_bound_state, bind_point, pipeline, vuid, loc);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
+                                                const vvl::Pipeline *pipeline, const vvl::DrawDispatchVuid &vuid,
+                                                const Location &loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+
     // Now complete other state checks
     if (pipeline) {
         for (const auto &ds : last_bound_state.per_set) {
@@ -1727,6 +1739,14 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_state, const vvl::Pipeline *pipeline,
+                                                 const vvl::DrawDispatchVuid &vuid, const Location &loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+
     // Verify if push constants have been set
     // NOTE: Currently not checking whether active push constants are compatible with the active pipeline, nor whether the
     //       "life times" of push constants are correct.
@@ -1767,44 +1787,34 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
+                                                    const vvl::Pipeline *pipeline, const vvl::DrawDispatchVuid &vuid,
+                                                    const Location &loc) const {
+    bool skip = false;
+
     if (pipeline) {
-        if ((pipeline->create_info_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
-                                              VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
-            for (const auto &query : cb_state.activeQueries) {
-                const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
-                if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
-                    const LogObjectList objlist(cb_state.Handle(), query.pool);
-                    skip |= LogError(vuid.mesh_shader_queries_07073, objlist, loc,
-                                     "Query (slot %" PRIu32 ") with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active.",
-                                     query.slot);
-                }
+        for (const auto &stage : pipeline->stage_states) {
+            // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
+            if (!stage.spirv_state) continue;
+
+            if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
+                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), loc,
+                                 "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
+                                 string_VkShaderStageFlags(stage.GetStage()).c_str());
+            }
+        }
+    } else {
+        for (const auto &stage : last_bound_state.shader_object_states) {
+            if (stage && stage->spirv->HasCapability(spv::CapabilityRayQueryKHR)) {
+                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), loc,
+                                 "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
+                                 string_VkShaderStageFlags(stage->create_info.stage).c_str());
             }
         }
     }
-
-    if (!cb_state.unprotected) {
-        if (pipeline) {
-            for (const auto &stage : pipeline->stage_states) {
-                // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
-                if (!stage.spirv_state) continue;
-
-                if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
-                    skip |= LogError(vuid.ray_query_04617, cb_state.GetObjectList(bind_point), loc,
-                                     "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
-                                     string_VkShaderStageFlags(stage.GetStage()).c_str());
-                }
-            }
-        } else {
-            for (const auto &stage : last_bound_state.shader_object_states) {
-                if (stage && stage->spirv->HasCapability(spv::CapabilityRayQueryKHR)) {
-                    skip |= LogError(vuid.ray_query_04617, cb_state.GetObjectList(bind_point), loc,
-                                     "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
-                                     string_VkShaderStageFlags(stage->create_info.stage).c_str());
-                }
-            }
-        }
-    }
-
     return skip;
 }
 
@@ -1895,5 +1905,77 @@ bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, 
                                       string_VkShaderStageFlags(stage).c_str());
         }
     }
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid,
+                                                      const Location &loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+
+    const bool with_rasterizer_discard = enabled_features.primitivesGeneratedQueryWithRasterizerDiscard == VK_TRUE;
+    const bool with_non_zero_streams = enabled_features.primitivesGeneratedQueryWithNonZeroStreams == VK_TRUE;
+
+    if (with_rasterizer_discard && with_non_zero_streams) {
+        return skip;
+    }
+
+    bool primitives_generated_query = false;
+    for (const auto &query : cb_state.activeQueries) {
+        auto query_pool_state = Get<vvl::QueryPool>(query.pool);
+        if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+            primitives_generated_query = true;
+            break;
+        }
+    }
+
+    if (primitives_generated_query) {
+        if (!with_rasterizer_discard && last_bound_state.IsRasterizationDisabled()) {
+            skip |= LogError(vuid.primitives_generated_06708, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                             "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but "
+                             "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.");
+        }
+        const vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
+        if (!with_non_zero_streams && pipeline) {
+            const auto rasterization_state_stream_ci =
+                vku::FindStructInPNextChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(pipeline->RasterizationState()->pNext);
+            if (rasterization_state_stream_ci && rasterization_state_stream_ci->rasterizationStream != 0) {
+                skip |=
+                    LogError(vuid.primitives_generated_streams_06709, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                             "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream set to %" PRIu32
+                             ", but primitivesGeneratedQueryWithNonZeroStreams feature is not enabled.",
+                             rasterization_state_stream_ci->rasterizationStream);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid,
+                                             const Location &loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+
+    if (!enabled_features.protectedMemory) {
+        return skip;
+    }
+
+    // Verify vertex & index buffer for unprotected command buffer.
+    // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
+    for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
+        if (const auto buffer_state = Get<vvl::Buffer>(vertex_buffer_binding.second.buffer)) {
+            skip |= ValidateProtectedBuffer(cb_state, *buffer_state, loc, vuid.unprotected_command_buffer_02707,
+                                            "Buffer is vertex buffer");
+        }
+    }
+
+    if (const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer)) {
+        skip |=
+            ValidateProtectedBuffer(cb_state, *buffer_state, loc, vuid.unprotected_command_buffer_02707, "Buffer is index buffer");
+    }
+
     return skip;
 }

@@ -1815,9 +1815,7 @@ void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipel
                                                        const std::vector<LastBound::PER_SET> **rtn_sets) const {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     const auto &last_bound = lastBound[lv_bind_point];
-    if (!last_bound.IsUsing()) {
-        return;
-    }
+    if (!last_bound.pipeline_state) return;
     *rtn_pipe = last_bound.pipeline_state;
     *rtn_sets = &(last_bound.per_set);
 }
