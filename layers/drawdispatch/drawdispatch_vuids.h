@@ -25,6 +25,11 @@ namespace vvl {
 
 // Set of VUID that need to go between drawdispatch_validation.cpp and rest of CoreChecks
 struct DrawDispatchVuid {
+    // Save the action command here for reverse lookup so don't need to pass around both items
+    const Func function;
+    DrawDispatchVuid(Func func) : function(func){};
+    Location loc() const { return Location(function); }
+
     const char* pipeline_bound_08606 = kVUIDUndefined;
     const char* pipeline_or_shaders_bound_08607 = kVUIDUndefined;
     const char* index_binding_07312 = kVUIDUndefined;
