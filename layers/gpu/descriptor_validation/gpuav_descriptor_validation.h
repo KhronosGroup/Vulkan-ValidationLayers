@@ -17,10 +17,17 @@
 
 #pragma once
 
+#include <vulkan/vulkan.h>
 #include "vma/vma.h"
+
+struct Location;
 
 namespace gpuav {
 class CommandBuffer;
+class Validator;
 
-void UpdateBindlessStateBuffer(CommandBuffer& cmd_buffer, VmaAllocator vma_allocator);
+void UpdateBoundPipeline(Validator& gpuav, VkCommandBuffer cb, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
+                         const Location& loc);
+void UpdateBoundDescriptors(Validator& gpuav, VkCommandBuffer cb, VkPipelineBindPoint pipeline_bind_point, const Location& loc);
+void UpdateBindlessStateBuffer(CommandBuffer& cb_state, VmaAllocator vma_allocator);
 }  // namespace gpuav

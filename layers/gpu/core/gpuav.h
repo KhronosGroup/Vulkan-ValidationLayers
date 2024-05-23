@@ -73,9 +73,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer, const Location& loc) const;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
                           std::vector<uint32_t>& out_instrumented_spirv) override;
-    void UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
-                             const Location& loc);
-    void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, const Location& loc);
 
     [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(
         const LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard>& cmd_buffer, VkPipelineBindPoint bind_point,
@@ -434,6 +431,9 @@ class Validator : public gpu::GpuShaderInstrumentor {
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const override;
 
+  public:
+    std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
+
   private:
     template <typename RangeFactory>
     bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
@@ -442,7 +442,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
 
     std::string instrumented_shader_cache_path_{};
     bool bda_validation_possible_ = false;
-    std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
 };
 
 }  // namespace gpuav

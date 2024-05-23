@@ -24,6 +24,7 @@
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
 #include "gpu/core/gpuav.h"
+#include "gpu/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"
@@ -272,7 +273,8 @@ void Validator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, con
 void Validator::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipeline pipeline, const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
-    UpdateBoundPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj.location);
+
+    UpdateBoundPipeline(*this, commandBuffer, pipelineBindPoint, pipeline, record_obj.location);
 }
 
 void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -281,7 +283,7 @@ void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
                                                     const uint32_t *pDynamicOffsets, const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
                                                    pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, record_obj);
-    UpdateBoundDescriptors(commandBuffer, pipelineBindPoint, record_obj.location);
+    UpdateBoundDescriptors(*this, commandBuffer, pipelineBindPoint, record_obj.location);
 }
 void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                         const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
@@ -289,13 +291,13 @@ void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandB
     BaseClass::PostCallRecordCmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo, record_obj);
 
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        UpdateBoundDescriptors(*this, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        UpdateBoundDescriptors(*this, commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        UpdateBoundDescriptors(*this, commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     }
 }
 
@@ -305,7 +307,7 @@ void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuff
                                                      const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                     pDescriptorWrites, record_obj);
-    UpdateBoundDescriptors(commandBuffer, pipelineBindPoint, record_obj.location);
+    UpdateBoundDescriptors(*this, commandBuffer, pipelineBindPoint, record_obj.location);
 }
 
 void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
@@ -314,13 +316,13 @@ void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuf
     BaseClass::PreCallRecordCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo, record_obj);
 
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        UpdateBoundDescriptors(*this, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        UpdateBoundDescriptors(*this, commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        UpdateBoundDescriptors(*this, commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     }
 }
 
