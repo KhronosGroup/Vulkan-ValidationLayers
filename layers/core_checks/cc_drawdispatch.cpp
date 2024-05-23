@@ -1525,41 +1525,40 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     }
 
     if (!pipeline) {
-        skip |= ValidateShaderObjectBoundShader(last_bound_state, bind_point, loc);
+        skip |= ValidateShaderObjectBoundShader(last_bound_state, bind_point, vuid);
     }
 
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-        skip |= ValidateDrawDynamicState(last_bound_state, loc);
-        skip |= ValidateDrawPrimitivesGeneratedQuery(last_bound_state, vuid, loc);
-        skip |= ValidateDrawProtectedMemory(last_bound_state, vuid, loc);
+        skip |= ValidateDrawDynamicState(last_bound_state, vuid);
+        skip |= ValidateDrawPrimitivesGeneratedQuery(last_bound_state, vuid);
+        skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
 
         if (pipeline) {
-            skip |= ValidatePipelineDraw(last_bound_state, *pipeline, loc);
+            skip |= ValidateDrawPipeline(last_bound_state, *pipeline, vuid);
         } else {
-            skip |= ValidateShaderObjectDraw(last_bound_state, loc);
+            skip |= ValidateDrawShaderObject(last_bound_state, vuid);
         }
 
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-        skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, loc);
+        skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, vuid);
         if (!cb_state.unprotected) {
             skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.GetObjectList(bind_point), loc,
                              "called in a protected command buffer.");
         }
     }
 
-    skip |= ValidateActionStateDescriptors(last_bound_state, bind_point, pipeline, vuid, loc);
-    skip |= ValidateActionStatePushConstant(last_bound_state, pipeline, vuid, loc);
+    skip |= ValidateActionStateDescriptors(last_bound_state, bind_point, pipeline, vuid);
+    skip |= ValidateActionStatePushConstant(last_bound_state, pipeline, vuid);
 
     if (!cb_state.unprotected) {
-        skip |= ValidateActionStateProtectedMemory(last_bound_state, bind_point, pipeline, vuid, loc);
+        skip |= ValidateActionStateProtectedMemory(last_bound_state, bind_point, pipeline, vuid);
     }
 
     return skip;
 }
 
 bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
-                                                const vvl::Pipeline *pipeline, const vvl::DrawDispatchVuid &vuid,
-                                                const Location &loc) const {
+                                                const vvl::Pipeline *pipeline, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
@@ -1571,7 +1570,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                 if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), ds.bound_descriptor_set->Handle());
                     skip |=
-                        LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, loc,
+                        LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, vuid.loc(),
                                  "pipeline bound to %s requires a descriptor buffer (because it was created with "
                                  "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound VkDescriptorSet (%s)",
                                  string_VkPipelineBindPoint(bind_point), FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
@@ -1581,7 +1580,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
             } else {
                 if (ds.bound_descriptor_buffer.has_value()) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
-                    skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, objlist, loc,
+                    skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, objlist, vuid.loc(),
                                      "pipeline bound to %s requires a VkDescriptorSet (because it was not created with "
                                      "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound descriptor buffer"
                                      " (index=%" PRIu32 " offset=%" PRIu64 ")",
@@ -1613,7 +1612,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                     pipe_layouts_log << FormatHandle(*layouts.front());
                 }
                 objlist.add(last_bound_state.pipeline_layout);
-                skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
+                skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                  "The %s (created with %s) statically uses descriptor set (index #%" PRIu32
                                  ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
                                  FormatHandle(*pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline->max_active_slot,
@@ -1624,7 +1623,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                     uint32_t set_index = set_binding_pair.first;
                     const auto set_info = last_bound_state.per_set[set_index];
                     if (!set_info.bound_descriptor_set) {
-                        skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), loc,
+                        skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
                                          "%s uses set #%" PRIu32 " but that set is not bound.", FormatHandle(*pipeline).c_str(),
                                          set_index);
                     } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, pipeline_layout->set_layouts,
@@ -1634,7 +1633,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                         LogObjectList objlist = cb_state.GetObjectList(bind_point);
                         objlist.add(set_handle);
                         objlist.add(pipeline_layout->Handle());
-                        skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
+                        skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                          "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
                                          FormatHandle(set_handle).c_str(), set_index, FormatHandle(*pipeline_layout).c_str(),
                                          error_string.c_str());
@@ -1658,8 +1657,8 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                              set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                         if (need_validate) {
-                            skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
-                                                      loc, vuid);
+                            skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets,
+                                                      cb_state, vuid.loc(), vuid);
                         }
                     }
                 }
@@ -1689,7 +1688,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
             if (shader_state && !shader_state->active_slots.empty() &&
                 !are_bound_sets_compat(shader_state->max_active_slot, last_bound_state, *shader_state)) {
                 LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
-                skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
+                skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                  "The %s statically uses descriptor set (index #%" PRIu32
                                  ") which is not compatible with the currently bound descriptor set's layout",
                                  FormatHandle(shader_state->Handle()).c_str(), shader_state->max_active_slot);
@@ -1700,7 +1699,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                     const auto set_info = last_bound_state.per_set[set_index];
                     if (!set_info.bound_descriptor_set) {
                         const LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
-                        skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
+                        skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                          "%s uses set #%" PRIu32 " but that set is not bound.",
                                          FormatHandle(shader_state->Handle()).c_str(), set_index);
                     } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, shader_state->set_layouts,
@@ -1708,7 +1707,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                         // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
                         VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();
                         const LogObjectList objlist(cb_state.Handle(), set_handle, shader_state->Handle());
-                        skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
+                        skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                          "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
                                          FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_state->Handle()).c_str(),
                                          error_string.c_str());
@@ -1730,8 +1729,8 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                              set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                         if (need_validate) {
-                            skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
-                                                      loc, vuid);
+                            skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets,
+                                                      cb_state, vuid.loc(), vuid);
                         }
                     }
                 }
@@ -1743,7 +1742,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
 }
 
 bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_state, const vvl::Pipeline *pipeline,
-                                                 const vvl::DrawDispatchVuid &vuid, const Location &loc) const {
+                                                 const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
@@ -1762,7 +1761,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                 if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
-                    skip |= LogError(vuid.push_constants_set_08602, objlist, loc,
+                    skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                      "pipeline layout %s.",
                                      string_VkShaderStageFlags(stage.GetStage()).c_str(),
@@ -1779,7 +1778,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                 if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
                     const LogObjectList objlist(cb_state.Handle(), stage->Handle());
-                    skip |= LogError(vuid.push_constants_set_08602, objlist, loc,
+                    skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
                                      string_VkShaderStageFlags(stage->create_info.stage).c_str());
                 }
@@ -1791,8 +1790,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
 }
 
 bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
-                                                    const vvl::Pipeline *pipeline, const vvl::DrawDispatchVuid &vuid,
-                                                    const Location &loc) const {
+                                                    const vvl::Pipeline *pipeline, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
     if (pipeline) {
@@ -1801,7 +1799,7 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
             if (!stage.spirv_state) continue;
 
             if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
-                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), loc,
+                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), vuid.loc(),
                                  "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
                                  string_VkShaderStageFlags(stage.GetStage()).c_str());
             }
@@ -1809,7 +1807,7 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
     } else {
         for (const auto &stage : last_bound_state.shader_object_states) {
             if (stage && stage->spirv->HasCapability(spv::CapabilityRayQueryKHR)) {
-                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), loc,
+                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), vuid.loc(),
                                  "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
                                  string_VkShaderStageFlags(stage->create_info.stage).c_str());
             }
@@ -1872,7 +1870,7 @@ bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, co
 }
 
 bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
-                                            const vvl::DrawDispatchVuid &vuid, const Location &loc) const {
+                                            const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     // Verify attachments for unprotected/protected command buffer.
     if (enabled_features.protectedMemory == VK_TRUE) {
@@ -1885,11 +1883,11 @@ bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, 
                 // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
                 // Some Functions could not be protected. See VUID 02711.
                 if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT && vuid.protected_command_buffer_02712 != kVUIDUndefined) {
-                    skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, loc, vuid.protected_command_buffer_02712,
-                                                     image_desc.c_str());
+                    skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, vuid.loc(),
+                                                     vuid.protected_command_buffer_02712, image_desc.c_str());
                 }
-                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc, vuid.unprotected_command_buffer_02707,
-                                               image_desc.c_str());
+                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, vuid.loc(),
+                                               vuid.unprotected_command_buffer_02707, image_desc.c_str());
             }
         }
     }
@@ -1899,7 +1897,7 @@ bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, 
         if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_layer &&
             cb_state.activeFramebuffer->create_info.layers == 1) {
             LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogUndefinedValue("Undefined-Layer-Written", objlist, loc,
+            skip |= LogUndefinedValue("Undefined-Layer-Written", objlist, vuid.loc(),
                                       "Shader stage %s writes to Layer (gl_Layer) but the framebuffer was created with "
                                       "VkFramebufferCreateInfo::layer of 1, this write will have an undefined value set to it.",
                                       string_VkShaderStageFlags(stage).c_str());
@@ -1908,8 +1906,7 @@ bool CoreChecks::ValidateCmdDrawFramebuffer(const vvl::CommandBuffer &cb_state, 
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid,
-                                                      const Location &loc) const {
+bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
@@ -1931,7 +1928,7 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
 
     if (primitives_generated_query) {
         if (!with_rasterizer_discard && last_bound_state.IsRasterizationDisabled()) {
-            skip |= LogError(vuid.primitives_generated_06708, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+            skip |= LogError(vuid.primitives_generated_06708, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                              "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
                              "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but "
                              "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.");
@@ -1941,12 +1938,12 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
             const auto rasterization_state_stream_ci =
                 vku::FindStructInPNextChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(pipeline->RasterizationState()->pNext);
             if (rasterization_state_stream_ci && rasterization_state_stream_ci->rasterizationStream != 0) {
-                skip |=
-                    LogError(vuid.primitives_generated_streams_06709, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                             "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
-                             "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream set to %" PRIu32
-                             ", but primitivesGeneratedQueryWithNonZeroStreams feature is not enabled.",
-                             rasterization_state_stream_ci->rasterizationStream);
+                skip |= LogError(vuid.primitives_generated_streams_06709, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+                                 vuid.loc(),
+                                 "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                                 "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream set to %" PRIu32
+                                 ", but primitivesGeneratedQueryWithNonZeroStreams feature is not enabled.",
+                                 rasterization_state_stream_ci->rasterizationStream);
             }
         }
     }
@@ -1954,8 +1951,7 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
     return skip;
 }
 
-bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid,
-                                             const Location &loc) const {
+bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
@@ -1967,14 +1963,14 @@ bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, 
     // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
     for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
         if (const auto buffer_state = Get<vvl::Buffer>(vertex_buffer_binding.second.buffer)) {
-            skip |= ValidateProtectedBuffer(cb_state, *buffer_state, loc, vuid.unprotected_command_buffer_02707,
+            skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
                                             "Buffer is vertex buffer");
         }
     }
 
     if (const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer)) {
-        skip |=
-            ValidateProtectedBuffer(cb_state, *buffer_state, loc, vuid.unprotected_command_buffer_02707, "Buffer is index buffer");
+        skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
+                                        "Buffer is index buffer");
     }
 
     return skip;

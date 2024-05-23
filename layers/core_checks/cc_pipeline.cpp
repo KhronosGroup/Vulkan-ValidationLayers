@@ -371,7 +371,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 }
             }
 
-            if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && cb_state->GetCurrentPipeline(pipelineBindPoint) &&
+            if (cb_state->GetCurrentPipeline(pipelineBindPoint) &&
                 pipeline == cb_state->GetCurrentPipeline(pipelineBindPoint)->VkHandle() && cb_state->dirtyStaticState &&
                 IsBeforeCtsVersion(1, 3, 8)) {
                 const LogObjectList objlist(commandBuffer, pipeline);

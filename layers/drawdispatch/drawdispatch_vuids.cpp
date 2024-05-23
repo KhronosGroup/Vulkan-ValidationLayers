@@ -22,7 +22,7 @@
 namespace vvl {
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
-    DispatchVuidsCmdDraw() : DrawDispatchVuid() {
+    DispatchVuidsCmdDraw() : DrawDispatchVuid(Func::vkCmdDraw) {
         pipeline_bound_08606                     = "VUID-vkCmdDraw-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDraw-None-08607";
         vertex_binding_04007                     = "VUID-vkCmdDraw-None-04007";
@@ -338,7 +338,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
-    DispatchVuidsCmdDrawMultiEXT() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMultiEXT() : DrawDispatchVuid(Func::vkCmdDrawMultiEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMultiEXT-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMultiEXT-None-08607";
         vertex_binding_04007                     = "VUID-vkCmdDrawMultiEXT-None-04007";
@@ -654,7 +654,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
-    DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid(Func::vkCmdDrawIndexed) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexed-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawIndexed-None-08607";
         index_binding_07312                      = "VUID-vkCmdDrawIndexed-None-07312";
@@ -971,7 +971,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
-    DispatchVuidsCmdDrawMultiIndexedEXT() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMultiIndexedEXT() : DrawDispatchVuid(Func::vkCmdDrawMultiIndexedEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMultiIndexedEXT-None-08607";
         index_binding_07312                      = "VUID-vkCmdDrawMultiIndexedEXT-None-07312";
@@ -1288,7 +1288,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
-    DispatchVuidsCmdDrawIndirect() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawIndirect() : DrawDispatchVuid(Func::vkCmdDrawIndirect) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndirect-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawIndirect-None-08607";
         vertex_binding_04007                     = "VUID-vkCmdDrawIndirect-None-04007";
@@ -1603,7 +1603,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
-    DispatchVuidsCmdDrawIndexedIndirect() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawIndexedIndirect() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirect) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexedIndirect-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawIndexedIndirect-None-08607";
         index_binding_07312                      = "VUID-vkCmdDrawIndexedIndirect-None-07312";
@@ -1919,7 +1919,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
-    DispatchVuidsCmdDispatch() : DrawDispatchVuid() {
+    DispatchVuidsCmdDispatch() : DrawDispatchVuid(Func::vkCmdDispatch) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatch-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDispatch-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDispatch-None-08600";
@@ -1967,7 +1967,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
-    DispatchVuidsCmdDispatchIndirect() : DrawDispatchVuid() {
+    DispatchVuidsCmdDispatchIndirect() : DrawDispatchVuid(Func::vkCmdDispatchIndirect) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatchIndirect-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDispatchIndirect-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDispatchIndirect-None-08600";
@@ -2016,7 +2016,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
-    DispatchVuidsCmdDrawIndirectCount() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawIndirectCount() : DrawDispatchVuid(Func::vkCmdDrawIndirectCount) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndirectCount-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawIndirectCount-None-08607";
         vertex_binding_04007                     = "VUID-vkCmdDrawIndirectCount-None-04007";
@@ -2334,7 +2334,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
-    DispatchVuidsCmdDrawIndexedIndirectCount() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawIndexedIndirectCount() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirectCount) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawIndexedIndirectCount-None-08607";
         index_binding_07312                      = "VUID-vkCmdDrawIndexedIndirectCount-None-07312";
@@ -2653,7 +2653,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
-    DispatchVuidsCmdTraceRaysNV() : DrawDispatchVuid() {
+    DispatchVuidsCmdTraceRaysNV() : DrawDispatchVuid(Func::vkCmdTraceRaysNV) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysNV-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdTraceRaysNV-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysNV-None-08600";
@@ -2701,7 +2701,7 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
-    DispatchVuidsCmdTraceRaysKHR() : DrawDispatchVuid() {
+    DispatchVuidsCmdTraceRaysKHR() : DrawDispatchVuid(Func::vkCmdTraceRaysKHR) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysKHR-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdTraceRaysKHR-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysKHR-None-08600";
@@ -2749,7 +2749,7 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
-    DispatchVuidsCmdTraceRaysIndirectKHR() : DrawDispatchVuid() {
+    DispatchVuidsCmdTraceRaysIndirectKHR() : DrawDispatchVuid(Func::vkCmdTraceRaysIndirectKHR) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysIndirectKHR-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdTraceRaysIndirectKHR-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysIndirectKHR-None-08600";
@@ -2799,7 +2799,7 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
-    DispatchVuidsCmdTraceRaysIndirect2KHR() : DrawDispatchVuid() {
+    DispatchVuidsCmdTraceRaysIndirect2KHR() : DrawDispatchVuid(Func::vkCmdTraceRaysIndirect2KHR) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysIndirect2KHR-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdTraceRaysIndirect2KHR-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysIndirect2KHR-None-08600";
@@ -2849,7 +2849,7 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
-    DispatchVuidsCmdDrawMeshTasksNV() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMeshTasksNV() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksNV) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMeshTasksNV-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksNV-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksNV-None-08600";
@@ -3148,7 +3148,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
-    DispatchVuidsCmdDrawMeshTasksIndirectNV() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMeshTasksIndirectNV() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksIndirectNV) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08600";
@@ -3450,7 +3450,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
-    DispatchVuidsCmdDrawMeshTasksIndirectCountNV() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMeshTasksIndirectCountNV() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksIndirectCountNV) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08600";
@@ -3755,7 +3755,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
-    DispatchVuidsCmdDrawMeshTasksEXT() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMeshTasksEXT() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMeshTasksEXT-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksEXT-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksEXT-None-08600";
@@ -4054,7 +4054,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
-    DispatchVuidsCmdDrawMeshTasksIndirectEXT() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMeshTasksIndirectEXT() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksIndirectEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08600";
@@ -4356,7 +4356,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
-    DispatchVuidsCmdDrawMeshTasksIndirectCountEXT() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawMeshTasksIndirectCountEXT() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksIndirectCountEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08600";
@@ -4661,7 +4661,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
-    DispatchVuidsCmdDrawIndirectByteCountEXT() : DrawDispatchVuid() {
+    DispatchVuidsCmdDrawIndirectByteCountEXT() : DrawDispatchVuid(Func::vkCmdDrawIndirectByteCountEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08607";
         vertex_binding_04007                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-04007";
@@ -4976,7 +4976,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
 };
 
 struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
-    DispatchVuidsCmdDispatchBase() : DrawDispatchVuid() {
+    DispatchVuidsCmdDispatchBase() : DrawDispatchVuid(Func::vkCmdDispatchBase) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatchBase-None-08606";
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDispatchBase-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDispatchBase-None-08600";
@@ -5052,7 +5052,7 @@ static const std::map<Func, DrawDispatchVuid> kDrawdispatchVuid = {
     {Func::vkCmdDispatchBase, DispatchVuidsCmdDispatchBase()},
     {Func::vkCmdDispatchBaseKHR, DispatchVuidsCmdDispatchBase()},
     // Used if invalid function is used
-    {Func::Empty, DrawDispatchVuid()}
+    {Func::Empty, DrawDispatchVuid(Func::Empty)}
 };
 // clang-format on
 
