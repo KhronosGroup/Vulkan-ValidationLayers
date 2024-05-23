@@ -88,8 +88,8 @@ class Validator : public gpu::GpuShaderInstrumentor {
     }
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& instrumented_spirv,
-                          uint32_t unique_shader_id, const Location& loc) override;
+    bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
+                          std::vector<uint32_t>& out_instrumented_spirv) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) override;

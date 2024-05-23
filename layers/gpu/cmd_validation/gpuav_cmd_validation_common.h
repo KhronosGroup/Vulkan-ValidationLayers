@@ -18,6 +18,7 @@
 #pragma once
 
 #include "state_tracker/cmd_buffer_state.h"
+#include "gpu/resources/gpuav_subclasses.h"
 
 #include <utility>
 #include <vector>
@@ -42,4 +43,8 @@ class RestorablePipelineState {
     PushConstantRangesId push_constants_ranges_;
     std::vector<vvl::ShaderObject*> shader_objects_;
 };
+
+void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard>& cmd_buffer_state,
+                                     VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
+                                     uint32_t resource_index);
 }  // namespace gpuav

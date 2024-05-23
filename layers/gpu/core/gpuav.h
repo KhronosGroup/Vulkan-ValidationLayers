@@ -71,15 +71,11 @@ class Validator : public gpu::GpuShaderInstrumentor {
     // ------------------
   public:
     VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer, const Location& loc) const;
-    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& instrumented_spirv,
-                          uint32_t unique_shader_id, const Location& loc) override;
+    bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
+                          std::vector<uint32_t>& out_instrumented_spirv) override;
     void UpdateBoundPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                              const Location& loc);
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, const Location& loc);
-
-    void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard>& cmd_buffer_state,
-                                         VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
-                                         uint32_t resource_index);
 
     [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(
         const LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard>& cmd_buffer, VkPipelineBindPoint bind_point,
