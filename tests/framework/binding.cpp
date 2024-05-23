@@ -800,6 +800,12 @@ VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, co
 
 NON_DISPATCHABLE_HANDLE_DTOR(Fence, vk::DestroyFence)
 
+Fence &Fence::operator=(Fence &&rhs) noexcept {
+    destroy();
+    NonDispHandle<VkFence>::operator=(std::move(rhs));
+    return *this;
+}
+
 void Fence::init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info); }
 
 VkResult Fence::wait(uint64_t timeout) const {
@@ -858,6 +864,12 @@ Semaphore::Semaphore(const Device &dev, VkSemaphoreType type, uint64_t initial_v
         VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&semaphore_type_ci);
         init(dev, semaphore_ci);
     }
+}
+
+Semaphore &Semaphore::operator=(Semaphore &&rhs) noexcept {
+    destroy();
+    NonDispHandle<VkSemaphore>::operator=(std::move(rhs));
+    return *this;
 }
 
 void Semaphore::init(const Device &dev, const VkSemaphoreCreateInfo &info) {

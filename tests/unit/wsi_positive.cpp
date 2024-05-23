@@ -1436,6 +1436,81 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8047
+    // The regression will cause occasional failures of this test. The reproducibility
+    // is very machine dependent and in some configurations the failures can be
+    // extremely rare. We also found configurations (slower laptop) where it was relatively
+    // easy to reproduce (still could take some time, tens of seconds and up to few minutes).
+    //
+    // NOTE: there are known bugs in the current queue progress tracking, when
+    // a submission might retire too early (happens for multiple queues, but present
+    // operation might be an example for a single queue). Reworking queue tracking
+    // from threading approach to a single manager that collects submits and resolves
+    // them on request should fix the known issues, but also will bring deterministic
+    // behavior to the issues like the one being tested here. The idea that resolve
+    // operation, even if non trivial, still will be a localized piece of code comparing
+    // to conceptually simple model of queues that process submissions one at a time
+    // but with more complex synchronization and non-deterministic behavior.
+    TEST_DESCRIPTION("Check that the wait on the present fence retires present queue operation");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    struct Frame {
+        vkt::Semaphore image_acquired;
+        vkt::Semaphore submit_finished;
+        vkt::Fence present_finished_fence;
+        uint32_t frame = 0;  // for debugging
+    };
+    std::vector<Frame> frames;
+
+    // TODO: iteration count can be reduced (100?) if queue simulation is done in more deterministic way
+    for (uint32_t i = 0; i < 500; i++) {
+        // Remove completed frames
+        for (auto it = frames.begin(); it != frames.end();) {
+            if (it->present_finished_fence.status() == VK_SUCCESS) {
+                // NOTE: Root cause of the issue. The present fence processed regular queue submissions,
+                // but not the one associated with a present operation. The present batch usually was
+                // lucky enough to get through, before we start the following "erase", which deletes the
+                // present batch semaphore. When the queue thread was not fast enough, then in-use state
+                // of present semaphore was properly detected (VUID-vkDestroySemaphore-semaphore-05149).
+                it = frames.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        // Add new frame
+        frames.emplace_back(Frame{vkt::Semaphore(*m_device), vkt::Semaphore(*m_device), vkt::Fence(*m_device), i});
+        const Frame &frame = frames.back();
+
+        uint32_t image_index = 0;
+        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, frame.image_acquired.handle(), VK_NULL_HANDLE, &image_index);
+
+        m_default_queue->Submit(vkt::no_cmd, frame.image_acquired, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, frame.submit_finished);
+
+        VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+        present_fence_info.swapchainCount = 1;
+        present_fence_info.pFences = &frame.present_finished_fence.handle();
+
+        VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
+        present.waitSemaphoreCount = 1;
+        present.pWaitSemaphores = &frame.submit_finished.handle();
+        present.swapchainCount = 1;
+        present.pSwapchains = &m_swapchain;
+        present.pImageIndices = &image_index;
+        vk::QueuePresentKHR(*m_default_queue, &present);
+    }
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     TEST_DESCRIPTION("Create swapchain with per present mode minImageCount that is less than surface's general minImageCount");
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR

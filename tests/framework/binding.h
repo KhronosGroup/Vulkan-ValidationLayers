@@ -147,6 +147,15 @@ class NonDispHandle : public Handle<T> {
 
     void destroy() noexcept { dev_handle_ = VK_NULL_HANDLE; }
 
+  public:
+    void SetName(const char *name) {
+        VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+        name_info.objectType = vku::GetObjectType<T>();
+        name_info.objectHandle = reinterpret_cast<uint64_t>(Handle<T>::handle());
+        name_info.pObjectName = name;
+        vk::SetDebugUtilsObjectNameEXT(dev_handle_, &name_info);
+    }
+
   private:
     VkDevice dev_handle_;
 };
@@ -354,6 +363,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
     Fence(const Device &dev) { init(dev, create_info()); }
     Fence(const Device &dev, const VkFenceCreateInfo &info) { init(dev, info); }
     Fence(Fence &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
+    Fence &operator=(Fence &&) noexcept;
     ~Fence() noexcept;
     void destroy() noexcept;
 
@@ -385,6 +395,7 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
     Semaphore(const Device &dev, VkSemaphoreType type = VK_SEMAPHORE_TYPE_BINARY, uint64_t initial_value = 0);
     Semaphore(const Device &dev, const VkSemaphoreCreateInfo &info) { init(dev, info); }
     Semaphore(Semaphore &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
+    Semaphore &operator=(Semaphore &&) noexcept;
     ~Semaphore() noexcept;
     void destroy() noexcept;
 
