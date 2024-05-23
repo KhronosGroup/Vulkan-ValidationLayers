@@ -154,8 +154,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                          const SafeCreateInfo &modified_create_infos);
 
     // GPU-AV and DebugPrint are going to have a different way to do the actual shader instrumentation logic
-    virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
-                                  uint32_t unique_shader_id, const Location &loc) = 0;
+    virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, uint32_t unique_shader_id, const Location &loc,
+                                  std::vector<uint32_t> &out_instrumented_spirv) = 0;
 
     VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
     VkPipelineLayout GetDebugPipelineLayout() { return debug_pipeline_layout_; }

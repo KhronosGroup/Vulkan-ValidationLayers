@@ -124,8 +124,8 @@ void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderM
     } else {
         shader_id = unique_shader_module_id_++;
     }
-    const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       chassis_state.instrumented_spirv, shader_id, record_obj.location);
+    const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)), shader_id,
+                                       record_obj.location, chassis_state.instrumented_spirv);
     if (pass) {
         chassis_state.instrumented_create_info.pCode = chassis_state.instrumented_spirv.data();
         chassis_state.instrumented_create_info.codeSize = chassis_state.instrumented_spirv.size() * sizeof(uint32_t);
@@ -154,7 +154,7 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
         }
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            chassis_state.instrumented_spirv[i], chassis_state.unique_shader_ids[i], record_obj.location);
+            chassis_state.unique_shader_ids[i], record_obj.location, chassis_state.instrumented_spirv[i]);
         if (pass) {
             chassis_state.instrumented_create_info[i].pCode = chassis_state.instrumented_spirv[i].data();
             chassis_state.instrumented_create_info[i].codeSize = chassis_state.instrumented_spirv[i].size() * sizeof(uint32_t);

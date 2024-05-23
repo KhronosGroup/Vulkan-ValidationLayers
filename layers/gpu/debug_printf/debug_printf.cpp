@@ -76,14 +76,14 @@ void Validator::DestroyBuffer(BufferInfo &buffer_info) {
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
-                                 uint32_t unique_shader_id, const Location &loc) {
+bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, uint32_t unique_shader_id, const Location &loc,
+                                 std::vector<uint32_t> &out_instrumented_spirv) {
     if (input[0] != spv::MagicNumber) return false;
 
     // Load original shader SPIR-V
-    instrumented_spirv.clear();
-    instrumented_spirv.reserve(input.size());
-    instrumented_spirv.insert(instrumented_spirv.end(), &input.front(), &input.back() + 1);
+    out_instrumented_spirv.clear();
+    out_instrumented_spirv.reserve(input.size());
+    out_instrumented_spirv.insert(out_instrumented_spirv.end(), &input.front(), &input.back() + 1);
 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
@@ -111,7 +111,8 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::ve
     };
     optimizer.SetMessageConsumer(debug_printf_console_message_consumer);
     optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index_, unique_shader_id));
-    const bool pass = optimizer.Run(instrumented_spirv.data(), instrumented_spirv.size(), &instrumented_spirv, opt_options);
+    const bool pass =
+        optimizer.Run(out_instrumented_spirv.data(), out_instrumented_spirv.size(), &out_instrumented_spirv, opt_options);
     if (!pass) {
         InternalError(device, loc, "Failure to instrument shader in spirv-opt. Proceeding with non-instrumented shader.");
     }
@@ -125,7 +126,7 @@ void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderM
                                                             chassis_state);
     chassis_state.unique_shader_id = unique_shader_module_id_++;
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       chassis_state.instrumented_spirv, chassis_state.unique_shader_id, record_obj.location);
+                                       chassis_state.unique_shader_id, record_obj.location, chassis_state.instrumented_spirv);
     if (pass) {
         chassis_state.instrumented_create_info.pCode = chassis_state.instrumented_spirv.data();
         chassis_state.instrumented_create_info.codeSize = chassis_state.instrumented_spirv.size() * sizeof(uint32_t);
@@ -143,7 +144,7 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
         chassis_state.unique_shader_ids[i] = unique_shader_module_id_++;
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            chassis_state.instrumented_spirv[i], chassis_state.unique_shader_ids[i], record_obj.location);
+            chassis_state.unique_shader_ids[i], record_obj.location, chassis_state.instrumented_spirv[i]);
         if (pass) {
             chassis_state.instrumented_create_info[i].pCode = chassis_state.instrumented_spirv[i].data();
             chassis_state.instrumented_create_info[i].codeSize = chassis_state.instrumented_spirv[i].size() * sizeof(uint32_t);

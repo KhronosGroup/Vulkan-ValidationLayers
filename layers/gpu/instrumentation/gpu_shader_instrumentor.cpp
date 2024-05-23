@@ -791,8 +791,8 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
                             unique_shader_id = unique_shader_module_id_++;
                         }
                         if (!cached) {
-                            pass = InstrumentShader(module_state->spirv->words_, instrumented_spirv, unique_shader_id,
-                                                    record_obj.location);
+                            pass = InstrumentShader(module_state->spirv->words_, unique_shader_id, record_obj.location,
+                                                    instrumented_spirv);
                         }
                         if (cached || pass) {
                             module_state->gpu_validation_shader_id = unique_shader_id;

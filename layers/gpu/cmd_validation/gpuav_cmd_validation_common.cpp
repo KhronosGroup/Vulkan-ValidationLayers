@@ -28,9 +28,9 @@
 
 namespace gpuav {
 
-void Validator::BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
-                                                VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
-                                                uint32_t cmd_index, uint32_t resource_index) {
+void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
+                                     VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
+                                     uint32_t resource_index) {
     assert(cmd_index < cst::indices_count);
     assert(resource_index < cst::indices_count);
     std::array<uint32_t, 2> dynamic_offsets = {
