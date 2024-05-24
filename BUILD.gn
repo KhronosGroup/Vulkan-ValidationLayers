@@ -175,6 +175,7 @@ vvl_sources = [
   "layers/gpu/descriptor_validation/gpuav_descriptor_validation.cpp",
   "layers/gpu/descriptor_validation/gpuav_descriptor_set.cpp",
   "layers/gpu/descriptor_validation/gpuav_descriptor_set.h",
+  "layers/gpu/descriptor_validation/gpuav_image_layout.h",
   "layers/gpu/descriptor_validation/gpuav_image_layout.cpp",
   "layers/gpu/core/gpuav.h",
   "layers/gpu/core/gpuav.cpp",

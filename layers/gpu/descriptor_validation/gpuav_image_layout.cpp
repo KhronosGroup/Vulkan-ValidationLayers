@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include "gpu/descriptor_validation/gpuav_image_layout.h"
+
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "generated/spirv_grammar_helper.h"
@@ -79,28 +81,14 @@ struct GlobalLayoutUpdater {
 
 namespace gpuav {
 
-void Validator::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
-    for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const auto image = layout_map_entry.first;
-        const auto subres_map = layout_map_entry.second.map;
-        if (!subres_map) {
-            continue;
-        }
-        auto image_state = Get<vvl::Image>(image);
-        if (image_state && image_state->GetId() == layout_map_entry.second.id) {
-            auto guard = image_state->layout_range_map->WriteLock();
-            sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
-        }
-    }
-}
-
-void Validator::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const ImageBarrier &mem_barrier) {
-    if (enabled_features.synchronization2) {
+static void RecordTransitionImageLayout(Validator &gpuav, vvl::CommandBuffer &cb_state,
+                                        const sync_utils::ImageBarrier &mem_barrier) {
+    if (gpuav.enabled_features.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {
             return;
         }
     }
-    auto image_state = Get<vvl::Image>(mem_barrier.image);
+    auto image_state = gpuav.Get<vvl::Image>(mem_barrier.image);
     if (!image_state) return;
 
     auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
@@ -129,21 +117,279 @@ void Validator::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const 
     }
 }
 
-void Validator::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
-                                       const VkImageMemoryBarrier2 *image_barriers) {
+static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_state, uint32_t barrier_count,
+                                   const VkImageMemoryBarrier2 *image_barriers) {
     for (uint32_t i = 0; i < barrier_count; i++) {
-        const ImageBarrier barrier(image_barriers[i]);
-        RecordTransitionImageLayout(cb_state, barrier);
+        const sync_utils::ImageBarrier barrier(image_barriers[i]);
+        RecordTransitionImageLayout(gpuav, cb_state, barrier);
     }
 }
 
-void Validator::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
-                                       const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
-                                       VkPipelineStageFlags dst_stage_mask) {
+static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_state, uint32_t barrier_count,
+                                   const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
+                                   VkPipelineStageFlags dst_stage_mask) {
     for (uint32_t i = 0; i < barrier_count; i++) {
-        const ImageBarrier barrier(image_barriers[i], src_stage_mask, dst_stage_mask);
-        RecordTransitionImageLayout(cb_state, barrier);
+        const sync_utils::ImageBarrier barrier(image_barriers[i], src_stage_mask, dst_stage_mask);
+        RecordTransitionImageLayout(gpuav, cb_state, barrier);
     }
+}
+
+static void TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_state, const vku::safe_VkAttachmentReference2 &ref) {
+    if (ref.attachment != VK_ATTACHMENT_UNUSED) {
+        vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
+        if (image_view) {
+            VkImageLayout stencil_layout = kInvalidLayout;
+            const auto *attachment_reference_stencil_layout =
+                vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
+            if (attachment_reference_stencil_layout) {
+                stencil_layout = attachment_reference_stencil_layout->stencilLayout;
+            }
+
+            cb_state.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
+        }
+    }
+}
+
+template <typename RangeFactory>
+static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
+                                   VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout, const RangeFactory &range_factory,
+                                   const Location &loc, const char *mismatch_layout_vuid, bool *error) {
+    bool skip = false;
+    const auto subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
+    if (!subresource_map) {
+        return skip;
+    }
+    const auto &layout_map = subresource_map->GetLayoutMap();
+    const auto *global_map = image_state.layout_range_map.get();
+    GlobalImageLayoutRangeMap empty_map(1);
+    assert(global_map);
+    auto global_map_guard = global_map->ReadLock();
+
+    auto pos = layout_map.begin();
+    const auto end = layout_map.end();
+    sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(empty_map, *global_map, pos->first.begin);
+    while (pos != end) {
+        VkImageLayout initial_layout = pos->second.initial_layout;
+        assert(initial_layout != image_layout_map::kInvalidLayout);
+        if (initial_layout == image_layout_map::kInvalidLayout) {
+            continue;
+        }
+
+        VkImageLayout image_layout = kInvalidLayout;
+
+        if (current_layout->range.empty()) break;  // When we are past the end of data in overlay and global... stop looking
+        if (current_layout->pos_A->valid) {        // pos_A denotes the overlay map in the parallel iterator
+            image_layout = current_layout->pos_A->lower_bound->second;
+        } else if (current_layout->pos_B->valid) {  // pos_B denotes the global map in the parallel iterator
+            image_layout = current_layout->pos_B->lower_bound->second;
+        }
+        const auto intersected_range = pos->first & current_layout->range;
+        if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+            // TODO: Set memory invalid which is in mem_tracker currently
+        } else if (image_layout != initial_layout) {
+            const auto aspect_mask = image_state.subresource_encoder.Decode(intersected_range.begin).aspectMask;
+            const bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
+            if (!matches) {
+                // We can report all the errors for the intersected range directly
+                for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
+                    const auto subresource = image_state.subresource_encoder.Decode(index);
+                    const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+                    skip |= gpuav.LogError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
+                                           "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
+                                           ", mip level %" PRIu32
+                                           ") "
+                                           "to be in layout %s--instead, current layout is %s.",
+                                           gpuav.FormatHandle(cb_state).c_str(), gpuav.FormatHandle(image_state).c_str(),
+                                           subresource.aspectMask, subresource.arrayLayer, subresource.mipLevel,
+                                           string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
+                }
+            }
+        }
+        if (pos->first.includes(intersected_range.end)) {
+            current_layout.seek(intersected_range.end);
+        } else {
+            ++pos;
+            if (pos != end) {
+                current_layout.seek(pos->first.begin);
+            }
+        }
+    }
+    return skip;
+}
+
+template <typename RegionType>
+static void RecordCmdBlitImage(Validator &gpuav, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
+                               VkFilter filter) {
+    auto cb_state_ptr = gpuav.GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto src_image_state = gpuav.Get<vvl::Image>(srcImage);
+    auto dst_image_state = gpuav.Get<vvl::Image>(dstImage);
+    if (cb_state_ptr && src_image_state && dst_image_state) {
+        // Make sure that all image slices are updated to correct layout
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            cb_state_ptr->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+            cb_state_ptr->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        }
+    }
+}
+
+static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                 const VkDependencyInfo *pDependencyInfos, vvl::Func command) {
+    // don't hold read lock during the base class method
+    auto cb_state = gpuav.GetWrite<vvl::CommandBuffer>(commandBuffer);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        const auto &dep_info = pDependencyInfos[i];
+        TransitionImageLayouts(gpuav, *cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
+    }
+}
+
+void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state) {
+    for (const auto &layout_map_entry : cb_state.image_layout_map) {
+        const auto image = layout_map_entry.first;
+        const auto subres_map = layout_map_entry.second.map;
+        if (!subres_map) {
+            continue;
+        }
+        auto image_state = gpuav.Get<vvl::Image>(image);
+        if (image_state && image_state->GetId() == layout_map_entry.second.id) {
+            auto guard = image_state->layout_range_map->WriteLock();
+            sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
+        }
+    }
+}
+
+void TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index) {
+    auto const &subpass = render_pass_state.create_info.pSubpasses[subpass_index];
+    for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+        TransitionAttachmentRefLayout(cb_state, subpass.pInputAttachments[j]);
+    }
+    for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+        TransitionAttachmentRefLayout(cb_state, subpass.pColorAttachments[j]);
+    }
+    if (subpass.pDepthStencilAttachment) {
+        TransitionAttachmentRefLayout(cb_state, *subpass.pDepthStencilAttachment);
+    }
+}
+
+// Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
+// 1. Transition into initialLayout state
+// 2. Transition from initialLayout to layout used in subpass 0
+void TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state) {
+    // First record expected initialLayout as a potential initial layout usage.
+    auto const rpci = render_pass_state.create_info.ptr();
+    for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
+        if (view_state) {
+            vvl::Image *image_state = view_state->image_state.get();
+            const auto initial_layout = rpci->pAttachments[i].initialLayout;
+            const auto *attachment_description_stencil_layout =
+                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
+            if (attachment_description_stencil_layout) {
+                const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
+                VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
+                sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
+                sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
+            } else {
+                cb_state.SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
+            }
+        }
+    }
+    // Now transition for first subpass (index 0)
+    TransitionSubpassLayouts(cb_state, render_pass_state, 0);
+}
+
+void TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
+    auto render_pass_state = cb_state.activeRenderPass.get();
+    auto framebuffer_state = cb_state.activeFramebuffer.get();
+    if (!render_pass_state || !framebuffer_state) {
+        return;
+    }
+
+    const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->create_info.ptr();
+    for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
+        if (view_state) {
+            VkImageLayout stencil_layout = kInvalidLayout;
+            const auto *attachment_description_stencil_layout =
+                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+            if (attachment_description_stencil_layout) {
+                stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
+            }
+            cb_state.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
+        }
+    }
+}
+
+bool Validator::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl::ImageView &image_view_state,
+                                  VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
+                                  bool *error) const {
+    if (disabled[image_layout_validation]) return false;
+    assert(image_view_state.image_state);
+    auto range_factory = [&image_view_state](const ImageSubresourceLayoutMap &map) {
+        return image_layout_map::RangeGenerator(image_view_state.range_generator);
+    };
+
+    return VerifyImageLayoutRange(*this, cb_state, *image_view_state.image_state,
+                                  image_view_state.create_info.subresourceRange.aspectMask, explicit_layout, range_factory, loc,
+                                  mismatch_layout_vuid, error);
+}
+
+// Validates the buffer is allowed to be protected
+bool Validator::ValidateProtectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
+                                        const Location &buffer_loc, const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state.unprotected == false)) {
+        const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
+        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is a protected buffer, but command buffer (%s) is unprotected.%s",
+                         FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
+}
+
+// Validates the buffer is allowed to be unprotected
+bool Validator::ValidateUnprotectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
+                                          const Location &buffer_loc, const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state.unprotected == true)) {
+        const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
+        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is an unprotected buffer, but command buffer (%s) is protected.%s",
+                         FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
+}
+
+// Validates the image is allowed to be protected
+bool Validator::ValidateProtectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
+                                       const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state.unprotected == false)) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, loc, "(%s) is a protected image, but command buffer (%s) is unprotected.%s",
+                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
+}
+
+// Validates the image is allowed to be unprotected
+bool Validator::ValidateUnprotectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
+                                         const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state.unprotected == true)) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, loc, "(%s) is an unprotected image, but command buffer (%s) is protected.%s",
+                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
 }
 
 void Validator::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
@@ -381,34 +627,18 @@ void Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer
     StoreCommandResources(commandBuffer, std::move(copy_buffer_to_image), record_obj.location);
 }
 
-template <typename RegionType>
-void Validator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                   VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
-                                   VkFilter filter) {
-    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto src_image_state = Get<vvl::Image>(srcImage);
-    auto dst_image_state = Get<vvl::Image>(dstImage);
-    if (cb_state_ptr && src_image_state && dst_image_state) {
-        // Make sure that all image slices are updated to correct layout
-        for (uint32_t i = 0; i < regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
-        }
-    }
-}
-
 void Validator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                           VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                           const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
                                          filter, record_obj);
-    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+    RecordCmdBlitImage(*this, commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
 }
 
 void Validator::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
                                               const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, record_obj);
-    RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
+    RecordCmdBlitImage(*this, commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
                        pBlitImageInfo->filter);
 }
@@ -416,7 +646,7 @@ void Validator::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, con
 void Validator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
                                            const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
-    RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
+    RecordCmdBlitImage(*this, commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
                        pBlitImageInfo->filter);
 }
@@ -465,29 +695,19 @@ void Validator::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32
                                           pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                           pImageMemoryBarriers, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
-}
-
-void Validator::RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                     const VkDependencyInfo *pDependencyInfos, Func command) {
-    // don't hold read lock during the base class method
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    for (uint32_t i = 0; i < eventCount; i++) {
-        const auto &dep_info = pDependencyInfos[i];
-        TransitionImageLayouts(*cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
-    }
+    TransitionImageLayouts(*this, *cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
 }
 
 void Validator::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
-    RecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2KHR);
+    RecordCmdWaitEvents2(*this, commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2KHR);
 }
 
 void Validator::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                             const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
-    RecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2);
+    RecordCmdWaitEvents2(*this, commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2);
 }
 
 void Validator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
@@ -502,7 +722,7 @@ void Validator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, V
                                                imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, srcStageMask, dstStageMask);
+    TransitionImageLayouts(*this, *cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, srcStageMask, dstStageMask);
 }
 
 void Validator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
@@ -510,7 +730,7 @@ void Validator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffe
     BaseClass::PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(*cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
+    TransitionImageLayouts(*this, *cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
 void Validator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
@@ -518,224 +738,6 @@ void Validator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, 
     BaseClass::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(*cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
-}
-
-void Validator::TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_state, const vku::safe_VkAttachmentReference2 &ref) {
-    if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
-        if (image_view) {
-            VkImageLayout stencil_layout = kInvalidLayout;
-            const auto *attachment_reference_stencil_layout =
-                vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
-            if (attachment_reference_stencil_layout) {
-                stencil_layout = attachment_reference_stencil_layout->stencilLayout;
-            }
-
-            cb_state.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
-        }
-    }
-}
-
-void Validator::TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state,
-                                         const int subpass_index) {
-    auto const &subpass = render_pass_state.create_info.pSubpasses[subpass_index];
-    for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-        TransitionAttachmentRefLayout(cb_state, subpass.pInputAttachments[j]);
-    }
-    for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-        TransitionAttachmentRefLayout(cb_state, subpass.pColorAttachments[j]);
-    }
-    if (subpass.pDepthStencilAttachment) {
-        TransitionAttachmentRefLayout(cb_state, *subpass.pDepthStencilAttachment);
-    }
-}
-
-// Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
-// 1. Transition into initialLayout state
-// 2. Transition from initialLayout to layout used in subpass 0
-void Validator::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state) {
-    // First record expected initialLayout as a potential initial layout usage.
-    auto const rpci = render_pass_state.create_info.ptr();
-    for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
-        if (view_state) {
-            vvl::Image *image_state = view_state->image_state.get();
-            const auto initial_layout = rpci->pAttachments[i].initialLayout;
-            const auto *attachment_description_stencil_layout =
-                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
-            if (attachment_description_stencil_layout) {
-                const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
-                VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
-                sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
-                sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
-            } else {
-                cb_state.SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
-            }
-        }
-    }
-    // Now transition for first subpass (index 0)
-    TransitionSubpassLayouts(cb_state, render_pass_state, 0);
-}
-
-void Validator::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
-    auto render_pass_state = cb_state.activeRenderPass.get();
-    auto framebuffer_state = cb_state.activeFramebuffer.get();
-    if (!render_pass_state || !framebuffer_state) {
-        return;
-    }
-
-    const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->create_info.ptr();
-    for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
-        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
-        if (view_state) {
-            VkImageLayout stencil_layout = kInvalidLayout;
-            const auto *attachment_description_stencil_layout =
-                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
-            if (attachment_description_stencil_layout) {
-                stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
-            }
-            cb_state.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
-        }
-    }
-}
-
-// Validates the buffer is allowed to be protected
-bool Validator::ValidateProtectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
-                                        const Location &buffer_loc, const char *vuid, const char *more_message) const {
-    bool skip = false;
-
-    // if driver supports protectedNoFault the operation is valid, just has undefined values
-    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state.unprotected == false)) {
-        const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
-        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is a protected buffer, but command buffer (%s) is unprotected.%s",
-                         FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
-    }
-    return skip;
-}
-
-// Validates the buffer is allowed to be unprotected
-bool Validator::ValidateUnprotectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
-                                          const Location &buffer_loc, const char *vuid, const char *more_message) const {
-    bool skip = false;
-
-    // if driver supports protectedNoFault the operation is valid, just has undefined values
-    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state.unprotected == true)) {
-        const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
-        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is an unprotected buffer, but command buffer (%s) is protected.%s",
-                         FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
-    }
-    return skip;
-}
-
-// Validates the image is allowed to be protected
-bool Validator::ValidateProtectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
-                                       const char *vuid, const char *more_message) const {
-    bool skip = false;
-
-    // if driver supports protectedNoFault the operation is valid, just has undefined values
-    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state.unprotected == false)) {
-        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "(%s) is a protected image, but command buffer (%s) is unprotected.%s",
-                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
-    }
-    return skip;
-}
-
-// Validates the image is allowed to be unprotected
-bool Validator::ValidateUnprotectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
-                                         const char *vuid, const char *more_message) const {
-    bool skip = false;
-
-    // if driver supports protectedNoFault the operation is valid, just has undefined values
-    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state.unprotected == true)) {
-        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "(%s) is an unprotected image, but command buffer (%s) is protected.%s",
-                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
-    }
-    return skip;
-}
-
-template <typename RangeFactory>
-bool Validator::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
-                                       VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
-                                       const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
-                                       bool *error) const {
-    bool skip = false;
-    const auto subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
-    if (!subresource_map) {
-        return skip;
-    }
-    const auto &layout_map = subresource_map->GetLayoutMap();
-    const auto *global_map = image_state.layout_range_map.get();
-    GlobalImageLayoutRangeMap empty_map(1);
-    assert(global_map);
-    auto global_map_guard = global_map->ReadLock();
-
-    auto pos = layout_map.begin();
-    const auto end = layout_map.end();
-    sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(empty_map, *global_map, pos->first.begin);
-    while (pos != end) {
-        VkImageLayout initial_layout = pos->second.initial_layout;
-        assert(initial_layout != image_layout_map::kInvalidLayout);
-        if (initial_layout == image_layout_map::kInvalidLayout) {
-            continue;
-        }
-
-        VkImageLayout image_layout = kInvalidLayout;
-
-        if (current_layout->range.empty()) break;  // When we are past the end of data in overlay and global... stop looking
-        if (current_layout->pos_A->valid) {        // pos_A denotes the overlay map in the parallel iterator
-            image_layout = current_layout->pos_A->lower_bound->second;
-        } else if (current_layout->pos_B->valid) {  // pos_B denotes the global map in the parallel iterator
-            image_layout = current_layout->pos_B->lower_bound->second;
-        }
-        const auto intersected_range = pos->first & current_layout->range;
-        if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
-            // TODO: Set memory invalid which is in mem_tracker currently
-        } else if (image_layout != initial_layout) {
-            const auto aspect_mask = image_state.subresource_encoder.Decode(intersected_range.begin).aspectMask;
-            const bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
-            if (!matches) {
-                // We can report all the errors for the intersected range directly
-                for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
-                    const auto subresource = image_state.subresource_encoder.Decode(index);
-                    const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-                    skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
-                                     "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
-                                     ", mip level %" PRIu32
-                                     ") "
-                                     "to be in layout %s--instead, current layout is %s.",
-                                     FormatHandle(cb_state).c_str(), FormatHandle(image_state).c_str(), subresource.aspectMask,
-                                     subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(initial_layout),
-                                     string_VkImageLayout(image_layout));
-                }
-            }
-        }
-        if (pos->first.includes(intersected_range.end)) {
-            current_layout.seek(intersected_range.end);
-        } else {
-            ++pos;
-            if (pos != end) {
-                current_layout.seek(pos->first.begin);
-            }
-        }
-    }
-    return skip;
-}
-
-bool Validator::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl::ImageView &image_view_state,
-                                  VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
-                                  bool *error) const {
-    if (disabled[image_layout_validation]) return false;
-    assert(image_view_state.image_state);
-    auto range_factory = [&image_view_state](const ImageSubresourceLayoutMap &map) {
-        return image_layout_map::RangeGenerator(image_view_state.range_generator);
-    };
-
-    return VerifyImageLayoutRange(cb_state, *image_view_state.image_state, image_view_state.create_info.subresourceRange.aspectMask,
-                                  explicit_layout, range_factory, loc, mismatch_layout_vuid, error);
+    TransitionImageLayouts(*this, *cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 }  // namespace gpuav
