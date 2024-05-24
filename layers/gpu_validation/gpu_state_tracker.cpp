@@ -119,7 +119,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
     }
 }
 
-uint64_t Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
+vvl::PreSubmitResult Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     for (const auto &submission : submissions) {
         for (auto &cb : submission.cbs) {
             auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb);

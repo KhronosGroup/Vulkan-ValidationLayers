@@ -1111,8 +1111,6 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
                                                       VkFence fence, const RecordObject &record_obj) {
     auto queue_state = Get<vvl::Queue>(queue);
 
-    uint64_t early_retire_seq = 0;
-
     std::vector<vvl::QueueSubmission> submissions;
     submissions.reserve(submitCount);
     if (submitCount == 0) {
@@ -1159,9 +1157,9 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
         submissions.emplace_back(std::move(submission));
     }
 
-    early_retire_seq = queue_state->PreSubmit(std::move(submissions));
-    if (early_retire_seq) {
-        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
+    if (result.has_external_fence) {
+        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
 }
 
@@ -1204,7 +1202,6 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_
 void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
                                                        VkFence fence, const RecordObject &record_obj) {
     auto queue_state = Get<vvl::Queue>(queue);
-    uint64_t early_retire_seq = 0;
     std::vector<vvl::QueueSubmission> submissions;
     submissions.reserve(submitCount);
     if (submitCount == 0) {
@@ -1238,9 +1235,9 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t s
         }
         submissions.emplace_back(std::move(submission));
     }
-    early_retire_seq = queue_state->PreSubmit(std::move(submissions));
-    if (early_retire_seq) {
-        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
+    if (result.has_external_fence) {
+        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
 }
 
@@ -1312,8 +1309,6 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
 void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                           VkFence fence, const RecordObject &record_obj) {
     auto queue_state = Get<vvl::Queue>(queue);
-
-    uint64_t early_retire_seq = 0;
 
     std::vector<vvl::QueueSubmission> submissions;
     submissions.reserve(bindInfoCount);
@@ -1390,9 +1385,9 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
         submissions.emplace_back(std::move(submission));
     }
 
-    early_retire_seq = queue_state->PreSubmit(std::move(submissions));
-    if (early_retire_seq) {
-        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
+    if (result.has_external_fence) {
+        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
 }
 
@@ -3817,9 +3812,9 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         }
     }
 
-    auto early_retire_seq = queue_state->PreSubmit(std::move(submissions));
-    if (early_retire_seq) {
-        queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
+    if (result.has_external_fence) {
+        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
 }
 

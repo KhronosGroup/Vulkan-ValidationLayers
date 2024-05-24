@@ -152,7 +152,7 @@ class Queue : public gpu_tracker::Queue {
     Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp);
 
   protected:
-    uint64_t PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
+    vvl::PreSubmitResult PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
 };
 
 class Buffer : public vvl::Buffer {

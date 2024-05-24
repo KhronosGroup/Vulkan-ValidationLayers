@@ -29,7 +29,7 @@ class Queue : public vvl::Queue {
     virtual ~Queue();
 
   protected:
-    uint64_t PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
+    vvl::PreSubmitResult PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
     void PostSubmit(vvl::QueueSubmission &) override;
     void SubmitBarrier(const Location &loc, uint64_t seq);
     void Retire(vvl::QueueSubmission &) override;
