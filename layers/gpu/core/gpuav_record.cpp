@@ -25,6 +25,7 @@
 #include "utils/hash_util.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_validation.h"
+#include "gpu/descriptor_validation/gpuav_image_layout.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"

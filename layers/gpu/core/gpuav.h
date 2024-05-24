@@ -56,7 +56,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
-    using ImageBarrier = sync_utils::ImageBarrier;
 
   public:
     Validator() {
@@ -316,16 +315,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     // gpuav_image_layout.cpp
     // --------------------
 
-    void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const vku::safe_VkAttachmentReference2& ref);
-
-    void TransitionSubpassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state, const int);
-    void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
-
-    void TransitionBeginRenderPassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state);
-
-    bool UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer& cb_state, const Location& image_loc,
-                                           const ImageBarrier& img_barrier, const vvl::CommandBuffer::ImageLayoutMap& current_map,
-                                           vvl::CommandBuffer::ImageLayoutMap& layout_updates) const;
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
@@ -369,9 +358,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                             const RecordObject&) override;
 
-    template <typename RegionType>
-    void RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                            VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions, VkFilter filter);
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter,
                                    const RecordObject&) override;
@@ -393,8 +379,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                     uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
                                     const RecordObject&) override;
-    void RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                              const VkDependencyInfo* pDependencyInfos, Func command);
     void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                         const VkDependencyInfoKHR* pDependencyInfos, const RecordObject&) override;
     void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -411,13 +395,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                              const RecordObject&) override;
     void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
                                           const RecordObject&) override;
-
-    void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
-    void RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const ImageBarrier& mem_barrier);
-    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
-    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
-                                VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
-
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const override;
     bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
@@ -435,11 +412,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
 
   private:
-    template <typename RangeFactory>
-    bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
-                                VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& loc,
-                                const char* mismatch_layout_vuid, bool* error) const;
-
     std::string instrumented_shader_cache_path_{};
     bool bda_validation_possible_ = false;
 };

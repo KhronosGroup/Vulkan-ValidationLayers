@@ -19,6 +19,7 @@
 
 #include "gpu/core/gpuav.h"
 #include "gpu/core/gpuav_constants.h"
+#include "gpu/descriptor_validation/gpuav_image_layout.h"
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpu_shaders/gpu_error_header.h"
@@ -486,7 +487,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         ValidateBindlessDescriptorSets();
     }
 
-    state_.UpdateCmdBufImageLayouts(*this);
+    UpdateCmdBufImageLayouts(state_, *this);
 }
 
 Queue::Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp)

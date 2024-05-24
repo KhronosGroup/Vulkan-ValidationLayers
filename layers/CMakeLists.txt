@@ -230,6 +230,7 @@ target_sources(vvl PRIVATE
     gpu/descriptor_validation/gpuav_descriptor_validation.cpp
     gpu/descriptor_validation/gpuav_descriptor_set.cpp
     gpu/descriptor_validation/gpuav_descriptor_set.h
+    gpu/descriptor_validation/gpuav_image_layout.h
     gpu/descriptor_validation/gpuav_image_layout.cpp
     gpu/core/gpuav.h
     gpu/core/gpuav.cpp
