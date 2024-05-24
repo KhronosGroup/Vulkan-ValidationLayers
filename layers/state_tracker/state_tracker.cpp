@@ -3786,7 +3786,6 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     }
 
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
-    const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
         // confused itself just as much.
@@ -3799,22 +3798,33 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
                 present_sync.swapchain = swapchain_data;
                 acquire_fence->SetPresentSync(present_sync);
             }
-            if (present_fence_info && present_fence_info->pFences[i] != VK_NULL_HANDLE) {
-                auto present_fence = Get<vvl::Fence>(present_fence_info->pFences[i]);
-                if (present_fence) {
-                    present_sync.swapchain = swapchain_data;
-                    present_fence->SetPresentSync(present_sync);
-                    present_fence->EnqueueSignal(nullptr, 0);
-                }
-            }
             uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
             swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id);
         }
     }
 
     vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
+
     if (result.has_external_fence) {
         queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
+    }
+
+    if (const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
+        // This ensures that waiting on the present fence will retire present queue operation.
+        present_sync.submissions.emplace_back(queue_state.get(), result.last_submission_seq);
+
+        for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+            auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
+            if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
+
+            if (auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i])) {
+                if (auto present_fence = Get<vvl::Fence>(present_fence_info->pFences[i])) {
+                    present_sync.swapchain = swapchain_data;
+                    present_fence->SetPresentSync(present_sync);
+                    present_fence->EnqueueSignal(nullptr, 0);
+                }
+            }
+        }
     }
 }
 
