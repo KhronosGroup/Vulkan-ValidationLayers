@@ -490,9 +490,28 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDrawPipelineRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                         const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                               const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidatePipelineDynamicRenderpassSampleCount(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                      const vvl::DrawDispatchVuid& vuid) const;
+                                               const VkRenderingInfo& rendering_info, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                          const VkRenderingInfo& rendering_info,
+                                                          const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state,
+                                                                    const vvl::Pipeline& pipeline,
+                                                                    const VkRenderingInfo& rendering_info,
+                                                                    const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderpassLegacyDithering(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                              const VkRenderingInfo& rendering_info,
+                                                              const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                                  const VkRenderingInfo& rendering_info,
+                                                                  const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                                const VkRenderingInfo& rendering_info,
+                                                                const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,
+                                                                const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                           const VkRenderingInfo& rendering_info,
+                                                           const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,
+                                                           const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                               const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateShaderObjectBoundShader(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
