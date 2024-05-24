@@ -17,13 +17,14 @@
 
 #pragma once
 
-#include "state_tracker/cmd_buffer_state.h"
 #include "gpu/resources/gpuav_subclasses.h"
 
 #include <utility>
 #include <vector>
 
 namespace gpuav {
+class Validator;
+
 class RestorablePipelineState {
   public:
     RestorablePipelineState(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
@@ -47,4 +48,7 @@ class RestorablePipelineState {
 void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard>& cmd_buffer_state,
                                      VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
                                      uint32_t resource_index);
+
+VkDeviceAddress GetBufferDeviceAddress(Validator& gpuav, VkBuffer buffer, const Location& loc);
+
 }  // namespace gpuav

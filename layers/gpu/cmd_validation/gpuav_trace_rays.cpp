@@ -225,7 +225,7 @@ PreTraceRaysResources::SharedResources *Validator::GetSharedTraceRaysValidationR
     shared_resources->shader_group_handle_size_aligned = shader_group_size_aligned;
 
     // Retrieve SBT address
-    const VkDeviceAddress sbt_address = GetBufferDeviceAddress(shared_resources->sbt_buffer, loc);
+    const VkDeviceAddress sbt_address = GetBufferDeviceAddress(*this, shared_resources->sbt_buffer, loc);
     assert(sbt_address != 0);
     if (sbt_address == 0) {
         InternalError(device, loc, "Retrieved SBT buffer device address is null. Aborting GPU-AV.");
