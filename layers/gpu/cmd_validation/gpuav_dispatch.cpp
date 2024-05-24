@@ -27,14 +27,14 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
                                                                                             VkCommandBuffer cmd_buffer,
                                                                                             VkBuffer indirect_buffer,
                                                                                             VkDeviceSize indirect_offset) {
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
+    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_state) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return nullptr;
     }
 
     if (!gpuav_settings.validate_indirect_dispatches_buffers) {
-        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
@@ -47,12 +47,12 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
 
     {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
-        auto const &last_bound = cb_node->lastBound[lv_bind_point];
+        auto const &last_bound = cb_state->lastBound[lv_bind_point];
         const auto *pipeline_state = last_bound.pipeline_state;
         const bool use_shader_objects = pipeline_state == nullptr;
 
         PreDispatchResources::SharedResources *shared_resources = GetSharedDispatchIndirectValidationResources(
-            cb_node->GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
+            cb_state->GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
         if (!shared_resources) {
             return std::make_unique<PreDispatchResources>();
         }
@@ -85,7 +85,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
         DispatchUpdateDescriptorSets(device, 1, &desc_write, 0, nullptr);
 
         // Save current graphics pipeline state
-        RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE);
+        RestorablePipelineState restorable_state(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
         // Insert diagnostic dispatch
         if (use_shader_objects) {
@@ -101,13 +101,13 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDispatchIndirectValidati
         push_constants[3] = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
         DispatchCmdPushConstants(cmd_buffer, shared_resources->pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                                  sizeof(push_constants), push_constants);
-        BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
-                                        cb_node->compute_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
+        BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
+                                        cb_state->compute_index, static_cast<uint32_t>(cb_state->per_command_resources.size()));
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
                                       glsl::kDiagPerCmdDescriptorSet, 1, &dispatch_resources->indirect_buffer_desc_set, 0, nullptr);
         DispatchCmdDispatch(cmd_buffer, 1, 1, 1);
 
-        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
         if (aborted_) {
             return nullptr;
         }

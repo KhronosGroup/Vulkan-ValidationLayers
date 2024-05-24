@@ -26,14 +26,14 @@ namespace gpuav {
 std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResources(const Location &loc,
                                                                                      VkCommandBuffer cmd_buffer,
                                                                                      VkDeviceAddress indirect_data_address) {
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
+    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_state) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return nullptr;
     }
 
     if (!gpuav_settings.validate_indirect_trace_rays_buffers) {
-        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
@@ -42,7 +42,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
 
     {
         PreTraceRaysResources::SharedResources *shared_resources =
-            GetSharedTraceRaysValidationResources(cb_node->GetValidationCmdCommonDescriptorSetLayout(), loc);
+            GetSharedTraceRaysValidationResources(cb_state->GetValidationCmdCommonDescriptorSetLayout(), loc);
         if (!shared_resources) {
             return nullptr;
         }
@@ -50,7 +50,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
         trace_rays_resources->indirect_data_address = indirect_data_address;
 
         // Save current ray tracing pipeline state
-        RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+        RestorablePipelineState restorable_state(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
         // Push info needed for validation:
         // - the device address indirect data is read from
@@ -70,8 +70,8 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
         push_constants[4] = static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
 
         DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_resources->pipeline);
-        BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_resources->pipeline_layout,
-                                        cb_node->trace_rays_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
+        BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_resources->pipeline_layout,
+                                        cb_state->trace_rays_index, static_cast<uint32_t>(cb_state->per_command_resources.size()));
         DispatchCmdPushConstants(cmd_buffer, shared_resources->pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0,
                                  sizeof(push_constants), push_constants);
         VkStridedDeviceAddressRegionKHR ray_gen_sbt{};
@@ -83,7 +83,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreTraceRaysValidationResou
         VkStridedDeviceAddressRegionKHR empty_sbt{};
         DispatchCmdTraceRaysKHR(cmd_buffer, &ray_gen_sbt, &empty_sbt, &empty_sbt, &empty_sbt, 1, 1, 1);
 
-        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
         if (aborted_) {
             return nullptr;
         }

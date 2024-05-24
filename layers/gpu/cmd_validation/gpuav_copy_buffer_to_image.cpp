@@ -50,14 +50,14 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
         return nullptr;
     }
 
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
+    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_state) {
         InternalError(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer");
         return nullptr;
     }
 
     PreCopyBufferToImageResources::SharedResources *shared_resources =
-        GetSharedCopyBufferToImageValidationResources(cb_node->GetValidationCmdCommonDescriptorSetLayout(), loc);
+        GetSharedCopyBufferToImageValidationResources(cb_state->GetValidationCmdCommonDescriptorSetLayout(), loc);
     if (!shared_resources) {
         return nullptr;
     }
@@ -213,13 +213,13 @@ std::unique_ptr<CommandResources> Validator::AllocatePreCopyBufferToImageValidat
         DispatchUpdateDescriptorSets(device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Insert diagnostic dispatch
     DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline);
 
-    BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout, 0,
-                                    static_cast<uint32_t>(cb_node->per_command_resources.size()));
+    BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout, 0,
+                                    static_cast<uint32_t>(cb_state->per_command_resources.size()));
     DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &copy_buffer_to_img_resources->desc_set, 0, nullptr);
     // correct_count == max texelsCount?

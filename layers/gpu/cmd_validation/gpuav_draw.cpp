@@ -28,14 +28,14 @@ namespace gpuav {
 std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationResources(
     const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride) {
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
+    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_state) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return nullptr;
     }
 
     if (!gpuav_settings.validate_indirect_draws_buffers) {
-        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
@@ -43,12 +43,12 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationRe
     auto draw_resources = std::make_unique<PreDrawResources>();
     {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        auto const &last_bound = cb_node->lastBound[lv_bind_point];
+        auto const &last_bound = cb_state->lastBound[lv_bind_point];
         const auto *pipeline_state = last_bound.pipeline_state;
         const bool use_shader_objects = pipeline_state == nullptr;
 
-        PreDrawResources::SharedResources *shared_resources =
-            GetSharedDrawIndirectValidationResources(cb_node->GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
+        PreDrawResources::SharedResources *shared_resources = GetSharedDrawIndirectValidationResources(
+            cb_state->GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
         if (!shared_resources) {
             return nullptr;
         }
@@ -59,7 +59,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationRe
 
         VkPipeline validation_pipeline = VK_NULL_HANDLE;
         if (!use_shader_objects) {
-            validation_pipeline = GetDrawValidationPipeline(*shared_resources, cb_node->activeRenderPass.get()->VkHandle(), loc);
+            validation_pipeline = GetDrawValidationPipeline(*shared_resources, cb_state->activeRenderPass.get()->VkHandle(), loc);
             if (validation_pipeline == VK_NULL_HANDLE) {
                 InternalError(cmd_buffer, loc, "Could not find or create a pipeline. Aborting GPU-AV");
                 return nullptr;
@@ -98,7 +98,7 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationRe
 
         // Save current graphics pipeline state
         const vvl::Func command = loc.function;
-        RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS);
+        RestorablePipelineState restorable_state(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
         const bool is_mesh_call =
             (command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV ||
              command == Func::vkCmdDrawMeshTasksIndirectEXT || command == Func::vkCmdDrawMeshTasksIndirectNV);
@@ -193,13 +193,13 @@ std::unique_ptr<CommandResources> Validator::AllocatePreDrawIndirectValidationRe
         static_assert(sizeof(push_constants) <= 128, "push_constants buffer size >128, need to consider maxPushConstantsSize.");
         DispatchCmdPushConstants(cmd_buffer, shared_resources->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                                  static_cast<uint32_t>(sizeof(push_constants)), push_constants);
-        BindValidationCmdsCommonDescSet(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_resources->pipeline_layout,
-                                        cb_node->draw_index, static_cast<uint32_t>(cb_node->per_command_resources.size()));
+        BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_resources->pipeline_layout,
+                                        cb_state->draw_index, static_cast<uint32_t>(cb_state->per_command_resources.size()));
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_resources->pipeline_layout,
                                       glsl::kDiagPerCmdDescriptorSet, 1, &draw_resources->buffer_desc_set, 0, nullptr);
         DispatchCmdDraw(cmd_buffer, 3, 1, 0, 0);
 
-        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
+        CommandResources cmd_resources = SetupShaderInstrumentationResources(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
         if (aborted_) {
             return nullptr;
         }
