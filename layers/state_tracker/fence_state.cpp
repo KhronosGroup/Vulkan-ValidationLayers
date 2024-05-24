@@ -34,6 +34,9 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
 
 void vvl::Fence::SetPresentSync(const PresentSync &present_sync) {
     auto guard = WriteLock();
+    // Attempt to overwrite not yet comitted present sync data with a new one is a bug
+    assert(present_sync.submissions.empty() || present_sync_.submissions.empty());
+
     present_sync_ = present_sync;
 }
 
