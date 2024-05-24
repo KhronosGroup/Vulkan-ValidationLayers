@@ -49,11 +49,11 @@ void vvl::QueueSubmission::EndUse() {
     }
 }
 
-uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
+vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     if (!submissions.empty()) {
         submissions.back().end_batch = true;
     }
-    uint64_t retire_early_seq = 0;
+    PreSubmitResult result;
     for (auto &submission : submissions) {
         for (auto &cb_state : submission.cbs) {
             auto cb_guard = cb_state->WriteLock();
@@ -79,18 +79,20 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) 
 
         if (submission.fence) {
             if (submission.fence->EnqueueSignal(this, submission.seq)) {
-                retire_early_seq = submission.seq;
+                result.has_external_fence = true;
+                result.submission_with_external_fence_seq = submission.seq;
             }
         }
         {
             auto guard = Lock();
+            result.last_submission_seq = submission.seq;
             submissions_.emplace_back(std::move(submission));
             if (!thread_) {
                 thread_ = std::make_unique<std::thread>(&Queue::ThreadFunc, this);
             }
         }
     }
-    return retire_early_seq;
+    return result;
 }
 
 void vvl::Queue::Notify(uint64_t until_seq) {

@@ -523,7 +523,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 Queue::Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp)
     : gpu_tracker::Queue(state, q, index, flags, qfp) {}
 
-uint64_t Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
+vvl::PreSubmitResult Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     return gpu_tracker::Queue::PreSubmit(std::move(submissions));
 }
 

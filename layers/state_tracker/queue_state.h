@@ -76,6 +76,13 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
     return std::chrono::steady_clock::now() + std::chrono::seconds(10);
 }
 
+struct PreSubmitResult {
+    uint64_t last_submission_seq = 0;
+
+    bool has_external_fence = false;
+    uint64_t submission_with_external_fence_seq = 0;
+};
+
 class Queue: public StateObject {
   public:
     Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t index, VkDeviceQueueCreateFlags flags,
@@ -92,7 +99,7 @@ class Queue: public StateObject {
     VkQueue VkHandle() const { return handle_.Cast<VkQueue>(); }
 
     // called from the various PreCallRecordQueueSubmit() methods
-    virtual uint64_t PreSubmit(std::vector<QueueSubmission> &&submissions);
+    virtual PreSubmitResult PreSubmit(std::vector<QueueSubmission> &&submissions);
     // called from the various PostCallRecordQueueSubmit() methods
     void PostSubmit();
 
