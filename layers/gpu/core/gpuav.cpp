@@ -88,13 +88,13 @@ void Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer, std::uni
                                       const Location &loc) {
     if (!command_resources) return;
 
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
+    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_state) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return;
     }
 
-    cb_node->per_command_resources.emplace_back(std::move(command_resources));
+    cb_state->per_command_resources.emplace_back(std::move(command_resources));
 }
 
 }  // namespace gpuav

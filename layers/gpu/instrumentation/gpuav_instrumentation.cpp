@@ -337,12 +337,12 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
 
 CommandResources Validator::SetupShaderInstrumentationResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
                                                                 const Location &loc) {
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
+    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_state) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer");
         return CommandResources();
     }
-    return SetupShaderInstrumentationResources(cb_node, bind_point, loc);
+    return SetupShaderInstrumentationResources(cb_state, bind_point, loc);
 }
 
 }  // namespace gpuav

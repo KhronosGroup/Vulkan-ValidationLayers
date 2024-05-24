@@ -633,14 +633,14 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     VkDescriptorBufferInfo output_desc_buffer_info = {};
     output_desc_buffer_info.range = output_buffer_byte_size_;
 
-    auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_node) {
+    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+    if (!cb_state) {
         InternalError(cmd_buffer, loc, "Unrecognized command buffer.");
         return;
     }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto &last_bound = cb_node->lastBound[lv_bind_point];
+    const auto &last_bound = cb_state->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
@@ -704,7 +704,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
                                       0, nullptr);
     }
     // Record buffer and memory info in CB state tracking
-    cb_node->buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point);
+    cb_state->buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point);
 }
 
 std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
