@@ -271,11 +271,11 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 if (last_bound.pipeline_state) {
                     auto last_bound_provoking_vertex_state_ci =
                         vku::FindStructInPNextChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
-                            last_bound.pipeline_state->RasterizationState()->pNext);
+                            last_bound.pipeline_state->RasterizationStatePNext());
 
                     auto current_provoking_vertex_state_ci =
                         vku::FindStructInPNextChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
-                            pipeline_state.RasterizationState()->pNext);
+                            pipeline_state.RasterizationStatePNext());
 
                     if (last_bound_provoking_vertex_state_ci && !current_provoking_vertex_state_ci) {
                         const LogObjectList objlist(cb_state->Handle(), pipeline);

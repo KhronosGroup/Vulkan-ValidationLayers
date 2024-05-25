@@ -486,14 +486,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
     const auto *pipe = last_bound_state.pipeline_state;
-    if (!pipe) {
-        return skip;
-    }
+    if (!pipe || pipe->RasterizationDisabled()) return skip;
 
-    const auto raster_state = pipe->RasterizationState();
-    if (raster_state && raster_state->rasterizerDiscardEnable) {
-        return skip;
-    }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
 
@@ -576,14 +570,8 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
     const auto *pipe = last_bound_state.pipeline_state;
-    if (!pipe) {
-        return;
-    }
+    if (!pipe || pipe->RasterizationDisabled()) return;
 
-    const auto *raster_state = pipe->RasterizationState();
-    if (raster_state && raster_state->rasterizerDiscardEnable) {
-        return;
-    }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
 

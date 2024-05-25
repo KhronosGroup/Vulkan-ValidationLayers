@@ -1717,10 +1717,16 @@ TEST_F(PositivePipeline, AttachmentCountIgnored) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositivePipeline, DynamicRasterizationState) {
+TEST_F(PositivePipeline, NoRasterizationState) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7899");
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8051");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3DepthClampEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3PolygonMode);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1731,8 +1737,55 @@ TEST_F(PositivePipeline, DynamicRasterizationState) {
     ms_ci.pSampleMask = nullptr;
 
     CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
     pipe.gp_ci_.pRasterizationState = nullptr;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_CULL_MODE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_FRONT_FACE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
+    pipe.ms_ci_ = ms_ci;
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositivePipeline, NoRasterizationStateDynamicRendering) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7899");
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8051");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3DepthClampEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3PolygonMode);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    VkPipelineMultisampleStateCreateInfo ms_ci = vku::InitStructHelper();
+    ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_ci.sampleShadingEnable = 0;
+    ms_ci.minSampleShading = 1.0;
+    ms_ci.pSampleMask = nullptr;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.pRasterizationState = nullptr;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_CULL_MODE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_FRONT_FACE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe.ms_ci_ = ms_ci;
     pipe.CreateGraphicsPipeline();
 }

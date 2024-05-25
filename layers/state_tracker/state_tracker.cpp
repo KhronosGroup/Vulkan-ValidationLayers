@@ -2250,8 +2250,6 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
     auto pipe_state = Get<vvl::Pipeline>(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
-        const auto *raster_state = pipe_state->RasterizationState();
-        const bool rasterization_enabled = raster_state && !raster_state->rasterizerDiscardEnable;
         const auto *viewport_state = pipe_state->ViewportState();
 
         cb_state->dynamic_state_status.pipeline.reset();
@@ -2289,10 +2287,8 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         // this time), then these are set to 0 to disable this checking.
         const auto has_dynamic_viewport_count = pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
         const auto has_dynamic_scissor_count = pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-        cb_state->pipelineStaticViewportCount =
-            has_dynamic_viewport_count || !rasterization_enabled ? 0 : viewport_state->viewportCount;
-        cb_state->pipelineStaticScissorCount =
-            has_dynamic_scissor_count || !rasterization_enabled ? 0 : viewport_state->scissorCount;
+        cb_state->pipelineStaticViewportCount = (has_dynamic_viewport_count || !viewport_state) ? 0 : viewport_state->viewportCount;
+        cb_state->pipelineStaticScissorCount = (has_dynamic_scissor_count || !viewport_state) ? 0 : viewport_state->scissorCount;
 
         // Trash dynamic viewport/scissor state if pipeline defines static state and enabled rasterization.
         // akeley98 NOTE: There's a bit of an ambiguity in the spec, whether binding such a pipeline overwrites
@@ -2300,14 +2296,14 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         // I am taking the latter interpretation based on the implementation details of NVIDIA's Vulkan driver.
         if (!has_dynamic_viewport_count) {
             cb_state->trashedViewportCount = true;
-            if (rasterization_enabled && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT))) {
+            if (viewport_state && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT))) {
                 cb_state->trashedViewportMask |= (uint32_t(1) << viewport_state->viewportCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
         if (!has_dynamic_scissor_count) {
             cb_state->trashedScissorCount = true;
-            if (rasterization_enabled && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR))) {
+            if (viewport_state && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR))) {
                 cb_state->trashedScissorMask |= (uint32_t(1) << viewport_state->scissorCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }

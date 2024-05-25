@@ -197,8 +197,7 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const vvl::Pipeline &pipeli
         }
     }
 
-    auto raster_state_ci = pipeline.RasterizationState();
-    if (raster_state_ci) {
+    if (const auto raster_state_ci = pipeline.RasterizationState()) {
         // Validate polygon mode
         if (!enabled_features.pointPolygons && !raster_state_ci->rasterizerDiscardEnable &&
             (raster_state_ci->polygonMode == VK_POLYGON_MODE_POINT)) {
@@ -541,8 +540,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08901", device, create_info_loc,
                              "Attempting to link pipeline libraries without a pre-rasterization shader state (did you forget to "
                              "add VK_PIPELINE_CREATE_LIBRARY_BIT_KHR to your intermediate pipeline?).");
-        } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
-                   !pipeline.RasterizationState()->rasterizerDiscardEnable) {
+        } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) || !pipeline.RasterizationDisabled()) {
             if (!pipeline.fragment_shader_state) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08909", device, create_info_loc,
                                  "Attempting to link pipeline libraries without a fragment shader state (did you forget to add "
@@ -736,8 +734,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 continue;
             }
 
-            if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) &&
-                pipeline.RasterizationState()->rasterizerDiscardEnable) {
+            if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) && pipeline.RasterizationDisabled()) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06683", device,
                                  create_info_loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags),
                                  "is %s, but layout was created with pSetLayouts[%" PRIu32 "] == VK_NULL_HANDLE",
@@ -1166,8 +1163,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
             const auto attachment_desc = rp_state->create_info.pAttachments[attachment];
             VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_desc.format);
 
-            const auto *raster_state = pipeline.RasterizationState();
-            if (raster_state && !raster_state->rasterizerDiscardEnable && pipeline.AttachmentStates()[i].blendEnable &&
+            if (!pipeline.RasterizationDisabled() && pipeline.AttachmentStates()[i].blendEnable &&
                 !(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041", device,
                                  color_loc.dot(Field::pAttachments, i).dot(Field::blendEnable),
@@ -1384,7 +1380,7 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline 
                       {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP})) {
             const auto rasterization_conservative_state_ci =
                 vku::FindStructInPNextChain<VkPipelineRasterizationConservativeStateCreateInfoEXT>(
-                    pipeline.RasterizationState()->pNext);
+                    pipeline.RasterizationStatePNext());
             if (rasterization_conservative_state_ci &&
                 rasterization_conservative_state_ci->conservativeRasterizationMode !=
                     VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT &&
@@ -1788,8 +1784,23 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
     const Location raster_loc = create_info_loc.dot(Field::pRasterizationState);
     const auto raster_state = pipeline.RasterizationState();
     if (!raster_state) {
+        const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
+        if (!pipeline_ci.pRasterizationState && pipeline.OwnsSubState(pipeline.pre_raster_state)) {
+            if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) ||
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT) ||
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) ||
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_CULL_MODE) || !pipeline.IsDynamic(CB_DYNAMIC_STATE_FRONT_FACE) ||
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE) || !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS) ||
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_WIDTH)) {
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601", device, raster_loc, "is NULL.");
+            }
+        }
+
         return skip;
     }
+
     if ((raster_state->depthClampEnable == VK_TRUE) && (!enabled_features.depthClamp)) {
         skip |= LogError("VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782", device,
                          raster_loc.dot(Field::depthClampEnable), "is VK_TRUE, but the depthClamp feature was not enabled.");
@@ -2063,9 +2074,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                         std::max(max_sample_count,
                                  rp_state->create_info.pAttachments[subpass_desc->pDepthStencilAttachment->attachment].samples);
                 }
-                const auto raster_state = pipeline.RasterizationState();
-                if ((raster_state && raster_state->rasterizerDiscardEnable == VK_FALSE) &&
-                    (max_sample_count != static_cast<VkSampleCountFlagBits>(0)) &&
+                if (!pipeline.RasterizationDisabled() && (max_sample_count != static_cast<VkSampleCountFlagBits>(0)) &&
                     (multisample_state->rasterizationSamples != max_sample_count)) {
                     skip |= LogError( "VUID-VkGraphicsPipelineCreateInfo-subpass-01505", device, ms_loc.dot(Field::rasterizationSamples),
                                      "(%s) is different from the max attachment samples (%s) used in pSubpasses[%" PRIu32 "].",
@@ -2936,9 +2945,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
         return skip;
     }
 
-    const auto raster_state = pipeline.RasterizationState();
-    const bool has_rasterization = raster_state && (raster_state->rasterizerDiscardEnable == VK_FALSE);
-    if (has_rasterization) {
+    if (!pipeline.RasterizationDisabled()) {
         if (pipeline.fragment_shader_state && pipeline.fragment_output_state &&
             ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
              (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
@@ -2997,7 +3004,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
         }
     }
 
-    if (rendering_struct->viewMask != 0 && raster_state) {
+    if (rendering_struct->viewMask != 0) {
         skip |= ValidateMultiViewShaders(pipeline, create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
                                          rendering_struct->viewMask, true);
     }
@@ -4181,10 +4188,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
     // Verify that any MSAA request in PSO matches sample# in bound FB
     // Verify that blend is enabled only if supported by subpasses image views format features
     // Skip the check if rasterization is disabled.
-    const auto *raster_state = pipeline.RasterizationState();
-    if (!raster_state || (raster_state->rasterizerDiscardEnable == VK_TRUE)) {
-        return skip;
-    }
+    if (pipeline.RasterizationDisabled()) return skip;
 
     if (cb_state.activeRenderPass->UsesDynamicRendering()) {
         // TODO: Mirror the below VUs but using dynamic rendering
@@ -4238,7 +4242,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
         const bool dynamic_line_stipple_enable = pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
         if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {
             const auto raster_line_state =
-                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(raster_state->pNext);
+                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(pipeline.RasterizationStatePNext());
 
             const VkLineRasterizationModeKHR line_rasterization_mode = (dynamic_line_raster_mode)
                                                                            ? cb_state.dynamic_state_value.line_rasterization_mode

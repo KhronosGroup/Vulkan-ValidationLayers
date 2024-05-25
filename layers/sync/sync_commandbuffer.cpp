@@ -302,8 +302,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     using TexelDescriptor = vvl::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_states) {
-        const auto raster_state = pipe->RasterizationState();
-        if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state && raster_state->rasterizerDiscardEnable) {
+        if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->RasterizationDisabled()) {
             continue;
         } else if (!stage_state.entrypoint) {
             continue;
@@ -447,8 +446,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     using TexelDescriptor = vvl::TexelDescriptor;
 
     for (const auto &stage_state : pipe->stage_states) {
-        const auto raster_state = pipe->RasterizationState();
-        if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state && raster_state->rasterizerDiscardEnable) {
+        if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->RasterizationDisabled()) {
             continue;
         } else if (!stage_state.entrypoint) {
             continue;
@@ -645,14 +643,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto &last_bound_state = cb_state_->lastBound[lv_bind_point];
     const auto *pipe = last_bound_state.pipeline_state;
-    if (!pipe) {
-        return skip;
-    }
-
-    const auto raster_state = pipe->RasterizationState();
-    if (raster_state && raster_state->rasterizerDiscardEnable) {
-        return skip;
-    }
+    if (!pipe || pipe->RasterizationDisabled()) return skip;
 
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &access_context = *GetCurrentAccessContext();
@@ -714,10 +705,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto &last_bound_state = cb_state_->lastBound[lv_bind_point];
     const auto *pipe = last_bound_state.pipeline_state;
-    if (!pipe) return;
-
-    const auto raster_state = pipe->RasterizationState();
-    if (raster_state && raster_state->rasterizerDiscardEnable) return;
+    if (!pipe || pipe->RasterizationDisabled()) return;
 
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     auto &access_context = *GetCurrentAccessContext();

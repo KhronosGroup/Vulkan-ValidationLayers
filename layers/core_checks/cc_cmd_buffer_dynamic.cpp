@@ -202,8 +202,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                                           loc, vuid.dynamic_attachment_feedback_loop_08877);
     }
 
-    if (const auto* rp_state = pipeline.RasterizationState()) {
-        if (rp_state->depthBiasEnable == VK_TRUE) {
+    if (const auto* raster_state = pipeline.RasterizationState()) {
+        if (raster_state->depthBiasEnable == VK_TRUE) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_BIAS, cb_state, objlist, loc,
                                               vuid.dynamic_depth_bias_07834);
         }
@@ -215,7 +215,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                        VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                               vuid.dynamic_line_width_07833);
-            const auto *line_state = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(rp_state);
+            const auto* line_state =
+                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(raster_state->pNext);
             if (line_state && line_state->stippledLineEnable) {
                 skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, cb_state, objlist, loc,
                                                   vuid.dynamic_line_stipple_ext_07849);
@@ -636,10 +637,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& la
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
     const bool dyn_viewport = pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT);
-    const auto* rp_state = pipeline.RasterizationState();
     const auto* viewport_state = pipeline.ViewportState();
-    if ((!rp_state || (rp_state->rasterizerDiscardEnable == VK_FALSE)) && viewport_state &&
-        (cb_state.inheritedViewportDepths.empty())) {
+    if (!pipeline.RasterizationDisabled() && viewport_state && (cb_state.inheritedViewportDepths.empty())) {
         const bool dyn_scissor = pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR);
 
         // NB (akeley98): Current validation layers do not detect the error where vkCmdSetViewport (or scissor) was called, but

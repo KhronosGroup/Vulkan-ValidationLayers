@@ -641,10 +641,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
     bool skip = false;
 
     // Don't check any color attachments if rasterization is disabled
-    const auto raster_state = pipeline.RasterizationState();
-    if (!raster_state || raster_state->rasterizerDiscardEnable) {
-        return skip;
-    }
+    if (pipeline.RasterizationDisabled()) return skip;
 
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
