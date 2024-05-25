@@ -1899,7 +1899,7 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
         const vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
         if (!with_non_zero_streams && pipeline) {
             const auto rasterization_state_stream_ci =
-                vku::FindStructInPNextChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(pipeline->RasterizationState()->pNext);
+                vku::FindStructInPNextChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(pipeline->RasterizationStatePNext());
             if (rasterization_state_stream_ci && rasterization_state_stream_ci->rasterizationStream != 0) {
                 skip |= LogError(vuid.primitives_generated_streams_06709, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                                  vuid.loc(),

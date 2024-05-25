@@ -290,6 +290,15 @@ class Pipeline : public StateObject {
         return nullptr;
     }
 
+    const void *RasterizationStatePNext() const {
+        if (const auto *raster_state = RasterizationState()) {
+            return raster_state->pNext;
+        }
+        return nullptr;
+    }
+
+    // Lack of a rasterization state can be from various things (dynamic state, GPL, etc)
+    // For this case, act as if (rasterizerDiscardEnable == false)
     bool RasterizationDisabled() const {
         if (pre_raster_state && pre_raster_state->raster_state) {
             return pre_raster_state->raster_state->rasterizerDiscardEnable == VK_TRUE;
