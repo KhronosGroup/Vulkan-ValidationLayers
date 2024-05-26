@@ -1436,7 +1436,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const StageCreateInfo &create_
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04504",
                              module_state.handle(), loc,
                              "SPIR-V (%s) statically writes to both PrimitiveShadingRateKHR and "
-                             "ViewportIndex built-ins,"
+                             "ViewportIndex built-ins, "
                              "but the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
                              string_VkShaderStageFlagBits(stage));
         }
@@ -1445,7 +1445,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const StageCreateInfo &create_
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04505",
                              module_state.handle(), loc,
                              "SPIR-V (%s) statically writes to both PrimitiveShadingRateKHR and "
-                             "ViewportMaskNV built-ins,"
+                             "ViewportMaskNV built-ins, "
                              "but the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
                              string_VkShaderStageFlagBits(stage));
         }

@@ -1927,13 +1927,13 @@ bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, 
     for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
         if (const auto buffer_state = Get<vvl::Buffer>(vertex_buffer_binding.second.buffer)) {
             skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
-                                            "Buffer is vertex buffer");
+                                            " (Buffer is the vertex buffer)");
         }
     }
 
     if (const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer)) {
         skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
-                                        "Buffer is index buffer");
+                                        " (Buffer is the index buffer)");
     }
 
     return skip;

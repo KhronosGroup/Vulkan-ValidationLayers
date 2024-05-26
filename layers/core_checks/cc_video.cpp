@@ -3346,7 +3346,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                         has_separate_images = true;
                     }
 
-                    snprintf(where, sizeof(where), " Image referenced in pBeginInfo->pReferenceSlots[%u].", i);
+                    snprintf(where, sizeof(where), " (Image referenced in pBeginInfo->pReferenceSlots[%u])", i);
                     skip |= ValidateProtectedImage(*cb_state, *reference_resource.image_state, error_obj.location,
                                                    "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07235", where);
                     skip |= ValidateUnprotectedImage(*cb_state, *reference_resource.image_state, error_obj.location,
@@ -4150,7 +4150,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
     const auto &profile_caps = vs_state->profile->GetCapabilities();
 
     if (auto buffer_state = Get<vvl::Buffer>(pEncodeInfo->dstBuffer)) {
-        const char *where = " Buffer referenced in pEncodeInfo->dstBuffer.";
+        const char *where = " (Buffer referenced in pEncodeInfo->dstBuffer)";
         skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, error_obj.location,
                                         "VUID-vkCmdEncodeVideoKHR-commandBuffer-08202", where);
         skip |= ValidateUnprotectedBuffer(*cb_state, *buffer_state, error_obj.location,

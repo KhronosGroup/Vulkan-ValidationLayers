@@ -1110,3 +1110,114 @@ TEST_F(PositiveDescriptors, ShaderStageAll) {
     ds_layout_ci.pBindings = &dsl_binding;
     vkt::DescriptorSetLayout(*m_device, ds_layout_ci);
 }
+
+TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSetsFunction) {
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+
+    auto image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+
+    vkt::ImageView image_view = image.CreateView();
+    VkImageView image_view_handle = image_view.handle();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle);
+
+    // used as a "would be valid" image
+    vkt::Image image_2(*m_device, image_create_info, vkt::set_layout);
+    vkt::ImageView image_view_2 = image_2.CreateView();
+
+    // like the following, but does OpLoad before function call
+    // layout(location = 0) out vec4 x;
+    // layout(set = 0, binding = 0, rgba8) uniform image2D image_0;
+    // layout(set = 0, binding = 1, rgba8) uniform image2D image_1;
+    // void foo(image2D bar) {
+    //     imageStore(bar, ivec2(0), vec4(0.5f));
+    // }
+    // void main() {
+    //     x = vec4(1.0f);
+    //     foo(image_1);
+    // }
+    char const *fsSource = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color_attach
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %color_attach Location 0
+               OpDecorate %image_0 DescriptorSet 0
+               OpDecorate %image_0 Binding 0
+               OpDecorate %image_1 DescriptorSet 0
+               OpDecorate %image_1 Binding 1
+       %void = OpTypeVoid
+          %6 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%color_attach = OpVariable %_ptr_Output_v4float Output
+    %float_1 = OpConstant %float 1
+         %11 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+         %12 = OpTypeImage %float 2D 0 0 0 2 Rgba8
+         %13 = OpTypeFunction %void %12
+%_ptr_UniformConstant_12 = OpTypePointer UniformConstant %12
+    %image_0 = OpVariable %_ptr_UniformConstant_12 UniformConstant
+        %int = OpTypeInt 32 1
+      %v2int = OpTypeVector %int 2
+      %int_0 = OpConstant %int 0
+         %18 = OpConstantComposite %v2int %int_0 %int_0
+  %float_0_5 = OpConstant %float 0.5
+         %20 = OpConstantComposite %v4float %float_0_5 %float_0_5 %float_0_5 %float_0_5
+    %image_1 = OpVariable %_ptr_UniformConstant_12 UniformConstant
+
+         %foo = OpFunction %void None %13
+         %bar = OpFunctionParameter %12
+         %23 = OpLabel
+               OpImageWrite %bar %18 %20
+               OpReturn
+               OpFunctionEnd
+
+       %main = OpFunction %void None %6
+         %24 = OpLabel
+               OpStore %color_attach %11
+         %25 = OpLoad %12 %image_1
+         %26 = OpFunctionCall %void %foo %25
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.CreateGraphicsPipeline();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view.handle(), sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view_2.handle(), sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, m_renderPassClearValues.data());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}

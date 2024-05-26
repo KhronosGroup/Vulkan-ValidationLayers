@@ -1205,16 +1205,10 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
         "VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT ");
 
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    if (atomic_float_features.shaderImageFloat32Atomics == VK_FALSE) {
-        GTEST_SKIP() << "shaderImageFloat32Atomics not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT;
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;  // The format doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT to
@@ -1233,12 +1227,6 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     }
     m_errorMonitor->SetUnexpectedError("VUID-VkBufferViewCreateInfo-format-08779");
     InitRenderTarget();
-
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-    if (!device_features.vertexPipelineStoresAndAtomics || !device_features.fragmentStoresAndAtomics) {
-        GTEST_SKIP() << "vertexPipelineStoresAndAtomics & fragmentStoresAndAtomics NOT supported";
-    }
 
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView();

@@ -1194,7 +1194,7 @@
                 },
                 "VkPhysicalDevicePointClippingProperties": {},
                 "VkPhysicalDeviceProtectedMemoryProperties": {
-                    "protectedNoFault": true
+                    "protectedNoFault": false
                 },
                 "VkPhysicalDeviceSamplerFilterMinmaxProperties": {
                     "filterMinmaxSingleComponentFormats": true,
@@ -1527,7 +1527,7 @@
                     "subgroupQuadOperationsInAllStages": true,
                     "maxMultiviewViewCount": 16,
                     "maxMultiviewInstanceIndex": 4294967000,
-                    "protectedNoFault": true,
+                    "protectedNoFault": false,
                     "maxPerSetDescriptors": 4294967000,
                     "maxMemoryAllocationSize": 4294967000
                 },
