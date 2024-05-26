@@ -172,19 +172,18 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     }
     if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
         if (dev_state.ValidateProtectedBuffer(cb_state, *buffer_node, loc, vuids.unprotected_command_buffer_02707,
-                                    "Buffer is in a descriptorSet")) {
+                                              " (Buffer is in a descriptorSet)")) {
             return true;
         }
         bool is_written_to = false;
         for (const auto &req : binding_info.second) {
-            if (req.variable->is_written_to) {
+            if (req.variable->IsWrittenTo()) {
                 is_written_to = true;
                 break;
             }
         }
-        if (is_written_to &&
-            dev_state.ValidateUnprotectedBuffer(cb_state, *buffer_node, loc, vuids.protected_command_buffer_02712,
-                                                "Buffer is in a descriptorSet")) {
+        if (is_written_to && dev_state.ValidateUnprotectedBuffer(cb_state, *buffer_node, loc, vuids.protected_command_buffer_02712,
+                                                                 " (Buffer is in a descriptorSet)")) {
             return true;
         }
     }
@@ -293,12 +292,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     }
     const auto &image_view_ci = image_view_state->create_info;
     const auto *variable = FindMatchingImageVar(binding_info.second, image_view_ci);
-    if (variable == nullptr) {
-        return false;
-    }
-    if (!variable->info.is_image_accessed) {
-        return false;
-    }
+    if (!variable || !variable->IsAccessed()) return false;
+
     // If not an image array, the set of indexes will be empty and we guarantee this is the only element
     if (!variable->image_access_chain_indexes.empty() &&
         variable->image_access_chain_indexes.find(index) == variable->image_access_chain_indexes.end()) {
@@ -456,7 +451,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     }
 
     // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
-    if (variable->info.is_atomic_operation && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
+    if (variable->IsAtomic() && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
         !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(set, image_view);
@@ -531,19 +526,16 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                 continue;
             }
 
-            bool descriptor_read_from = false;
             bool descriptor_written_to = false;
+            bool descriptor_image_read_from = false;
             const auto pipeline = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
             for (const auto &stage : pipeline->stage_states) {
-                if (!stage.entrypoint) {
-                    continue;
-                }
+                if (!stage.entrypoint) continue;
                 for (const auto &inteface_variable : stage.entrypoint->resource_interface_variables) {
                     if (inteface_variable.decorations.set == set_index && inteface_variable.decorations.binding == binding) {
-                        descriptor_written_to |= inteface_variable.is_written_to;
-                        descriptor_read_from |=
-                            inteface_variable.is_read_from | inteface_variable.info.is_sampler_implicitLod_dref_proj;
-                        break;
+                        descriptor_written_to |= inteface_variable.IsWrittenTo();
+                        descriptor_image_read_from |= inteface_variable.IsImageReadFrom();
+                        break;  // only one set/binding will match
                     }
                 }
             }
@@ -595,7 +587,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             }
             if (((color_write_attachment && !color_feedback_loop) || (depth_write_attachment && !depth_feedback_loop) ||
                  (stencil_write_attachment && !stencil_feedback_loop)) &&
-                descriptor_read_from) {
+                descriptor_image_read_from) {
                 const auto vuid = color_write_attachment    ? vuids.attachment_access_09000
                                   : !depth_write_attachment ? vuids.attachment_access_09001
                                                             : vuids.attachment_access_09002;
@@ -618,7 +610,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                               att_index);
                 }
             }
-            const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) > 0;
+            const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
             if (read_attachment && descriptor_written_to) {
                 if (same_view) {
                     auto set = descriptor_set.Handle();
@@ -663,12 +655,12 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         }
         if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
             if (dev_state.ValidateProtectedImage(cb_state, *image_view_state->image_state, loc,
-                                       vuids.unprotected_command_buffer_02707, "Image is in a descriptorSet")) {
+                                                 vuids.unprotected_command_buffer_02707, " (Image is in a descriptorSet)")) {
                 return true;
             }
-            if (variable->is_written_to &&
+            if (variable->IsWrittenTo() &&
                 dev_state.ValidateUnprotectedImage(cb_state, *image_view_state->image_state, loc,
-                                         vuids.protected_command_buffer_02712, "Image is in a descriptorSet")) {
+                                                   vuids.protected_command_buffer_02712, " (Image is in a descriptorSet)")) {
                 return true;
             }
         }
@@ -1017,12 +1009,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         return false;
     }
     const auto *variable = FindMatchingTexelVar(binding_info.second);
-    if (!variable) {
-        return false;
-    }
-    if (!variable->info.is_image_accessed) {
-        return false;
-    }
+    if (!variable || !variable->IsAccessed()) return false;
 
     auto buffer = buffer_view_state->create_info.buffer;
     const auto *buffer_state = buffer_view_state->buffer_state.get();
@@ -1073,7 +1060,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     const VkFormatFeatureFlags2 buffer_format_features = buffer_view_state->buffer_format_features;
 
     // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
-    if ((variable->info.is_atomic_operation) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
+    if ((variable->IsAtomic()) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
         !(buffer_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(set, buffer_view);
@@ -1123,12 +1110,12 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
 
     if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
         if (dev_state.ValidateProtectedBuffer(cb_state, *buffer_view_state->buffer_state, loc,
-                                    vuids.unprotected_command_buffer_02707, "Buffer is in a descriptorSet")) {
+                                              vuids.unprotected_command_buffer_02707, " (Buffer is in a descriptorSet)")) {
             return true;
         }
-        if (variable->is_written_to &&
+        if (variable->IsWrittenTo() &&
             dev_state.ValidateUnprotectedBuffer(cb_state, *buffer_view_state->buffer_state, loc,
-                                                vuids.protected_command_buffer_02712, "Buffer is in a descriptorSet")) {
+                                                vuids.protected_command_buffer_02712, " (Buffer is in a descriptorSet)")) {
             return true;
         }
     }

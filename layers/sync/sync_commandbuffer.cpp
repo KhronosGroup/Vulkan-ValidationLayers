@@ -39,17 +39,10 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
     }
 
     // Detect if variable is nonreadable (writeonly in glsl).
-    // NOTE: is_written_to can be used as a more general case instead of adding is_writeonly logic.
-    // At first we need to fix is_written_to support for buffers.
-    bool is_writeonly = variable.decorations.Has(spirv::DecorationBase::nonreadable_bit);
-    if (variable.type_struct_info) {
-        is_writeonly |= variable.type_struct_info->decorations.AllMemberHave(spirv::DecorationBase::nonreadable_bit);
-    }
-
     // If the desriptorSet is writable, we don't need to care SHADER_READ. SHADER_WRITE is enough.
     // Because if write hazard happens, read hazard might or might not happen.
     // But if write hazard doesn't happen, read hazard is impossible to happen.
-    if (variable.is_written_to || is_writeonly) {
+    if (variable.IsWrittenTo()) {
         return stage_accesses.storage_write;
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
                descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||

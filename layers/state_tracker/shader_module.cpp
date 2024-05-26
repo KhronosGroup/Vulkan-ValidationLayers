@@ -94,7 +94,7 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
     }
 }
 
-bool DecorationSet::HasBuiltIn() const {
+bool DecorationSet::HasAnyBuiltIn() const {
     if (kInvalidValue != builtin) {
         return true;
     } else if (!member_decorations.empty()) {
@@ -401,6 +401,47 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
     }
 }
 
+// Built-in can be both on the OpVariable or a inside a OpTypeStruct for Block built-in.
+bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_state, const StageInteraceVariable& variable,
+                                  const AccessChainVariableMap& access_chain_map) {
+    if (!variable.IsWrittenTo()) {
+        return false;
+    }
+    if (built_in == variable.decorations.builtin) {
+        return true;  // The built-in is on the Variable
+    } else if (!variable.type_struct_info || variable.type_struct_info->decorations.member_decorations.empty()) {
+        return false;
+    } else {
+        for (const auto& member : variable.type_struct_info->decorations.member_decorations) {
+            if (built_in != member.second.builtin) continue;
+
+            // We have confirmed the Block variable was written to, now need to confirm an access to.
+            // Because Built-in can't both be the input and output at the same time, we can confirm all accesses are either all
+            // loads or all stores.
+            const auto it = access_chain_map.find(variable.id);
+            if (it == access_chain_map.end()) {
+                return false;
+            }
+            const uint32_t member_index = member.first;
+            for (const auto access_chain_insn : it->second) {
+                if (access_chain_insn->Length() < 5) continue;
+
+                // We know for sure any built-in inside a block are only 1-element deep so can just check the "Indexes 0" operand
+                // Also no built-in we are dealing with are inside array-of-structs
+                const Instruction* value_def = module_state.GetConstantDef(access_chain_insn->Word(4));
+                if (value_def) {
+                    const uint32_t value = value_def->GetConstantValue();
+                    if (value == member_index) {
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+    }
+    return false;
+}
+
 vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
     vvl::unordered_set<uint32_t> result_ids;
 
@@ -449,8 +490,8 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
     return result_ids;
 }
 
-std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state,
-                                                                          const EntryPoint& entrypoint) {
+std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state, const EntryPoint& entrypoint,
+                                                                          const VariableAccessMap& variable_access_map) {
     std::vector<StageInteraceVariable> variables;
 
     // spirv-val validates that any Input/Output used in the entrypoint is listed in as interface IDs
@@ -475,14 +516,15 @@ std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const 
         if (insn.Word(3) != spv::StorageClassInput && insn.Word(3) != spv::StorageClassOutput) {
             continue;  // Only checking for input/output here
         }
-        variables.emplace_back(module_state, insn, entrypoint.stage);
+        variables.emplace_back(module_state, insn, entrypoint.stage, variable_access_map);
     }
     return variables;
 }
 
 std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const Module& module_state, EntryPoint& entrypoint,
                                                                                  const ImageAccessMap& image_access_map,
-                                                                                 const AccessChainVariableMap& access_chain_map) {
+                                                                                 const AccessChainVariableMap& access_chain_map,
+                                                                                 const VariableAccessMap& variable_access_map) {
     std::vector<ResourceInterfaceVariable> variables;
 
     // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
@@ -496,9 +538,10 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
         // see vkspec.html#interfaces-resources-descset
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer) {
-            variables.emplace_back(module_state, entrypoint, insn, image_access_map, access_chain_map);
+            variables.emplace_back(module_state, entrypoint, insn, image_access_map, access_chain_map, variable_access_map);
         } else if (storage_class == spv::StorageClassPushConstant) {
-            entrypoint.push_constant_variable = std::make_shared<PushConstantVariable>(module_state, insn, entrypoint.stage);
+            entrypoint.push_constant_variable =
+                std::make_shared<PushConstantVariable>(module_state, insn, entrypoint.stage, variable_access_map);
         }
     }
     return variables;
@@ -509,7 +552,8 @@ static inline bool IsImageOperandsBiasOffset(uint32_t type) {
                     spv::ImageOperandsConstOffsetsMask)) != 0;
 }
 
-ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_insn) : image_insn(image_insn) {
+ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_insn, const FuncParameterMap& func_parameter_map)
+    : image_insn(image_insn) {
     const uint32_t image_opcode = image_insn.Opcode();
 
     // Get properties from each access instruction
@@ -551,15 +595,11 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
         }
 
         case spv::OpImageWrite:
-            is_written_to = true;
             texel_component_count = module_state.GetTexelComponentCount(image_insn);
             break;
 
         case spv::OpImageRead:
         case spv::OpImageSparseRead:
-            is_read_from = true;
-            break;
-
         case spv::OpImageTexelPointer:
         case spv::OpImageFetch:
         case spv::OpImageSparseFetch:
@@ -576,6 +616,9 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
             assert(false);  // This is an OpImage* we are not catching
             break;
     }
+
+    // There is only one way to write to images, everything else is considered a read access
+    access_mask |= (image_opcode == spv::OpImageWrite) ? AccessBit::image_write : AccessBit::image_read;
 
     is_not_sampler_sampled = !is_sampler_sampled;
 
@@ -603,7 +646,8 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
     // Do sampler searching as seperate walk to not have the "visited" loop protection be falsly triggered
     std::vector<const Instruction*> sampler_insn_to_search;
 
-    auto walk_to_variables = [this, &module_state, &sampler_insn_to_search](const Instruction* insn, bool sampler) {
+    auto walk_to_variables = [this, &module_state, &func_parameter_map, &sampler_insn_to_search](const Instruction* insn,
+                                                                                                 bool sampler) {
         // Protect from loops
         vvl::unordered_set<uint32_t> visited;
 
@@ -642,11 +686,11 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                     // OpImageFetch grabs OpImage before OpLoad
                     insn = module_state.FindDef(insn->Word(3));
                     break;
-                case spv::Op::OpLoad:
+                case spv::OpLoad:
                     // Follow the pointer being loaded
                     insn = module_state.FindDef(insn->Word(3));
                     break;
-                case spv::Op::OpCopyObject:
+                case spv::OpCopyObject:
                     // Follow the object being copied.
                     insn = module_state.FindDef(insn->Word(3));
                     break;
@@ -662,20 +706,20 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                     insn = module_state.FindDef(insn->Word(3));
                     break;
                 }
-                case spv::Op::OpFunctionParameter: {
+                case spv::OpFunctionParameter: {
                     // might be dead-end, but end searching in this Function block
                     insn_to_search.pop();
                     new_func = true;
 
-                    auto it = module_state.static_data_.func_parameter_map.find(insn->ResultId());
-                    if (it != module_state.static_data_.func_parameter_map.end()) {
+                    auto it = func_parameter_map.find(insn->ResultId());
+                    if (it != func_parameter_map.end()) {
                         for (uint32_t arg : it->second) {
                             insn_to_search.push(module_state.FindDef(arg));
                         }
                     }
                     break;
                 }
-                case spv::Op::OpVariable: {
+                case spv::OpVariable: {
                     if (sampler) {
                         variable_sampler_insn.push_back(insn);
                     } else {
@@ -703,7 +747,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
 }
 
 EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint_insn, const ImageAccessMap& image_access_map,
-                       const AccessChainVariableMap& access_chain_map)
+                       const AccessChainVariableMap& access_chain_map, const VariableAccessMap& variable_access_map)
     : entrypoint_insn(entrypoint_insn),
       execution_model(spv::ExecutionModel(entrypoint_insn.Word(1))),
       stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
@@ -712,8 +756,9 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
       execution_mode(module_state.GetExecutionModeSet(id)),
       emit_vertex_geometry(false),
       accessible_ids(GetAccessibleIds(module_state, *this)),
-      resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, image_access_map, access_chain_map)),
-      stage_interface_variables(GetStageInterfaceVariables(module_state, *this)) {
+      resource_interface_variables(
+          GetResourceInterfaceVariables(module_state, *this, image_access_map, access_chain_map, variable_access_map)),
+      stage_interface_variables(GetStageInterfaceVariables(module_state, *this, variable_access_map)) {
     // After all variables are made, can get references from them
     // Also can set per-Entrypoint values now
     for (const auto& variable : stage_interface_variables) {
@@ -729,6 +774,22 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
                 builtin_input_components += variable.total_builtin_components;
             } else if (variable.storage_class == spv::StorageClassOutput) {
                 builtin_output_components += variable.total_builtin_components;
+            }
+
+            if (IsBuiltInWritten(spv::BuiltInPrimitiveShadingRateKHR, module_state, variable, access_chain_map)) {
+                written_builtin_primitive_shading_rate_khr = true;
+            }
+            if (IsBuiltInWritten(spv::BuiltInViewportIndex, module_state, variable, access_chain_map)) {
+                written_builtin_viewport_index = true;
+            }
+            if (IsBuiltInWritten(spv::BuiltInPointSize, module_state, variable, access_chain_map)) {
+                written_builtin_point_size = true;
+            }
+            if (IsBuiltInWritten(spv::BuiltInLayer, module_state, variable, access_chain_map)) {
+                written_builtin_layer = true;
+            }
+            if (IsBuiltInWritten(spv::BuiltInViewportMaskNV, module_state, variable, access_chain_map)) {
+                written_builtin_viewport_mask_nv = true;
             }
         } else {
             user_defined_interface_variables.push_back(&variable);
@@ -755,26 +816,6 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
                     }
                 }
             }
-        }
-    }
-
-    for (const Instruction* decoration_inst : module_state.static_data_.builtin_decoration_inst) {
-        if ((decoration_inst->GetBuiltIn() == spv::BuiltInPointSize) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
-            written_builtin_point_size = true;
-        }
-        if ((decoration_inst->GetBuiltIn() == spv::BuiltInLayer) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
-            written_builtin_layer = true;
-        }
-        if ((decoration_inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) &&
-            module_state.IsBuiltInWritten(decoration_inst, *this)) {
-            written_builtin_primitive_shading_rate_khr = true;
-        }
-        if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportIndex) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
-            written_builtin_viewport_index = true;
-        }
-        if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportMaskNV) &&
-            module_state.IsBuiltInWritten(decoration_inst, *this)) {
-            written_builtin_viewport_mask_nv = true;
         }
     }
 }
@@ -821,6 +862,13 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     std::vector<const Instruction*> type_struct_instructions;
     std::vector<const Instruction*> image_instructions;
     std::vector<const Instruction*> func_call_instructions;
+    // both OpDecorate and OpMemberDecorate builtin instructions
+    std::vector<const Instruction*> builtin_decoration_instructions;
+
+    std::vector<uint32_t> store_pointer_ids;
+    std::vector<uint32_t> load_pointer_ids;
+    std::vector<uint32_t> atomic_store_pointer_ids;
+    std::vector<uint32_t> atomic_load_pointer_ids;
 
     AccessChainVariableMap access_chain_map;
 
@@ -854,7 +902,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 decorations[target_id].Add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
                 decoration_inst.push_back(&insn);
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
-                    builtin_decoration_inst.push_back(&insn);
+                    builtin_decoration_instructions.push_back(&insn);
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
                     id_to_spec_id[target_id] = insn.Word(3);
                 }
@@ -865,7 +913,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 decorations[target_id].member_decorations[member_index].Add(insn.Word(3), insn.Length() > 4u ? insn.Word(4) : 0u);
                 member_decoration_inst.push_back(&insn);
                 if (insn.Word(3) == spv::DecorationBuiltIn) {
-                    builtin_decoration_inst.push_back(&insn);
+                    builtin_decoration_instructions.push_back(&insn);
                 }
             } break;
 
@@ -970,29 +1018,16 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 break;
             }
             case spv::OpLoad: {
-                // 2: Load id, 3: object id or AccessChain id
-                load_members.emplace(insn.Word(2), insn.Word(3));
+                load_pointer_ids.emplace_back(insn.Word(3));  // object id or AccessChain id
                 break;
             }
             case spv::OpAccessChain:
             case spv::OpInBoundsAccessChain: {
                 const uint32_t base_id = insn.Word(3);
                 access_chain_map[base_id].push_back(&insn);
-
-                if (insn.Length() == 4) {
-                    // If it is for struct, the length is only 4.
-                    // 2: AccessChain id, 3: object id
-                    accesschain_members.emplace(insn.Word(2), std::pair<uint32_t, uint32_t>(base_id, 0));
-                } else {
-                    // 2: AccessChain id, 3: object id, 4: object id of array index
-                    accesschain_members.emplace(insn.Word(2), std::pair<uint32_t, uint32_t>(base_id, insn.Word(4)));
-                }
                 break;
             }
             case spv::OpImageTexelPointer: {
-                // 2: ImageTexelPointer id, 3: object id
-                image_texel_pointer_members.emplace(insn.Word(2), insn.Word(3));
-
                 // All Image atomics go through here.
                 // Currrently only interested if used/accessed
                 image_instructions.push_back(&insn);
@@ -1041,9 +1076,8 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                     }
                     if (opcode == spv::OpAtomicStore) {
                         atomic_store_pointer_ids.emplace_back(insn.Word(1));
-                        atomic_pointer_ids.emplace_back(insn.Word(1));
                     } else {
-                        atomic_pointer_ids.emplace_back(insn.Word(3));
+                        atomic_load_pointer_ids.emplace_back(insn.Word(3));
                     }
                 }
                 if (GroupOperation(opcode)) {
@@ -1056,6 +1090,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
         }
     }
 
+    FuncParameterMap func_parameter_map;
     const uint32_t first_arg_word = 4;
     for (const auto& func_def : func_parameter_list) {
         const uint32_t func_id = func_def.first;
@@ -1073,7 +1108,40 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
         }
     }
 
-    for (const Instruction* decoration_inst : builtin_decoration_inst) {
+    // parsing, take every load/store find the variable it touches
+    // (image access are done later)
+    VariableAccessMap variable_access_map;
+    auto mark_variable_access = [&module_state, &variable_access_map](const std::vector<uint32_t>& ids, uint32_t access) {
+        for (const auto& object_id : ids) {
+            uint32_t variable_id = object_id;
+            const Instruction* insn = module_state.FindDef(object_id);
+            while (insn) {
+                switch (insn->Opcode()) {
+                    case spv::OpImageTexelPointer:  // used for atomics
+                    case spv::OpAccessChain:
+                    case spv::OpInBoundsAccessChain:
+                    case spv::OpCopyObject:
+                        variable_id = insn->Word(3);
+                        insn = module_state.FindDef(variable_id);
+                        break;
+                    case spv::OpVariable:
+                        variable_access_map[variable_id] |= access;
+                        insn = nullptr;
+                        break;
+                    default:
+                        insn = nullptr;
+                        break;
+                }
+            }
+        }
+    };
+
+    mark_variable_access(store_pointer_ids, AccessBit::write);
+    mark_variable_access(load_pointer_ids, AccessBit::read);
+    mark_variable_access(atomic_store_pointer_ids, AccessBit::atomic_write);
+    mark_variable_access(atomic_load_pointer_ids, AccessBit::atomic_read);
+
+    for (const Instruction* decoration_inst : builtin_decoration_instructions) {
         const uint32_t built_in = decoration_inst->GetBuiltIn();
         if (built_in == spv::BuiltInLayer) {
             has_builtin_layer = true;
@@ -1100,7 +1168,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     ImageAccessMap image_access_map;
 
     for (const auto& insn : image_instructions) {
-        auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn));
+        auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn, func_parameter_map));
         if (!new_access->variable_image_insn.empty() && new_access->valid_access) {
             for (const Instruction* image_insn : new_access->variable_image_insn) {
                 image_access_map[image_insn->ResultId()].push_back(new_access);
@@ -1110,7 +1178,8 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
     for (const auto& insn : entry_point_instructions) {
-        entry_points.emplace_back(std::make_shared<EntryPoint>(module_state, *insn, image_access_map, access_chain_map));
+        entry_points.emplace_back(
+            std::make_shared<EntryPoint>(module_state, *insn, image_access_map, access_chain_map, variable_access_map));
     }
 }
 
@@ -1470,160 +1539,6 @@ NumericType Module::GetNumericType(uint32_t type) const {
     }
 }
 
-// For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
-// This function examines instructions in the static call tree for a write to this variable.
-bool Module::IsBuiltInWritten(const Instruction* builtin_insn, const EntryPoint& entrypoint) const {
-    auto type = builtin_insn->Opcode();
-    uint32_t target_id = builtin_insn->Word(1);
-    bool init_complete = false;
-    uint32_t target_member_offset = 0;
-
-    if (type == spv::OpMemberDecorate) {
-        // Built-in is part of a structure -- examine instructions up to first function body to get initial IDs
-        for (const Instruction& insn : GetInstructions()) {
-            if (insn.Opcode() == spv::OpFunction) {
-                break;
-            }
-            switch (insn.Opcode()) {
-                case spv::OpTypePointer:
-                    if (insn.StorageClass() == spv::StorageClassOutput) {
-                        const auto type_id = insn.Word(3);
-                        if (type_id == target_id) {
-                            target_id = insn.Word(1);
-                        } else {
-                            // If the output is an array, check if the element type is what we're looking for
-                            const Instruction* type_def = FindDef(type_id);
-                            if ((type_def->Opcode() == spv::OpTypeArray) && (type_def->Word(2) == target_id)) {
-                                target_id = insn.Word(1);
-                                target_member_offset = 1;
-                            }
-                        }
-                    }
-                    break;
-                case spv::OpVariable:
-                    if (insn.Word(1) == target_id) {
-                        target_id = insn.Word(2);
-                        init_complete = true;
-                    }
-                    break;
-            }
-        }
-    }
-
-    if (!init_complete && (type == spv::OpMemberDecorate)) return false;
-
-    bool found_write = false;
-    vvl::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint.id);
-
-    // Follow instructions in call graph looking for writes to target
-    while (!worklist.empty() && !found_write) {
-        auto worklist_id_iter = worklist.begin();
-        auto worklist_id = *worklist_id_iter;
-        worklist.erase(worklist_id_iter);
-
-        const Instruction* insn = FindDef(worklist_id);
-        if (!insn) {
-            continue;
-        }
-
-        if (insn->Opcode() == spv::OpFunction) {
-            // Scan body of function looking for other function calls or items in our ID chain
-            while (++insn, (insn->Opcode() != spv::OpFunctionEnd) && !found_write) {
-                switch (insn->Opcode()) {
-                    case spv::OpAccessChain:
-                    case spv::OpInBoundsAccessChain:
-                        if (insn->Word(3) == target_id) {
-                            if (type == spv::OpMemberDecorate) {
-                                // Get the target member of the struct
-                                // NOTE: this will only work for structs and arrays of structs.
-                                // Deeper levels of nesting (arrays of structs of structs) is not currently supported.
-                                const Instruction* value_def = GetConstantDef(insn->Word(4 + target_member_offset));
-                                if (value_def) {
-                                    auto value = value_def->GetConstantValue();
-                                    if (value == builtin_insn->Word(2)) {
-                                        target_id = insn->Word(2);
-                                    }
-                                }
-                            } else {
-                                target_id = insn->Word(2);
-                            }
-                        }
-                        break;
-                    case spv::OpStore:
-                        if (insn->Word(1) == target_id) {
-                            found_write = true;
-                        }
-                        break;
-                    case spv::OpFunctionCall:
-                        worklist.insert(insn->Word(3));
-                        break;
-                }
-            }
-        }
-    }
-    return found_write;
-}
-
-// Takes a OpVariable ID and searches all ways it can be accessed from the access id lists
-// Example:
-//    %a = OpVariable
-//    %b = OpLoad %a
-//    %c = OpSampledImage %b
-//
-// %a == variable_id
-// %c == access_ids
-// %b == return value
-const std::vector<const Instruction*> Module::FindVariableAccesses(uint32_t variable_id, const std::vector<uint32_t>& access_ids,
-                                                                   bool atomic) const {
-    std::vector<const Instruction*> accessed_instructions;
-    for (auto access_id : access_ids) {
-        // The only time a direct access to a OpVariable is possible is in a Workgroup storage class
-        // But this is checking resource variables which are not Workgroup
-        assert(variable_id != access_id);
-
-        // Atomic are accessed by OpImageTexelPointer instead of OpLoad
-        // Currently for Atomics, just need to know if it was accessed or not
-        uint32_t access_chain_load = 0;
-        if (atomic) {
-            // non image atomic operations (ex. OpAtomicIAdd) go straight to an OpAccessChain
-            auto access_chain_it = static_data_.accesschain_members.find(access_id);
-            if ((access_chain_it != static_data_.accesschain_members.end()) && (access_chain_it->second.first == variable_id)) {
-                accessed_instructions.emplace_back(FindDef(access_chain_it->first));
-                continue;
-            }
-            auto pointer_it = static_data_.image_texel_pointer_members.find(access_id);
-            if (pointer_it == static_data_.image_texel_pointer_members.end()) {
-                continue;  // if not here, won't be in AccessChain neither
-            }
-            if (pointer_it->second == variable_id) {
-                accessed_instructions.emplace_back(FindDef(pointer_it->first));
-                continue;
-            } else {
-                access_chain_load = pointer_it->second;
-            }
-        } else {
-            auto load_it = static_data_.load_members.find(access_id);
-            if (load_it == static_data_.load_members.end()) {
-                continue;  // if not here, won't be in AccessChain neither
-            }
-            if (load_it->second == variable_id) {
-                accessed_instructions.emplace_back(FindDef(load_it->first));
-                continue;
-            } else {
-                access_chain_load = load_it->second;
-            }
-        }
-
-        auto access_chain_it = static_data_.accesschain_members.find(access_chain_load);
-        if ((access_chain_it != static_data_.accesschain_members.end()) && (access_chain_it->second.first == variable_id)) {
-            accessed_instructions.emplace_back(FindDef(access_chain_it->first));
-            continue;
-        }
-    }
-    return accessed_instructions;
-}
-
 bool Module::HasRuntimeArray(uint32_t type_id) const {
     const Instruction* type = FindDef(type_id);
     if (!type) {
@@ -1663,14 +1578,23 @@ char const* string_NumericType(uint32_t type) {
     return "(none)";
 }
 
-VariableBase::VariableBase(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
+VariableBase::VariableBase(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
+                           const VariableAccessMap& variable_access_map)
     : id(insn.Word(2)),
       type_id(insn.Word(1)),
       storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
       decorations(module_state.GetDecorationSet(id)),
       type_struct_info(module_state.GetTypeStructInfo(&insn)),
+      access_mask(AccessBit::empty),
       stage(stage) {
     assert(insn.Opcode() == spv::OpVariable);
+
+    // Finding the access of an image is more complex we will set that using the ImageAccessMap later
+    // (Also there are no images for push constant or stage interface variables)
+    auto access_it = variable_access_map.find(id);
+    if (access_it != variable_access_map.end()) {
+        access_mask = access_it->second;
+    }
 }
 
 bool StageInteraceVariable::IsPerTaskNV(const StageInteraceVariable& variable) {
@@ -1725,7 +1649,7 @@ const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& va
 bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, const Module& module_state) {
     const auto decoration_set = module_state.GetDecorationSet(variable.id);
     // If OpTypeStruct, will grab it's own decoration set
-    return decoration_set.HasBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasBuiltIn());
+    return decoration_set.HasAnyBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasAnyBuiltIn());
 }
 
 // This logic is based off assumption that the Location are implicit and not member decorations
@@ -1893,8 +1817,9 @@ uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable
     return count;
 }
 
-StageInteraceVariable::StageInteraceVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
-    : VariableBase(module_state, insn, stage),
+StageInteraceVariable::StageInteraceVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
+                                             const VariableAccessMap& variable_access_map)
+    : VariableBase(module_state, insn, stage, variable_access_map),
       is_patch(decorations.Has(DecorationSet::patch_bit)),
       is_per_vertex(decorations.Has(DecorationSet::per_vertex_bit)),
       is_per_task_nv(IsPerTaskNV(*this)),
@@ -2001,14 +1926,11 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }
 
-bool ResourceInterfaceVariable::IsAtomicOperation(const Module& module_state, const ResourceInterfaceVariable& variable) {
-    return !module_state.FindVariableAccesses(variable.id, module_state.static_data_.atomic_pointer_ids, true).empty();
-}
-
 ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn, const ImageAccessMap& image_access_map,
-                                                     const AccessChainVariableMap& access_chain_map)
-    : VariableBase(module_state, insn, entrypoint.stage),
+                                                     const AccessChainVariableMap& access_chain_map,
+                                                     const VariableAccessMap& variable_access_map)
+    : VariableBase(module_state, insn, entrypoint.stage, variable_access_map),
       array_length(0),
       is_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
@@ -2021,12 +1943,11 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
     info.image_dim = base_type.FindImageDim();
     info.is_image_array = base_type.IsImageArray();
     info.is_multisampled = base_type.IsImageMultisampled();
-    info.is_atomic_operation = IsAtomicOperation(module_state, *this);
 
-    const auto& static_data_ = module_state.static_data_;
     // Handle anything specific to the base type
-    switch (base_type.Opcode()) {
-        case spv::OpTypeImage: {
+    if (base_type.Opcode() == spv::OpTypeImage) {
+        const auto image_access_it = image_access_map.find(id);
+        if (image_access_it != image_access_map.end()) {
             const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
             if (is_sampled_without_sampler) {
                 if (info.image_dim == spv::DimSubpassData) {
@@ -2038,16 +1959,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     is_storage_image = true;
                 }
             }
-
             const bool is_image_without_format = ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));
 
-            const auto access_it = image_access_map.find(id);
-            if (access_it == image_access_map.end()) {
-                break;
-            }
-
-            info.is_image_accessed = true;
-            for (const auto& image_access_ptr : access_it->second) {
+            for (const auto& image_access_ptr : image_access_it->second) {
                 const auto& image_access = *image_access_ptr;
 
                 info.is_dref |= image_access.is_dref;
@@ -2058,14 +1972,13 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 info.is_sampler_offset |= image_access.is_sampler_offset;
                 info.is_sign_extended |= image_access.is_sign_extended;
                 info.is_zero_extended |= image_access.is_zero_extended;
+                access_mask |= image_access.access_mask;
 
                 if (array_length > 1) {
                     image_access_chain_indexes.insert(image_access.image_access_chain_index);
                 }
-                is_written_to |= image_access.is_written_to;
-                is_read_from |= image_access.is_read_from;
 
-                if (image_access.is_written_to) {
+                if (image_access.access_mask & AccessBit::image_write) {
                     if (is_image_without_format) {
                         info.is_write_without_format |= true;
                         if (image_access.texel_component_count != kInvalidValue) {
@@ -2074,7 +1987,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     }
                 }
 
-                if (image_access.is_read_from) {
+                if (image_access.access_mask & AccessBit::image_read) {
                     if (is_image_without_format) {
                         info.is_read_without_format |= true;
                     }
@@ -2110,40 +2023,16 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     }
                 }
             }
-            break;
         }
-
-        case spv::OpTypeStruct: {
-            // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
-            // as nonwritable.
-            if (is_storage_buffer && !type_struct_info->decorations.AllMemberHave(DecorationSet::nonwritable_bit)) {
-                if (!module_state.FindVariableAccesses(id, static_data_.store_pointer_ids, false).empty()) {
-                    is_written_to = true;
-                    break;
-                }
-                if (!module_state.FindVariableAccesses(id, static_data_.atomic_store_pointer_ids, true).empty()) {
-                    is_written_to = true;
-                    break;
-                }
-            }
-
-            break;
-        }
-
-        default:
-            break;
     }
 
-    // Type independent checks
-    if (!module_state.FindVariableAccesses(id, static_data_.atomic_pointer_ids, true).empty()) {
-        info.is_atomic_operation = true;
-    }
-
+    info.access_mask = access_mask;
     descriptor_hash = hash_util::DescriptorVariableHash(&info, sizeof(info));
 }
 
-PushConstantVariable::PushConstantVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
-    : VariableBase(module_state, insn, stage), offset(vvl::kU32Max), size(0) {
+PushConstantVariable::PushConstantVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
+                                           const VariableAccessMap& variable_access_map)
+    : VariableBase(module_state, insn, stage, variable_access_map), offset(vvl::kU32Max), size(0) {
     assert(type_struct_info != nullptr);  // Push Constants need to be structs
 
     auto struct_size = type_struct_info->GetSize(module_state);

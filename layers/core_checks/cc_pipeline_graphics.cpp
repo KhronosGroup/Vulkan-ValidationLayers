@@ -3148,7 +3148,7 @@ bool CoreChecks::ValidateDrawPipelineFragmentShadingRate(const vvl::CommandBuffe
             pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
             if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
                 skip |= LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), vuid.loc(),
-                                 "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
+                                 "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
                                  "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
                                  "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
                                  string_VkShaderStageFlagBits(stage));
@@ -4114,7 +4114,7 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_st
             const auto *view_state = cb_state.active_attachments[i].image_view;
             const auto &subpass = cb_state.active_subpasses[i];
             if (subpass.used && view_state && !view_state->Destroyed()) {
-                std::string image_desc = "Image is ";
+                std::string image_desc = " Image is ";
                 image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
                 // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
                 // Some Functions could not be protected. See VUID 02711.
