@@ -524,19 +524,9 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
     const int32_t tex_width = 32;
     const int32_t tex_height = 32;
-
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(tex_width, tex_height, 1, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 0;
@@ -545,7 +535,6 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     // Introduce failure, do NOT set memProps to
     // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
     mem_alloc.memoryTypeIndex = 1;
-    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
@@ -606,17 +595,8 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
     TEST_DESCRIPTION("Create an image, allocate memory, set a bad typeIndex and then try to bind it");
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 32;
-    image_create_info.extent.height = 32;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
@@ -659,24 +639,13 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
 TEST_F(NegativeMemory, BindMemory) {
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 256;
-    image_create_info.extent.height = 256;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
-
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     auto buffer_create_info = vkt::Buffer::create_info(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     // Create an image/buffer, allocate memory, free it, and then try to bind it
     {
-    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
         vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
@@ -708,7 +677,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     // Try to bind memory to an object that already has a memory binding
     {
-    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
         vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
@@ -737,7 +706,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     // Try to bind memory to an object with an invalid memoryOffset
     {
-    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
         vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
@@ -863,17 +832,8 @@ TEST_F(NegativeMemory, BindMemory) {
 TEST_F(NegativeMemory, BindMemoryUnsupported) {
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 256;
-    image_create_info.extent.height = 256;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     auto buffer_info = vkt::Buffer::create_info(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -962,18 +922,8 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
 
     // Next test is a single-plane image
     {
-        VkImageCreateInfo image_create_info = vku::InitStructHelper();
-        image_create_info.imageType = VK_IMAGE_TYPE_2D;
-        image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-        image_create_info.extent.width = 256;
-        image_create_info.extent.height = 256;
-        image_create_info.extent.depth = 1;
-        image_create_info.mipLevels = 1;
-        image_create_info.arrayLayers = 1;
-        image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-        image_create_info.flags = 0;
+        VkImageCreateInfo image_create_info =
+            vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
         // Create 2 images, one that is checked and one that isn't by GetImageMemoryRequirements
         vkt::Image image(*m_device, image_create_info, vkt::no_mem);
@@ -1019,17 +969,8 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
             GTEST_SKIP() << "test rely on a supported disjoint format";
         }
 
-        VkImageCreateInfo mp_image_create_info = vku::InitStructHelper();
-        mp_image_create_info.imageType = VK_IMAGE_TYPE_2D;
-        mp_image_create_info.format = mp_format;
-        mp_image_create_info.extent.width = 256;
-        mp_image_create_info.extent.height = 256;
-        mp_image_create_info.extent.depth = 1;
-        mp_image_create_info.mipLevels = 1;
-        mp_image_create_info.arrayLayers = 1;
-        mp_image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-        mp_image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        mp_image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+        VkImageCreateInfo mp_image_create_info =
+            vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT);
         mp_image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
         // Array represent planes for disjoint images
@@ -1121,18 +1062,8 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
     RETURN_IF_SKIP(Init());
     const bool mp_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 256;
-    image_create_info.extent.height = 256;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     {
         // Create 2 image with 2 memory objects
@@ -1284,19 +1215,14 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         // Valid case of binding 2 disjoint image and normal image by removing duplicate
         vk::BindImageMemory2KHR(device(), 5, bind_image_info);
 
-        vk::FreeMemory(device(), mp_image_a_mem[0], NULL);
-        vk::FreeMemory(device(), mp_image_a_mem[1], NULL);
-        vk::FreeMemory(device(), mp_image_b_mem[0], NULL);
-        vk::FreeMemory(device(), mp_image_b_mem[1], NULL);
+        vk::FreeMemory(device(), mp_image_a_mem[0], nullptr);
+        vk::FreeMemory(device(), mp_image_a_mem[1], nullptr);
+        vk::FreeMemory(device(), mp_image_b_mem[0], nullptr);
+        vk::FreeMemory(device(), mp_image_b_mem[1], nullptr);
     }
 }
 
 TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
-    VkResult err;
-    bool pass;
-
-    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-parameter");
-
     RETURN_IF_SKIP(Init());
 
     // Create an image object, allocate memory, destroy the object and then try
@@ -1304,48 +1230,27 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
     VkImage image;
     VkMemoryRequirements mem_reqs;
 
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
-
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 0;
     mem_alloc.memoryTypeIndex = 0;
-
-    err = vk::CreateImage(device(), &image_create_info, NULL, &image);
-    ASSERT_EQ(VK_SUCCESS, err);
-
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
     mem_alloc.allocationSize = mem_reqs.size;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
 
-    // Allocate memory
     vkt::DeviceMemory mem(*m_device, mem_alloc);
 
     // Introduce validation failure, destroy Image object before binding
-    vk::DestroyImage(device(), image, NULL);
-    ASSERT_EQ(VK_SUCCESS, err);
+    vk::DestroyImage(device(), image, nullptr);
 
     // Now Try to bind memory to this destroyed object
-    err = vk::BindImageMemory(device(), image, mem, 0);
-    // This may very well return an error.
-    (void)err;
-
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-parameter");
+    vk::BindImageMemory(device(), image, mem, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1393,18 +1298,8 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
     RETURN_IF_SKIP(Init());
 
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = 32;
-    image_create_info.extent.height = 32;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image_create_info.flags = 0;
+    VkImageCreateInfo image_create_info = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, tex_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
     // Have to bind memory to image before recording cmd in cmd buffer using it
     VkMemoryRequirements mem_reqs;
@@ -1907,18 +1802,8 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     buffer_create_info.pQueueFamilyIndices = NULL;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = normal_format;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.flags = 0;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, normal_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
     // Create Images and Buffers without any memory backing
     VkImage normal_image = VK_NULL_HANDLE;
@@ -2334,18 +2219,8 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     m_errorMonitor->VerifyFound();
     device_indices[0] = 0;
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 32;
-    image_create_info.extent.height = 32;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;

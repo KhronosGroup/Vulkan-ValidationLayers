@@ -578,9 +578,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
                                                             size32(subpasses), subpasses.data(), 0u, nullptr);
     vkt::RenderPass rp(*m_device, rpci);
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view_input.handle(), 64, 64);
-
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 

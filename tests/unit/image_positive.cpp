@@ -155,22 +155,10 @@ TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) 
 }
 
 TEST_F(PositiveImage, BasicUsage) {
-    TEST_DESCRIPTION("Verify that creating an image view from an image with valid usage doesn't generate validation errors");
-
+    TEST_DESCRIPTION("Verify that we can create a view with usage INPUT_ATTACHMENT");
     RETURN_IF_SKIP(Init());
-
-    // Verify that we can create a view with usage INPUT_ATTACHMENT
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    vkt::ImageView view(*m_device, ivci);
+    vkt::ImageView view = image.CreateView();
 }
 
 TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
@@ -686,16 +674,7 @@ TEST_F(PositiveImage, Create3DImageView) {
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image image(*m_device, ci, vkt::set_layout);
-
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkt::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_3D);
 }
 
 TEST_F(PositiveImage, SlicedCreateInfo) {
@@ -837,10 +816,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     image_view_create_info.subresourceRange = view_range;
 
     vkt::ImageView view(*m_device, image_view_create_info);
-
-    // Create Sampler
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // Setup structure for descriptor update with sampler, for update in do_test below
     VkDescriptorImageInfo img_info = {};
@@ -1133,14 +1109,8 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     vkt::Image image(*m_device, ci, vkt::set_layout);
 
     VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.baseArrayLayer = 2;
-    blitRegion.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
-    blitRegion.srcSubresource.mipLevel = 0;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.baseArrayLayer = 1;
-    blitRegion.dstSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
-    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
+    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, VK_REMAINING_ARRAY_LAYERS};
     blitRegion.srcOffsets[0] = {0, 0, 0};
     blitRegion.srcOffsets[1] = {16, 16, 1};
     blitRegion.dstOffsets[0] = {32, 32, 0};

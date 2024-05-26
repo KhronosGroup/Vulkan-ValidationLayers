@@ -210,17 +210,11 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     const uint32_t bufferSize = width * height * 4u;
     std::vector<uint8_t> data(bufferSize);
 
-    VkImageSubresourceLayers imageSubresource;
-    imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageSubresource.mipLevel = 3u;
-    imageSubresource.baseArrayLayer = 0u;
-    imageSubresource.layerCount = 1u;
-
     VkImageToMemoryCopyEXT region = vku::InitStructHelper();
     region.pHostPointer = data.data();
     region.memoryRowLength = 0u;
     region.memoryImageHeight = 0u;
-    region.imageSubresource = imageSubresource;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 3u, 0u, 1u};
     region.imageOffset = {0u, 0u, 0u};
     region.imageExtent = {4u, 4u, 1u};
 

@@ -231,8 +231,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
         "5) That it is prohibited to write to an immutable sampler. ");
     RETURN_IF_SKIP(Init());
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet::Bindings bindings = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, NULL},
                                               {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
@@ -369,10 +368,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
     image_view_ci.image = image;
     image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_ci.subresourceRange.layerCount = 1;
-    image_view_ci.subresourceRange.baseArrayLayer = 0;
-    image_view_ci.subresourceRange.levelCount = 1;
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     // G and B are swizzled
     image_view_ci.components.r = VK_COMPONENT_SWIZZLE_R;
@@ -594,20 +590,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
     // Create images to update the descriptor with
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image tmp_image(*m_device, image_create_info, vkt::no_mem);
     vkt::Image image2(*m_device, image_create_info, vkt::no_mem);
 
@@ -629,21 +612,11 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     // Bind second image to memory right after first image
     image2.bind_memory(image_memory, aligned_size);
 
-    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
-    image_view_create_info.image = tmp_image.handle();
-    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_create_info.format = tex_format;
-    image_view_create_info.subresourceRange.layerCount = 1;
-    image_view_create_info.subresourceRange.baseMipLevel = 0;
-    image_view_create_info.subresourceRange.levelCount = 1;
-    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
     // First test deletes this view
-    vkt::ImageView tmp_view(*m_device, image_view_create_info);
-    vkt::ImageView view(*m_device, image_view_create_info);
+    vkt::ImageView tmp_view = tmp_image.CreateView();
+    vkt::ImageView view = tmp_image.CreateView();
 
-    image_view_create_info.image = image2.handle();
-    vkt::ImageView view2(*m_device, image_view_create_info);
+    vkt::ImageView view2 = image2.CreateView();
 
     // Create Samplers
     vkt::Sampler tmp_sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -829,17 +802,7 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     vkt::Image image(*m_device, 32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
-    image_view_create_info.image = image.handle();
-    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_create_info.format = tex_format;
-    image_view_create_info.subresourceRange.layerCount = 1;
-    image_view_create_info.subresourceRange.baseMipLevel = 0;
-    image_view_create_info.subresourceRange.levelCount = 1;
-    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    vkt::ImageView view(*m_device, image_view_create_info);
-    // Create Samplers
+    vkt::ImageView view = image.CreateView();
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);
     vkt::Sampler sampler1(*m_device, sampler_ci);
@@ -926,10 +889,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
 
     auto image_view_create_info = image.BasicViewCreatInfo();
     vkt::ImageView view(*m_device, image_view_create_info);
-
-    // Create Sampler
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // Setup structure for descriptor update with sampler, for update in do_test below
     VkDescriptorImageInfo img_info = {};
@@ -1063,9 +1023,7 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkt::ImageView view = image.CreateView();
-    // Create Sampler
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     // Update descriptor with image and sampler
     descriptor_set.WriteDescriptorImageInfo(0, view, sampler.handle());
     descriptor_set.UpdateDescriptorSets();
@@ -1107,34 +1065,10 @@ TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
 
     // Create images to update the descriptor with
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     // Create with bound memory to avoid error at bind view time. We'll break binding before update.
     vkt::Image image(*m_device, image_create_info);
-
-    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
-    image_view_create_info.image = image.handle();
-    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_create_info.format = tex_format;
-    image_view_create_info.subresourceRange.layerCount = 1;
-    image_view_create_info.subresourceRange.baseMipLevel = 0;
-    image_view_create_info.subresourceRange.levelCount = 1;
-    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkt::ImageView view(*m_device, image_view_create_info);
-
-    // Create Samplers
+    vkt::ImageView view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // Update descriptor with image and sampler
@@ -1786,9 +1720,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
     // Create an image to be used for invalid updates
     vkt::Image image_obj(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image_obj.CreateView();
-
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorBufferInfo buff_info = {};
     buff_info.buffer = buffer.handle();
@@ -1998,8 +1930,7 @@ TEST_F(NegativeDescriptors, DSTypeMismatch) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
@@ -2176,13 +2107,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, ds_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::Image image2D(*m_device, image_ci, vkt::set_layout);
-
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image2D.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = ds_format;
-    ivci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
-    vkt::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view = image2D.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -2293,13 +2218,7 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
         VkExtent3D{32, 32, 32}, 1u, 1u, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
         VkImageUsageFlags{VK_IMAGE_USAGE_SAMPLED_BIT}, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr, VK_IMAGE_LAYOUT_UNDEFINED);
     vkt::Image image(*m_device, ici, vkt::set_layout);
-
-    auto ivci =
-        vku::InitStruct<VkImageViewCreateInfo>(nullptr, 0u, image.handle(), VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM,
-                                             VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                                                VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
-                                             VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-    vkt::ImageView view(*m_device, ivci);
+    vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-imageView-07796");  // missing VK_EXT_image_2d_view_of_3d
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-descriptorType-06714");
@@ -3019,20 +2938,8 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     vkt::ImageView view_input = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
     VkImageView attachments[] = {view_input, depth_view};
 
-    VkImageViewCreateInfo createView = vku::InitStructHelper();
-    createView.image = image.handle();
-    createView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createView.format = format;
-    createView.components.r = VK_COMPONENT_SWIZZLE_R;
-    createView.components.g = VK_COMPONENT_SWIZZLE_G;
-    createView.components.b = VK_COMPONENT_SWIZZLE_B;
-    createView.components.a = VK_COMPONENT_SWIZZLE_A;
-    createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
-    createView.flags = 0;
-    vkt::ImageView view_sampler_overlap(*m_device, createView);
-
-    createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vkt::ImageView view_sampler_not_overlap(*m_device, createView);
+    vkt::ImageView view_sampler_overlap = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
+    vkt::ImageView view_sampler_not_overlap = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -3044,9 +2951,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     rp.CreateRenderPass();
 
     vkt::Framebuffer fb(*m_device, rp.Handle(), 2u, attachments, 64, 64);
-
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     char const *fsSource = R"glsl(
         #version 450
@@ -3793,34 +3698,12 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = format;
-    image_create_info.extent.width = width;
-    image_create_info.extent.height = height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 3;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-    image_create_info.flags = 0;
+    auto image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
-
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = format;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkt::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view = image.CreateView();
     VkImageView image_view_handle = image_view.handle();
-
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
@@ -3896,34 +3779,12 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     rp.AddInputAttachment(0);
     rp.CreateRenderPass();
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = format;
-    image_create_info.extent.width = width;
-    image_create_info.extent.height = height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 3;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-    image_create_info.flags = 0;
+    auto image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
-
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = format;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkt::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view = image.CreateView();
     VkImageView image_view_handle = image_view.handle();
-
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
@@ -4359,9 +4220,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
         vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-
-        VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
-        vkt::Sampler sampler(*m_device, sci);
+        vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
         VkDescriptorBufferInfo buffer_info = {};
         buffer_info.buffer = buffer.handle();
@@ -4564,10 +4423,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
     vkt::Image image(*m_device, 1, 1, 1, combined_image_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
-
-    auto sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
-    ASSERT_TRUE(sampler.initialized());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -4675,9 +4531,7 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
-
-    auto sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -4735,10 +4589,11 @@ TEST_F(NegativeDescriptors, InvalidImageInfoDescriptorType) {
     }
     RETURN_IF_SKIP(InitState(nullptr, pNext));
 
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
-    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.format = format;
     image_ci.extent.width = 32;
     image_ci.extent.height = 32;
     image_ci.extent.depth = 2;
@@ -4750,16 +4605,7 @@ TEST_F(NegativeDescriptors, InvalidImageInfoDescriptorType) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
-    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
-    view_ci.image = image.handle();
-    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    view_ci.components.r = VK_COMPONENT_SWIZZLE_R;
-    view_ci.components.g = VK_COMPONENT_SWIZZLE_G;
-    view_ci.components.b = VK_COMPONENT_SWIZZLE_B;
-    view_ci.components.a = VK_COMPONENT_SWIZZLE_A;
-    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vkt::ImageView view(*m_device, view_ci);
+    vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet descriptor_set(m_device,

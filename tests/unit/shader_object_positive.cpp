@@ -229,20 +229,9 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                        VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    VkImageCreateInfo imageInfo = vku::InitStructHelper();
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    imageInfo.extent = {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), 1};
-    imageInfo.mipLevels = 1u;
-    imageInfo.arrayLayers = 1u;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.queueFamilyIndexCount = 0u;
-    imageInfo.pQueueFamilyIndices = nullptr;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vkt::Image image(*m_device, imageInfo, vkt::set_layout);
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -305,15 +294,10 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     }
 
     VkBufferImageCopy copyRegion = {};
-    copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.imageSubresource.mipLevel = 0u;
-    copyRegion.imageSubresource.baseArrayLayer = 0u;
-    copyRegion.imageSubresource.layerCount = 1u;
+    copyRegion.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copyRegion.imageOffset.x = static_cast<int32_t>(m_width / 2) + 1;
     copyRegion.imageOffset.y = static_cast<int32_t>(m_height / 2) + 1;
-    copyRegion.imageExtent.width = 1u;
-    copyRegion.imageExtent.height = 1u;
-    copyRegion.imageExtent.depth = 1u;
+    copyRegion.imageExtent = {1, 1, 1};
 
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1u, &copyRegion);
 
@@ -420,21 +404,9 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     VkShaderEXT shaders[5] = {vertShader.handle(), tescShader.handle(), teseShader.handle(), geomShader.handle(),
                               fragShader.handle()};
 
-    VkImageCreateInfo imageInfo = vku::InitStructHelper();
-    imageInfo.flags = 0;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    imageInfo.extent = {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), 1};
-    imageInfo.mipLevels = 1u;
-    imageInfo.arrayLayers = 1u;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.queueFamilyIndexCount = 0u;
-    imageInfo.pQueueFamilyIndices = nullptr;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vkt::Image image(*m_device, imageInfo, vkt::set_layout);
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -614,21 +586,9 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
 
     VkShaderEXT shaders[3] = {taskShader.handle(), meshShader.handle(), fragShader.handle()};
 
-    VkImageCreateInfo imageInfo = vku::InitStructHelper();
-    imageInfo.flags = 0;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    imageInfo.extent = {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), 1};
-    imageInfo.mipLevels = 1u;
-    imageInfo.arrayLayers = 1u;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.queueFamilyIndexCount = 0u;
-    imageInfo.pQueueFamilyIndices = nullptr;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vkt::Image image(*m_device, imageInfo, vkt::set_layout);
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -951,9 +911,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
-
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     frag_descriptor_set.WriteDescriptorImageInfo(0, view, sampler.handle());
     frag_descriptor_set.UpdateDescriptorSets();

@@ -323,23 +323,11 @@ TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
     // VK_IMAGE_LAYOUT_UNDEFINED = 0,
     // VK_IMAGE_LAYOUT_GENERAL = 1,
     VkImageResolve resolveRegion;
-    resolveRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    resolveRegion.srcSubresource.mipLevel = 0;
-    resolveRegion.srcSubresource.baseArrayLayer = 0;
-    resolveRegion.srcSubresource.layerCount = 1;
-    resolveRegion.srcOffset.x = 0;
-    resolveRegion.srcOffset.y = 0;
-    resolveRegion.srcOffset.z = 0;
-    resolveRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    resolveRegion.dstSubresource.mipLevel = 0;
-    resolveRegion.dstSubresource.baseArrayLayer = 0;
-    resolveRegion.dstSubresource.layerCount = 1;
-    resolveRegion.dstOffset.x = 0;
-    resolveRegion.dstOffset.y = 0;
-    resolveRegion.dstOffset.z = 0;
-    resolveRegion.extent.width = 1;
-    resolveRegion.extent.height = 1;
-    resolveRegion.extent.depth = 1;
+    resolveRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolveRegion.srcOffset = {0, 0, 0};
+    resolveRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolveRegion.dstOffset = {0, 0, 0};
+    resolveRegion.extent = {1, 1, 1};
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-MismatchedImageType");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
@@ -535,17 +523,8 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
 
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
 
-    VkImageCreateInfo image_info{};
-    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_info.extent = {64, 64, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-
+    VkImageCreateInfo image_info =
+        vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     // Create a small image with a dedicated allocation
     vkt::Image image(*m_device, image_info, vkt::no_mem);
 
@@ -620,27 +599,10 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     rp_info.pSubpasses = &sd;
     vkt::RenderPass rp(*m_device, rp_info);
 
-    VkImageCreateInfo image_info{};
-    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_info.extent = {1920, 1080, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
+    VkImageCreateInfo image_info = vkt::Image::ImageCreateInfo2D(
+        1920, 1080, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT);
     vkt::Image image(*m_device, image_info, vkt::set_layout);
-
-    VkImageViewCreateInfo iv_info{};
-    iv_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    iv_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    iv_info.image = image.handle();
-    iv_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    iv_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    iv_info.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
-
-    vkt::ImageView image_view(*m_device, iv_info);
+    vkt::ImageView image_view = image.CreateView();
 
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &image_view.handle(), 1920, 1080);
 
@@ -1476,19 +1438,9 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     const unsigned int w = 1920;
     const unsigned int h = 1080;
 
-    // Setup Image
-    VkImageCreateInfo image_info = vku::InitStructHelper();
-    image_info.extent = {w, h, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-    vkt::Image image(*m_device, image_info, vkt::set_layout);
-
-    const auto image_view = image.CreateView();
+    vkt::Image image(*m_device, w, h, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
 
     // Setup RenderPass
     VkAttachmentDescription attachment{};
@@ -1497,7 +1449,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attachment.format = image_info.format;
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkAttachmentReference ar{};
     ar.attachment = 0;
@@ -1559,18 +1511,9 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     const unsigned int w = 1920;
     const unsigned int h = 1080;
 
-    // Setup Image
-    VkImageCreateInfo image_info = vku::InitStructHelper();
-    image_info.extent = {w, h, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-    vkt::Image image(*m_device, image_info, vkt::set_layout);
-    const auto image_view = image.CreateView();
+    vkt::Image image(*m_device, w, h, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
 
     // Setup RenderPass
     VkAttachmentDescription attachment{};
@@ -1579,7 +1522,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachment.format = image_info.format;
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkAttachmentReference ar{};
     ar.attachment = 0;
@@ -1646,18 +1589,9 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     const unsigned int w = 100;
     const unsigned int h = 100;
 
-    // Setup Image
-    VkImageCreateInfo image_info = vku::InitStructHelper();
-    image_info.extent = {w, h, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-    vkt::Image image(*m_device, image_info, vkt::set_layout);
-    const auto image_view = image.CreateView();
+    vkt::Image image(*m_device, w, h, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
 
     // Setup first RenderPass
     VkAttachmentDescription attachment{};
@@ -1666,7 +1600,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;  // Dont care even though we will load afterwards
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachment.format = image_info.format;
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkAttachmentReference ar{};
     ar.attachment = 0;
@@ -1789,20 +1723,9 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     const unsigned int w = 100;
     const unsigned int h = 100;
 
-    // Setup Image
-    VkImageCreateInfo image_info = vku::InitStructHelper();
-    image_info.extent = {w, h, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-    vkt::Image image(*m_device, image_info, vkt::set_layout);
-    const auto image_view = image.CreateView();
-
-    // Prepare graphics
+    vkt::Image image(*m_device, w, h, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
 
     // Setup RenderPass
     VkAttachmentDescription attachment{};
@@ -1811,7 +1734,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;  // Store written image for next queue family
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attachment.format = image_info.format;
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkAttachmentReference ar{};
     ar.attachment = 0;

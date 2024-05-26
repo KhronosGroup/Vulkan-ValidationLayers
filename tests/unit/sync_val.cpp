@@ -2344,15 +2344,9 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     image_st.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 1;
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    copyRegion.dstSubresource.mipLevel = 0;
-    copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 1;
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {16, 16, 1};
 
@@ -3034,8 +3028,7 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
     rp_helper_negative.InitFramebuffer();
     rp_helper_negative.InitBeginInfo();
 
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     CreatePipelineHelper g_pipe(*this);
     rp_helper_positive.InitPipelineHelper(g_pipe);
@@ -3976,8 +3969,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     auto combined_view = std::make_unique<vkt::ImageView>();
     combined_view->init(*m_device, imageview_ci);
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorImageInfo image_info[3] = {};
     image_info[0].sampler = sampler.handle();
@@ -4153,18 +4145,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     vkt::Image image1(*m_device, image_ci, vkt::set_layout);
-
-    VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
-    iv_ci.image = image1.handle();
-    iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    iv_ci.format = VK_FORMAT_D32_SFLOAT;
-    iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    iv_ci.subresourceRange.baseMipLevel = 0;
-    iv_ci.subresourceRange.levelCount = 1;
-    iv_ci.subresourceRange.baseArrayLayer = 0;
-    iv_ci.subresourceRange.layerCount = 1;
-    vkt::ImageView image_view1(*m_device, iv_ci);
-
+    vkt::ImageView image_view1 = image1.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     VkImageView framebuffer_attachments[1] = {image_view1.handle()};
 
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, framebuffer_attachments);
@@ -4210,26 +4191,14 @@ TEST_F(NegativeSyncVal, CopyToCompressedImage) {
     vkt::Image dst_image(*m_device, 12, 4, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImageCopy copy_regions[2] = {};
-    copy_regions[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_regions[0].srcSubresource.mipLevel = 0;
-    copy_regions[0].srcSubresource.baseArrayLayer = 0;
-    copy_regions[0].srcSubresource.layerCount = 1;
+    copy_regions[0].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_regions[0].srcOffset = {0, 0, 0};
-    copy_regions[0].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_regions[0].dstSubresource.mipLevel = 0;
-    copy_regions[0].dstSubresource.baseArrayLayer = 0;
-    copy_regions[0].dstSubresource.layerCount = 1;
+    copy_regions[0].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_regions[0].dstOffset = {0, 0, 0};
     copy_regions[0].extent = {1, 1, 1};
-    copy_regions[1].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_regions[1].srcSubresource.mipLevel = 0;
-    copy_regions[1].srcSubresource.baseArrayLayer = 0;
-    copy_regions[1].srcSubresource.layerCount = 1;
+    copy_regions[1].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_regions[1].srcOffset = {0, 0, 0};
-    copy_regions[1].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_regions[1].dstSubresource.mipLevel = 0;
-    copy_regions[1].dstSubresource.baseArrayLayer = 0;
-    copy_regions[1].dstSubresource.layerCount = 1;
+    copy_regions[1].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_regions[1].dstOffset = {4, 0, 0};
     copy_regions[1].extent = {1, 1, 1};
 
@@ -4252,27 +4221,15 @@ TEST_F(NegativeSyncVal, CopyToCompressedImage) {
 
         VkImageCopy2KHR copy_regions2[2];
         copy_regions2[0] = vku::InitStructHelper();
-        copy_regions2[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy_regions2[0].srcSubresource.mipLevel = 0;
-        copy_regions2[0].srcSubresource.baseArrayLayer = 0;
-        copy_regions2[0].srcSubresource.layerCount = 1;
+        copy_regions2[0].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         copy_regions2[0].srcOffset = {0, 0, 0};
-        copy_regions2[0].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy_regions2[0].dstSubresource.mipLevel = 0;
-        copy_regions2[0].dstSubresource.baseArrayLayer = 0;
-        copy_regions2[0].dstSubresource.layerCount = 1;
+        copy_regions2[0].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         copy_regions2[0].dstOffset = {0, 0, 0};
         copy_regions2[0].extent = {1, 1, 1};
         copy_regions2[1] = vku::InitStructHelper();
-        copy_regions2[1].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy_regions2[1].srcSubresource.mipLevel = 0;
-        copy_regions2[1].srcSubresource.baseArrayLayer = 0;
-        copy_regions2[1].srcSubresource.layerCount = 1;
+        copy_regions2[1].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         copy_regions2[1].srcOffset = {0, 0, 0};
-        copy_regions2[1].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy_regions2[1].dstSubresource.mipLevel = 0;
-        copy_regions2[1].dstSubresource.baseArrayLayer = 0;
-        copy_regions2[1].dstSubresource.layerCount = 1;
+        copy_regions2[1].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         copy_regions2[1].dstOffset = {4, 0, 0};
         copy_regions2[1].extent = {1, 1, 1};
 
