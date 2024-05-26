@@ -40,8 +40,10 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
 VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
                                                   const VkImageSubresourceRange &range) {
     VkImageSubresourceRange norm = range;
-    norm.levelCount = ResolveRemainingLevels(image_create_info, range);
-    norm.layerCount = ResolveRemainingLayers(image_create_info, range);
+    norm.levelCount =
+        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image_create_info.mipLevels - range.baseMipLevel) : range.levelCount;
+    norm.layerCount =
+        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image_create_info.arrayLayers - range.baseArrayLayer) : range.layerCount;
 
     // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
     if (vkuFormatIsMultiplane(image_create_info.format)) {
