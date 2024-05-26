@@ -3920,9 +3920,11 @@ TEST_F(NegativeImage, BlockTexelViewLevelOrLayerCount) {
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    // Test for error message
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.levelCount = 4;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
+
+    ivci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
 
     // Test for error message
@@ -5016,12 +5018,9 @@ TEST_F(NegativeImage, SlicedMipLevel) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.subresourceRange.layerCount = 1;
 
-    auto get_effective_mip_levels = [&]() -> uint32_t { return ResolveRemainingLevels(ci, ivci.subresourceRange); };
-
     {
         ivci.subresourceRange.baseMipLevel = 0;
         ivci.subresourceRange.levelCount = 4;
-        ASSERT_TRUE(get_effective_mip_levels() == 4);
 
         m_errorMonitor->SetDesiredError("VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
         vkt::ImageView image_view(*m_device, ivci);
@@ -5031,7 +5030,6 @@ TEST_F(NegativeImage, SlicedMipLevel) {
     {
         ivci.subresourceRange.baseMipLevel = 0;
         ivci.subresourceRange.levelCount = 2;
-        ASSERT_TRUE(get_effective_mip_levels() == 2);
 
         m_errorMonitor->SetDesiredError("VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
         vkt::ImageView image_view(*m_device, ivci);
@@ -5041,7 +5039,6 @@ TEST_F(NegativeImage, SlicedMipLevel) {
     {
         ivci.subresourceRange.baseMipLevel = 1;
         ivci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        ASSERT_TRUE(get_effective_mip_levels() == 5);
 
         m_errorMonitor->SetDesiredError("VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
         vkt::ImageView image_view(*m_device, ivci);
@@ -5051,7 +5048,6 @@ TEST_F(NegativeImage, SlicedMipLevel) {
     {
         ivci.subresourceRange.baseMipLevel = 3;
         ivci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        ASSERT_TRUE(get_effective_mip_levels() == 3);
 
         m_errorMonitor->SetDesiredError("VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
         vkt::ImageView image_view(*m_device, ivci);
@@ -5713,5 +5709,30 @@ TEST_F(NegativeImage, ImageAlignmentControlExternalMemory) {
     VkImage image;
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-09654");
     vk::CreateImage(*m_device, &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, RemainingMipLevels2DViewOf3D) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 2;
+    image_ci.mipLevels = 2;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-04970");
+    vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, VK_REMAINING_MIP_LEVELS, 0, 1);
     m_errorMonitor->VerifyFound();
 }

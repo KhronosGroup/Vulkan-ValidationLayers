@@ -383,16 +383,6 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
 VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
 
-// Calculates the number of mip levels a VkImageView references.
-constexpr uint32_t ResolveRemainingLevels(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
-    return (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (ci.mipLevels - range.baseMipLevel) : range.levelCount;
-}
-
-// Calculates the number of mip layers a VkImageView references.
-constexpr uint32_t ResolveRemainingLayers(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
-    return (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (ci.arrayLayers - range.baseArrayLayer) : range.layerCount;
-}
-
 // Used to get the VkExternalFormatANDROID without having to use ifdef in logic
 // Result of zero is same of not having pNext struct
 constexpr uint64_t GetExternalFormat(const void *pNext) {

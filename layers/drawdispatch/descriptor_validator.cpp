@@ -867,7 +867,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                     string_VkImageViewType(image_view_ci.viewType), FormatHandle(sampler_state->Handle()).c_str());
             }
 
-            if (ResolveRemainingLevels(image_view_state->image_state->create_info, image_view_ci.subresourceRange) != 1) {
+            const auto &subresource_range = image_view_state->normalized_subresource_range;
+            if (subresource_range.levelCount != 1) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view, sampler_state->Handle());
                 return dev_state.LogError(
@@ -880,7 +881,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                     FormatHandle(sampler_state->Handle()).c_str());
             }
 
-            if (ResolveRemainingLayers(image_view_state->image_state->create_info, image_view_ci.subresourceRange) != 1) {
+            if (subresource_range.layerCount != 1) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view, sampler_state->Handle());
                 return dev_state.LogError(
