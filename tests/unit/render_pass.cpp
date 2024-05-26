@@ -1106,16 +1106,7 @@ TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
     // Create a depth stencil image view
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
-    VkImageViewCreateInfo dsvci = vku::InitStructHelper();
-    dsvci.image = image.handle();
-    dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    dsvci.format = VK_FORMAT_D16_UNORM;
-    dsvci.subresourceRange.layerCount = 1;
-    dsvci.subresourceRange.baseMipLevel = 0;
-    dsvci.subresourceRange.levelCount = 1;
-    dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vkt::ImageView dsv(*m_device, dsvci);
+    vkt::ImageView dsv = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     // Create a renderPass with a single attachment that uses loadOp CLEAR
     VkAttachmentDescription description = {0,
@@ -1171,16 +1162,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
 
     // Create an input attachment view
     vkt::Image iai(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-
-    VkImageViewCreateInfo iavci = vku::InitStructHelper();
-    iavci.image = iai.handle();
-    iavci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    iavci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    iavci.subresourceRange.layerCount = 1;
-    iavci.subresourceRange.baseMipLevel = 0;
-    iavci.subresourceRange.levelCount = 1;
-    iavci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkt::ImageView iav(*m_device, iavci);
+    vkt::ImageView iav = iai.CreateView();
 
     // Create an input depth attachment view
     VkFormat dformat = FindSupportedDepthStencilFormat(gpu());
@@ -1189,16 +1171,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
 
     // Create a color attachment view
     vkt::Image cai(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-    VkImageViewCreateInfo cavci = vku::InitStructHelper();
-    cavci.image = cai.handle();
-    cavci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    cavci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    cavci.subresourceRange.layerCount = 1;
-    cavci.subresourceRange.baseMipLevel = 0;
-    cavci.subresourceRange.levelCount = 1;
-    cavci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkt::ImageView cav(*m_device, cavci);
+    vkt::ImageView cav = cai.CreateView();
 
     // Create a renderPass with those attachments
     VkAttachmentDescription descriptions[] = {
@@ -1477,16 +1450,7 @@ TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
     // Create a depth stencil image view
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
-    VkImageViewCreateInfo dsvci = vku::InitStructHelper();
-    dsvci.image = image.handle();
-    dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    dsvci.format = VK_FORMAT_D16_UNORM;
-    dsvci.subresourceRange.layerCount = 1;
-    dsvci.subresourceRange.baseMipLevel = 0;
-    dsvci.subresourceRange.levelCount = 1;
-    dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vkt::ImageView dsv(*m_device, dsvci);
+    vkt::ImageView dsv = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     // Create a renderPass with a single attachment that uses loadOp CLEAR
     VkAttachmentDescription description = {0,
@@ -1904,19 +1868,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkImageViewCreateInfo createView = vku::InitStructHelper();
-    createView.image = m_renderTargets[0]->handle();
-    createView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createView.format = VK_FORMAT_B8G8R8A8_UNORM;
-    createView.components.r = VK_COMPONENT_SWIZZLE_R;
-    createView.components.g = VK_COMPONENT_SWIZZLE_G;
-    createView.components.b = VK_COMPONENT_SWIZZLE_B;
-    createView.components.a = VK_COMPONENT_SWIZZLE_A;
-    createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    createView.flags = 0;
-
-    vkt::ImageView iv(*m_device, createView);
-
+    vkt::ImageView iv = m_renderTargets[0]->CreateView();
     // Create the framebuffer then destory the view it uses.
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &iv.handle(), 100, 100);
     iv.destroy();
@@ -2448,21 +2400,9 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
-
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = format;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vkt::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     VkImageView image_view_handle = image_view.handle();
-
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
@@ -2537,20 +2477,8 @@ TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
 
     VkImageViewUsageCreateInfo image_view_usage = vku::InitStructHelper();
     image_view_usage.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper(&image_view_usage);
-    image_view_ci.image = image.handle();
-    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_view_ci.subresourceRange.layerCount = 1;
-    image_view_ci.subresourceRange.baseMipLevel = 0;
-    image_view_ci.subresourceRange.levelCount = 1;
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    vkt::ImageView image_view(*m_device, image_view_ci);
-
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT, &image_view_usage);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorImageInfo image_info = {};
     image_info.sampler = sampler.handle();

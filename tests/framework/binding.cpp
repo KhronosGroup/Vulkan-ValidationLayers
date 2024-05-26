@@ -1321,10 +1321,11 @@ VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) 
     return ci;
 }
 
-ImageView Image::CreateView(VkImageAspectFlags aspect) const {
+ImageView Image::CreateView(VkImageAspectFlags aspect, void *pNext) const {
     VkImageViewCreateInfo ci = BasicViewCreatInfo(aspect);
     ci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
     ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    ci.pNext = pNext;
     return ImageView(*device_, ci);
 }
 

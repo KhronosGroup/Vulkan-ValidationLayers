@@ -1311,13 +1311,10 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImage) {
     vkt::Image dst_image(*m_device, 16, 16, 1, mp_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    buffer_copy[0].imageSubresource.mipLevel = 0;
-    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
-    buffer_copy[0].imageSubresource.layerCount = 1;
+    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[0].imageOffset = {0, 0, 0};
     buffer_copy[0].imageExtent = {8, 8, 1};
-    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
+    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[1].imageOffset = {8, 0, 0};
     buffer_copy[1].imageExtent = {8, 8, 1};
 
@@ -1346,13 +1343,10 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC) {
     vkt::Image dst_image(*m_device, 20, 10, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    buffer_copy[0].imageSubresource.mipLevel = 0;
-    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
-    buffer_copy[0].imageSubresource.layerCount = 1;
+    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[0].imageOffset = {0, 0, 0};
     buffer_copy[0].imageExtent = {10, 10, 1};
-    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
+    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[1].imageOffset = {10, 0, 0};
     buffer_copy[1].imageExtent = {10, 10, 1};
 
@@ -1381,13 +1375,10 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC2) {
     vkt::Image dst_image(*m_device, 10, 20, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    buffer_copy[0].imageSubresource.mipLevel = 0;
-    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
-    buffer_copy[0].imageSubresource.layerCount = 1;
+    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[0].imageOffset = {0, 0, 0};
     buffer_copy[0].imageExtent = {10, 10, 1};
-    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
+    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[1].imageOffset = {0, 10, 0};
     buffer_copy[1].imageExtent = {10, 10, 1};
 
@@ -1416,13 +1407,10 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
     vkt::Image dst_image(*m_device, 20, 20, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    buffer_copy[0].imageSubresource.mipLevel = 0;
-    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
-    buffer_copy[0].imageSubresource.layerCount = 1;
+    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[0].imageOffset = {10, 10, 0};
     buffer_copy[0].imageExtent = {10, 10, 1};
-    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
+    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     buffer_copy[1].imageOffset = {10, 0, 0};
     buffer_copy[1].imageExtent = {10, 20, 1};
 

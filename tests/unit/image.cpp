@@ -125,14 +125,8 @@ TEST_F(NegativeImage, SampleCounts) {
     image_create_info.flags = 0;
 
     VkImageBlit blit_region = {};
-    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.srcSubresource.baseArrayLayer = 0;
-    blit_region.srcSubresource.layerCount = 1;
-    blit_region.srcSubresource.mipLevel = 0;
-    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.dstSubresource.baseArrayLayer = 0;
-    blit_region.dstSubresource.layerCount = 1;
-    blit_region.dstSubresource.mipLevel = 0;
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.srcOffsets[1] = {256, 256, 1};
     blit_region.dstOffsets[0] = {0, 0, 0};
@@ -266,14 +260,8 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     depth_image2.SetLayout(VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.baseArrayLayer = 0;
-    blitRegion.srcSubresource.layerCount = 1;
-    blitRegion.srcSubresource.mipLevel = 0;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.baseArrayLayer = 0;
-    blitRegion.dstSubresource.layerCount = 1;
-    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blitRegion.srcOffsets[0] = {0, 0, 0};
     blitRegion.srcOffsets[1] = {64, 64, 1};
     blitRegion.dstOffsets[0] = {0, 0, 0};
@@ -460,14 +448,8 @@ TEST_F(NegativeImage, BlitFilters) {
     vkt::Image src3D(*m_device, ci, vkt::set_layout);
 
     VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.baseArrayLayer = 0;
-    blitRegion.srcSubresource.layerCount = 1;
-    blitRegion.srcSubresource.mipLevel = 0;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.baseArrayLayer = 0;
-    blitRegion.dstSubresource.layerCount = 1;
-    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blitRegion.srcOffsets[0] = {0, 0, 0};
     blitRegion.srcOffsets[1] = {48, 48, 1};
     blitRegion.dstOffsets[0] = {0, 0, 0};
@@ -520,14 +502,8 @@ TEST_F(NegativeImage, BlitLayout) {
     img_color.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     VkImageBlit blit_region = {};
-    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.srcSubresource.baseArrayLayer = 0;
-    blit_region.srcSubresource.layerCount = 1;
-    blit_region.srcSubresource.mipLevel = 0;
-    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.dstSubresource.baseArrayLayer = 0;
-    blit_region.dstSubresource.layerCount = 1;
-    blit_region.dstSubresource.mipLevel = 0;
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.srcOffsets[1] = {32, 32, 1};
     blit_region.dstOffsets[0] = {32, 32, 0};
@@ -666,14 +642,8 @@ TEST_F(NegativeImage, BlitOffsets) {
     vkt::Image image_3D(*m_device, ci, vkt::set_layout);
 
     VkImageBlit blit_region = {};
-    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.srcSubresource.baseArrayLayer = 0;
-    blit_region.srcSubresource.layerCount = 1;
-    blit_region.srcSubresource.mipLevel = 0;
-    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.dstSubresource.baseArrayLayer = 0;
-    blit_region.dstSubresource.layerCount = 1;
-    blit_region.dstSubresource.mipLevel = 0;
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
 
     m_commandBuffer->begin();
 
@@ -794,14 +764,8 @@ TEST_F(NegativeImage, BlitOverlap) {
     vkt::Image image_2D(*m_device, ci, vkt::set_layout);
 
     VkImageBlit blit_region = {};
-    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.srcSubresource.baseArrayLayer = 0;
-    blit_region.srcSubresource.layerCount = 1;
-    blit_region.srcSubresource.mipLevel = 0;
-    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.dstSubresource.baseArrayLayer = 0;
-    blit_region.dstSubresource.layerCount = 1;
-    blit_region.dstSubresource.mipLevel = 0;
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
 
     m_commandBuffer->begin();
 
@@ -856,14 +820,8 @@ TEST_F(NegativeImage, MiscBlitTests) {
     vkt::Image color_3D_img(*m_device, ci, vkt::set_layout);
 
     VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.baseArrayLayer = 0;
-    blitRegion.srcSubresource.layerCount = 1;
-    blitRegion.srcSubresource.mipLevel = 0;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.baseArrayLayer = 0;
-    blitRegion.dstSubresource.layerCount = 1;
-    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blitRegion.srcOffsets[0] = {0, 0, 0};
     blitRegion.srcOffsets[1] = {16, 16, 1};
     blitRegion.dstOffsets[0] = {32, 32, 0};
@@ -1028,14 +986,8 @@ TEST_F(NegativeImage, BlitToDepth) {
     vkt::Image depth_img(*m_device, ci, vkt::set_layout);
 
     VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.baseArrayLayer = 0;
-    blitRegion.srcSubresource.layerCount = 1;
-    blitRegion.srcSubresource.mipLevel = 0;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.baseArrayLayer = 0;
-    blitRegion.dstSubresource.layerCount = 1;
-    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blitRegion.srcOffsets[0] = {0, 0, 0};
     blitRegion.srcOffsets[1] = {16, 16, 1};
     blitRegion.dstOffsets[0] = {32, 32, 0};
@@ -5486,14 +5438,8 @@ TEST_F(NegativeImage, BlitColorToDepth) {
     }
 
     VkImageBlit region;
-    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.srcSubresource.baseArrayLayer = 0;
-    region.srcSubresource.layerCount = 1;
-    region.srcSubresource.mipLevel = 0;
-    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    region.dstSubresource.baseArrayLayer = 0;
-    region.dstSubresource.layerCount = 1;
-    region.dstSubresource.mipLevel = 0;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     region.srcOffsets[0] = {0, 0, 0};
     region.srcOffsets[1] = {32, 32, 1};
     region.dstOffsets[0] = {0, 0, 0};

@@ -1684,18 +1684,7 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
-
-    VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
-    iv_ci.image = image.handle();
-    iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    iv_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    iv_ci.subresourceRange.baseMipLevel = 0;
-    iv_ci.subresourceRange.levelCount = 1;
-    iv_ci.subresourceRange.baseArrayLayer = 0;
-    iv_ci.subresourceRange.layerCount = 4;
-    vkt::ImageView image_view(*m_device, iv_ci);
-
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 4);
     VkImageView image_view_handle = image_view.handle();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view_handle, 64, 64);
@@ -2091,18 +2080,7 @@ TEST_F(NegativeQuery, DISABLED_MultiviewEndQuery) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
-
-    VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
-    iv_ci.image = image.handle();
-    iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    iv_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    iv_ci.subresourceRange.baseMipLevel = 0;
-    iv_ci.subresourceRange.levelCount = 1;
-    iv_ci.subresourceRange.baseArrayLayer = 0;
-    iv_ci.subresourceRange.layerCount = 4;
-    vkt::ImageView image_view(*m_device, iv_ci);
-
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 4);
     VkImageView image_view_handle = image_view.handle();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view_handle, 64, 64);

@@ -938,17 +938,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCreateInfo.format = attachmentFormats[0];
     vkt::Image image3D(*m_device, imageCreateInfo, vkt::set_layout);
-
-    VkImageViewCreateInfo imageViewCreateInfo = vku::InitStructHelper();
-    imageViewCreateInfo.image = image3D;
-    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
-    imageViewCreateInfo.format = attachmentFormats[0];
-    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-    imageViewCreateInfo.subresourceRange.levelCount = 1;
-    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
-    const vkt::ImageView imageView3D(*m_device, imageViewCreateInfo);
+    vkt::ImageView imageView3D = image3D.CreateView(VK_IMAGE_VIEW_TYPE_3D);
 
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.flags = 0;

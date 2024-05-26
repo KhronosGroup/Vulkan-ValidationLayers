@@ -311,18 +311,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         }
 
         {
-            VkImageCreateInfo image_create_info = vku::InitStructHelper();
-            image_create_info.imageType = VK_IMAGE_TYPE_2D;
-            image_create_info.extent.width = 128;
-            image_create_info.extent.height = 128;
-            image_create_info.extent.depth = 1;
-            image_create_info.mipLevels = 1;
-            image_create_info.arrayLayers = 1;
-            image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-            image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-            image_create_info.format = VK_FORMAT_D32_SFLOAT;
-            image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            vkt::Image temp_image(*m_device, image_create_info);
+            vkt::Image temp_image(*m_device, 64, 64, 1, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
             VkImageViewCreateInfo dsvci = vku::InitStructHelper();
             dsvci.flags |= VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
@@ -427,17 +416,8 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         vkt::Image temp_image(*m_device, image_create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        VkImageViewCreateInfo dsvci = vku::InitStructHelper();
-        // dsvci.flags |= VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-        dsvci.image = temp_image.handle();
-        dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        dsvci.format = VK_FORMAT_D32_SFLOAT;
-        dsvci.subresourceRange.layerCount = 1;
-        dsvci.subresourceRange.baseMipLevel = 0;
-        dsvci.subresourceRange.levelCount = 1;
-        dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-        vkt::ImageView dsv(*m_device, dsvci);
+        // missing VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
+        vkt::ImageView dsv = temp_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
         VkImageViewCaptureDescriptorDataInfoEXT icddi = vku::InitStructHelper();
         icddi.imageView = dsv.handle();

@@ -641,18 +641,8 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
 
     // Create an image without a Ycbcr conversion
     vkt::Image mpimage(*m_device, ci, vkt::set_layout);
-
     ycbcr_info.conversion = conversions[0].handle();  // Need two samplers with different conversions
-    VkImageViewCreateInfo ivci = vku::InitStructHelper(&ycbcr_info);
-    ivci.image = mpimage.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-
-    vkt::ImageView view(*m_device, ivci);
+    vkt::ImageView view = mpimage.CreateView(VK_IMAGE_ASPECT_PLANE_0_BIT, &ycbcr_info);
 
     VkSampler vksamplers[2] = {samplers[0].handle(), samplers[1].handle()};
     // Use the image and sampler together in a descriptor set

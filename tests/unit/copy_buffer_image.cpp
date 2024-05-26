@@ -323,10 +323,7 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopy) {
         ds_region.bufferOffset = 0;
         ds_region.bufferRowLength = 0;
         ds_region.bufferImageHeight = 0;
-        ds_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        ds_region.imageSubresource.mipLevel = 0;
-        ds_region.imageSubresource.baseArrayLayer = 0;
-        ds_region.imageSubresource.layerCount = 1;
+        ds_region.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
         ds_region.imageOffset = {0, 0, 0};
         ds_region.imageExtent = {256, 256, 1};
 
@@ -638,24 +635,12 @@ TEST_F(NegativeCopyBufferImage, ImageLayerCountMismatch) {
 
     m_commandBuffer->begin();
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 1;
-    copyRegion.srcOffset.x = 0;
-    copyRegion.srcOffset.y = 0;
-    copyRegion.srcOffset.z = 0;
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.dstSubresource.mipLevel = 0;
-    copyRegion.dstSubresource.baseArrayLayer = 0;
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copyRegion.srcOffset = {0, 0, 0};
     // Introduce failure by forcing the dst layerCount to differ from src
-    copyRegion.dstSubresource.layerCount = 3;
-    copyRegion.dstOffset.x = 0;
-    copyRegion.dstOffset.y = 0;
-    copyRegion.dstOffset.z = 0;
-    copyRegion.extent.width = 1;
-    copyRegion.extent.height = 1;
-    copyRegion.extent.depth = 1;
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 3};
+    copyRegion.dstOffset = {0, 0, 0};
+    copyRegion.extent = {1, 1, 1};
 
     const char *vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-08793" : "VUID-VkImageCopy-apiVersion-07941";
     m_errorMonitor->SetDesiredError(vuid);
@@ -1024,11 +1009,8 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
 
     VkImageCopy copy_region;
     copy_region.extent = {32, 1, 1};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -1287,11 +1269,8 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatchMaintenance1) {
 
     VkImageCopy copy_region;
     copy_region.extent = {32, 1, 1};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -1399,11 +1378,8 @@ TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
 
     VkImageCopy copy_region;
     copy_region.extent = {48, 48, 1};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -1514,11 +1490,9 @@ TEST_F(NegativeCopyBufferImage, ImageSrcSizeExceeded) {
 
     VkImageCopy copy_region;
     copy_region.extent = {32, 32, 8};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    ;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -1591,11 +1565,8 @@ TEST_F(NegativeCopyBufferImage, ImageDstSizeExceeded) {
 
     VkImageCopy copy_region;
     copy_region.extent = {32, 32, 8};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -1666,11 +1637,8 @@ TEST_F(NegativeCopyBufferImage, ImageZeroSize) {
     m_commandBuffer->begin();
 
     VkImageCopy copy_region;
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -1747,14 +1715,8 @@ TEST_F(NegativeCopyBufferImage, ImageMultiPlaneSizeExceeded) {
 
     VkImageCopy copy_region = {};
     copy_region.extent = {64, 64, 1};  // Size of plane 1
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
     VkImageCopy original_region = copy_region;
@@ -1880,23 +1842,11 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch) {
 
         m_commandBuffer->begin();
         VkImageCopy copyRegion;
-        copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copyRegion.srcSubresource.mipLevel = 0;
-        copyRegion.srcSubresource.baseArrayLayer = 0;
-        copyRegion.srcSubresource.layerCount = 1;
-        copyRegion.srcOffset.x = 0;
-        copyRegion.srcOffset.y = 0;
-        copyRegion.srcOffset.z = 0;
-        copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copyRegion.dstSubresource.mipLevel = 0;
-        copyRegion.dstSubresource.baseArrayLayer = 0;
-        copyRegion.dstSubresource.layerCount = 1;
-        copyRegion.dstOffset.x = 0;
-        copyRegion.dstOffset.y = 0;
-        copyRegion.dstOffset.z = 0;
-        copyRegion.extent.width = 1;
-        copyRegion.extent.height = 1;
-        copyRegion.extent.depth = 1;
+        copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copyRegion.srcOffset = {0, 0, 0};
+        copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copyRegion.dstOffset = {0, 0, 0};
+        copyRegion.extent = {1, 1, 1};
 
         // Sanity check between two 8bit formats
         vk::CmdCopyImage(m_commandBuffer->handle(), image_8b_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_uint.handle(),
@@ -1926,21 +1876,11 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch) {
 
         m_commandBuffer->begin();
         VkImageCopy copyRegion;
-        copyRegion.srcSubresource.mipLevel = 0;
-        copyRegion.srcSubresource.baseArrayLayer = 0;
-        copyRegion.srcSubresource.layerCount = 1;
-        copyRegion.srcOffset.x = 0;
-        copyRegion.srcOffset.y = 0;
-        copyRegion.srcOffset.z = 0;
-        copyRegion.dstSubresource.mipLevel = 0;
-        copyRegion.dstSubresource.baseArrayLayer = 0;
-        copyRegion.dstSubresource.layerCount = 1;
-        copyRegion.dstOffset.x = 0;
-        copyRegion.dstOffset.y = 0;
-        copyRegion.dstOffset.z = 0;
-        copyRegion.extent.width = 1;
-        copyRegion.extent.height = 1;
-        copyRegion.extent.depth = 1;
+        copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copyRegion.srcOffset = {0, 0, 0};
+        copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copyRegion.dstOffset = {0, 0, 0};
+        copyRegion.extent = {1, 1, 1};
 
         // First test single-plane -> multi-plan
         copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -2011,23 +1951,11 @@ TEST_F(NegativeCopyBufferImage, ImageDepthStencilFormatMismatch) {
 
     m_commandBuffer->begin();
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 1;
-    copyRegion.srcOffset.x = 0;
-    copyRegion.srcOffset.y = 0;
-    copyRegion.srcOffset.z = 0;
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    copyRegion.dstSubresource.mipLevel = 0;
-    copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 1;
-    copyRegion.dstOffset.x = 0;
-    copyRegion.dstOffset.y = 0;
-    copyRegion.dstOffset.z = 0;
-    copyRegion.extent.width = 1;
-    copyRegion.extent.height = 1;
-    copyRegion.extent.depth = 1;
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copyRegion.srcOffset = {0, 0, 0};
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copyRegion.dstOffset = {0, 0, 0};
+    copyRegion.extent = {1, 1, 1};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
     vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
@@ -2078,15 +2006,9 @@ TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
     m_commandBuffer->begin();
 
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 1;
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.dstSubresource.mipLevel = 0;
-    copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 1;
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {128, 128, 1};
 
@@ -2135,12 +2057,9 @@ TEST_F(NegativeCopyBufferImage, ImageLayerCount) {
     m_commandBuffer->begin();
 
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 0;
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0};
     copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource = copyRegion.srcSubresource;
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0};
     copyRegion.dstOffset = {32, 32, 0};
     copyRegion.extent = {16, 16, 1};
 
@@ -2193,15 +2112,9 @@ TEST_F(NegativeCopyBufferImage, ImageAspectMismatch) {
     ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 1;
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    copyRegion.dstSubresource.mipLevel = 0;
-    copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 1;
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     copyRegion.dstOffset = {64, 0, 0};
     copyRegion.extent = {64, 128, 1};
 
@@ -2456,14 +2369,8 @@ TEST_F(NegativeCopyBufferImage, CopyCommands2V13) {
     vk::CmdCopyImageToBuffer2(m_commandBuffer->handle(), &image_buffer_info);
     m_errorMonitor->VerifyFound();
     VkImageBlit2 blit_region = vku::InitStructHelper();
-    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.srcSubresource.baseArrayLayer = 0;
-    blit_region.srcSubresource.layerCount = 1;
-    blit_region.srcSubresource.mipLevel = 0;
-    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blit_region.dstSubresource.baseArrayLayer = 0;
-    blit_region.dstSubresource.layerCount = 1;
-    blit_region.dstSubresource.mipLevel = 0;
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.srcOffsets[1] = {31, 31, 1};
     blit_region.dstOffsets[0] = {32, 32, 0};
@@ -2480,23 +2387,11 @@ TEST_F(NegativeCopyBufferImage, CopyCommands2V13) {
     vk::CmdBlitImage2(m_commandBuffer->handle(), &blit_image_info);
     m_errorMonitor->VerifyFound();
     VkImageResolve2 resolve_region = vku::InitStructHelper();
-    resolve_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    resolve_region.srcSubresource.mipLevel = 0;
-    resolve_region.srcSubresource.baseArrayLayer = 0;
-    resolve_region.srcSubresource.layerCount = 1;
-    resolve_region.srcOffset.x = 0;
-    resolve_region.srcOffset.y = 0;
-    resolve_region.srcOffset.z = 0;
-    resolve_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    resolve_region.dstSubresource.mipLevel = 0;
-    resolve_region.dstSubresource.baseArrayLayer = 0;
-    resolve_region.dstSubresource.layerCount = 1;
-    resolve_region.dstOffset.x = 0;
-    resolve_region.dstOffset.y = 0;
-    resolve_region.dstOffset.z = 0;
-    resolve_region.extent.width = 1;
-    resolve_region.extent.height = 1;
-    resolve_region.extent.depth = 1;
+    resolve_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.srcOffset = {0, 0, 0};
+    resolve_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.dstOffset = {0, 0, 0};
+    resolve_region.extent = {1, 1, 1};
     VkResolveImageInfo2 resolve_image_info = vku::InitStructHelper();
     resolve_image_info.srcImage = image.handle();
     resolve_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -2542,13 +2437,11 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.layerCount = 1;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.imageOffset = {0, 0, 0};
     region.bufferOffset = 0;
 
     region.imageExtent = {32, 32, 1};
-    region.imageSubresource.mipLevel = 0;
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-pRegions-00184");
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1, &region);
@@ -2560,12 +2453,10 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
     VkBufferImageCopy2 bic2_region = vku::InitStructHelper();
     bic2_region.bufferRowLength = 0;
     bic2_region.bufferImageHeight = 0;
-    bic2_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    bic2_region.imageSubresource.layerCount = 1;
+    bic2_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     bic2_region.imageOffset = {0, 0, 0};
     bic2_region.bufferOffset = 0;
     bic2_region.imageExtent = {32, 32, 1};
-    bic2_region.imageSubresource.mipLevel = 0;
 
     VkCopyImageToBufferInfo2 i2b2_info = vku::InitStructHelper();
     i2b2_info.dstBuffer = buffer.handle();
@@ -2689,11 +2580,8 @@ TEST_F(NegativeCopyBufferImage, DifferentFormatTexelBlockExtent) {
 
     VkImageCopy region;
     region.extent = {32, 32, 1};
-    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.srcSubresource.mipLevel = 0;
-    region.srcSubresource.baseArrayLayer = 0;
-    region.srcSubresource.layerCount = 1;
-    region.dstSubresource = region.srcSubresource;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.srcOffset = {0, 0, 0};
     region.dstOffset = {0, 0, 0};
     m_commandBuffer->begin();
@@ -2803,11 +2691,8 @@ TEST_F(NegativeCopyBufferImage, SameImage) {
 
     m_commandBuffer->begin();
     VkImageCopy copy_region;
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {2, 2, 0};
     copy_region.extent = {1, 1, 1};
@@ -2836,14 +2721,8 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingArrayLayers) {
     vkt::Image image(*m_device, ci, vkt::set_layout);
 
     VkImageCopy copy_region = {};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 2;
-    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.mipLevel = 0;
-    copy_region.dstSubresource.baseArrayLayer = 1;
-    copy_region.dstSubresource.layerCount = 3;  // should be 2
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3};  // should be 2, not 3
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {4, 4, 0};
     copy_region.extent = {1, 1, 1};
@@ -2877,11 +2756,8 @@ TEST_F(NegativeCopyBufferImage, ImageMemory) {
     vkt::Image image(*m_device, image_info);
 
     VkImageCopy copy_region;
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent.width = 4;
@@ -2964,23 +2840,11 @@ TEST_F(NegativeCopyBufferImage, ImageMissingUsage) {
     vkt::Image separate_stencil_transfer_image(*m_device, image_ci, vkt::set_layout);
 
     VkImageCopy region;
-    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    region.srcSubresource.mipLevel = 0;
-    region.srcSubresource.baseArrayLayer = 0;
-    region.srcSubresource.layerCount = 1;
-    region.srcOffset.x = 0;
-    region.srcOffset.y = 0;
-    region.srcOffset.z = 0;
-    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    region.dstSubresource.mipLevel = 0;
-    region.dstSubresource.baseArrayLayer = 0;
-    region.dstSubresource.layerCount = 1;
-    region.dstOffset.x = 0;
-    region.dstOffset.y = 0;
-    region.dstOffset.z = 0;
-    region.extent.width = 32;
-    region.extent.height = 32;
-    region.extent.depth = 1;
+    region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    region.srcOffset = {0, 0, 0};
+    region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    region.dstOffset = {0, 0, 0};
+    region.extent = {32, 32, 1};
 
     m_commandBuffer->begin();
 
@@ -3012,19 +2876,8 @@ TEST_F(NegativeCopyBufferImage, OverlappingImage) {
 
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage =
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    vkt::Image image(*m_device, image_create_info);
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_commandBuffer->begin();
@@ -3086,23 +2939,11 @@ TEST_F(NegativeCopyBufferImage, MinImageTransferGranularity) {
     command_buffer.begin();
 
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 1;
-    copyRegion.srcOffset.x = 0;
-    copyRegion.srcOffset.y = 0;
-    copyRegion.srcOffset.z = 0;
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.dstSubresource.mipLevel = 0;
-    copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 1;
-    copyRegion.dstOffset.x = 0;
-    copyRegion.dstOffset.y = 0;
-    copyRegion.dstOffset.z = 0;
-    copyRegion.extent.width = granularity.width;
-    copyRegion.extent.height = granularity.height;
-    copyRegion.extent.depth = granularity.depth;
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copyRegion.srcOffset = {0, 0, 0};
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copyRegion.dstOffset = {0, 0, 0};
+    copyRegion.extent = granularity;
 
     // Introduce failure by setting srcOffset to a bad granularity value
     copyRegion.srcOffset.y = 3;
