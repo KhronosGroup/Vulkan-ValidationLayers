@@ -359,7 +359,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -430,7 +430,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -838,7 +838,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
         layout(set = 0, binding = 0) uniform ufoo {
             bufStruct ptr;
         } ssbo;
-        
+
         layout(buffer_reference, scalar) buffer bufStruct {
             float f;
             vec3 v;
@@ -928,21 +928,21 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     char const *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
-        
+
         layout(buffer_reference) buffer Node;
         layout(buffer_reference, std430) buffer Node {
             vec3 v;
             Node next;
         };
-        
+
         layout(set = 0, binding = 0) uniform foo {
             Node node_0;
             Node node_1;
             Node node_2;
         };
-        
+
         void main() {
-            node_0.next = node_1; 
+            node_0.next = node_1;
             node_1.next = node_2;
 
             node_0.v = vec3(1.0, 2.0, 3.0);

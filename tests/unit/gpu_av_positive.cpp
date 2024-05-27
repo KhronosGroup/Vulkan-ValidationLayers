@@ -289,7 +289,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         layouts[i] = &descriptor_set.layout_;
     }
     // Expect error since GPU-AV cannot add debug descriptor to layout
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GPU-Assisted-Validation");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-GPU-Assisted-Validation");
     vkt::PipelineLayout pl_layout(*m_device, layouts);
     m_errorMonitor->VerifyFound();
 

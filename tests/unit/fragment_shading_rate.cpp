@@ -2208,7 +2208,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
 
         for (const auto &test_case : test_cases) {
             for (uint32_t i = 0; i < test_case.vuids.size(); ++i) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.vuids[i]);
+                m_errorMonitor->SetDesiredError(test_case.vuids[i].c_str());
             }
             vk::CmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, 1, test_case.order);
             if (test_case.vuids.size()) {

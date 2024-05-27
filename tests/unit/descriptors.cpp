@@ -1758,7 +1758,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
         }
         descriptor_write.descriptorType = VkDescriptorType(i);
         descriptor_write.dstSet = descriptor_sets[i]->handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error_codes[i]);
+        m_errorMonitor->SetDesiredError(error_codes[i].c_str());
 
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
@@ -1898,7 +1898,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         if (test_case.max_range != vvl::kU32Max) {
             buff_info.range = test_case.max_range + 1;
             buff_info.offset = 0;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.max_range_vu);
+            m_errorMonitor->SetDesiredError(test_case.max_range_vu.c_str());
             vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
             m_errorMonitor->VerifyFound();
         }
@@ -1907,7 +1907,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         if (test_case.min_align > 1) {
             buff_info.range = test_case.max_range;
             buff_info.offset = test_case.min_align - 1;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.min_align_vu);
+            m_errorMonitor->SetDesiredError(test_case.min_align_vu.c_str());
             vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
             m_errorMonitor->VerifyFound();
         }
@@ -1915,7 +1915,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         // Exceed effective range limit by using VK_WHOLE_SIZE
         buff_info.range = VK_WHOLE_SIZE;
         buff_info.offset = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.max_range_vu);
+        m_errorMonitor->SetDesiredError(test_case.max_range_vu.c_str());
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
         m_errorMonitor->VerifyFound();
     }
@@ -4987,7 +4987,7 @@ TEST_F(NegativeDescriptors, DescriptorTypeNotInPool) {
     if (result != VK_ERROR_OUT_OF_POOL_MEMORY) {
         GTEST_SKIP() << "Does not return expected VK_ERROR_OUT_OF_POOL_MEMORY";
     }
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "WARNING-CoreValidation-AllocateDescriptorSets-WrongType");
+    m_errorMonitor->SetDesiredWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType");
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
@@ -5034,7 +5034,7 @@ TEST_F(NegativeDescriptors, GetSupportMutableDescriptorType) {
     set_layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303");
     vk::GetDescriptorSetLayoutSupport(device(), &set_layout_ci, &support);
     m_errorMonitor->VerifyFound();
 }

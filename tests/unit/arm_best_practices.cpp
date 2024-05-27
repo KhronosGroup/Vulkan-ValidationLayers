@@ -593,7 +593,7 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     }
 
     {
-        m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
+        m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
 
         const auto err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 

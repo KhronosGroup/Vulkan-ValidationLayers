@@ -33,7 +33,7 @@ TEST_F(NegativeGpuAV, DestroyedPipelineLayout) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Unable to find pipeline layout to bind debug descriptor set");
+    m_errorMonitor->SetDesiredError("Unable to find pipeline layout to bind debug descriptor set");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -57,7 +57,7 @@ TEST_F(NegativeGpuAV, ValidationAbort) {
     features.vertexPipelineStoresAndAtomics = false;
     features.fragmentStoresAndAtomics = false;
     fpvkSetPhysicalDeviceFeaturesEXT(gpu(), features);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "GPU-AV is being disabled");
+    m_errorMonitor->SetDesiredError("GPU-AV is being disabled");
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();
 
@@ -88,7 +88,7 @@ TEST_F(NegativeGpuAV, ValidationFeatures) {
     features.pNext = ici.pNext;
     ici.pNext = &features;
     VkInstance instance;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967");
+    m_errorMonitor->SetDesiredError("VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967");
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
 
@@ -96,7 +96,7 @@ TEST_F(NegativeGpuAV, ValidationFeatures) {
                                                      VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     features.pEnabledValidationFeatures = printf_enables;
     features.enabledValidationFeatureCount = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02968");
+    m_errorMonitor->SetDesiredError("VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02968");
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
 }
@@ -277,10 +277,8 @@ TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02691");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02691");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07888");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07888");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02691", 2);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07888", 2);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -390,7 +388,7 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08611");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08611");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -493,7 +491,7 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesCopyObject) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08611");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08611");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -579,8 +577,8 @@ TEST_F(NegativeGpuAV, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08609");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08610");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08609");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08610");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -690,7 +688,7 @@ TEST_F(NegativeGpuAV, ShareOpSampledImage) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08610");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08610");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -777,7 +775,7 @@ TEST_F(NegativeGpuAV, DISABLED_YcbcrDrawFetchIndexed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06550");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06550");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -829,8 +827,8 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32) {
                              &buffer_image_copy_2);
 
     m_commandBuffer->end();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
+    m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
+    m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -886,8 +884,8 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32Vk13) {
     vk::CmdCopyBufferToImage2(*m_commandBuffer, &buffer_image_copy);
 
     m_commandBuffer->end();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 16376 that is not in the range [0, 1]");
+    m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
+    m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -936,7 +934,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8) {
                              &buffer_image_copy);
 
     m_commandBuffer->end();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 20475 that is not in the range [0, 1]");
+    m_errorMonitor->SetDesiredError("has a float value at offset 20475 that is not in the range [0, 1]");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -992,7 +990,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
     vk::CmdCopyBufferToImage2(*m_commandBuffer, &buffer_image_copy);
 
     m_commandBuffer->end();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has a float value at offset 20475 that is not in the range [0, 1]");
+    m_errorMonitor->SetDesiredError("has a float value at offset 20475 that is not in the range [0, 1]");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

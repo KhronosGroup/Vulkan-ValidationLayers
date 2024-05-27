@@ -487,7 +487,7 @@ TEST_F(VkLayerTest, SpecLinks) {
         spec_version = "registry/vulkan/specs";
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, spec_version);
+    m_errorMonitor->SetDesiredError(spec_version.c_str());
     vk::GetPhysicalDeviceFeatures(gpu(), NULL);
     m_errorMonitor->VerifyFound();
 
@@ -2158,7 +2158,7 @@ TEST_F(VkLayerTest, MissingCreateInfo) {
 TEST_F(VkLayerTest, GetDeviceProcAddrInstance) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an instance function");
     RETURN_IF_SKIP(Init());
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "WARNING-vkGetDeviceProcAddr-device");
+    m_errorMonitor->SetDesiredWarning("WARNING-vkGetDeviceProcAddr-device");
     vk::GetDeviceProcAddr(device(), "vkGetPhysicalDeviceProperties");
     m_errorMonitor->VerifyFound();
 }

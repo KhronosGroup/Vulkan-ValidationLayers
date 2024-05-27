@@ -223,7 +223,8 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     vk::DestroyCommandPool(device(), command_pool, NULL);
 }
 
-TEST_F(PositiveCommand, ClearRectWith2DArray) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5356
+TEST_F(PositiveCommand, DISABLED_ClearRectWith2DArray) {
     TEST_DESCRIPTION("Test using VkClearRect with an image that is of a 2D array type.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);

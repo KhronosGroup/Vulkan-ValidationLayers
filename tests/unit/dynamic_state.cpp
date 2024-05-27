@@ -375,7 +375,7 @@ TEST_F(NegativeDynamicState, SetScissorParam) {
                                         {{{0, 0}, {16, uint32_t{vvl::kI32Max} + 1}}, "VUID-vkCmdSetScissor-offset-00597"}};
 
     for (const auto &test_case : test_cases) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.vuid);
+        m_errorMonitor->SetDesiredError(test_case.vuid.c_str());
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &test_case.scissor);
         m_errorMonitor->VerifyFound();
     }
@@ -3218,7 +3218,7 @@ TEST_F(NegativeDynamicState, SetViewportParam) {
     using std::vector;
     struct TestCase {
         VkViewport vp;
-        std::string veid;
+        std::string vuid;
     };
 
     // not necessarily boundary values (unspecified cast rounding), but guaranteed to be over limit
@@ -3261,7 +3261,7 @@ TEST_F(NegativeDynamicState, SetViewportParam) {
     }
 
     for (const auto &test_case : test_cases) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.veid);
+        m_errorMonitor->SetDesiredError(test_case.vuid.c_str());
         vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
         m_errorMonitor->VerifyFound();
     }
@@ -3503,7 +3503,7 @@ TEST_F(NegativeDynamicState, DISABLED_ExtensionDynamicStatesSetWOExtensionEnable
     for (const auto &test_case : dyn_test_cases) {
         CreatePipelineHelper pipe(*this);
         pipe.AddDynamicState(test_case.dynamic_state);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.errmsg);
+        m_errorMonitor->SetDesiredError(test_case.errmsg);
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -5680,7 +5680,7 @@ TEST_F(NegativeDynamicState, RebindSamePipeline) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-vkCmdBindPipeline-Pipeline-Rebind");
+    m_errorMonitor->SetDesiredWarning("UNASSIGNED-vkCmdBindPipeline-Pipeline-Rebind");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
