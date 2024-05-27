@@ -159,15 +159,15 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
 
     if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[0]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[0]) <
         uint64_t(vvl::kU32Max)) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkTraceRaysIndirectCommandKHR-width-03638");
+        m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-width-03638");
     }
     if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[1]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[1]) <
         uint64_t(vvl::kU32Max)) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkTraceRaysIndirectCommandKHR-height-03639");
+        m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-height-03639");
     }
     if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[2]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[2]) <
         uint64_t(vvl::kU32Max)) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkTraceRaysIndirectCommandKHR-depth-03640");
+        m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640");
     }
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();

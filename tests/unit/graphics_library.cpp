@@ -1924,7 +1924,7 @@ TEST_F(NegativeGraphicsLibrary, DestroyedLibrary) {
     frag_shader_lib.Destroy();
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-parameter");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -1980,7 +1980,7 @@ TEST_F(NegativeGraphicsLibrary, DestroyedLibraryNested) {
     vertex_input_lib.Destroy();
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-parameter");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();

@@ -1508,7 +1508,7 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
         pipe.tess_ci_ = tess_ci;
         pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tesc.GetStageCreateInfo(), tese.GetStageCreateInfo(),
                                pipe.fs_->GetStageCreateInfo()};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuids[i]);
+        m_errorMonitor->SetDesiredError(vuids[i].c_str());
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -1541,7 +1541,7 @@ TEST_F(NegativeGeometryTessellation, WritingToLayerWithSingleFramebufferLayer) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "Undefined-Layer-Written");
+    m_errorMonitor->SetDesiredWarning("Undefined-Layer-Written");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();

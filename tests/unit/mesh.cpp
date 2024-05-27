@@ -1470,7 +1470,7 @@ TEST_F(NegativeMesh, DrawIndexMesh) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-09631");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-09631");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

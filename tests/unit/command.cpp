@@ -293,8 +293,7 @@ TEST_F(NegativeCommand, PushConstants) {
     for (const auto &iter : duplicate_stageFlags_tests) {
         pipeline_layout_ci.pPushConstantRanges = iter.ranges;
         pipeline_layout_ci.pushConstantRangeCount = ranges_per_test;
-        std::for_each(iter.msg.begin(), iter.msg.end(),
-                      [&](const char *vuid) { m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid); });
+        std::for_each(iter.msg.begin(), iter.msg.end(), [&](const char *vuid) { m_errorMonitor->SetDesiredError(vuid); });
         vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -2265,7 +2264,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
             {{{0, 0}, {16, uint32_t{vvl::kI32Max} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
 
         for (const auto &test_case : test_cases) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.vuid);
+            m_errorMonitor->SetDesiredError(test_case.vuid.c_str());
             vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, &test_case.scissor);
             m_errorMonitor->VerifyFound();
         }

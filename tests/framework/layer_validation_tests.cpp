@@ -139,14 +139,14 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device
             rp2_vuid = rp1_vuid;
         }
 
-        error_monitor->SetDesiredFailureMsg(kErrorBit, rp1_vuid);
+        error_monitor->SetDesiredError(rp1_vuid);
         vkt::RenderPass rp(device, create_info);
         error_monitor->VerifyFound();
     }
 
     if (rp2_supported && rp2_vuid) {
         auto create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
-        error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+        error_monitor->SetDesiredError(rp2_vuid);
         vkt::RenderPass rp2(device, *create_info2.ptr());
         error_monitor->VerifyFound();
     }
@@ -167,7 +167,7 @@ void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderP
 void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
                               const std::initializer_list<const char *> &vuids) {
     for (auto vuid : vuids) {
-        error_monitor.SetDesiredFailureMsg(kErrorBit, vuid);
+        error_monitor.SetDesiredError(vuid);
     }
     vkt::RenderPass rp(device, create_info);
     error_monitor.VerifyFound();
@@ -180,7 +180,7 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
 
     if (rp1_vuid) {
         vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
-        error_monitor->SetDesiredFailureMsg(kErrorBit, rp1_vuid);
+        error_monitor->SetDesiredError(rp1_vuid);
         vk::CmdBeginRenderPass(command_buffer, begin_info, VK_SUBPASS_CONTENTS_INLINE);
         error_monitor->VerifyFound();
         vk::ResetCommandBuffer(command_buffer, 0);
@@ -188,7 +188,7 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
     if (rp2Supported && rp2_vuid) {
         VkSubpassBeginInfoKHR subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
         vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
-        error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+        error_monitor->SetDesiredError(rp2_vuid);
         vk::CmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
         error_monitor->VerifyFound();
         vk::ResetCommandBuffer(command_buffer, 0);
@@ -198,7 +198,7 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
             (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2");
         if (vkCmdBeginRenderPass2) {
             vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
-            error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+            error_monitor->SetDesiredError(rp2_vuid);
             vkCmdBeginRenderPass2(command_buffer, begin_info, &subpass_begin_info);
             error_monitor->VerifyFound();
             vk::ResetCommandBuffer(command_buffer, 0);
@@ -251,7 +251,7 @@ VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, 
 
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
-        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
+        test.Monitor().SetDesiredError(code.c_str());
     }
 
     vkt::Sampler sampler(*test.DeviceObj(), *create_info);
@@ -263,7 +263,7 @@ void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info
 
 void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
-        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
+        test.Monitor().SetDesiredError(code.c_str());
     }
     vkt::Buffer buffer(*test.DeviceObj(), *create_info, vkt::no_mem);
     if (code.length()) {
@@ -273,7 +273,7 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, 
 
 void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
-        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
+        test.Monitor().SetDesiredError(code.c_str());
     }
     vkt::Image image(*test.DeviceObj(), *create_info, vkt::no_mem);
     if (code.length()) {
@@ -283,7 +283,7 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *create_info, co
 
 void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *create_info, const std::vector<std::string> &codes) {
     if (codes.size()) {
-        std::for_each(codes.begin(), codes.end(), [&](const std::string &s) { test.Monitor().SetDesiredFailureMsg(kErrorBit, s); });
+        std::for_each(codes.begin(), codes.end(), [&](const std::string &s) { test.Monitor().SetDesiredError(s.c_str()); });
     }
     vkt::BufferView view(*test.DeviceObj(), *create_info);
     if (codes.size()) {
@@ -293,7 +293,7 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *creat
 
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
-        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
+        test.Monitor().SetDesiredError(code.c_str());
     }
     vkt::ImageView view(*test.DeviceObj(), *create_info);
     if (code.length()) {

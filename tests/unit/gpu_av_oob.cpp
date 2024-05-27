@@ -168,7 +168,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
         InitRenderTarget();
     }
     for (const char *error : expected_errors) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error);
+        m_errorMonitor->SetDesiredError(error);
     }
 
     OneOffDescriptorSet ds(m_device, {{0, descriptor_type, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -937,7 +937,7 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -968,7 +968,7 @@ void NegativeGpuAVOOB::ComputeStorageBufferTest(const char *expected_error, cons
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, expected_error);
+    m_errorMonitor->SetDesiredError(expected_error);
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -1061,7 +1061,7 @@ TEST_F(NegativeGpuAVOOB, TexelFetch) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-uniformBuffers-06935");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-uniformBuffers-06935");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -1115,7 +1115,7 @@ TEST_F(NegativeGpuAVOOB, ImageLoad) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -1162,8 +1162,7 @@ TEST_F(NegativeGpuAVOOB, ImageStore) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-storageBuffers-06936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936", 2);
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -1216,7 +1215,7 @@ TEST_F(NegativeGpuAVOOB, Geometry) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-storageBuffers-06936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -1276,7 +1275,7 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationControl) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-storageBuffers-06936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -1334,7 +1333,7 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationEvaluation) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-storageBuffers-06936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

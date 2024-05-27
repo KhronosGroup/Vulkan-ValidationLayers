@@ -145,7 +145,7 @@ TEST_F(NegativeDescriptorBuffer, GetSupportSetLayout) {
     const VkDescriptorSetLayoutCreateFlags flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
     const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, 1U, &binding);
     VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-08000");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08000");
     vk::GetDescriptorSetLayoutSupport(device(), &dslci, &support);
     m_errorMonitor->VerifyFound();
 }

@@ -517,12 +517,12 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
             vkt::QueryPool query_pool(*m_device, query_type, 1);
 
             m_commandBuffer->begin();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid_begin_query);
+            m_errorMonitor->SetDesiredError(vuid_begin_query);
             vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
             m_errorMonitor->VerifyFound();
 
             if (ext_transform_feedback) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid_begin_query_indexed);
+                m_errorMonitor->SetDesiredError(vuid_begin_query_indexed);
                 vk::CmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0, 0);
                 m_errorMonitor->VerifyFound();
             }

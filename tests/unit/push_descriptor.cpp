@@ -409,9 +409,9 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
     create_info.descriptorUpdateEntryCount = 1;
     create_info.pDescriptorUpdateEntries = &entries;
 
-    auto do_test = [&](std::string err) {
+    auto do_test = [&](const char* err) {
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
+        m_errorMonitor->SetDesiredError(err);
         if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
             vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
         }
@@ -490,9 +490,9 @@ TEST_F(NegativePushDescriptor, SetLayout) {
     ds_layout_ci.pBindings = &binding;
 
     // Note that as binding is referenced in ds_layout_ci, it is effectively in the closure by reference as well.
-    auto test_create_ds_layout = [&ds_layout_ci, this](std::string error) {
+    auto test_create_ds_layout = [&ds_layout_ci, this](const char* error) {
         VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error);
+        m_errorMonitor->SetDesiredError(error);
         vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
         m_errorMonitor->VerifyFound();
     };
@@ -526,7 +526,7 @@ TEST_F(NegativePushDescriptor, GetSupportSetLayout) {
     ds_layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-00280");
     vk::GetDescriptorSetLayoutSupportKHR(device(), &ds_layout_ci, &support);
     m_errorMonitor->VerifyFound();
 }
