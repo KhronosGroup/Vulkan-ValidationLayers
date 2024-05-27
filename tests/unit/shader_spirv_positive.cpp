@@ -2066,3 +2066,36 @@ TEST_F(PositiveShaderSpirv, ScalarBlockLayoutShaderCache) {
     )glsl";
     VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
 }
+
+TEST_F(PositiveShaderSpirv, RayQueryPositionFetch) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8055");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::rayTracingPositionFetch);
+    RETURN_IF_SKIP(Init());
+
+    char const *cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : enable
+        #extension GL_EXT_ray_tracing_position_fetch : enable
+
+        layout(set = 0, binding = 0) buffer Log { uint x; };
+        layout(set = 0, binding = 1) uniform accelerationStructureEXT rtas;
+
+        void main() {
+            rayQueryEXT rayQuery;
+            rayQueryInitializeEXT(rayQuery, rtas, gl_RayFlagsNoneEXT, 0xFF, vec3(0,0,0), 0.0, vec3(1,0,0), 1.0);
+
+            vec3 positions[3];
+            rayQueryGetIntersectionTriangleVertexPositionsEXT(rayQuery, true, positions);
+            if (positions[0].x > 0) {
+                x = 2;
+            } else {
+                x = 1;
+            }
+        }
+    )glsl";
+    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+}
