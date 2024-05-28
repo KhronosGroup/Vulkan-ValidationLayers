@@ -365,7 +365,7 @@ TEST_F(NegativeShaderInterface, FragmentInputNotProvided) {
 
 TEST_F(NegativeShaderInterface, FragmentInputNotProvidedInBlock) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a fragment shader input within an interace block, which is not present in the outputs "
+        "Test that an error is produced for a fragment shader input within an interface block, which is not present in the outputs "
         "of the previous stage.");
 
     RETURN_IF_SKIP(Init());

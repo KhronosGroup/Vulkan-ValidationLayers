@@ -402,7 +402,7 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
 }
 
 // Built-in can be both on the OpVariable or a inside a OpTypeStruct for Block built-in.
-bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_state, const StageInteraceVariable& variable,
+bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_state, const StageInterfaceVariable& variable,
                                   const AccessChainVariableMap& access_chain_map) {
     if (!variable.IsWrittenTo()) {
         return false;
@@ -411,33 +411,33 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
         return true;  // The built-in is on the Variable
     } else if (!variable.type_struct_info || variable.type_struct_info->decorations.member_decorations.empty()) {
         return false;
-    } else {
-        for (const auto& member : variable.type_struct_info->decorations.member_decorations) {
-            if (built_in != member.second.builtin) continue;
+    }
 
-            // We have confirmed the Block variable was written to, now need to confirm an access to.
-            // Because Built-in can't both be the input and output at the same time, we can confirm all accesses are either all
-            // loads or all stores.
-            const auto it = access_chain_map.find(variable.id);
-            if (it == access_chain_map.end()) {
-                return false;
-            }
-            const uint32_t member_index = member.first;
-            for (const auto access_chain_insn : it->second) {
-                if (access_chain_insn->Length() < 5) continue;
+    for (const auto& member : variable.type_struct_info->decorations.member_decorations) {
+        if (built_in != member.second.builtin) continue;
 
-                // We know for sure any built-in inside a block are only 1-element deep so can just check the "Indexes 0" operand
-                // Also no built-in we are dealing with are inside array-of-structs
-                const Instruction* value_def = module_state.GetConstantDef(access_chain_insn->Word(4));
-                if (value_def) {
-                    const uint32_t value = value_def->GetConstantValue();
-                    if (value == member_index) {
-                        return true;
-                    }
+        // We have confirmed the Block variable was written to, now need to confirm an access to.
+        // Because Built-in can't both be the input and output at the same time, we can confirm all accesses are either all
+        // loads or all stores.
+        const auto it = access_chain_map.find(variable.id);
+        if (it == access_chain_map.end()) {
+            return false;
+        }
+        const uint32_t member_index = member.first;
+        for (const auto access_chain_insn : it->second) {
+            if (access_chain_insn->Length() < 5) continue;
+
+            // We know for sure any built-in inside a block are only 1-element deep so can just check the "Indexes 0" operand
+            // Also no built-in we are dealing with are inside array-of-structs
+            const Instruction* value_def = module_state.GetConstantDef(access_chain_insn->Word(4));
+            if (value_def) {
+                const uint32_t value = value_def->GetConstantValue();
+                if (value == member_index) {
+                    return true;
                 }
             }
-            break;
         }
+        break;
     }
     return false;
 }
@@ -490,9 +490,9 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
     return result_ids;
 }
 
-std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state, const EntryPoint& entrypoint,
-                                                                          const VariableAccessMap& variable_access_map) {
-    std::vector<StageInteraceVariable> variables;
+std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state, const EntryPoint& entrypoint,
+                                                                           const VariableAccessMap& variable_access_map) {
+    std::vector<StageInterfaceVariable> variables;
 
     // spirv-val validates that any Input/Output used in the entrypoint is listed in as interface IDs
     uint32_t word = 3;  // operand Name operand starts
@@ -1597,7 +1597,7 @@ VariableBase::VariableBase(const Module& module_state, const Instruction& insn, 
     }
 }
 
-bool StageInteraceVariable::IsPerTaskNV(const StageInteraceVariable& variable) {
+bool StageInterfaceVariable::IsPerTaskNV(const StageInterfaceVariable& variable) {
     // will always be in a struct member
     if (variable.type_struct_info &&
         (variable.stage == VK_SHADER_STAGE_MESH_BIT_EXT || variable.stage == VK_SHADER_STAGE_TASK_BIT_EXT)) {
@@ -1608,7 +1608,7 @@ bool StageInteraceVariable::IsPerTaskNV(const StageInteraceVariable& variable) {
 
 // Some cases there is an array that is there to be "per-vertex" (or related)
 // We want to remove this as it is not part of the Location caluclation or true type of variable
-bool StageInteraceVariable::IsArrayInterface(const StageInteraceVariable& variable) {
+bool StageInterfaceVariable::IsArrayInterface(const StageInterfaceVariable& variable) {
     switch (variable.stage) {
         case VK_SHADER_STAGE_GEOMETRY_BIT:
             return variable.storage_class == spv::StorageClassInput;
@@ -1626,7 +1626,7 @@ bool StageInteraceVariable::IsArrayInterface(const StageInteraceVariable& variab
     return false;
 }
 
-const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& variable, const Module& module_state) {
+const Instruction& StageInterfaceVariable::FindBaseType(StageInterfaceVariable& variable, const Module& module_state) {
     // base type is always just grabbing the type of the OpTypePointer tied to the variables
     // This is allowed only here because interface variables are never Phyiscal pointers
     const Instruction* base_type = module_state.FindDef(module_state.FindDef(variable.type_id)->Word(3));
@@ -1646,7 +1646,7 @@ const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& va
     return *base_type;
 }
 
-bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, const Module& module_state) {
+bool StageInterfaceVariable::IsBuiltin(const StageInterfaceVariable& variable, const Module& module_state) {
     const auto decoration_set = module_state.GetDecorationSet(variable.id);
     // If OpTypeStruct, will grab it's own decoration set
     return decoration_set.HasAnyBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasAnyBuiltIn());
@@ -1689,7 +1689,7 @@ static uint32_t GetStructInterfaceSlots(const Module& module_state, std::shared_
     return locations_added;
 }
 
-std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInteraceVariable& variable, const Module& module_state) {
+std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterfaceVariable& variable, const Module& module_state) {
     std::vector<InterfaceSlot> slots;
     if (variable.is_builtin || variable.is_per_task_nv) {
         // SPV_NV_mesh_shader has a PerTaskNV which is not a builtin or interface
@@ -1784,7 +1784,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
     return slots;
 }
 
-std::vector<uint32_t> StageInteraceVariable::GetBuiltinBlock(const StageInteraceVariable& variable, const Module& module_state) {
+std::vector<uint32_t> StageInterfaceVariable::GetBuiltinBlock(const StageInterfaceVariable& variable, const Module& module_state) {
     // Built-in Location slot will always be [zero, size]
     std::vector<uint32_t> slots;
     // Only check block built-ins - many builtin are non-block and not used between shaders
@@ -1801,7 +1801,7 @@ std::vector<uint32_t> StageInteraceVariable::GetBuiltinBlock(const StageInterace
     return slots;
 }
 
-uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable& variable, const Module& module_state) {
+uint32_t StageInterfaceVariable::GetBuiltinComponents(const StageInterfaceVariable& variable, const Module& module_state) {
     uint32_t count = 0;
     if (!variable.is_builtin) {
         return count;
@@ -1817,8 +1817,8 @@ uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable
     return count;
 }
 
-StageInteraceVariable::StageInteraceVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
-                                             const VariableAccessMap& variable_access_map)
+StageInterfaceVariable::StageInterfaceVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
+                                               const VariableAccessMap& variable_access_map)
     : VariableBase(module_state, insn, stage, variable_access_map),
       is_patch(decorations.Has(DecorationSet::patch_bit)),
       is_per_vertex(decorations.Has(DecorationSet::per_vertex_bit)),
