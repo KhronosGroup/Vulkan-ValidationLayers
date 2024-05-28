@@ -454,10 +454,10 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
 
     // build up a mapping of which slots are used and then go through it and look for gaps
     struct ComponentInfo {
-        const spirv::StageInteraceVariable *output = nullptr;
+        const spirv::StageInterfaceVariable *output = nullptr;
         uint32_t output_type = 0;
         uint32_t output_width = 0;
-        const spirv::StageInteraceVariable *input = nullptr;
+        const spirv::StageInterfaceVariable *input = nullptr;
         uint32_t input_type = 0;
         uint32_t input_width = 0;
     };
@@ -646,7 +646,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
         const VkAttachmentDescription2 *attachment = nullptr;
-        const spirv::StageInteraceVariable *output = nullptr;
+        const spirv::StageInterfaceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -735,7 +735,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const spirv:
     bool skip = false;
 
     struct Attachment {
-        const spirv::StageInteraceVariable *output = nullptr;
+        const spirv::StageInterfaceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 

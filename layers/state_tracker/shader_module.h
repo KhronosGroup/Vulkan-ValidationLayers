@@ -319,7 +319,7 @@ struct VariableBase {
 //
 // These include both BuiltIns and User Defined, while there are difference in member variables, the variables are needed for the
 // common logic so its easier using the same object in the end
-struct StageInteraceVariable : public VariableBase {
+struct StageInterfaceVariable : public VariableBase {
     // Only will be true in BuiltIns
     const bool is_patch;
     const bool is_per_vertex;   // VK_KHR_fragment_shader_barycentric
@@ -336,17 +336,17 @@ struct StageInteraceVariable : public VariableBase {
     const std::vector<uint32_t> builtin_block;
     uint32_t total_builtin_components = 0;
 
-    StageInteraceVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                          const VariableAccessMap &variable_access_map);
+    StageInterfaceVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
+                           const VariableAccessMap &variable_access_map);
 
   protected:
-    static bool IsPerTaskNV(const StageInteraceVariable &variable);
-    static bool IsArrayInterface(const StageInteraceVariable &variable);
-    static const Instruction &FindBaseType(StageInteraceVariable &variable, const Module &module_state);
-    static bool IsBuiltin(const StageInteraceVariable &variable, const Module &module_state);
-    static std::vector<InterfaceSlot> GetInterfaceSlots(StageInteraceVariable &variable, const Module &module_state);
-    static std::vector<uint32_t> GetBuiltinBlock(const StageInteraceVariable &variable, const Module &module_state);
-    static uint32_t GetBuiltinComponents(const StageInteraceVariable &variable, const Module &module_state);
+    static bool IsPerTaskNV(const StageInterfaceVariable &variable);
+    static bool IsArrayInterface(const StageInterfaceVariable &variable);
+    static const Instruction &FindBaseType(StageInterfaceVariable &variable, const Module &module_state);
+    static bool IsBuiltin(const StageInterfaceVariable &variable, const Module &module_state);
+    static std::vector<InterfaceSlot> GetInterfaceSlots(StageInterfaceVariable &variable, const Module &module_state);
+    static std::vector<uint32_t> GetBuiltinBlock(const StageInterfaceVariable &variable, const Module &module_state);
+    static uint32_t GetBuiltinComponents(const StageInterfaceVariable &variable, const Module &module_state);
 };
 
 // vkspec.html#interfaces-resources describes 'Shader Resource Interface'
@@ -409,7 +409,7 @@ struct ResourceInterfaceVariable : public VariableBase {
 
         // If a variable is used as a function arguement, but never actually used, it will be found in EntryPoint::accessible_ids so
         // we need to have a dedicated mark if it was accessed.
-        // We use this for variable hasing, but the VariableBase has the helper functions to read this value.
+        // We use this for variable hashing, but the VariableBase has the helper functions to read this value.
         uint32_t access_mask{AccessBit::empty};
     } info;
     uint64_t descriptor_hash = 0;
@@ -476,20 +476,20 @@ struct EntryPoint {
     // only one Push Constant block is allowed per entry point
     std::shared_ptr<const PushConstantVariable> push_constant_variable;
     const std::vector<ResourceInterfaceVariable> resource_interface_variables;
-    const std::vector<StageInteraceVariable> stage_interface_variables;
+    const std::vector<StageInterfaceVariable> stage_interface_variables;
     // Easier to lookup without having to check for the is_builtin bool
     // "Built-in interface variables" - vkspec.html#interfaces-iointerfaces-builtin
-    std::vector<const StageInteraceVariable *> built_in_variables;
+    std::vector<const StageInterfaceVariable *> built_in_variables;
     // "User-defined Variable Interface" - vkspec.html#interfaces-iointerfaces-user
-    std::vector<const StageInteraceVariable *> user_defined_interface_variables;
+    std::vector<const StageInterfaceVariable *> user_defined_interface_variables;
 
     // Lookup map from Interface slot to the variable in that spot
     // spirv-val guarantees no overlap so 2 variables won't have same slot
-    vvl::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> input_interface_slots;
-    vvl::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> output_interface_slots;
+    vvl::unordered_map<InterfaceSlot, const StageInterfaceVariable *, InterfaceSlot::Hash> input_interface_slots;
+    vvl::unordered_map<InterfaceSlot, const StageInterfaceVariable *, InterfaceSlot::Hash> output_interface_slots;
     // Uesd for limit check
-    const StageInteraceVariable *max_input_slot_variable = nullptr;
-    const StageInteraceVariable *max_output_slot_variable = nullptr;
+    const StageInterfaceVariable *max_input_slot_variable = nullptr;
+    const StageInterfaceVariable *max_output_slot_variable = nullptr;
     const InterfaceSlot *max_input_slot = nullptr;
     const InterfaceSlot *max_output_slot = nullptr;
     uint32_t builtin_input_components = 0;
@@ -510,14 +510,14 @@ struct EntryPoint {
 
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
-    static std::vector<StageInteraceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint,
-                                                                         const VariableAccessMap &variable_access_map);
+    static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint,
+                                                                          const VariableAccessMap &variable_access_map);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
                                                                                 const ImageAccessMap &image_access_map,
                                                                                 const AccessChainVariableMap &access_chain_map,
                                                                                 const VariableAccessMap &variable_access_map);
-    static bool IsBuiltInWritten(spv::BuiltIn built_in, const Module &module_state, const StageInteraceVariable &variable,
-                          const AccessChainVariableMap &access_chain_map);
+    static bool IsBuiltInWritten(spv::BuiltIn built_in, const Module &module_state, const StageInterfaceVariable &variable,
+                                 const AccessChainVariableMap &access_chain_map);
 };
 
 // Info to capture while parsing the SPIR-V, but will only be used by ValidateSpirvStateless and don't need to save after
