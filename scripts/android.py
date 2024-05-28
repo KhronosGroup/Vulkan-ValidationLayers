@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 Valve Corporation
-# Copyright (c) 2023 LunarG, Inc.
+# Copyright (c) 2023-2024 Valve Corporation
+# Copyright (c) 2023-2024 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,7 +46,8 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
 
     android_manifest = get_android_manifest()
 
-    android_jar = f"{SDK_ROOT}/platforms/android-26/android.jar"
+    # 33 is matching the targetSdkVersion
+    android_jar = f"{SDK_ROOT}/platforms/android-33/android.jar"
     if not os.path.isfile(android_jar):
         print(f"Unable to find {android_jar}!")
         sys.exit(-1)
