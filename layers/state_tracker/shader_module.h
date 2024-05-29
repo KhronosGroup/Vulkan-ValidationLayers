@@ -186,22 +186,23 @@ struct TypeStructInfo {
     TypeStructSize GetSize(const Module &module_state) const;
 };
 
-enum AccessBit {
-    empty = 0,
-    read = 1 << 0,
-    write = 1 << 1,
-    atomic_read = 1 << 2,
-    atomic_write = 1 << 3,
-    // For Images, we might only want to know if the read/write came from an image operation
-    // (a storage image is always "loaded" before it is written, but that is not a image read, just a memory read)
-    image_read = 1 << 4,
-    image_write = 1 << 5,
+namespace AccessBit {
+const uint32_t empty = 0;
+const uint32_t read = 1 << 0;
+const uint32_t write = 1 << 1;
+const uint32_t atomic_read = 1 << 2;
+const uint32_t atomic_write = 1 << 3;
+// For Images, we might only want to know if the read/write came from an image operation
+// (a storage image is always "loaded" before it is written, but that is not a image read, just a memory read)
+const uint32_t image_read = 1 << 4;
+const uint32_t image_write = 1 << 5;
 
-    atomic_mask = atomic_read | atomic_write,
-    image_mask = image_read | image_write,
-    read_mask = read | atomic_read | image_read,
-    write_mask = write | atomic_write | image_write,
-};
+constexpr uint32_t atomic_mask = atomic_read | atomic_write;
+constexpr uint32_t image_mask = image_read | image_write;
+constexpr uint32_t read_mask = read | atomic_read | image_read;
+constexpr uint32_t write_mask = write | atomic_write | image_write;
+}  // namespace AccessBit
+
 // Mapping of < variable ID, AccessBit >
 using VariableAccessMap = vvl::unordered_map<uint32_t, uint32_t>;
 
