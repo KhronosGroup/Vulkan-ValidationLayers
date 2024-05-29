@@ -267,7 +267,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             skip |= ValidateStageMaskHost(objlist, stage_mask_loc, submit.pWaitDstStageMask[i]);
         }
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) continue;
+        ASSERT_AND_CONTINUE(semaphore_state);
 
         auto wait_semaphore_loc = submit_loc.dot(Field::pWaitSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
@@ -297,7 +297,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) continue;
+        ASSERT_AND_CONTINUE(semaphore_state);
 
         auto signal_semaphore_loc = submit_loc.dot(Field::pSignalSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
@@ -337,7 +337,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         skip |= ValidateStageMaskHost(objlist, wait_info_loc.dot(Field::stageMask), wait_info.stageMask);
 
         auto semaphore_state = Get<vvl::Semaphore>(wait_info.semaphore);
-        if (!semaphore_state) continue;
+        ASSERT_AND_CONTINUE(semaphore_state);
 
         skip |= state.ValidateWaitSemaphore(wait_info_loc.dot(Field::semaphore), *semaphore_state, wait_info.value);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
@@ -376,7 +376,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         const LogObjectList objlist(semaphore, state.queue);
         // NOTE: there are no stage masks in bind sparse submissions
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) continue;
+        ASSERT_AND_CONTINUE(semaphore_state);
 
         auto wait_semaphore_loc = submit_loc.dot(Field::pWaitSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
@@ -406,7 +406,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (!semaphore_state) continue;
+        ASSERT_AND_CONTINUE(semaphore_state);
 
         auto signal_semaphore_loc = submit_loc.dot(Field::pSignalSemaphores, i);
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
@@ -535,7 +535,8 @@ bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphor
 
     for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
         auto semaphore_state = Get<vvl::Semaphore>(pWaitInfo->pSemaphores[i]);
-        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
+        ASSERT_AND_CONTINUE(semaphore_state);
+        if (semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |= LogError("VUID-VkSemaphoreWaitInfo-pSemaphores-03256", pWaitInfo->pSemaphores[i],
                              error_obj.location.dot(Field::pWaitInfo).dot(Field::pSemaphores, i), "%s was created with %s",
                              FormatHandle(pWaitInfo->pSemaphores[i]).c_str(), string_VkSemaphoreType(semaphore_state->type));
@@ -547,10 +548,10 @@ bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphor
 
 bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator,
                                              const ErrorObject &error_obj) const {
-    auto fence_node = Get<vvl::Fence>(fence);
     bool skip = false;
-    if (fence_node && fence_node->Scope() == vvl::Fence::kInternal && fence_node->State() == vvl::Fence::kInflight) {
-        skip |= ValidateObjectNotInUse(fence_node.get(), error_obj.location.dot(Field::fence), "VUID-vkDestroyFence-fence-01120");
+    auto fence_state = Get<vvl::Fence>(fence);
+    if (fence_state && fence_state->Scope() == vvl::Fence::kInternal && fence_state->State() == vvl::Fence::kInflight) {
+        skip |= ValidateObjectNotInUse(fence_state.get(), error_obj.location.dot(Field::fence), "VUID-vkDestroyFence-fence-01120");
     }
     return skip;
 }
@@ -560,7 +561,8 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; ++i) {
         auto fence_state = Get<vvl::Fence>(pFences[i]);
-        if (fence_state && fence_state->Scope() == vvl::Fence::kInternal && fence_state->State() == vvl::Fence::kInflight) {
+        ASSERT_AND_CONTINUE(fence_state);
+        if (fence_state->Scope() == vvl::Fence::kInternal && fence_state->State() == vvl::Fence::kInflight) {
             skip |= LogError("VUID-vkResetFences-pFences-01123", pFences[i], error_obj.location.dot(Field::pFences, i),
                              "(%s) is in use.", FormatHandle(pFences[i]).c_str());
         }
@@ -634,7 +636,6 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
 bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                               const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     const LogObjectList objlist(commandBuffer);
     const Location stage_mask_loc = error_obj.location.dot(Field::stageMask);
 
@@ -648,7 +649,6 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
 bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                                const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     const LogObjectList objlist(commandBuffer);
     const Location stage_mask_loc = error_obj.location.dot(Field::stageMask);
 
@@ -834,8 +834,8 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                              img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         }
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
-        if (VK_NULL_HANDLE != cb_state.activeFramebuffer) {
-            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, cb_state.activeFramebuffer.get(), state.active_subpass,
+        if (cb_state.activeFramebuffer) {
+            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.activeFramebuffer, state.active_subpass,
                                                    sub_desc, state.rp_handle, img_barrier);
         }
     }
@@ -896,8 +896,8 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                              img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         }
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
-        if (VK_NULL_HANDLE != cb_state.activeFramebuffer) {
-            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, cb_state.activeFramebuffer.get(), state.active_subpass,
+        if (cb_state.activeFramebuffer) {
+            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.activeFramebuffer, state.active_subpass,
                                                    sub_desc, state.rp_handle, img_barrier);
         }
     }
@@ -1087,7 +1087,6 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     auto queue_flags = cb_state->GetQueueFlags();
     const LogObjectList objlist(commandBuffer);
@@ -1125,7 +1124,6 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
 bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                const VkDependencyInfo *pDependencyInfos, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     bool skip = false;
     if (!enabled_features.synchronization2) {
@@ -1220,7 +1218,6 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
     const VkImageMemoryBarrier *pImageMemoryBarriers, const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     const LogObjectList objlist(commandBuffer);
     auto queue_flags = cb_state->GetQueueFlags();
 
@@ -1254,7 +1251,6 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
                                                     const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     const LogObjectList objlist(commandBuffer);
 
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
@@ -1358,7 +1354,7 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
     bool skip = false;
     const Location signal_loc = error_obj.location.dot(Field::pSignalInfo);
     auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
-    if (!semaphore_state) return skip;
+    ASSERT_AND_RETURN_SKIP(semaphore_state);
 
     if (semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
         skip |= LogError("VUID-VkSemaphoreSignalInfo-semaphore-03257", pSignalInfo->semaphore, signal_loc.dot(Field::semaphore),
@@ -1416,7 +1412,8 @@ bool CoreChecks::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSema
                                                          const ErrorObject &error_obj) const {
     bool skip = false;
     auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-    if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
+    ASSERT_AND_RETURN_SKIP(semaphore_state);
+    if (semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
         skip |= LogError("VUID-vkGetSemaphoreCounterValue-semaphore-03255", semaphore, error_obj.location.dot(Field::semaphore),
                          "%s was created with %s.", FormatHandle(semaphore).c_str(), string_VkSemaphoreType(semaphore_state->type));
     }
@@ -1580,7 +1577,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
 
     {
         auto image_state = Get<vvl::Image>(img_barrier.image);
-        if (!image_state) return skip;
+        ASSERT_AND_RETURN_SKIP(image_state);
 
         auto image_loc = barrier_loc.dot(Field::image);
 
@@ -1684,7 +1681,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
                     continue;
                 }
                 const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
-                if (!image_view_state) continue;
+                ASSERT_AND_CONTINUE(image_view_state);
                 const auto &image_view_image_state = image_view_state->image_state;
 
                 if (img_barrier_image == image_view_image_state->VkHandle()) {
@@ -1733,15 +1730,13 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
 
 // Verify image barrier image state and that the image is consistent with FB image
 bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, const vvl::CommandBuffer &cb_state,
-                                                const vvl::Framebuffer *framebuffer, uint32_t active_subpass,
+                                                const vvl::Framebuffer &fb_state, uint32_t active_subpass,
                                                 const vku::safe_VkSubpassDescription2 &sub_desc, const VkRenderPass rp_handle,
                                                 const ImageBarrier &img_barrier, const vvl::CommandBuffer *primary_cb_state) const {
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
     bool skip = false;
-    const auto *fb_state = framebuffer;
-    assert(fb_state);
     const auto img_bar_image = img_barrier.image;
     bool image_match = false;
     bool sub_image_found = false;  // Do we find a corresponding subpass description
@@ -1750,7 +1745,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
     uint64_t image_ahb_format = 0;
     const Location image_loc = barrier_loc.dot(Field::image);
     // Verify that a framebuffer image matches barrier image
-    const auto attachment_count = fb_state->create_info.attachmentCount;
+    const auto attachment_count = fb_state.create_info.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
         auto view_state = primary_cb_state ? primary_cb_state->GetActiveAttachmentImageViewState(attachment)
                                            : cb_state.GetActiveAttachmentImageViewState(attachment);
@@ -1812,8 +1807,8 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
 
     } else {  // !image_match
         const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassMismatch);
-        skip |= LogError(vuid, fb_state->Handle(), image_loc, "(%s) does not match an image from the current %s.",
-                         FormatHandle(img_bar_image).c_str(), FormatHandle(fb_state->Handle()).c_str());
+        skip |= LogError(vuid, fb_state.Handle(), image_loc, "(%s) does not match an image from the current %s.",
+                         FormatHandle(img_bar_image).c_str(), FormatHandle(fb_state.Handle()).c_str());
     }
     if (img_barrier.oldLayout != img_barrier.newLayout) {
         const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassLayoutChange);
@@ -1850,7 +1845,8 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
             cb_state.cmd_execute_commands_functions.emplace_back(
                 [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
                     const vvl::CommandBuffer &secondary_cb, const vvl::CommandBuffer *primary_cb, const vvl::Framebuffer *fb) {
-                    return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), secondary_cb, fb, active_subpass, sub_desc,
+                    if (!fb) return false;
+                    return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), secondary_cb, *fb, active_subpass, sub_desc,
                                                                     render_pass, barrier, primary_cb);
                 });
         }

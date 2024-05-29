@@ -1276,12 +1276,12 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
     if (const auto dedicated = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext)) {
         if (dedicated->buffer) {
             auto buffer_state = Get<vvl::Buffer>(dedicated->buffer);
-            if (!buffer_state) return;
+            ASSERT_AND_RETURN(buffer_state);
 
             dedicated_binding.emplace(dedicated->buffer, buffer_state->create_info);
         } else if (dedicated->image) {
             auto image_state = Get<vvl::Image>(dedicated->image);
-            if (!image_state) return;
+            ASSERT_AND_RETURN(image_state);
 
             dedicated_binding.emplace(dedicated->image, image_state->create_info);
         }
@@ -1736,9 +1736,8 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineLayout(VkDevice device,
 void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler,
                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     if (!sampler) return;
-    auto sampler_state = Get<vvl::Sampler>(sampler);
     // Any bound cmd buffers are now invalid
-    if (sampler_state) {
+    if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
         if (sampler_state->create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
             sampler_state->create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
             custom_border_color_sampler_count--;
@@ -2214,15 +2213,11 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
                                                              const VkCommandBufferBeginInfo *pBeginInfo,
                                                              const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) return;
-
     cb_state->Begin(pBeginInfo);
 }
 
 void ValidationStateTracker::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) return;
-
     cb_state->End(record_obj.result);
 }
 
@@ -2242,7 +2237,6 @@ void ValidationStateTracker::PostCallRecordResetCommandBuffer(VkCommandBuffer co
 void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                           VkPipeline pipeline, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     cb_state->RecordCmd(record_obj.location.function);
 
     auto pipe_state = Get<vvl::Pipeline>(pipeline);
@@ -2321,7 +2315,6 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 void ValidationStateTracker::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                            VkPipeline pipeline, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     auto pipe_state = Get<vvl::Pipeline>(pipeline);
 
     if (enabled_features.variableMultisampleRate == VK_FALSE) {
@@ -3187,7 +3180,7 @@ void ValidationStateTracker::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     if (VK_SUCCESS != record_obj.result) return;
 
     auto vs_state = Get<vvl::VideoSession>(videoSession);
-    assert(vs_state);
+    ASSERT_AND_RETURN(vs_state);
 
     if (pMemoryRequirements != nullptr) {
         if (*pMemoryRequirementsCount > vs_state->memory_bindings_queried) {
@@ -3205,7 +3198,7 @@ void ValidationStateTracker::PostCallRecordBindVideoSessionMemoryKHR(VkDevice de
     if (VK_SUCCESS != record_obj.result) return;
 
     auto vs_state = Get<vvl::VideoSession>(videoSession);
-    assert(vs_state);
+    ASSERT_AND_RETURN(vs_state);
 
     for (uint32_t i = 0; i < bindSessionMemoryInfoCount; ++i) {
         vs_state->BindMemoryBindingIndex(pBindSessionMemoryInfos[i].memoryBindIndex);
@@ -3928,7 +3921,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
                                                                                   VkQueueFamilyProperties *pQueueFamilyProperties,
                                                                                   const RecordObject &record_obj) {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    assert(pd_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state.get(), *pQueueFamilyPropertyCount);
 }
 
@@ -3937,7 +3929,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
                                                                                    VkQueueFamilyProperties2 *pQueueFamilyProperties,
                                                                                    const RecordObject &record_obj) {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    assert(pd_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state.get(), *pQueueFamilyPropertyCount);
 }
 
@@ -4103,7 +4094,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query) &&
                vku::FindStructInPNextChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
         auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-        assert(pd_state);
         pd_state->surfaceless_query_state.capabilities = vku::safe_VkSurfaceCapabilities2KHR(pSurfaceCapabilities);
     }
 }
@@ -4145,7 +4135,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesK
             surface_state->SetPresentModes(physicalDevice, vvl::span<const VkPresentModeKHR>(pPresentModes, *pPresentModeCount));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-            assert(pd_state);
             pd_state->surfaceless_query_state.present_modes =
                 std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount);
         }
@@ -4168,7 +4157,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(Vk
             surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-            assert(pd_state);
             pd_state->surfaceless_query_state.formats = std::move(formats2);
         }
     }
@@ -4191,7 +4179,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
             surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-            assert(pd_state);
             pd_state->surfaceless_query_state.formats.clear();
             pd_state->surfaceless_query_state.formats.reserve(*pSurfaceFormatCount);
             for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; ++surface_format_index) {
@@ -4242,7 +4229,6 @@ void ValidationStateTracker::RecordEnumeratePhysicalDeviceQueueFamilyPerformance
     if (NULL == pCounters) return;
 
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    assert(pd_state);
 
     std::unique_ptr<QueueFamilyPerfCounters> queue_family_counters(new QueueFamilyPerfCounters());
     queue_family_counters->counters.resize(*pCounterCount);
@@ -4494,7 +4480,7 @@ void ValidationStateTracker::PostCallRecordResetQueryPool(VkDevice device, VkQue
 
     // Do nothing if the query pool has been destroyed.
     auto query_pool_state = Get<vvl::QueryPool>(queryPool);
-    if (!query_pool_state) return;
+    ASSERT_AND_RETURN(query_pool_state);
 
     // Reset the state of existing entries.
     const uint32_t max_query_count = std::min(queryCount, query_pool_state->create_info.queryCount - firstQuery);

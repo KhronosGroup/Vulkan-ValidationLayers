@@ -30,7 +30,7 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
     if (skip) return skip;
 
     const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
-    if (!pool_state) return skip;
+    ASSERT_AND_RETURN_SKIP(pool_state);
 
     // if the number of freed sets > 0, it implies they could be recycled instead if desirable
     // this warning is specific to Arm

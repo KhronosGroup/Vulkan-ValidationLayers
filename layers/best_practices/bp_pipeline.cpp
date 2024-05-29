@@ -435,11 +435,11 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
                                                  VkPipeline pipeline, const RecordObject& record_obj) {
     StateTracker::PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
 
-    auto pipeline_info = Get<vvl::Pipeline>(pipeline);
-    if (!pipeline_info) return;
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
     if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && VendorCheckEnabled(kBPVendorNVIDIA)) {
+        auto pipeline_info = Get<vvl::Pipeline>(pipeline);
+        ASSERT_AND_RETURN(pipeline_info);
         using TessGeometryMeshState = bp_state::CommandBufferStateNV::TessGeometryMesh::State;
         auto& tgm = cb_state->nv.tess_geometry_mesh;
 
@@ -490,7 +490,6 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
         // check for depth/blend state tracking
         if (auto pipeline_state = Get<bp_state::Pipeline>(pipeline)) {
             auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-            assert(cb_state);
             auto& render_pass_state = cb_state->render_pass_state;
 
             render_pass_state.nextDrawTouchesAttachments = pipeline_state->access_framebuffer_attachments;

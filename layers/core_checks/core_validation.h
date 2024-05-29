@@ -151,7 +151,7 @@ class CoreChecks : public ValidationStateTracker {
     void EnqueueSubmitTimeValidateImageBarrierAttachment(const Location& loc, vvl::CommandBuffer& cb_state,
                                                          const ImageBarrier& barrier);
     bool ValidateImageBarrierAttachment(const Location& barrier_loc, vvl::CommandBuffer const& cb_state,
-                                        const vvl::Framebuffer* framebuffer, uint32_t active_subpass,
+                                        const vvl::Framebuffer& fb_state, uint32_t active_subpass,
                                         const vku::safe_VkSubpassDescription2& sub_desc, const VkRenderPass rp_handle,
                                         const ImageBarrier& img_barrier,
                                         const vvl::CommandBuffer* primary_cb_state = nullptr) const;

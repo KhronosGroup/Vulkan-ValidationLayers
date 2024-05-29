@@ -55,6 +55,33 @@
 #endif
 #endif
 
+// There are many times we want to assert, but also it is highly important to not crash for release builds.
+// This Macro also makes it more obvious if we are returning early because of a known situation or if we are just guarding against
+// something wrong actually happening.
+#define ASSERT_AND_RETURN(cond) \
+    do {                        \
+        if (!(cond)) {          \
+            assert(false);      \
+            return;             \
+        }                       \
+    } while (0)
+
+#define ASSERT_AND_RETURN_SKIP(cond) \
+    do {                             \
+        if (!(cond)) {               \
+            assert(false);           \
+            return skip;             \
+        }                            \
+    } while (0)
+
+#define ASSERT_AND_CONTINUE(cond) \
+    do {                          \
+        if (!(cond)) {            \
+            assert(false);        \
+            continue;             \
+        }                         \
+    } while (0)
+
 static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
     VkExtent3D d3 = {d2.width, d2.height, 1};
     return d3;

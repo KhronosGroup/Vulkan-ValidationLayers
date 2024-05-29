@@ -67,7 +67,6 @@ bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const Loca
 
 void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count) {
     auto cb_state = GetWrite<bp_state::CommandBuffer>(cmd_buffer);
-    assert(cb_state);
     if (VendorCheckEnabled(kBPVendorArm)) {
         RecordCmdDrawTypeArm(*cb_state, draw_count);
     }
@@ -195,7 +194,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
     const auto ib_state = Get<vvl::Buffer>(cmd_state.index_buffer_binding.buffer);
-    if (!ib_state) return skip;
+    ASSERT_AND_RETURN_SKIP(ib_state);
 
     const VkIndexType ib_type = cmd_state.index_buffer_binding.index_type;
     const auto& ib_mem_state = *ib_state->MemState();
@@ -205,7 +204,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto& last_bound = cmd_state.lastBound[lv_bind_point];
     const auto* pipeline_state = last_bound.pipeline_state;
-    if (!pipeline_state) return skip;
+    ASSERT_AND_RETURN_SKIP(pipeline_state);
 
     const auto* ia_state = pipeline_state->InputAssemblyState();
     if (ia_state) {

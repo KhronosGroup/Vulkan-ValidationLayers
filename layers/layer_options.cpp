@@ -122,7 +122,7 @@ void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDis
             disable_data[sync_validation_queue_submit] = true;
             break;
         default:
-            assert(true);
+            assert(false);
     }
 }
 
@@ -181,7 +181,7 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
             enable_data[vendor_specific_nvidia] = true;
             break;
         default:
-            assert(true);
+            assert(false);
     }
 }
 

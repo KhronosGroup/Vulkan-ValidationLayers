@@ -80,7 +80,7 @@ void vvl::DescriptorPool::Free(uint32_t count, const VkDescriptorSet *descriptor
     for (uint32_t i = 0; i < count; ++i) {
         if (descriptor_sets[i] != VK_NULL_HANDLE) {
             auto iter = sets_.find(descriptor_sets[i]);
-            assert(iter != sets_.end());
+            ASSERT_AND_CONTINUE(iter != sets_.end());
             auto *set_state = iter->second;
             const auto &layout = set_state->Layout();
             uint32_t type_index = 0, descriptor_count = 0;
@@ -345,7 +345,6 @@ const vvl::IndexRange &vvl::DescriptorSetLayoutDef::GetGlobalIndexRangeFromBindi
 // Move to next valid binding having a non-zero binding count
 uint32_t vvl::DescriptorSetLayoutDef::GetNextValidBinding(const uint32_t binding) const {
     auto it = non_empty_bindings_.upper_bound(binding);
-    assert(it != non_empty_bindings_.cend());
     if (it != non_empty_bindings_.cend()) return *it;
     return GetMaxBinding() + 1;
 }
@@ -425,7 +424,8 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
     auto free_binding = bindings_store_.data();
     for (uint32_t i = 0; i < binding_count; ++i) {
         auto create_info = layout_->GetDescriptorSetLayoutBindingPtrFromIndex(i);
-        assert(create_info);
+        ASSERT_AND_CONTINUE(create_info);
+
         uint32_t descriptor_count = create_info->descriptorCount;
         auto flags = layout_->GetDescriptorBindingFlagsFromIndex(i);
         if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
@@ -499,7 +499,7 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
                 break;
             }
             default:
-                assert(0);  // Bad descriptor type specified
+                assert(false);  // Bad descriptor type specified
                 break;
         }
     }
@@ -544,7 +544,7 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
     // Perform update on a per-binding basis as consecutive updates roll over to next binding
     auto descriptors_remaining = update.descriptorCount;
     auto iter = FindDescriptor(update.dstBinding, update.dstArrayElement);
-    assert(!iter.AtEnd());
+    ASSERT_AND_RETURN(!iter.AtEnd());
     auto &orig_binding = iter.CurrentBinding();
 
     // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
@@ -612,7 +612,8 @@ void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, vv
     // resources
     for (const auto &binding_req_pair : binding_req_map) {
         auto *binding = GetBinding(binding_req_pair.first);
-        assert(binding);
+        ASSERT_AND_CONTINUE(binding);
+
         // core validation doesn't handle descriptor indexing, that is only done by GPU-AV
         if (SkipBinding(*binding, binding_req_pair.second.variable->is_dynamic_accessed)) {
             continue;

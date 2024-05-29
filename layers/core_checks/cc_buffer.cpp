@@ -449,7 +449,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto buffer_state = Get<vvl::Buffer>(dstBuffer);
-    if (!cb_state_ptr || !buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(cb_state_ptr && buffer_state);
 
     const LogObjectList objlist(commandBuffer, dstBuffer);
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;

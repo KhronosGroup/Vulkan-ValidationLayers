@@ -145,7 +145,7 @@ class BufferAddressValidation {
 template <size_t ChecksCount>
 bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept {
     for (const auto& buffer : buffer_list) {
-        assert(buffer);
+        ASSERT_AND_CONTINUE(buffer);
 
         bool valid_buffer_found = true;
         for (const auto& vuidAndValidation : vuidsAndValidationFunctions) {
@@ -163,7 +163,7 @@ bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer*
 template <size_t ChecksCount>
 bool BufferAddressValidation<ChecksCount>::HasInvalidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept {
     for (const auto& buffer : buffer_list) {
-        assert(buffer);
+        ASSERT_AND_CONTINUE(buffer);
 
         for (const auto& vuidAndValidation : vuidsAndValidationFunctions) {
             if (!vuidAndValidation.validation_func(buffer, nullptr)) {
@@ -198,7 +198,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
 
     // For each buffer, and for each violated VUID, build an error message
     for (const auto& buffer : buffer_list) {
-        assert(buffer);
+        ASSERT_AND_CONTINUE(buffer);
 
         for (size_t i = 0; i < ChecksCount; ++i) {
             [[maybe_unused]] const auto& [vuid, validation_func, error_msg_header_suffix_func] = vuidsAndValidationFunctions[i];

@@ -430,7 +430,6 @@ bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer comma
     bool skip = false;
 
     const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && barrier.newLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
@@ -460,13 +459,12 @@ static void ForEachSubresource(const vvl::Image& image, const VkImageSubresource
 template <typename ImageMemoryBarrier>
 void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) {
     auto cb_state = Get<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     // Is a queue ownership acquisition barrier
     if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
         barrier.dstQueueFamilyIndex == cb_state->command_pool->queueFamilyIndex) {
         auto image = Get<bp_state::Image>(barrier.image);
-        if (!image) return;
+        ASSERT_AND_RETURN(image);
         auto subresource_range = barrier.subresourceRange;
         cb_state->queue_submit_functions.push_back([image, subresource_range](const ValidationStateTracker& vst,
                                                                               const vvl::Queue& qs,

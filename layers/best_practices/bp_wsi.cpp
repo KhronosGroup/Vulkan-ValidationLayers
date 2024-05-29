@@ -71,7 +71,7 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
     bool skip = false;
 
     auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
-    if (!swapchain_state || !pSwapchainImages) return skip;
+    ASSERT_AND_RETURN_SKIP(swapchain_state);
 
     // Compare the preliminary value of *pSwapchainImageCount with the value this time:
     if (swapchain_state->vkGetSwapchainImagesKHRState == UNCALLED) {

@@ -781,7 +781,7 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     auto cp_state = Get<vvl::CommandPool>(commandPool);
-    if (!cp_state) return skip;
+    ASSERT_AND_RETURN_SKIP(cp_state);
     // Verify that command buffers in pool are complete (not in-flight)
     for (auto &entry : cp_state->commandBuffers) {
         auto cb_state = entry.second;

@@ -116,7 +116,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
                                             const RecordObject& record_obj) {
     if (memory != VK_NULL_HANDLE && VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto mem_info = Get<vvl::DeviceMemory>(memory);
-        if (!mem_info) return;
+        ASSERT_AND_RETURN(mem_info);
 
         // Exclude memory free events on dedicated allocations, or imported/exported allocations.
         if (!mem_info->IsDedicatedBuffer() && !mem_info->IsDedicatedImage() && !mem_info->IsExport() && !mem_info->IsImport()) {
@@ -139,7 +139,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
     if (memory == VK_NULL_HANDLE) return skip;
 
     auto mem_info = Get<vvl::DeviceMemory>(memory);
-    if (!mem_info) return skip;
+    ASSERT_AND_RETURN_SKIP(mem_info);
 
     for (const auto& item : mem_info->ObjectBindings()) {
         const auto& obj = item.first;
@@ -155,7 +155,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
     bool skip = false;
     auto buffer_state = Get<vvl::Buffer>(buffer);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
-    if (!mem_state || !buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(mem_state && buffer_state);
 
     if (mem_state->allocate_info.allocationSize == buffer_state->create_info.size &&
         mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
@@ -203,7 +203,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
-    if (!mem_state || !image_state) return skip;
+    ASSERT_AND_RETURN_SKIP(mem_state && image_state);
 
     if (mem_state->allocate_info.allocationSize == image_state->requirements[0].size &&
         mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {

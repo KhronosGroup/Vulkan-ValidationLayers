@@ -219,7 +219,7 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const vvl::Pipeline &pipeli
         // Validate color attachments
         const uint32_t subpass = pipeline.Subpass();
         auto render_pass = Get<vvl::RenderPass>(pipeline.GraphicsCreateInfo().renderPass);
-        if (!render_pass) return skip;
+        ASSERT_AND_RETURN_SKIP(render_pass);
         const bool ignore_color_blend_state =
             raster_state_ci->rasterizerDiscardEnable ||
             (pipeline.rendering_create_info ? (pipeline.rendering_create_info->colorAttachmentCount == 0)
@@ -3322,7 +3322,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
     const auto rp_state = pipeline.RenderPassState();
-    if (!rp_state) return skip;
+    ASSERT_AND_RETURN_SKIP(rp_state);
     if (rp_state->VkHandle() != VK_NULL_HANDLE) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
         skip |= LogError(vuid.dynamic_rendering_06198, objlist, vuid.loc(),
@@ -3433,7 +3433,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const La
         if (enabled_features.dynamicRenderingUnusedAttachments) {
             if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
                 auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-                if (!view_state) continue;
+                ASSERT_AND_CONTINUE(view_state);
                 if ((pipeline_rendering_ci.colorAttachmentCount > i) && (view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                     (pipeline_rendering_ci.pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED) &&
                     (view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i])) {
@@ -3461,7 +3461,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const La
                 }
             } else {
                 auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-                if (!view_state) continue;
+                ASSERT_AND_CONTINUE(view_state);
                 if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
                     view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
@@ -3730,9 +3730,9 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
                 continue;
             }
             auto color_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-            if (!color_view_state) continue;
+            ASSERT_AND_CONTINUE(color_view_state);
             auto color_image_samples = Get<vvl::Image>(color_view_state->create_info.image)->create_info.samples;
-            if (!color_image_samples) continue;
+            ASSERT_AND_CONTINUE(color_image_samples);
 
             if (p_attachment_sample_count_info &&
                 (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
@@ -3748,9 +3748,9 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
 
         if (rendering_info.pDepthAttachment != nullptr) {
             auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-            if (!depth_view_state) return skip;
+            ASSERT_AND_RETURN_SKIP(depth_view_state);
             auto depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
-            if (!depth_image_samples) return skip;
+            ASSERT_AND_RETURN_SKIP(depth_image_samples);
 
             if (p_attachment_sample_count_info) {
                 if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -3767,9 +3767,9 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
 
         if (rendering_info.pStencilAttachment != nullptr) {
             auto stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-            if (!stencil_view_state) return skip;
+            ASSERT_AND_RETURN_SKIP(stencil_view_state);
             auto stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
-            if (!stencil_image_samples) return skip;
+            ASSERT_AND_RETURN_SKIP(stencil_image_samples);
 
             if (p_attachment_sample_count_info) {
                 if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -3790,9 +3790,9 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
                 continue;
             }
             auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-            if (!view_state) continue;
+            ASSERT_AND_CONTINUE(view_state);
             auto image_state = Get<vvl::Image>(view_state->create_info.image);
-            if (!image_state) continue;
+            ASSERT_AND_CONTINUE(image_state);
 
             auto samples = image_state->create_info.samples;
             if (samples != rasterization_samples) {
@@ -3807,9 +3807,11 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
 
         if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-            if (!depth_view_state) return skip;
+            ASSERT_AND_RETURN_SKIP(depth_view_state);
             const auto &depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
-            if (depth_image_samples && (depth_image_samples != rasterization_samples)) {
+            ASSERT_AND_RETURN_SKIP(depth_image_samples);
+
+            if (depth_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_rendering_07286, objlist, vuid.loc(),
                                  "Depth attachment sample count (%s) must match corresponding "
@@ -3821,9 +3823,11 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
 
         if ((rendering_info.pStencilAttachment != nullptr) && (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-            if (!stencil_view_state) return skip;
+            ASSERT_AND_RETURN_SKIP(stencil_view_state);
             const auto &stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
-            if (stencil_image_samples && (stencil_image_samples != rasterization_samples)) {
+            ASSERT_AND_RETURN_SKIP(stencil_image_samples);
+
+            if (stencil_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_rendering_07287, objlist, vuid.loc(),
                                  "Stencil attachment sample count (%s) must match corresponding "

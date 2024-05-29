@@ -3983,8 +3983,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
     if (vs_state->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
         const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(pDecodeInfo->pNext);
         if (inline_query_info != nullptr) {
-            auto query_pool_state = Get<vvl::QueryPool>(inline_query_info->queryPool);
-            if (query_pool_state) {
+            if (auto query_pool_state = Get<vvl::QueryPool>(inline_query_info->queryPool)) {
                 skip |= ValidateVideoInlineQueryInfo(*query_pool_state, *inline_query_info,
                                                      decode_info_loc.pNext(Struct::VkVideoInlineQueryInfoKHR));
 
@@ -4393,8 +4392,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
     if (vs_state->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
         const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(pEncodeInfo->pNext);
         if (inline_query_info != nullptr) {
-            auto query_pool_state = Get<vvl::QueryPool>(inline_query_info->queryPool);
-            if (query_pool_state) {
+            if (auto query_pool_state = Get<vvl::QueryPool>(inline_query_info->queryPool)) {
                 skip |= ValidateVideoInlineQueryInfo(*query_pool_state, *inline_query_info,
                                                      encode_info_loc.pNext(Struct::VkVideoInlineQueryInfoKHR));
 

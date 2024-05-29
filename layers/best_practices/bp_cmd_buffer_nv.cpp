@@ -88,7 +88,7 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkI
     assert((subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U);
 
     auto image_state = Get<vvl::Image>(depth_attachment);
-    if (!image_state) return;
+    ASSERT_AND_RETURN(image_state);
 
     const uint32_t mip_levels = image_state->create_info.mipLevels;
     const uint32_t array_layers = image_state->create_info.arrayLayers;
@@ -147,7 +147,7 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
     auto& tree = image_it->second;
 
     auto image = Get<vvl::Image>(depth_image);
-    if (!image) return;
+    ASSERT_AND_RETURN(image);
 
     ForEachSubresource(*image, subresource_range, [&tree](uint32_t layer, uint32_t level) {
         auto& subresource = tree.GetState(layer, level);
@@ -174,7 +174,7 @@ void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, 
     auto& tree = image_it->second;
 
     auto image = Get<vvl::Image>(depth_image);
-    if (!image) return;
+    ASSERT_AND_RETURN(image);
 
     ForEachSubresource(*image, subresource_range, [&tree, &cmd_state](uint32_t layer, uint32_t level) {
         tree.GetState(layer, level).direction = cmd_state.nv.zcull_direction;
@@ -188,7 +188,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     auto& scope = cmd_state.nv.zcull_scope;
 
     auto image = Get<vvl::Image>(scope.image);
-    if (!image) return;
+    ASSERT_AND_RETURN(image);
 
     ForEachSubresource(*image, scope.range, [&scope](uint32_t layer, uint32_t level) {
         auto& subresource = scope.tree->GetState(layer, level);
@@ -196,7 +196,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
         switch (subresource.direction) {
             case ZcullDirection::Unknown:
                 // Unreachable
-                assert(0);
+                assert(false);
                 break;
             case ZcullDirection::Less:
                 ++subresource.num_less_draws;
@@ -236,7 +236,7 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
     const auto& tree = image_it->second;
 
     auto image_state = Get<vvl::Image>(image);
-    if (!image_state) return skip;
+    ASSERT_AND_RETURN_SKIP(image_state);
 
     ForEachSubresource(*image_state, subresource_range, [&](uint32_t layer, uint32_t level) {
         if (is_balanced) {

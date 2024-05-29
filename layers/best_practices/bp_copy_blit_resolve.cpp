@@ -199,7 +199,6 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                                        const VkClearRect* pRects, const ErrorObject& error_obj) const {
     bool skip = false;
     const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-    if (!cb_state) return skip;
 
     if (cb_state->IsSeconary()) {
         // Defer checks to ExecuteCommands.
@@ -331,7 +330,7 @@ bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkIm
     bool skip = false;
     auto src_image_state = Get<vvl::Image>(src_image);
     auto dst_image_state = Get<vvl::Image>(dst_image);
-    if (!src_image_state || !dst_image_state) return skip;
+    ASSERT_AND_RETURN_SKIP(src_image_state && dst_image_state);
 
     auto src_image_type = src_image_state->create_info.imageType;
     auto dst_image_type = dst_image_state->create_info.imageType;
@@ -554,7 +553,7 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
     bool skip = false;
 
     auto dst_image = Get<bp_state::Image>(image);
-    if (!dst_image) return skip;
+    ASSERT_AND_RETURN_SKIP(dst_image);
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
         skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_ClearImage, commandBuffer, error_obj.location,
@@ -582,7 +581,6 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                                       VendorSpecificTag(kBPVendorAMD));
     }
     const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         for (uint32_t i = 0; i < rangeCount; i++) {
             skip |= ValidateZcull(*cb_state, image, pRanges[i], error_obj.location);

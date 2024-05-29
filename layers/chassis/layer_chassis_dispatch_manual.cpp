@@ -106,9 +106,10 @@ void DispatchExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT 
 // copy the returned data to the caller before freeing the copy's data.
 void CopyCreatePipelineFeedbackData(const void *src_chain, const void *dst_chain) {
     auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(src_chain);
-    if (!src_feedback_struct) return;
     auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfoEXT *>(
         vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(dst_chain));
+    if (!src_feedback_struct || !dst_feedback_struct) return;
+
     *dst_feedback_struct->pPipelineCreationFeedback = *src_feedback_struct->pPipelineCreationFeedback;
     for (uint32_t i = 0; i < src_feedback_struct->pipelineStageCreationFeedbackCount; i++) {
         dst_feedback_struct->pPipelineStageCreationFeedbacks[i] = src_feedback_struct->pPipelineStageCreationFeedbacks[i];
@@ -708,7 +709,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
                                                   0);
                 } break;
                 default:
-                    assert(0);
+                    assert(false);
                     break;
             }
         }
@@ -748,7 +749,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
                         CastFromUint64<VkAccelerationStructureNV>(source);
                     break;
                 default:
-                    assert(0);
+                    assert(false);
                     break;
             }
         }
@@ -1352,7 +1353,6 @@ void DispatchGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDe
     VkDescriptorImageInfo image_info;
     vku::safe_VkDescriptorAddressInfoEXT address_info;
 
-    assert(pDescriptorInfo);
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             // if using null descriptors can be null

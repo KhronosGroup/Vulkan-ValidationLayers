@@ -68,7 +68,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     auto sem_state = Get<vvl::Semaphore>(pImportSemaphoreFdInfo->semaphore);
-    if (!sem_state) return skip;
+    ASSERT_AND_RETURN_SKIP(sem_state);
 
     const Location info_loc = error_obj.location.dot(Field::pImportSemaphoreFdInfo);
     skip |= ValidateObjectNotInUse(sem_state.get(), info_loc.dot(Field::semaphore), "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
@@ -110,7 +110,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
     auto sem_state = Get<vvl::Semaphore>(pGetFdInfo->semaphore);
-    if (!sem_state) return skip;
+    ASSERT_AND_RETURN_SKIP(sem_state);
 
     const Location info_loc = error_obj.location.dot(Field::pGetFdInfo);
     if ((pGetFdInfo->handleType & sem_state->exportHandleTypes) == 0) {
@@ -144,7 +144,8 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const Location &loc) const {
     auto fence_node = Get<vvl::Fence>(fence);
     bool skip = false;
-    if (fence_node && fence_node->Scope() == vvl::Fence::kInternal && fence_node->State() == vvl::Fence::kInflight) {
+    ASSERT_AND_RETURN_SKIP(fence_node);
+    if (fence_node->Scope() == vvl::Fence::kInternal && fence_node->State() == vvl::Fence::kInflight) {
         skip |= LogError(vuid, fence, loc.dot(Field::fence), "(%s) is currently in use.", FormatHandle(fence).c_str());
     }
     return skip;

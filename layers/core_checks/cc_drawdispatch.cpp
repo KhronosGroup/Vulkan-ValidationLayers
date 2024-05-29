@@ -299,7 +299,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
@@ -348,7 +348,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     skip |= ValidateGraphicsIndexedCmd(cb_state, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
@@ -520,7 +520,7 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     if (offset & 3) {
         skip |= LogError("VUID-vkCmdDispatchIndirect-offset-02710", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
@@ -563,7 +563,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
                          "call this command.");
     }
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
     skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
                                             Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
     if (maxDrawCount > 1) {
@@ -575,7 +575,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    if (!count_buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(count_buffer_state);
     skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
     return skip;
@@ -617,7 +617,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                                             Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
                                             error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
                                                 Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
@@ -628,7 +628,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    if (!count_buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(count_buffer_state);
     skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
     return skip;
@@ -689,6 +689,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
     skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto counter_buffer_state = Get<vvl::Buffer>(counterBuffer);
+    ASSERT_AND_RETURN_SKIP(counter_buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *counter_buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
     return skip;
@@ -1284,7 +1285,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
 
     if (drawCount > 1) {
@@ -1347,7 +1348,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    if (!buffer_state || !count_buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state && count_buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
     skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
@@ -1435,7 +1436,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
 
     if (drawCount > 1) {
@@ -1486,7 +1487,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    if (!buffer_state || !count_buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state && count_buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *count_buffer_state, error_obj.location.dot(Field::countBuffer),
                                           vuid.indirect_count_contiguous_memory_02714);
@@ -1640,7 +1641,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                     } else {  // Valid set is bound and layout compatible, validate that it's updated
                         // Pull the set node
                         const auto *descriptor_set = set_info.bound_descriptor_set.get();
-                        assert(descriptor_set);
+                        ASSERT_AND_CONTINUE(descriptor_set);
                         // Validate the draw-time state for this descriptor set
                         // We can skip validating the descriptor set if "nothing" has changed since the last validation.
                         // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
@@ -1714,7 +1715,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                     } else {  // Valid set is bound and layout compatible, validate that it's updated
                         // Pull the set node
                         const auto *descriptor_set = set_info.bound_descriptor_set.get();
-                        assert(descriptor_set);
+                        ASSERT_AND_CONTINUE(descriptor_set);
                         // Validate the draw-time state for this descriptor set
                         // We can skip validating the descriptor set if "nothing" has changed since the last validation.
                         // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are

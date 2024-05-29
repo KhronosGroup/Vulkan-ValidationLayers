@@ -38,7 +38,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         }
 
         auto view_state = Get<vvl::ImageView>(attachments[i]);
-        if (!view_state) continue;
+        ASSERT_AND_CONTINUE(view_state);
 
         const auto& ici = view_state->image_state->create_info;
 
@@ -81,7 +81,8 @@ bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
     bool skip = false;
 
     auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);
-    if (rp_state && !(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
+    ASSERT_AND_RETURN_SKIP(rp_state);
+    if (!(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         skip |= ValidateAttachments(rp_state->create_info.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments,
                                     error_obj.location);
     }
