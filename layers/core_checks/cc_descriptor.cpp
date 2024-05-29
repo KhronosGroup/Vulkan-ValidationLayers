@@ -316,7 +316,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                             }
 
                             auto *descriptor = descriptor_set->GetDescriptorFromDynamicOffsetIndex(set_dyn_offset);
-                            assert(descriptor != nullptr);
+                            ASSERT_AND_CONTINUE(descriptor);
                             // Currently only GeneralBuffer are dynamic and need to be checked
                             if (descriptor->GetClass() == vvl::DescriptorClass::GeneralBuffer) {
                                 const auto *buffer_descriptor = static_cast<const vvl::BufferDescriptor *>(descriptor);
@@ -412,7 +412,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                       const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                       const uint32_t *pDynamicOffsets, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidateCmdBindDescriptorSets(*cb_state, layout, firstSet, setCount, pDescriptorSets, dynamicOffsetCount,
@@ -426,7 +425,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
                                                           const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
                                                           const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -921,7 +919,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     bool skip = false;
     const auto src_set = Get<vvl::DescriptorSet>(update.srcSet);
     const auto dst_set = Get<vvl::DescriptorSet>(update.dstSet);
-    if (!src_set || !dst_set) return skip;
+    ASSERT_AND_RETURN_SKIP(src_set && dst_set);
 
     const auto *dst_layout = dst_set->GetLayout().get();
     const auto *src_layout = src_set->GetLayout().get();
@@ -1138,7 +1136,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
     VkImage image = view_state.create_info.image;
     VkImageUsageFlags usage = 0;
     auto *image_node = view_state.image_state.get();
-    assert(image_node);
+    ASSERT_AND_RETURN_SKIP(image_node);
 
     const auto image_view_usage_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(view_state.create_info.pNext);
     const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_node->create_info.pNext);
@@ -1528,7 +1526,7 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker &
                     break;
                 }
                 default:
-                    assert(0);
+                    assert(false);
                     break;
             }
             dst_array_element++;
@@ -1603,7 +1601,7 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
     bool skip = false;
     // Invalid handles should be caught by the object tracker, but lets make sure not to crash anyways.
     const auto buffer_state = Get<vvl::Buffer>(buffer_info.buffer);
-    if (!buffer_state) return skip;
+    ASSERT_AND_RETURN_SKIP(buffer_state);
 
     skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
@@ -1779,7 +1777,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
         case DescriptorClass::Mutable:
             break;
         default:
-            assert(0);  // We've already verified update type so should never get here
+            assert(false);  // We've already verified update type so should never get here
             break;
     }
     return skip;
@@ -1979,7 +1977,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                 auto image_layout = update.pImageInfo[di].imageLayout;
                 auto sampler = update.pImageInfo[di].sampler;
                 auto iv_state = Get<vvl::ImageView>(image_view);
-                if (!iv_state) continue;
+                ASSERT_AND_CONTINUE(iv_state);
 
                 const auto *image_state = iv_state->image_state.get();
                 skip |= ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
@@ -2023,8 +2021,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                 }
 
                 // Verify portability
-                auto sampler_state = Get<vvl::Sampler>(sampler);
-                if (sampler_state) {
+                if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
                     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
                         if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
                             (VK_FALSE != sampler_state->create_info.compareEnable)) {
@@ -2115,9 +2112,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
             const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
                 VkAccelerationStructureNV as = acc_info->pAccelerationStructures[di];
-                auto as_state = Get<vvl::AccelerationStructureNV>(as);
                 // nullDescriptor feature allows this to be VK_NULL_HANDLE
-                if (as_state) {
+                if (auto as_state = Get<vvl::AccelerationStructureNV>(as)) {
                     skip |= VerifyBoundMemoryIsValid(
                         as_state->MemState(), LogObjectList(as), as_state->Handle(),
                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, di),
@@ -2130,7 +2126,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
             break;
         default:
-            assert(0);  // We've already verified update type so should never get here
+            assert(false);  // We've already verified update type so should never get here
             break;
     }
     return skip;
@@ -2289,7 +2285,6 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                                                                  const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
                                                                  const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     bool skip = false;
     skip |= ValidatePipelineBindPoint(*cb_state, pipelineBindPoint, error_obj.location);
@@ -2302,7 +2297,6 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT *pSetDescriptorBufferOffsetsInfo,
     const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
 
     skip |= ValidateCmdSetDescriptorBufferOffsets(
@@ -2376,7 +2370,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCom
                                                                            VkPipelineLayout layout, uint32_t set,
                                                                            const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
 
     skip |= ValidatePipelineBindPoint(*cb_state, pipelineBindPoint, error_obj.location);
@@ -2388,7 +2381,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
     const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
 
     skip |= ValidateCmdBindDescriptorBufferEmbeddedSamplers(*cb_state, pBindDescriptorBufferEmbeddedSamplersInfo->layout,
@@ -2423,7 +2415,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                                                             const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                             const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     bool skip = false;
 
@@ -2715,9 +2706,7 @@ bool CoreChecks::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDev
                          physical_device_count);
     }
 
-    auto image_view_state = Get<vvl::ImageView>(pInfo->imageView);
-
-    if (image_view_state) {
+    if (auto image_view_state = Get<vvl::ImageView>(pInfo->imageView)) {
         if (!(image_view_state->create_info.flags & VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkImageViewCaptureDescriptorDataInfoEXT-imageView-08083", pInfo->imageView,
                              error_obj.location.dot(Field::pInfo).dot(Field::imageView), "is %s.",
@@ -2747,9 +2736,7 @@ bool CoreChecks::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevic
                          physical_device_count);
     }
 
-    auto sampler_state = Get<vvl::Sampler>(pInfo->sampler);
-
-    if (sampler_state) {
+    if (auto sampler_state = Get<vvl::Sampler>(pInfo->sampler)) {
         if (!(sampler_state->create_info.flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkSamplerCaptureDescriptorDataInfoEXT-sampler-08087", pInfo->sampler,
                              error_obj.location.dot(Field::pInfo).dot(Field::sampler), "is %s.",
@@ -2780,9 +2767,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
     }
 
     if (pInfo->accelerationStructure != VK_NULL_HANDLE) {
-        auto acceleration_structure_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure);
-
-        if (acceleration_structure_state) {
+        if (auto acceleration_structure_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure)) {
             if (!(acceleration_structure_state->create_info.createFlags &
                   VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
                 skip |= LogError(
@@ -2800,9 +2785,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
     }
 
     if (pInfo->accelerationStructureNV != VK_NULL_HANDLE) {
-        auto acceleration_structure_state = Get<vvl::AccelerationStructureNV>(pInfo->accelerationStructureNV);
-
-        if (acceleration_structure_state) {
+        if (auto acceleration_structure_state = Get<vvl::AccelerationStructureNV>(pInfo->accelerationStructureNV)) {
             if (!(acceleration_structure_state->create_info.info.flags &
                   VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
                 skip |= LogError(
@@ -3302,7 +3285,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 
     bool skip = false;
     auto ds_pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
-    if (!ds_pool_state) return skip;
+    ASSERT_AND_RETURN_SKIP(ds_pool_state);
 
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
 
@@ -3379,7 +3362,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
         if (count_allocate_info->descriptorSetCount == pAllocateInfo->descriptorSetCount) {
             for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
                 auto ds_layout_state = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
-                if (!ds_layout_state) continue;
+                ASSERT_AND_CONTINUE(ds_layout_state);
                 if (count_allocate_info->pDescriptorCounts[i] >
                     ds_layout_state->GetDescriptorCountFromBinding(ds_layout_state->GetMaxBinding())) {
                     skip |= LogError("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-09380", device,
@@ -3407,11 +3390,11 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
     if (record_obj.result == VK_ERROR_OUT_OF_POOL_MEMORY && pAllocateInfo) {
         // result type added in VK_KHR_maintenance1
         auto ds_pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
-        if (!ds_pool_state) return;
+        ASSERT_AND_RETURN(ds_pool_state);
 
         for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
             auto ds_layout_state = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
-            if (!ds_layout_state) continue;
+            ASSERT_AND_CONTINUE(ds_layout_state);
 
             const uint32_t binding_count = ds_layout_state->GetBindingCount();
             for (uint32_t j = 0; j < binding_count; ++j) {
@@ -3456,7 +3439,8 @@ bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptor
         }
     }
     auto ds_pool_state = Get<vvl::DescriptorPool>(descriptorPool);
-    if (ds_pool_state && !(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT & ds_pool_state->create_info.flags)) {
+    ASSERT_AND_RETURN_SKIP(ds_pool_state);
+    if (!(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT & ds_pool_state->create_info.flags)) {
         // Can't Free from a NON_FREE pool
         skip |= LogError("VUID-vkFreeDescriptorSets-descriptorPool-00312", descriptorPool,
                          error_obj.location.dot(Field::descriptorPool), "with a pool created with %s.",
@@ -3523,7 +3507,6 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                                                         const VkWriteDescriptorSet *pDescriptorWrites,
                                                         const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineBindPoint(*cb_state, pipelineBindPoint, error_obj.location);
@@ -3535,7 +3518,6 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer command
                                                          const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
                                                          const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
@@ -3670,7 +3652,6 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
                                                           VkPipelineLayout layout, uint32_t set, const void *pData,
                                                           const Location &loc) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, loc);
 
@@ -4457,7 +4438,6 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
                                           uint32_t offset, uint32_t size, const Location &loc) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
     skip |= ValidateCmd(*cb_state, loc);
 
     // Check if pipeline_layout VkPushConstantRange(s) overlapping offset, size have stageFlags set for each stage in the command

@@ -108,7 +108,7 @@ DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo *pA
 
 void vvl::BindableLinearMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
                                              VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
-    if (!mem_state) return;
+    ASSERT_AND_RETURN(mem_state);
 
     mem_state->AddParent(parent);
     binding_ = {mem_state, memory_offset, 0u};
@@ -235,7 +235,7 @@ bool vvl::BindableMultiplanarMemoryTracker::HasFullRangeBound() const {
 // resource_offset is the plane index
 void vvl::BindableMultiplanarMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
                                                   VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
-    if (!mem_state) return;
+    ASSERT_AND_RETURN(mem_state);
 
     assert(resource_offset < planes_.size());
     mem_state->AddParent(parent);

@@ -60,7 +60,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
             drm_format_modifiers.insert(drm_explicit->drmFormatModifier);
         } else {
             // VUID 02261 makes sure its only explict or implict in parameter checking
-            assert(drm_implicit != nullptr);
+            ASSERT_AND_RETURN_SKIP(drm_implicit);
             for (uint32_t i = 0; i < drm_implicit->drmFormatModifierCount; i++) {
                 drm_format_modifiers.insert(drm_implicit->pDrmFormatModifiers[i]);
             }
@@ -874,9 +874,8 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto image_state_ptr = Get<vvl::Image>(image);
-    if (!cb_state_ptr || !image_state_ptr) {
-        return skip;
-    }
+    ASSERT_AND_RETURN_SKIP(image_state_ptr);
+
     const auto &cb_state = *cb_state_ptr;
     const auto &image_state = *image_state_ptr;
     const Location image_loc = error_obj.location.dot(Field::image);
@@ -959,9 +958,8 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto image_state_ptr = Get<vvl::Image>(image);
-    if (!cb_state_ptr || !image_state_ptr) {
-        return skip;
-    }
+    ASSERT_AND_RETURN_SKIP(image_state_ptr);
+
     const auto &cb_state = *cb_state_ptr;
     const auto &image_state = *image_state_ptr;
     const Location image_loc = error_obj.location.dot(Field::image);
@@ -1047,12 +1045,12 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
     StateTracker::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
                                                          record_obj);
 
-    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto image_state = Get<vvl::Image>(image);
-    if (cb_state_ptr && image_state) {
-        for (uint32_t i = 0; i < rangeCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(image, pRanges[i], imageLayout);
-        }
+    ASSERT_AND_RETURN(image_state);
+
+    for (uint32_t i = 0; i < rangeCount; ++i) {
+        cb_state->SetImageInitialLayout(image, pRanges[i], imageLayout);
     }
 }
 
@@ -1632,8 +1630,6 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         // AHB image view and image share same feature sets
         tiling_features = image_state.format_features;
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
-        assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.VkHandle(), &drm_format_properties);
 
@@ -1807,7 +1803,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                                 [[maybe_unused]] VkImageView *pView, const ErrorObject &error_obj) const {
     bool skip = false;
     auto image_state_ptr = Get<vvl::Image>(pCreateInfo->image);
-    if (!image_state_ptr) return skip;
+    ASSERT_AND_RETURN_SKIP(image_state_ptr);
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -2470,8 +2466,6 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image &image_state
                 LogError(vuid, image_state.Handle(), subresource_loc.dot(Field::aspectMask),
                          "(%s) must be VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT.", string_VkImageAspectFlags(aspect_mask).c_str());
         } else {
-            // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
-            assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
             VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
             DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.VkHandle(), &drm_format_properties);
 

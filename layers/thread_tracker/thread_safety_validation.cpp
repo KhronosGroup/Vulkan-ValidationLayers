@@ -99,7 +99,7 @@ void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const V
             if (iter != dsl_read_only_map.end()) {
                 ds_read_only_map.insert_or_assign(pDescriptorSets[index0], iter->second);
             } else {
-                assert(0 && "descriptor set layout not found");
+                assert(false && "descriptor set layout not found");
             }
         }
     }

@@ -137,7 +137,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
     auto mem_info = Get<vvl::DeviceMemory>(pInfo->memory);
-    if (!mem_info) return skip;
+    ASSERT_AND_RETURN_SKIP(mem_info);
 
     // VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID must have been included in
     // VkExportMemoryAllocateInfo::handleTypes when memory was created.
@@ -297,7 +297,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             }
 
             auto image_state = Get<vvl::Image>(mem_ded_alloc_info->image);
-            if (!image_state) return skip;
+            ASSERT_AND_RETURN_SKIP(image_state);
             const auto *ici = &image_state->create_info;
             const Location &dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
 
@@ -557,7 +557,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(create_info.image);
-    if (!image_state) return skip;
+    ASSERT_AND_RETURN_SKIP(image_state);
 
     if (image_state->HasAHBFormat()) {
         if (VK_FORMAT_UNDEFINED != create_info.format) {

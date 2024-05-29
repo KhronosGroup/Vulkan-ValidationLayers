@@ -206,7 +206,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 
         auto *overlay_map = GetLayoutRangeMap(overlayLayoutMap, *image_state);
         const auto *global_map = image_state->layout_range_map.get();
-        assert(global_map);
+        ASSERT_AND_CONTINUE(global_map);
         auto global_map_guard = global_map->ReadLock();
 
         // Note: don't know if it would matter
@@ -218,7 +218,6 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                                                                                             pos->first.begin);
         while (pos != end) {
             VkImageLayout initial_layout = pos->second.initial_layout;
-            assert(initial_layout != image_layout_map::kInvalidLayout);
             if (initial_layout == image_layout_map::kInvalidLayout) {
                 continue;
             }
@@ -827,7 +826,7 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer &cb_
                                                    vvl::CommandBuffer::ImageLayoutMap &layout_updates) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(img_barrier.image);
-    if (!image_state) return skip;
+    ASSERT_AND_RETURN_SKIP(image_state);
 
     std::shared_ptr<ImageSubresourceLayoutMap> write_subresource_map;
     auto iter = layout_updates.find(image_state->VkHandle());
@@ -910,7 +909,7 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
         }
     }
     auto image_state = Get<vvl::Image>(mem_barrier.image);
-    if (!image_state) return;
+    ASSERT_AND_RETURN(image_state);
 
     auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
 

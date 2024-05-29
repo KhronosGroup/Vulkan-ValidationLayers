@@ -284,7 +284,8 @@ bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::Co
     for (uint32_t count = 0; count < rp_submit_info->stripeSemaphoreInfoCount; ++count) {
         auto semaphore = rp_submit_info->pStripeSemaphoreInfos[count].semaphore;
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
+        ASSERT_AND_CONTINUE(semaphore_state);
+        if (semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             objlist.add(semaphore);
             skip |= LogError("VUID-VkRenderPassStripeSubmitInfoARM-semaphore-09447", objlist,
                              loc.pNext(Struct::VkRenderPassStripeSubmitInfoARM, Field::pStripeSemaphoreInfos, count),
@@ -485,7 +486,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
     using sync_vuid_maps::SubmitError;
     bool skip = false;
     auto pool = cb_state.command_pool;
-    if (!pool) return skip;
+    ASSERT_AND_RETURN_SKIP(pool);
 
     if (pool->queueFamilyIndex != queue_state.queueFamilyIndex) {
         const LogObjectList objlist(cb_state.Handle(), queue_state.Handle());
@@ -663,7 +664,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const VkSparseBufferMemoryBindInfo &buffer_bind = bind_info.pBufferBinds[buffer_idx];
                 if (buffer_bind.pBinds) {
                     auto buffer_state = Get<vvl::Buffer>(buffer_bind.buffer);
-                    if (!buffer_state) continue;
+                    ASSERT_AND_CONTINUE(buffer_state);
                     for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
                         const Location buffer_loc = bind_info_loc.dot(Field::pBufferBinds, buffer_idx);
@@ -681,7 +682,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
                 if (image_opaque_bind.pBinds) {
                     auto image_state = Get<vvl::Image>(image_opaque_bind.image);
-                    if (!image_state) continue;
+                    ASSERT_AND_CONTINUE(image_state);
                     for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount;
                          ++image_opaque_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
@@ -702,7 +703,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const Location bind_loc = bind_info_loc.dot(Field::pImageBinds, image_idx);
                 const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
                 auto image_state = Get<vvl::Image>(image_bind.image);
-                if (!image_state) continue;
+                ASSERT_AND_CONTINUE(image_state);
 
                 if (!image_state->sparse_residency) {
                     skip |=

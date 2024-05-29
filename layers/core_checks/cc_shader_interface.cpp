@@ -865,7 +865,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
             producer.spirv_state ? producer.spirv_state : producer.module_state->spirv;
         const std::shared_ptr<const spirv::Module> &consumer_spirv =
             consumer.spirv_state ? consumer.spirv_state : consumer.module_state->spirv;
-        assert(producer.module_state);
         if (&producer == fragment_stage) {
             break;
         }

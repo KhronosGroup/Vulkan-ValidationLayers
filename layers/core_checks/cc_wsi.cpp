@@ -87,8 +87,8 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
     // Validate VkSwapchainPresentModesCreateInfoEXT data
     auto swapchain_present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info.pNext);
     if (swapchain_present_modes_ci) {
-        // Ensure surface state is non-null if not using surfaceless_query
-        assert(surface_state);
+        ASSERT_AND_RETURN_SKIP(surface_state);
+
         bool found_swapchain_modes_ci_present_mode = false;
         const std::vector<VkPresentModeKHR> compatible_present_modes =
             surface_state->GetCompatibleModes(physical_device, present_mode);
@@ -188,7 +188,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
             }
         }
 
-        assert(surface_state);
+        ASSERT_AND_RETURN_SKIP(surface_state);
         VkSurfacePresentScalingCapabilitiesEXT scaling_caps =
             surface_state->GetPresentModeScalingCapabilities(physical_device, present_mode);
 
@@ -714,7 +714,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
                                                   const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     if (auto swapchain_data = Get<vvl::Swapchain>(swapchain)) {
         for (const auto &swapchain_image : swapchain_data->images) {
-            assert(swapchain_image.image_state);
+            ASSERT_AND_CONTINUE(swapchain_image.image_state);
             qfo_release_image_barrier_map.erase(swapchain_image.image_state->VkHandle());
         }
     }
@@ -794,7 +794,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     const Location present_info_loc = error_obj.location.dot(Struct::VkPresentInfoKHR, Field::pPresentInfo);
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<vvl::Semaphore>(pPresentInfo->pWaitSemaphores[i]);
-        if (!semaphore_state) continue;
+        ASSERT_AND_CONTINUE(semaphore_state);
 
         if (semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError("VUID-vkQueuePresentKHR-pWaitSemaphores-03267", pPresentInfo->pWaitSemaphores[i],
@@ -807,7 +807,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
-        if (!swapchain_data) continue;
+        ASSERT_AND_CONTINUE(swapchain_data);
 
         const Location swapchain_loc = present_info_loc.dot(Field::pSwapchains, i);
         // Check if index is even possible to be acquired to give better error message
@@ -821,7 +821,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                              "image at index %" PRIu32 " was not acquired from the swapchain.", pPresentInfo->pImageIndices[i]);
         } else {
             const auto *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state;
-            assert(image_state);
+            ASSERT_AND_CONTINUE(image_state);
 
             std::vector<VkImageLayout> layouts;
             if (FindLayouts(*image_state, layouts)) {
@@ -872,7 +872,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         if (present_regions) {
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
                 auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
-                if (!swapchain_data) continue;
+                ASSERT_AND_CONTINUE(swapchain_data);
 
                 VkPresentRegionKHR region = present_regions->pRegions[i];
                 const Location region_loc = present_info_loc.pNext(Struct::VkPresentRegionsKHR, Field::pRegions, i);
@@ -945,7 +945,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
             for (uint32_t i = 0; i < present_id_info->swapchainCount; i++) {
                 auto swapchain_state = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
-                if (!swapchain_state) continue;
+                ASSERT_AND_CONTINUE(swapchain_state);
                 if ((present_id_info->pPresentIds[i] != 0) &&
                     (present_id_info->pPresentIds[i] <= swapchain_state->max_present_id)) {
                     skip |= LogError("VUID-VkPresentIdKHR-presentIds-04999", pPresentInfo->pSwapchains[i],
@@ -992,7 +992,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             for (uint32_t i = 0; i < swapchain_present_mode_info->swapchainCount; i++) {
                 const VkPresentModeKHR present_mode = swapchain_present_mode_info->pPresentModes[i];
                 const auto swapchain_state = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
-                if (!swapchain_state) continue;
+                ASSERT_AND_CONTINUE(swapchain_state);
                 if (!swapchain_state->present_modes.empty()) {
                     bool found_match = std::find(swapchain_state->present_modes.begin(), swapchain_state->present_modes.end(),
                                                  present_mode) != swapchain_state->present_modes.end();
@@ -1022,7 +1022,7 @@ bool CoreChecks::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const
     bool skip = false;
     bool image_in_use = false;
     auto swapchain_state = Get<vvl::Swapchain>(pReleaseInfo->swapchain);
-    if (!swapchain_state) return skip;
+    ASSERT_AND_RETURN_SKIP(swapchain_state);
 
     const Location release_info_loc = error_obj.location.dot(Field::pReleaseInfo);
     for (uint32_t i = 0; i < pReleaseInfo->imageIndexCount; i++) {
@@ -1122,7 +1122,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
             vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(swapchain_data->create_info.pNext);
         if (present_modes_ci) {
             auto surface_state = Get<vvl::Surface>(swapchain_data->create_info.surface);
-            if (!surface_state) return skip;
+            ASSERT_AND_RETURN_SKIP(surface_state);
             // If a SwapchainPresentModesCreateInfo struct was included, min_image_count becomes the max of the
             // minImageCount values returned via VkSurfaceCapabilitiesKHR for each of the present modes in
             // SwapchainPresentModesCreateInfo
@@ -1369,7 +1369,7 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
     bool skip = false;
 
     auto swapchain_state = Get<vvl::Swapchain>(swapchain);
-    if (!swapchain_state) return skip;
+    ASSERT_AND_RETURN_SKIP(swapchain_state);
 
     if (swapchain_state->retired) {
         skip |= LogError("VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674", device, error_obj.location,
@@ -1397,7 +1397,7 @@ bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice devic
     bool skip = false;
 
     const auto swapchain_state = Get<vvl::Swapchain>(swapchain);
-    if (!swapchain_state) return skip;
+    ASSERT_AND_RETURN_SKIP(swapchain_state);
 
     if (swapchain_state->retired) {
         skip |= LogError("VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677", device, error_obj.location,
@@ -1533,7 +1533,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
                                                  error_obj.location);
 
     const auto surface_state = Get<vvl::Surface>(pSurfaceInfo->surface);
-    if (!surface_state) return skip;
+    ASSERT_AND_RETURN_SKIP(surface_state);
 
     if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
         const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);

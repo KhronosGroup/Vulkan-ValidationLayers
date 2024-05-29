@@ -139,7 +139,7 @@ uint32_t Instruction::GetBitWidth() const {
         default:
             // Most likely the caller is not checking for this being a matrix/array/struct/etc
             // This class only knows a single instruction's information
-            assert(0);
+            assert(false);
             break;
     }
     return bit_width;

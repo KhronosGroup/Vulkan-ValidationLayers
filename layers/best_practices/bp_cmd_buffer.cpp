@@ -41,7 +41,7 @@ bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const
     bool skip = false;
 
     auto cp_state = Get<vvl::CommandPool>(pAllocateInfo->commandPool);
-    if (!cp_state) return false;
+    ASSERT_AND_RETURN_SKIP(cp_state);
 
     const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[cp_state->queueFamilyIndex].queueFlags;
     const VkQueueFlags sec_cmd_buf_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
@@ -63,7 +63,6 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
     StateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    if (!cb_state) return;
 
     // reset
     cb_state->num_submits = 0;
@@ -140,7 +139,7 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
     bool skip = false;
 
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
-    if (!query_pool_state) return skip;
+    ASSERT_AND_RETURN_SKIP(query_pool_state);
 
     for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
         if (query_pool_state->GetQueryState(i, 0u) == QUERYSTATE_RESET) {
@@ -160,7 +159,6 @@ void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuf
     StateTracker::PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         RecordSetDepthTestState(*cb_state, depthCompareOp, cb_state->nv.depth_test_enable);
@@ -177,7 +175,6 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBu
     StateTracker::PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         RecordSetDepthTestState(*cb_state, cb_state->nv.depth_compare_op, depthTestEnable != VK_FALSE);

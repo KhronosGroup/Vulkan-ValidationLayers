@@ -1068,7 +1068,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
     RecordCmd(Func::vkCmdExecuteCommands);
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto sub_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
-        assert(sub_cb_state);
+        ASSERT_AND_RETURN(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
                 // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved
@@ -1276,7 +1276,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
                                                   uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
                                                   std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
                                                   uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
-    assert((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
+    ASSERT_AND_RETURN((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
 
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
@@ -1444,7 +1444,7 @@ void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const V
 
 void CommandBuffer::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
     auto image_state = dev_data.Get<vvl::Image>(image);
-    if (!image_state) return;
+    ASSERT_AND_RETURN(image_state);
     SetImageInitialLayout(*image_state, range, layout);
 }
 

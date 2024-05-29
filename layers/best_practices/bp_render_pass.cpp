@@ -173,7 +173,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
     }
 
     auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    if (!rp_state) return skip;
+    ASSERT_AND_RETURN_SKIP(rp_state);
 
     if (rp_state->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
         const VkRenderPassAttachmentBeginInfo* rpabi =
@@ -275,7 +275,7 @@ bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
         const Location color_attachment_info = rendering_info.dot(Field::pColorAttachments, i);
 
         auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
-        if (!image_view_state) continue;
+        ASSERT_AND_CONTINUE(image_view_state);
 
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {
             if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -386,7 +386,7 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto rp = cb_state->activeRenderPass.get();
-    assert(rp);
+    ASSERT_AND_RETURN(rp);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         vvl::ImageView* depth_image_view = nullptr;
@@ -414,7 +414,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
     auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    if (!rp_state) return;
+    ASSERT_AND_RETURN(rp_state);
 
     // Check load ops
     for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
@@ -499,10 +499,9 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
 
 void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer) {
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     auto rp = cb_state->activeRenderPass.get();
-    assert(rp);
+    ASSERT_AND_RETURN(rp);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         std::shared_ptr<vvl::ImageView> depth_image_view_shared_ptr;
@@ -514,6 +513,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
             if (depth_attachment) {
                 load_op.emplace(depth_attachment->loadOp);
                 depth_image_view_shared_ptr = Get<vvl::ImageView>(depth_attachment->imageView);
+                ASSERT_AND_RETURN(depth_image_view_shared_ptr);
                 depth_image_view = depth_image_view_shared_ptr.get();
             }
 
@@ -571,10 +571,9 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
 
 void BestPractices::RecordCmdEndRenderingCommon(VkCommandBuffer commandBuffer) {
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
 
     auto rp = cb_state->activeRenderPass.get();
-    assert(rp);
+    ASSERT_AND_RETURN(rp);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         std::optional<VkAttachmentStoreOp> store_op;
@@ -696,7 +695,6 @@ void BestPractices::PostRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     // TODO - move this logic to the Render Pass state as cb->has_draw_cmd should stay true for lifetime of command buffer
     cb_state->has_draw_cmd = false;
-    assert(cb_state);
     auto& render_pass_state = cb_state->render_pass_state;
     render_pass_state.touchesAttachments.clear();
     render_pass_state.earlyClearAttachments.clear();
@@ -753,7 +751,6 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuff
     skip |= ValidateCmdEndRenderPass(commandBuffer, error_obj.location);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-        assert(cb_state);
         skip |= ValidateZcullScope(*cb_state, error_obj.location);
     }
     return skip;
@@ -770,7 +767,6 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
     skip |= ValidateCmdEndRenderPass(commandBuffer, error_obj.location);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-        assert(cb_state);
         skip |= ValidateZcullScope(*cb_state, error_obj.location);
     }
     return skip;
@@ -781,7 +777,6 @@ bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer
     skip |= StateTracker::PreCallValidateCmdEndRendering(commandBuffer, error_obj);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-        assert(cb_state);
         skip |= ValidateZcullScope(*cb_state, error_obj.location);
     }
     return skip;
@@ -795,7 +790,6 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     bool skip = false;
     const auto cmd = GetRead<bp_state::CommandBuffer>(commandBuffer);
 
-    if (cmd == nullptr) return skip;
     auto& render_pass_state = cmd->render_pass_state;
 
     // Does the number of draw calls classified as depth only surpass the vendor limit for a specified vendor
