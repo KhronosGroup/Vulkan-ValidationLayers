@@ -5111,3 +5111,41 @@ TEST_F(NegativeDescriptors, GetSupportMutableDescriptorType) {
     vk::GetDescriptorSetLayoutSupport(device(), &set_layout_ci, &support);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptors, EmptyDescriptorSetLayout) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8065");
+    RETURN_IF_SKIP(Init());
+
+    // Layout is created with no bindings
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+
+    VkDescriptorPoolSize pool_sizes = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &pool_sizes;
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.pSetLayouts = &ds_layout.handle();
+
+    VkDescriptorSet descriptor_set;
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buff_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pBufferInfo = &buff_info;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.dstSet = descriptor_set;
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-zero-binding");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}

@@ -1801,7 +1801,11 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
     }
 
     const Location dst_binding_loc = write_loc.dot(Field::dstBinding);
-    if (update.dstBinding > dst_layout->GetMaxBinding()) {
+    if (dst_layout->GetBindingCount() == 0) {
+        // VUID being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3890
+        return LogError("VUID-VkWriteDescriptorSet-zero-binding", objlist, write_loc.dot(Field::dstSet),
+                        "was created with %s that has a binding count of zero.", FormatHandle(dst_layout->Handle()).c_str());
+    } else if (update.dstBinding > dst_layout->GetMaxBinding()) {
         return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", objlist, dst_binding_loc,
                         "(%" PRIu32 ") is larger than %s binding count (%" PRIu32 ").", update.dstBinding,
                         FormatHandle(dst_layout->Handle()).c_str(), dst_layout->GetBindingCount());
