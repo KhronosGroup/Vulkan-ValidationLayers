@@ -948,6 +948,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo,
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing, &phys_dev_props->image_processing_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_mesa_image_alignment_control,
                                    &phys_dev_props->image_alignment_control_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_nested_command_buffer,
+                                   &phys_dev_props->nested_command_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance6, &phys_dev_props->maintenance6_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);

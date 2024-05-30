@@ -813,9 +813,19 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         skip |= viewport_scissor_inheritance.VisitPrimary(cb_state);
     }
 
-    if (!cb_state.IsPrimary() && !enabled_features.nestedCommandBuffer) {
-        skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-09375", commandBuffer,
-                         error_obj.location.dot(Field::commandBuffer), "is a secondary command buffer.");
+    if (!cb_state.IsPrimary()) {
+        if (!enabled_features.nestedCommandBuffer) {
+            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-09375", commandBuffer,
+                             error_obj.location.dot(Field::commandBuffer),
+                             "is a secondary command buffer (and the nestedCommandBuffer feature was not enabled).");
+        } else if (!enabled_features.nestedCommandBufferRendering &&
+                   ((cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) != 0)) {
+            skip |= LogError(
+                "VUID-vkCmdExecuteCommands-nestedCommandBufferRendering-09377", commandBuffer,
+                error_obj.location.dot(Field::commandBuffer),
+                "is a secondary command buffer and was recorded with VkCommandBufferBeginInfo::flag including "
+                "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, but the nestedCommandBufferRendering feature was not enabled.");
+        }
     }
 
     const QueryObject *active_occlusion_query = nullptr;
@@ -913,6 +923,16 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     for (auto &function : sub_cb_state.cmd_execute_commands_functions) {
                         skip |= function(sub_cb_state, &cb_state, cb_state.activeFramebuffer.get());
                     }
+                }
+
+                if ((sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) &&
+                    !enabled_features.nestedCommandBufferSimultaneousUse) {
+                    skip |=
+                        LogError("VUID-vkCmdExecuteCommands-nestedCommandBufferSimultaneousUse-09378", pCommandBuffers[i], cb_loc,
+                                 "(%s) was recorded with VkCommandBufferBeginInfo::flag including "
+                                 "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, but the nestedCommandBufferSimultaneousUse feature "
+                                 "was not enabled.",
+                                 FormatHandle(pCommandBuffers[i]).c_str());
                 }
 
                 if (!cb_state.activeRenderPass->UsesDynamicRendering() && (cb_state.GetActiveSubpass() != inheritance_subpass)) {
@@ -1207,6 +1227,18 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 }
                             }
                         }
+                    }
+                }
+
+                // spec: "A maxCommandBufferNestingLevel of UINT32_MAX means there is no limit to the nesting level"
+                if (enabled_features.nestedCommandBuffer &&
+                    phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel != UINT32_MAX) {
+                    if (sub_cb_state.nesting_level >= phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel) {
+                        skip |= LogError("VUID-vkCmdExecuteCommands-nestedCommandBuffer-09376", pCommandBuffers[i], cb_loc,
+                                         "(%s) has a nesting level of %" PRIu32
+                                         " which is not less then maxCommandBufferNestingLevel (%" PRIu32 ").",
+                                         FormatHandle(pCommandBuffers[i]).c_str(), sub_cb_state.nesting_level,
+                                         phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel);
                     }
                 }
             }
