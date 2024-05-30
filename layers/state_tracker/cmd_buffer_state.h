@@ -517,6 +517,9 @@ class CommandBuffer : public RefcountedStateObject {
     std::optional<uint32_t> video_encode_quality_level{};
     VideoSessionUpdateMap video_session_updates;
 
+    // VK_EXT_nested_command_buffer
+    uint32_t nesting_level;
+
     bool transform_feedback_active{false};
     uint32_t transform_feedback_buffers_bound;
 

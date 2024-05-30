@@ -301,6 +301,8 @@ void CommandBuffer::ResetCBState() {
     label_stack_depth_ = 0;
     label_commands_.clear();
 
+    nesting_level = 0;
+
     transform_feedback_active = false;
     transform_feedback_buffers_bound = 0;
 
@@ -1136,6 +1138,10 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         if (!sub_cb_state->activeRenderPass) {
             suspendsRenderPassInstance = sub_cb_state->suspendsRenderPassInstance;
             hasRenderPassInstance |= sub_cb_state->hasRenderPassInstance;
+        }
+
+        if (sub_cb_state->IsSeconary()) {
+            nesting_level = std::max(nesting_level, sub_cb_state->nesting_level + 1);
         }
 
         label_stack_depth_ += sub_cb_state->label_stack_depth_;
