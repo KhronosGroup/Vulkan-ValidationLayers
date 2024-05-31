@@ -1215,3 +1215,62 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoad) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_scalar_block_layout : require
+        #extension GL_EXT_buffer_reference2 : require
+
+        struct RealCamera {
+            mat4 viewProjection; // [0, 63]
+            vec4 frustum[6]; // [64, 191] - should not be factored if not accessing
+        };
+        layout(buffer_reference, scalar, buffer_reference_align = 4) restrict readonly buffer CameraBuffer {
+            RealCamera camera;
+        };
+
+        layout(binding = 0, set = 0) buffer OutData {
+            CameraBuffer cameraBuffer;
+            mat4 out_mat;
+        };
+
+        void main() {
+            restrict const RealCamera camera = cameraBuffer.camera;
+            out_mat = camera.viewProjection;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer bda_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    VkDeviceAddress buffer_ptr = bda_buffer.address();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
+    in_buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}

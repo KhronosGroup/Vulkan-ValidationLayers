@@ -1007,3 +1007,203 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
         buffer->memory().unmap();
     }
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089
+TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ProxyStructLoad) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_scalar_block_layout : require
+        #extension GL_EXT_buffer_reference2 : require
+
+        struct RealCamera {
+            vec4 frustum[6];
+            mat4 viewProjection; // accessed but with large offset
+        };
+        layout(buffer_reference, scalar, buffer_reference_align = 4) restrict readonly buffer CameraBuffer {
+            RealCamera camera;
+        };
+
+        layout(binding = 0, set = 0) buffer OutData {
+            CameraBuffer cameraBuffer;
+            mat4 in_mat;
+            mat4 out_mat;
+        };
+
+        void foo() {
+            out_mat += cameraBuffer.camera.viewProjection * in_mat;
+        }
+
+        void main() {
+            restrict const RealCamera camera = cameraBuffer.camera;
+            out_mat = camera.viewProjection * in_mat;
+            foo();
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer bda_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    VkDeviceAddress buffer_ptr = bda_buffer.address();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
+    in_buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    // One for each of the 2 access
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 2);
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_scalar_block_layout : require
+        #extension GL_EXT_buffer_reference2 : require
+        #extension GL_ARB_gpu_shader_int64 : require
+
+        struct Test {
+            float a;
+        };
+
+        layout(buffer_reference, std430, buffer_reference_align = 16) buffer TestBuffer {
+            mat4 padding;
+            Test test;
+        };
+
+        Test GetTest(uint64_t ptr) {
+            return TestBuffer(ptr).test;
+        }
+
+        layout(set = 0, binding = 0) buffer foo {
+            TestBuffer data;
+            float x;
+        } in_buffer;
+
+        void main() {
+            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer bda_buffer(*m_device, 16, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    VkDeviceAddress buffer_ptr = bda_buffer.address();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
+    in_buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_scalar_block_layout : require
+        #extension GL_EXT_buffer_reference2 : require
+        #extension GL_ARB_gpu_shader_int64 : require
+
+        struct Test {
+            float a;
+        };
+
+        layout(buffer_reference, std430, buffer_reference_align = 16) buffer TestBuffer {
+            Test test;
+        };
+
+        Test GetTest(uint64_t ptr) {
+            return TestBuffer(ptr).test;
+        }
+
+        layout(set = 0, binding = 0) buffer foo {
+            TestBuffer data;
+            float x;
+        } in_buffer;
+
+        void main() {
+            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer bda_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+
+    vkt::Buffer in_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    VkDeviceAddress buffer_ptr = bda_buffer.address() + 256;  // wrong
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
+    in_buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
