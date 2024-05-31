@@ -5145,7 +5145,7 @@ TEST_F(NegativeDescriptors, EmptyDescriptorSetLayout) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.dstSet = descriptor_set;
 
-    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-zero-binding");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkWriteDescriptorSet-zero-binding");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }

@@ -474,6 +474,7 @@ def main(argv):
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/object_tracker/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/drawdispatch/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu/error_message'), '*.cpp')))
 
     test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 
