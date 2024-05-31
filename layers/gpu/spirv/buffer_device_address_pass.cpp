@@ -85,17 +85,28 @@ bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const
         return false;
     }
 
-    if (op_type_pointer->inst_.Operand(0) != spv::StorageClassPhysicalStorageBuffer) {
-        return false;
-    }
-
-    access_opcode_ = opcode;
-
     // The OpTypePointer's type
     uint32_t accessed_type_id = op_type_pointer->inst_.Operand(1);
     const Type* accessed_type = module_.type_manager_.FindTypeById(accessed_type_id);
 
+    // Most common case we will just spot the access directly using the PhysicalStorageBuffer pointer
+    if (op_type_pointer->inst_.Operand(0) == spv::StorageClassPhysicalStorageBuffer) {
+        // If loading the struct, this is likely just saving it
+        // Shown from RADV/Intel NIR compiler, the compiler gets an offset and then dereference just the member, it never "loads the
+        // whole struct"
+        if (accessed_type->spv_type_ == SpvType::kStruct) {
+            // If the struct is only a single element, then everything works and the size will be the same
+            if (accessed_type->inst_.Length() > 3) {
+                return false;
+            }
+        }
+    } else {
+        // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089
+        return false;
+    }
+
     // Save information to be used to make the Function
+    access_opcode_ = opcode;
     target_instruction_ = &inst;
     type_length_ = module_.type_manager_.TypeLength(*accessed_type);
     return true;
