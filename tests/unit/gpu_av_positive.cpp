@@ -666,17 +666,14 @@ TEST_F(PositiveGpuAV, MaxDescriptorsClamp13) {
 TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("Use a bad vertex shader, but don't select it for validation and make sure we don't get a buffer oob warning");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
     const VkBool32 value = true;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                        &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &setting};
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.robustBufferAccess) {
-        GTEST_SKIP() << "Not safe to write outside of buffer memory";
-    }
+
     // Robust buffer access will be on by default
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     InitState(nullptr, nullptr, pool_flags);

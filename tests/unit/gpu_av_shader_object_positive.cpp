@@ -11,35 +11,27 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/shader_object_helper.h"
 #include "../framework/gpu_av_helper.h"
 
 TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
     const VkBool32 value = true;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                        &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &setting};
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    validation_features.pNext = &layer_settings_create_info;
-    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV(*this)) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
+    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
 
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&shader_object_features);
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.robustBufferAccess) {
-        GTEST_SKIP() << "Not safe to write outside of buffer memory";
-    }
     // Robust buffer access will be on by default
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    InitState(nullptr, &features2, pool_flags);
+    InitState(nullptr, nullptr, pool_flags);
     InitDynamicRenderTarget();
 
     OneOffDescriptorSet vert_descriptor_set(m_device,
@@ -61,29 +53,14 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 
     VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_.handle()};
 
-    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
-    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vert_create_info.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
-    vert_create_info.pCode = vert_spv.data();
-    vert_create_info.pName = "main";
-    vert_create_info.setLayoutCount = 1;
-    vert_create_info.pSetLayouts = descriptor_set_layouts;
+    VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
 
     VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enabled;
     vert_create_info.pNext = &features;
-
-    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper();
-    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    frag_create_info.codeSize = frag_spv.size() * sizeof(frag_spv[0]);
-    frag_create_info.pCode = frag_spv.data();
-    frag_create_info.pName = "main";
-    frag_create_info.setLayoutCount = 1;
-    frag_create_info.pSetLayouts = descriptor_set_layouts;
 
     // TODO - Once the spec is changed to allow this, the SetUnexpectedError call can be removed
     m_errorMonitor->SetUnexpectedError("VUID-VkShaderCreateInfoEXT-pNext-pNext");
@@ -100,12 +77,12 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     m_commandBuffer->BindVertFragShader(vertShader, fragShader);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 
     // Should get a warning since shader was instrumented
-    m_errorMonitor->SetDesiredWarning("VUID-vkCmdDraw-None-08613", 4);
+    m_errorMonitor->SetDesiredWarning("VUID-vkCmdDraw-None-08613", 3);
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
