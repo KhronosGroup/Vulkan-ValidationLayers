@@ -354,8 +354,11 @@ uint32_t TypeManager::TypeLength(const Type& type) {
             return 8u;
         case spv::OpTypeArray: {
             const Type* element_type = FindTypeById(type.inst_.Operand(0));
-            const uint32_t count = element_type->inst_.Operand(0);
-            return count * TypeLength(*element_type);
+            const Constant* count = FindConstantById(type.inst_.Operand(1));
+            // TODO - Need to handle spec constant here, for now return zero to have things not blowup
+            assert(count);
+            const uint32_t length = count ? count->inst_.Operand(0) : 0;
+            return length * TypeLength(*element_type);
         }
         case spv::OpTypeStruct: {
             // Get the offset of the last member and then figure out it's size
