@@ -23,11 +23,6 @@
 #include "core_validation.h"
 #include "chassis/chassis_modification_state.h"
 
-bool CoreChecks::ValidateComputePipelineShaderState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
-    StageCreateInfo stage_create_info(&pipeline);
-    return ValidateShaderStage(stage_create_info, pipeline.stage_states[0], create_info_loc.dot(Field::stage));
-}
-
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -43,7 +38,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
             continue;
         }
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        skip |= ValidateComputePipelineShaderState(*pipeline, create_info_loc);
+        skip |= ValidateShaderStage(pipeline->stage_states[0], pipeline, create_info_loc.dot(Field::stage));
         skip |= ValidateShaderModuleId(*pipeline, create_info_loc);
         skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");

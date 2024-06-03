@@ -47,17 +47,6 @@ namespace chassis {
 struct CreateShaderModule;
 }  // namespace chassis
 
-struct StageCreateInfo {
-    const vvl::Pipeline *pipeline;
-
-    const PushConstantRangesId shader_object_const_ranges;
-
-    std::vector<VkPushConstantRange> const *GetPushConstantRanges() const;
-
-    StageCreateInfo(const vvl::Pipeline *pipeline);
-    StageCreateInfo(const VkShaderCreateInfoEXT &create_info);
-};
-
 namespace vvl {
 class PipelineCache : public StateObject {
   public:

@@ -179,7 +179,7 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, 
 }
 
 bool CoreChecks::ValidateBuiltinLimits(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                       const StageCreateInfo &create_info, const Location &loc) const {
+                                       const vvl::Pipeline *pipeline, const Location &loc) const {
     bool skip = false;
 
     // Currently all builtin tested are only found in fragment shaders
@@ -192,8 +192,8 @@ bool CoreChecks::ValidateBuiltinLimits(const spirv::Module &module_state, const 
         // Handles both the input and output sampleMask
         if (variable->decorations.builtin == spv::BuiltInSampleMask &&
             variable->array_size > phys_dev_props.limits.maxSampleMaskWords) {
-            const char *vuid = create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711"
-                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08451";
+            const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711"
+                                        : "VUID-VkShaderCreateInfoEXT-pCode-08451";
             skip |= LogError(vuid, module_state.handle(), loc,
                              "The BuiltIns SampleMask array sizes is %" PRIu32
                              " which exceeds "
@@ -207,15 +207,13 @@ bool CoreChecks::ValidateBuiltinLimits(const spirv::Module &module_state, const 
 }
 
 bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                           const StageCreateInfo &create_info, const Location &loc) const {
+                                           const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
 
-    if (!create_info.pipeline || !create_info.pipeline->pre_raster_state || !create_info.pipeline->InputAssemblyState() ||
-        entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT || create_info.pipeline->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+    if (!pipeline.pre_raster_state || !pipeline.InputAssemblyState() || entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT ||
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         return skip;
     }
-
-    const auto &pipeline = *create_info.pipeline;
 
     bool has_tess = false;
     VkPrimitiveTopology topology = pipeline.InputAssemblyState()->topology;
@@ -830,8 +828,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
         const VkShaderStageFlagBits stage = stage_state.GetStage();
         // Only validate the shader state once when added, not again when linked
         if ((stage & pipeline.linking_shaders) == 0) {
-            StageCreateInfo stage_create_info(&pipeline);
-            skip |= ValidateShaderStage(stage_create_info, stage_state, create_info_loc.dot(Field::pStages, i));
+            skip |= ValidateShaderStage(stage_state, &pipeline, create_info_loc.dot(Field::pStages, i));
         }
         if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage_state;

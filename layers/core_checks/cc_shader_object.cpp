@@ -306,11 +306,10 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         spv_const_binary_t binary{static_cast<const uint32_t*>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)};
         skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
-        const StageCreateInfo stage_create_info(pCreateInfos[i]);
         const auto spirv = std::make_shared<spirv::Module>(create_info.codeSize, static_cast<const uint32_t*>(create_info.pCode));
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
         const ShaderStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
-        skip |= ValidateShaderStage(stage_create_info, stage_state, create_info_loc);
+        skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);
 
         if (create_info.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             skip |= ValidateCreateShadersMesh(create_info, *spirv, create_info_loc);

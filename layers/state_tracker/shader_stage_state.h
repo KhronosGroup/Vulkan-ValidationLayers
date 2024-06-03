@@ -49,6 +49,7 @@ struct ShaderStageState {
                      const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
                      std::shared_ptr<const vvl::ShaderModule> module_state, std::shared_ptr<const spirv::Module> spirv_state);
 
+    bool HasPipeline() const { return pipeline_create_info != nullptr; }
     const char *GetPName() const;
     VkShaderStageFlagBits GetStage() const;
     vku::safe_VkSpecializationInfo *GetSpecializationInfo() const;
