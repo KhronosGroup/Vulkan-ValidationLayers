@@ -19,7 +19,7 @@
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
 #include "generated/layer_chassis_dispatch.h"
-#include "utils/shader_utils.h"
+#include "state_tracker/shader_stage_state.h"
 #include "chassis/chassis_modification_state.h"
 
 namespace debug_printf {

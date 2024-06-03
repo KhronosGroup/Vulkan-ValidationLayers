@@ -39,11 +39,13 @@ Currently these are
 
 The code is currently split up into the following main sections
 
-- `layers/shader_instruction.cpp`
+- `layers/state_tracker/shader_instruction.cpp`
     - This contains information about each SPIR-V instruction.
-- `layers/shader_module.cpp`
+- `layers/state_tracker/shader_module.cpp`
     - This contains information about the `VkShaderModule` object
-- `layers/shader_validation.cpp`
+- `layers/state_tracker/shader_stage_state.cpp`
+    - This contains information about the shader stage, this can be either from a Pipeline and/or Shader Object
+- `layers/core_checks/cc_spirv.cpp`
     - This takes the following above and does the actual validation. All errors are produced here.
     - `layers/vulkan/generated/spirv_validation_helper.cpp`
         - This is generated file provides a way to generate checks for things found in the `vk.xml` related to SPIR-V

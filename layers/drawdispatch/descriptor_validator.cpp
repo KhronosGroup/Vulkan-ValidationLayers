@@ -17,7 +17,7 @@
 
 #include "descriptor_validator.h"
 #include "generated/spirv_grammar_helper.h"
-#include "utils/shader_utils.h"
+#include "state_tracker/shader_stage_state.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"

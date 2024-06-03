@@ -25,7 +25,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
-#include "utils/shader_utils.h"
+#include "state_tracker/shader_stage_state.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/render_pass_state.h"
 
