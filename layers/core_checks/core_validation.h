@@ -657,7 +657,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                            const ErrorObject& error_obj) const override;
-    bool ValidatePipelineShaderStage(const StageCreateInfo& stage_create_info, const PipelineStageState& stage_state,
+    bool ValidatePipelineShaderStage(const StageCreateInfo& stage_create_info, const ShaderStageState& stage_state,
                                      const Location& loc) const;
     bool ValidatePointSizeShaderState(const StageCreateInfo& create_info, const spirv::Module& module_state,
                                       const spirv::EntryPoint& entrypoint, VkShaderStageFlagBits stage, const Location& loc) const;
@@ -682,11 +682,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSubgroupRotateClustered(const spirv::Module& module_state, const spirv::Instruction& insn,
                                          const Location& loc) const;
     bool ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                   const PipelineStageState& stage_state, const uint32_t local_size_x, const Location& loc) const;
+                                   const ShaderStageState& stage_state, const uint32_t local_size_x, const Location& loc) const;
     bool ValidateShaderResolveQCOM(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                    const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateShaderSubgroupSizeControl(const StageCreateInfo& stage_create_info, VkShaderStageFlagBits stage,
-                                           const PipelineStageState& stage_state, const Location& loc) const;
+                                           const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateWorkgroupSharedMemory(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory, const Location& loc) const;
     bool ValidateShaderTileImage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -2040,18 +2040,18 @@ class CoreChecks : public ValidationStateTracker {
                                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue,
                                                  const ErrorObject& error_obj) const override;
-    bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const PipelineStageState& stage_state,
+    bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const ShaderStageState& stage_state,
                                       const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT& required_subgroup_size,
                                       uint64_t invocations, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z,
                                       const Location& loc) const;
     bool ValidateComputeWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                       const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
+                                       const ShaderStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                        uint32_t local_size_z, const Location& loc) const;
     bool ValidateTaskMeshWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                        const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
+                                        const ShaderStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                         uint32_t local_size_z, const Location& loc) const;
     bool ValidateEmitMeshTasksSize(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                   const PipelineStageState& stage_state, const Location& loc) const;
+                                   const ShaderStageState& stage_state, const Location& loc) const;
 
     bool PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                           const ErrorObject& error_obj) const override;

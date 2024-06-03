@@ -195,7 +195,7 @@ void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spi
 }
 
 // static
-ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states) {
+ActiveSlotMap GetActiveSlots(const std::vector<ShaderStageState> &stage_states) {
     ActiveSlotMap active_slots;
     for (const auto &stage : stage_states) {
         GetActiveSlots(active_slots, stage.entrypoint);
@@ -217,23 +217,23 @@ uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots) {
     return max_active_slot;
 }
 
-const char *PipelineStageState::GetPName() const {
+const char *ShaderStageState::GetPName() const {
     return (pipeline_create_info) ? pipeline_create_info->pName : shader_object_create_info->pName;
 }
 
-VkShaderStageFlagBits PipelineStageState::GetStage() const {
+VkShaderStageFlagBits ShaderStageState::GetStage() const {
     return (pipeline_create_info) ? pipeline_create_info->stage : shader_object_create_info->stage;
 }
 
-vku::safe_VkSpecializationInfo *PipelineStageState::GetSpecializationInfo() const {
+vku::safe_VkSpecializationInfo *ShaderStageState::GetSpecializationInfo() const {
     return (pipeline_create_info) ? pipeline_create_info->pSpecializationInfo : shader_object_create_info->pSpecializationInfo;
 }
 
-const void *PipelineStageState::GetPNext() const {
+const void *ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-bool PipelineStageState::GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const {
+bool ShaderStageState::GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const {
     const spirv::Instruction *type_id = spirv_state->FindDef(insn.Word(1));
     if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
         return false;
@@ -257,10 +257,10 @@ bool PipelineStageState::GetInt32ConstantValue(const spirv::Instruction &insn, u
     return false;
 }
 
-PipelineStageState::PipelineStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
-                                       const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
-                                       std::shared_ptr<const vvl::ShaderModule> module_state,
-                                       std::shared_ptr<const spirv::Module> spirv_state)
+ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
+                                   const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
+                                   std::shared_ptr<const vvl::ShaderModule> module_state,
+                                   std::shared_ptr<const spirv::Module> spirv_state)
     : module_state(module_state),
       spirv_state(spirv_state),
       pipeline_create_info(pipeline_create_info),

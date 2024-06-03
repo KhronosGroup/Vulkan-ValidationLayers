@@ -464,7 +464,7 @@ VkComponentTypeKHR GetComponentType(const spirv::Instruction *insn) {
 // Validate SPV_KHR_cooperative_matrix (and SPV_NV_cooperative_matrix) behavior that can't be statically validated in SPIRV-Tools
 // (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                           const PipelineStageState &stage_state, const uint32_t local_size_x,
+                                           const ShaderStageState &stage_state, const uint32_t local_size_x,
                                            const Location &loc) const {
     bool skip = false;
 
@@ -476,7 +476,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
         bool all_constant;
         bool is_signed_int;
 
-        CoopMatType(uint32_t id, const spirv::Module &module_state, const PipelineStageState &stage_state) {
+        CoopMatType(uint32_t id, const spirv::Module &module_state, const ShaderStageState &stage_state) {
             const spirv::Instruction *insn = module_state.FindDef(id);
             const spirv::Instruction *component_type_insn = module_state.FindDef(insn->Word(2));
             const spirv::Instruction *scope_insn = module_state.FindDef(insn->Word(3));
@@ -2145,7 +2145,7 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
 }
 
 // Function to get the VkPipelineShaderStageCreateInfo from the various pipeline types
-bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create_info, const PipelineStageState &stage_state,
+bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create_info, const ShaderStageState &stage_state,
                                              const Location &loc) const {
     bool skip = false;
     const VkShaderStageFlagBits stage = stage_state.GetStage();
@@ -2589,7 +2589,7 @@ bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice 
     return skip;
 }
 
-bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module &module_state, const PipelineStageState &stage_state,
+bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module &module_state, const ShaderStageState &stage_state,
                                               const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT &required_subgroup_size,
                                               uint64_t invocations, uint32_t local_size_x, uint32_t local_size_y,
                                               uint32_t local_size_z, const Location &loc) const {
@@ -2648,7 +2648,7 @@ bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module &module_state,
 }
 
 bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                               const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
+                                               const ShaderStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                                uint32_t local_size_z, const Location &loc) const {
     bool skip = false;
 
@@ -2728,7 +2728,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
 }
 
 bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
+                                                const ShaderStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                                 uint32_t local_size_z, const Location &loc) const {
     bool skip = false;
 
@@ -2821,7 +2821,7 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module &module_stat
 }
 
 bool CoreChecks::ValidateEmitMeshTasksSize(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                           const PipelineStageState &stage_state, const Location &loc) const {
+                                           const ShaderStageState &stage_state, const Location &loc) const {
     bool skip = false;
 
     for (const spirv::Instruction &insn : module_state.static_data_.instructions) {
