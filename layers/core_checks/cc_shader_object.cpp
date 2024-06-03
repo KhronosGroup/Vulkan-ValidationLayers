@@ -258,6 +258,18 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
     return skip;
 }
 
+bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_info, const spirv::Module& spirv,
+                                           const Location& create_info_loc) const {
+    bool skip = false;
+    if (create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) return skip;
+    if (spirv.static_data_.has_builtin_draw_index) {
+        skip |= LogError(
+            "VUID-vkCreateShadersEXT-pCreateInfos-09632", device, create_info_loc,
+            "The Mesh shader object is being created uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                  const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
                                                  VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
@@ -299,6 +311,10 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
         const PipelineStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
         skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc);
+
+        if (create_info.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+            skip |= ValidateCreateShadersMesh(create_info, *spirv, create_info_loc);
+        }
 
         // Validate tessellation stages
         if (stage_state.entrypoint && (create_info.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
