@@ -1599,7 +1599,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
         // Check if the current pipeline is compatible for the maximum used set with the bound sets.
         if (!pipeline->descriptor_buffer_mode) {
             if (!pipeline->active_slots.empty() &&
-                !IsBoundSetCompat(pipeline->max_active_slot, last_bound_state, *pipeline_layout)) {
+                !IsBoundSetCompatible(pipeline->max_active_slot, last_bound_state, *pipeline_layout)) {
                 LogObjectList objlist(pipeline->Handle());
                 const auto layouts = pipeline->PipelineLayoutStateUnion();
                 std::ostringstream pipe_layouts_log;
@@ -1620,7 +1620,7 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                                  FormatHandle(*pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline->max_active_slot,
                                  FormatHandle(last_bound_state.pipeline_layout).c_str());
             } else {
-                // if the bound set is not copmatible, the rest will just be extra redundant errors
+                // if the bound set is not compatible, the rest will just be extra redundant errors
                 for (const auto &set_binding_pair : pipeline->active_slots) {
                     uint32_t set_index = set_binding_pair.first;
                     const auto set_info = last_bound_state.per_set[set_index];

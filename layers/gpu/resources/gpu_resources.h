@@ -22,6 +22,9 @@
 #include "generated/error_location_helper.h"
 #include "vma/vma.h"
 
+#include <optional>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -40,7 +43,6 @@ class DescriptorSetManager {
   private:
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
 
-    static const uint32_t kItemsPerChunk = 512;
     struct PoolTracker {
         uint32_t size;
         uint32_t used;
@@ -64,175 +66,61 @@ struct DeviceMemoryBlock {
     bool IsNull() { return buffer == VK_NULL_HANDLE; }
 };
 
-}  // namespace gpu
-
-namespace gpuav {
-class Validator;
-struct DescBindingInfo;
-
 class GpuResourcesManager {
   public:
-    void AddPipeline(VkPipeline);
+    GpuResourcesManager(VmaAllocator vma_allocator, DescriptorSetManager &descriptor_set_manager)
+        : vma_allocator_(vma_allocator), descriptor_set_manager_(descriptor_set_manager) {}
+
+    VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
+    void ManageDeviceMemoryBlock(gpu::DeviceMemoryBlock mem_block);
+
+    void DestroyResources();
 
   private:
-    std::vector<VkPipeline> pipelines_;
-    std::vector<VkDescriptorPool> descriptor_pools_;
-    std::vector<VkDescriptorSet> descriptor_sets_;
-    std::vector<gpu::DeviceMemoryBlock> buffers_;
-    std::vector<VkShaderModule> shader_modules_;
-    std::vector<VkDescriptorSetLayout> descriptor_set_layouts_;
-    std::vector<VkPipelineLayout> pipeline_layouts_;
-    std::vector<VkShaderEXT> shader_objects_;
+    VmaAllocator vma_allocator_;
+    DescriptorSetManager &descriptor_set_manager_;
+    std::vector<std::pair<VkDescriptorPool, VkDescriptorSet>> descriptors_;
+    std::vector<gpu::DeviceMemoryBlock> mem_blocks_;
 };
 
-// Every recorded action command needs the validation resources listed in this function
-// If adding validation for a new command reveals the need to allocate specific resources for it, create a new class that derives
-// from this one
-class CommandResources {
+class SharedResourcesManager {
   public:
-    virtual ~CommandResources() {}
-    virtual void Destroy(Validator &validator);
-    CommandResources() = default;
-    CommandResources(const CommandResources &) = default;
-    CommandResources &operator=(const CommandResources &) = default;
-
-    // Return iff an error was logged
-    bool LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *error_record,
-                              const uint32_t operation_index, const LogObjectList &objlist);
-    // Return iff an error was logged
-    virtual bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
-                                            const LogObjectList &objlist) {
-        return false;
+    template <typename T>
+    T *TryGet() {
+        auto entry = shared_validation_resources_map_.find(typeid(T));
+        if (entry == shared_validation_resources_map_.cend()) {
+            return nullptr;
+        }
+        T *t = reinterpret_cast<T *>(entry->second.first);
+        return t;
     }
 
-    // Used by gpu av inserted validation pipelines
-    // ---
-    vvl::Func command = vvl::Func::Empty;  // Should probably use Location instead
-    // Draw/dispatch/trace rays index in cmd buffer. 0 for all other operations (TODO: maintain it correctly)
-    uint32_t operation_index = 0;
+    template <typename T, class... ConstructorTypes>
+    T &Get(ConstructorTypes &&...args) {
+        T *t = TryGet<T>();
+        if (t) return *t;
 
-    // Only used for shader instrumentation
-    // ---
-    bool uses_shader_object = false;  // Only used in error message logging, to select VUID
-    VkDescriptorSet instrumentation_desc_set = VK_NULL_HANDLE;
-    VkDescriptorPool instrumentation_desc_pool = VK_NULL_HANDLE;
+        auto entry =
+            shared_validation_resources_map_.insert({typeid(T), {new T(std::forward<ConstructorTypes>(args)...), [](void *ptr) {
+                                                                     auto obj = static_cast<T *>(ptr);
+                                                                     delete obj;
+                                                                 }}});
+        return *static_cast<T *>(entry.first->second.first);
+    }
 
-    VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
-    bool uses_robustness =
-        false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
+    void Clear();
 
-    // desc_binding list and index are only used to help generate an error message
-    uint32_t desc_binding_index = vvl::kU32Max;
-    std::vector<DescBindingInfo> *desc_binding_list = nullptr;
-};
-
-struct SharedValidationResources {
-    virtual ~SharedValidationResources() {}
-    virtual void Destroy(Validator &validator) = 0;
-};
-
-class PreDrawResources : public CommandResources {
-  public:
-    ~PreDrawResources() {}
-
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    // Store a descriptor for the indirect buffer or count buffer
-    VkDescriptorSet buffer_desc_set = VK_NULL_HANDLE;
-    VkBuffer indirect_buffer = VK_NULL_HANDLE;
-    VkDeviceSize indirect_buffer_offset = 0;
-    uint32_t indirect_buffer_stride = 0;
-    VkDeviceSize indirect_buffer_size = 0;
-    static constexpr uint32_t push_constant_words = 11;
-    bool emit_task_error = false;  // Used to decide between mesh error and task error
-
-    void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist);
-
-    struct SharedResources : SharedValidationResources {
-        VkShaderModule shader_module = VK_NULL_HANDLE;
-        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-        vvl::concurrent_unordered_map<VkRenderPass, VkPipeline> renderpass_to_pipeline;
-        VkShaderEXT shader_object = VK_NULL_HANDLE;
-
-        void Destroy(Validator &validator);
+  private:
+    using TypeInfoRef = std::reference_wrapper<const std::type_info>;
+    struct Hasher {
+        std::size_t operator()(TypeInfoRef code) const { return code.get().hash_code(); }
     };
-};
-
-class PreDispatchResources : public CommandResources {
-  public:
-    ~PreDispatchResources() {}
-
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet indirect_buffer_desc_set = VK_NULL_HANDLE;
-    VkBuffer indirect_buffer = VK_NULL_HANDLE;
-    VkDeviceSize indirect_buffer_offset = 0;
-    static constexpr uint32_t push_constant_words = 4;
-
-    void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist);
-
-    struct SharedResources : SharedValidationResources {
-        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-        VkPipeline pipeline = VK_NULL_HANDLE;
-        VkShaderEXT shader_object = VK_NULL_HANDLE;
-
-        void Destroy(Validator &validator);
+    struct EqualTo {
+        bool operator()(TypeInfoRef lhs, TypeInfoRef rhs) const { return lhs.get() == rhs.get(); }
     };
+
+    std::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
+        shared_validation_resources_map_;
 };
 
-class PreTraceRaysResources : public CommandResources {
-  public:
-    ~PreTraceRaysResources() {}
-
-    VkDeviceAddress indirect_data_address = 0;
-    static constexpr uint32_t push_constant_words = 5;
-
-    void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist);
-
-    struct SharedResources : SharedValidationResources {
-        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-        VkPipeline pipeline = VK_NULL_HANDLE;
-        VmaPool sbt_pool = VK_NULL_HANDLE;
-        VkBuffer sbt_buffer = VK_NULL_HANDLE;
-        VmaAllocation sbt_allocation = {};
-        VkDeviceAddress sbt_address = 0;
-        uint32_t shader_group_handle_size_aligned = 0;
-
-        void Destroy(Validator &validator);
-    };
-};
-
-class PreCopyBufferToImageResources : public CommandResources {
-  public:
-    ~PreCopyBufferToImageResources() {}
-
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet desc_set = VK_NULL_HANDLE;
-    VkBuffer src_buffer = VK_NULL_HANDLE;
-
-    // Buffer holding the copy regions obtained from pRegions
-    VkBuffer copy_src_regions_buffer = VK_NULL_HANDLE;
-    VmaAllocation copy_src_regions_allocation = VK_NULL_HANDLE;
-
-    void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist);
-
-    struct SharedResources : SharedValidationResources {
-        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-        VkPipeline pipeline = VK_NULL_HANDLE;
-        VmaPool copy_regions_pool = VK_NULL_HANDLE;
-
-        void Destroy(Validator &validator);
-    };
-};
-
-}  // namespace gpuav
+}  // namespace gpu

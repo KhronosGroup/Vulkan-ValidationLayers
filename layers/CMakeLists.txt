@@ -30,6 +30,7 @@ target_sources(VkLayer_utils PRIVATE
     error_message/error_strings.h
     error_message/record_object.h
     external/xxhash.h
+    external/inplace_function.h
     ${API_TYPE}/generated/error_location_helper.cpp
     ${API_TYPE}/generated/error_location_helper.h
     ${API_TYPE}/generated/feature_requirements_helper.cpp
@@ -221,10 +222,13 @@ target_sources(vvl PRIVATE
     gpu/core/gpuav_constants.h
     gpu/cmd_validation/gpuav_cmd_validation_common.h
     gpu/cmd_validation/gpuav_cmd_validation_common.cpp
+    gpu/cmd_validation/gpuav_draw.h
     gpu/cmd_validation/gpuav_draw.cpp
-    gpu/cmd_validation/gpuav_draw.cpp
+    gpu/cmd_validation/gpuav_dispatch.h
     gpu/cmd_validation/gpuav_dispatch.cpp
+    gpu/cmd_validation/gpuav_trace_rays.h
     gpu/cmd_validation/gpuav_trace_rays.cpp
+    gpu/cmd_validation/gpuav_copy_buffer_to_image.h
     gpu/cmd_validation/gpuav_copy_buffer_to_image.cpp
     gpu/descriptor_validation/gpuav_descriptor_validation.h
     gpu/descriptor_validation/gpuav_descriptor_validation.cpp

@@ -47,28 +47,26 @@ VkResult DescriptorSetManager::GetDescriptorSet(VkDescriptorPool *out_desc_pool,
 VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
                                                  std::vector<VkDescriptorSet> *out_desc_sets) {
     auto guard = Lock();
-    const uint32_t default_pool_size = kItemsPerChunk;
+
     VkResult result = VK_SUCCESS;
-    VkDescriptorPool pool_to_use = VK_NULL_HANDLE;
+    VkDescriptorPool desc_pool_to_use = VK_NULL_HANDLE;
 
     assert(count > 0);
-    if (0 == count) {
+    if (count == 0) {
         return result;
     }
     out_desc_sets->clear();
     out_desc_sets->resize(count);
 
-    for (auto &pool : desc_pool_map_) {
-        if (pool.second.used + count < pool.second.size) {
-            pool_to_use = pool.first;
+    for (auto &[desc_pool, pool_tracker] : desc_pool_map_) {
+        if (pool_tracker.used + count < pool_tracker.size) {
+            desc_pool_to_use = desc_pool;
             break;
         }
     }
-    if (VK_NULL_HANDLE == pool_to_use) {
-        uint32_t pool_count = default_pool_size;
-        if (count > default_pool_size) {
-            pool_count = count;
-        }
+    if (desc_pool_to_use == VK_NULL_HANDLE) {
+        constexpr uint32_t kDefaultMaxSetsPerPool = 512;
+        const uint32_t max_sets = std::max(kDefaultMaxSetsPerPool, count);
 
         // TODO: The logic to compute descriptor pool sizes should not be
         // hardcoded like so, should be dynamic depending on the descriptor sets
@@ -76,57 +74,94 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
         // mismatch between this and created descriptor sets.
         const std::array<VkDescriptorPoolSize, 2> pool_sizes = {{{
                                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                                     pool_count * num_bindings_in_set,
+                                                                     max_sets * num_bindings_in_set,
                                                                  },
                                                                  {
                                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
-                                                                     pool_count * num_bindings_in_set,
+                                                                     max_sets * num_bindings_in_set,
                                                                  }}};
 
         VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        desc_pool_info.maxSets = pool_count;
+        desc_pool_info.maxSets = max_sets;
         desc_pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
         desc_pool_info.pPoolSizes = pool_sizes.data();
-        result = DispatchCreateDescriptorPool(device, &desc_pool_info, nullptr, &pool_to_use);
+        result = DispatchCreateDescriptorPool(device, &desc_pool_info, nullptr, &desc_pool_to_use);
         assert(result == VK_SUCCESS);
         if (result != VK_SUCCESS) {
             return result;
         }
-        desc_pool_map_[pool_to_use].size = desc_pool_info.maxSets;
-        desc_pool_map_[pool_to_use].used = 0;
+        desc_pool_map_[desc_pool_to_use].size = desc_pool_info.maxSets;
+        desc_pool_map_[desc_pool_to_use].used = 0;
     }
+
     std::vector<VkDescriptorSetLayout> desc_layouts(count, ds_layout);
-
-    VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr, pool_to_use, count,
-                                              desc_layouts.data()};
-
-    result = DispatchAllocateDescriptorSets(device, &alloc_info, out_desc_sets->data());
+    VkDescriptorSetAllocateInfo desc_set_alloc_info = vku::InitStructHelper();
+    desc_set_alloc_info.descriptorPool = desc_pool_to_use;
+    desc_set_alloc_info.descriptorSetCount = count;
+    desc_set_alloc_info.pSetLayouts = desc_layouts.data();
+    result = DispatchAllocateDescriptorSets(device, &desc_set_alloc_info, out_desc_sets->data());
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
         return result;
     }
-    *out_pool = pool_to_use;
-    desc_pool_map_[pool_to_use].used += count;
+
+    *out_pool = desc_pool_to_use;
+    desc_pool_map_[desc_pool_to_use].used += count;
+
     return result;
 }
 
 void DescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set) {
     auto guard = Lock();
+
     auto iter = desc_pool_map_.find(desc_pool);
-    if (iter != desc_pool_map_.end()) {
-        VkResult result = DispatchFreeDescriptorSets(device, desc_pool, 1, &desc_set);
-        assert(result == VK_SUCCESS);
-        if (result != VK_SUCCESS) {
-            return;
-        }
-        desc_pool_map_[desc_pool].used--;
-        if (0 == desc_pool_map_[desc_pool].used) {
-            DispatchDestroyDescriptorPool(device, desc_pool, nullptr);
-            desc_pool_map_.erase(desc_pool);
-        }
+    assert(iter != desc_pool_map_.end());
+    if (iter == desc_pool_map_.end()) {
+        return;
     }
+
+    VkResult result = DispatchFreeDescriptorSets(device, desc_pool, 1, &desc_set);
+    assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+        return;
+    }
+    desc_pool_map_[desc_pool].used--;
+    if (desc_pool_map_[desc_pool].used == 0) {
+        DispatchDestroyDescriptorPool(device, desc_pool, nullptr);
+        desc_pool_map_.erase(desc_pool);
+    }
+
     return;
+}
+
+void SharedResourcesManager::Clear() {
+    for (auto &[key, value] : shared_validation_resources_map_) {
+        auto &[object, destructor] = value;
+        destructor(object);
+    }
+    shared_validation_resources_map_.clear();
+}
+
+VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {
+    std::pair<VkDescriptorPool, VkDescriptorSet> descriptor;
+    descriptor_set_manager_.GetDescriptorSet(&descriptor.first, desc_set_layout, &descriptor.second);
+    descriptors_.emplace_back(descriptor);
+    return descriptor.second;
+}
+
+void GpuResourcesManager::ManageDeviceMemoryBlock(gpu::DeviceMemoryBlock mem_block) { mem_blocks_.emplace_back(mem_block); }
+
+void GpuResourcesManager::DestroyResources() {
+    for (auto &[desc_pool, desc_set] : descriptors_) {
+        descriptor_set_manager_.PutBackDescriptorSet(desc_pool, desc_set);
+    }
+    descriptors_.clear();
+
+    for (auto &mem_block : mem_blocks_) {
+        mem_block.Destroy(vma_allocator_);
+    }
+    mem_blocks_.clear();
 }
 
 }  // namespace gpu
