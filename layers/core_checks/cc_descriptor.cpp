@@ -4527,6 +4527,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
     auto num_samplers = Count<vvl::Sampler>();
     if (num_samplers >= phys_dev_props.limits.maxSamplerAllocationCount) {
         skip |= LogError("VUID-vkCreateSampler-maxSamplerAllocationCount-04110", device, error_obj.location,

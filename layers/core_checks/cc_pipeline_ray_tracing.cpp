@@ -176,6 +176,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
     bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                          pPipelines, error_obj, pipeline_states, chassis_state);
 
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
         if (!pipeline) {
@@ -218,6 +219,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                                           pCreateInfos, pAllocator, pPipelines, error_obj,
                                                                           pipeline_states, chassis_state);
 
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
     skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
                                       "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03678");
 

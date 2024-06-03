@@ -319,6 +319,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const char* vuid) const;
 
     bool ValidateObjectNotInUse(const vvl::StateObject* obj_node, const Location& loc, const char* error_code) const;
+    bool ValidateDeviceQueueSupport(const Location& loc) const;
     bool HasRequiredQueueFlags(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
                                VkQueueFlags required_flags) const;
     std::string DescribeRequiredQueueFlag(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
