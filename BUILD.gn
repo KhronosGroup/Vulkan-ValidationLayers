@@ -229,6 +229,7 @@ vvl_sources = [
   "layers/state_tracker/descriptor_sets.h",
   "layers/state_tracker/device_memory_state.cpp",
   "layers/state_tracker/device_memory_state.h",
+  "layers/state_tracker/device_state.cpp",
   "layers/state_tracker/device_state.h",
   "layers/state_tracker/fence_state.cpp",
   "layers/state_tracker/fence_state.h",

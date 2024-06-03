@@ -264,6 +264,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                                                 const ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     switch (pCreateInfo->queryType) {
         case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
@@ -397,7 +398,6 @@ bool CoreChecks::HasRequiredQueueFlags(const vvl::CommandBuffer &cb_state, const
         }
     }
     return true;
-    ;
 }
 
 std::string CoreChecks::DescribeRequiredQueueFlag(const vvl::CommandBuffer &cb_state,

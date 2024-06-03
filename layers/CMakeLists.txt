@@ -265,6 +265,7 @@ target_sources(vvl PRIVATE
     state_tracker/descriptor_sets.h
     state_tracker/device_memory_state.cpp
     state_tracker/device_memory_state.h
+    state_tracker/device_state.cpp
     state_tracker/device_state.h
     state_tracker/fence_state.cpp
     state_tracker/fence_state.h

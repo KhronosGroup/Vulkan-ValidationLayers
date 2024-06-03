@@ -35,6 +35,8 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                                                        chassis::CreateComputePipelines &chassis_state) const {
     bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                     pPipelines, error_obj, pipeline_states, chassis_state);
+
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
         if (!pipeline) {

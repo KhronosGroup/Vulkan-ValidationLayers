@@ -263,6 +263,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                                                  VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
     bool skip = false;
 
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
     if (enabled_features.shaderObject == VK_FALSE) {
         skip |=
             LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");

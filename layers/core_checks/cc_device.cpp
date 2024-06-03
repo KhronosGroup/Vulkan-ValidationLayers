@@ -851,3 +851,73 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint
     }
     return skip;
 }
+
+// These were all added from https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6672
+bool CoreChecks::ValidateDeviceQueueSupport(const Location &loc) const {
+    bool skip = false;
+    const char *vuid = kVUIDUndefined;
+    VkQueueFlags flags = 0;
+
+    switch (loc.function) {
+        case Func::vkCreateRayTracingPipelinesKHR:
+            vuid = "VUID-vkCreateRayTracingPipelinesKHR-device-09677";
+            flags = VK_QUEUE_COMPUTE_BIT;
+            break;
+        case Func::vkCreateRayTracingPipelinesNV:
+            vuid = "VUID-vkCreateRayTracingPipelinesNV-device-09677";
+            flags = VK_QUEUE_COMPUTE_BIT;
+            break;
+        case Func::vkCreateComputePipelines:
+            vuid = "VUID-vkCreateComputePipelines-device-09661";
+            flags = VK_QUEUE_COMPUTE_BIT;
+            break;
+        case Func::vkCreateGraphicsPipelines:
+            vuid = "VUID-vkCreateGraphicsPipelines-device-09662";
+            flags = VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateQueryPool:
+            vuid = "VUID-vkCreateQueryPool-device-09663";
+            flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateBuffer:
+            vuid = "VUID-vkCreateBuffer-device-09664";
+            flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_SPARSE_BINDING_BIT |
+                    VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateBufferView:
+            vuid = "VUID-vkCreateBufferView-device-09665";
+            flags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateImage:
+            vuid = "VUID-vkCreateImage-device-09666";
+            flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_OPTICAL_FLOW_BIT_NV |
+                    VK_QUEUE_SPARSE_BINDING_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateImageView:
+            vuid = "VUID-vkCreateImageView-device-09667";
+            flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateSampler:
+            vuid = "VUID-vkCreateSampler-device-09668";
+            flags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateEvent:
+            vuid = "VUID-vkCreateEvent-device-09672";
+            flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateShadersEXT:
+            vuid = "VUID-vkCreateShadersEXT-device-09669";
+            flags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+            break;
+        default:
+            assert(false);  // missing case
+            return skip;
+    }
+
+    if ((physical_device_state->supported_queues & flags) == 0) {
+        skip |= LogError(vuid, device, loc, "device only supports (%s) but require one of (%s).",
+                         string_VkQueueFlags(physical_device_state->supported_queues).c_str(), string_VkQueueFlags(flags).c_str());
+    }
+
+    return skip;
+}

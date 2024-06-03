@@ -2587,6 +2587,7 @@ bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreate
                                             const VkAllocationCallbacks* pAllocator, VkEvent* pEvent,
                                             const ErrorObject& error_obj) const {
     bool skip = false;
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
         if (VK_FALSE == enabled_features.events) {
             skip |= LogError("VUID-vkCreateEvent-events-04468", device, error_obj.location,
