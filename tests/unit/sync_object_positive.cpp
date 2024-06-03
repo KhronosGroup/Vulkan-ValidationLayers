@@ -1939,3 +1939,75 @@ TEST_F(PositiveSyncObject, SubmitImportedBinarySemaphoreWithNonZeroValue) {
     vk::QueueSubmit2(*m_default_queue, 2, submits, VK_NULL_HANDLE);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncObject, IgnoreAcquireOpSrcStage) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7928
+    TEST_DESCRIPTION("Test that graphics src stage is ignored during acquire operation on the transfer queue");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+    vkt::CommandPool transfer_pool(*m_device, transfer_only_family.value());
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
+    acquire_barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    acquire_barrier.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    acquire_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    acquire_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    acquire_barrier.dstQueueFamilyIndex = transfer_only_family.value();
+    acquire_barrier.buffer = buffer.handle();
+    acquire_barrier.offset = 0;
+    acquire_barrier.size = 256;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &acquire_barrier;
+
+    transfer_cb.begin();
+    vk::CmdPipelineBarrier2(transfer_cb.handle(), &dep_info);
+    transfer_cb.end();
+}
+
+TEST_F(PositiveSyncObject, IgnoreReleaseOpDstStage) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7928
+    TEST_DESCRIPTION("Test that graphics dst stage is ignored during release operation on the transfer queue");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+    vkt::CommandPool release_pool(*m_device, transfer_only_family.value());
+    vkt::CommandBuffer release_cb(*m_device, release_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier2 release_barrier = vku::InitStructHelper();
+    release_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    release_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    release_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    release_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    release_barrier.srcQueueFamilyIndex = transfer_only_family.value();
+    release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    release_barrier.buffer = buffer.handle();
+    release_barrier.offset = 0;
+    release_barrier.size = 256;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &release_barrier;
+
+    release_cb.begin();
+    vk::CmdPipelineBarrier2(release_cb.handle(), &dep_info);
+    release_cb.end();
+}

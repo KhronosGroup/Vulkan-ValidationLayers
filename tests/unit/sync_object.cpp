@@ -3522,3 +3522,155 @@ TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
                            0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncObject, MemoryBarrierStageNotSupportedByQueue) {
+    TEST_DESCRIPTION("Memory barrier uses pipeline stages not supported by the queue family");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+    vkt::CommandPool transfer_pool(*m_device, transfer_only_family.value());
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkMemoryBarrier2 barrier_src_gfx = vku::InitStructHelper();
+    barrier_src_gfx.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_src_gfx.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier_src_gfx.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_src_gfx.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+
+    VkMemoryBarrier2 barrier_dst_gfx = vku::InitStructHelper();
+    barrier_dst_gfx.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_dst_gfx.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_dst_gfx.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_dst_gfx.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+
+    VkDependencyInfo dep_info_src_gfx = vku::InitStructHelper();
+    dep_info_src_gfx.memoryBarrierCount = 1;
+    dep_info_src_gfx.pMemoryBarriers = &barrier_src_gfx;
+
+    VkDependencyInfo dep_info_dst_gfx = vku::InitStructHelper();
+    dep_info_dst_gfx.memoryBarrierCount = 1;
+    dep_info_dst_gfx.pMemoryBarriers = &barrier_dst_gfx;
+
+    transfer_cb.begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-09673");
+    vk::CmdPipelineBarrier2(transfer_cb.handle(), &dep_info_src_gfx);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dstStageMask-09674");
+    vk::CmdPipelineBarrier2(transfer_cb.handle(), &dep_info_dst_gfx);
+    m_errorMonitor->VerifyFound();
+    transfer_cb.end();
+}
+
+TEST_F(NegativeSyncObject, BufferBarrierStageNotSupportedByQueue) {
+    TEST_DESCRIPTION("Buffer memory barrier without ownership transfer uses pipeline stages not supported by the queue family");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    if (!compute_only_family.has_value()) {
+        GTEST_SKIP() << "Compute-only queue family is required";
+    }
+    vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
+    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier2 barrier_src_gfx = vku::InitStructHelper();
+    barrier_src_gfx.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_src_gfx.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier_src_gfx.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_src_gfx.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_src_gfx.buffer = buffer.handle();
+    barrier_src_gfx.offset = 0;
+    barrier_src_gfx.size = 256;
+
+    VkBufferMemoryBarrier2 barrier_dst_gfx = vku::InitStructHelper();
+    barrier_dst_gfx.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_dst_gfx.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_dst_gfx.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_dst_gfx.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier_dst_gfx.buffer = buffer.handle();
+    barrier_dst_gfx.offset = 0;
+    barrier_dst_gfx.size = 256;
+
+    VkDependencyInfo dep_info_src_gfx = vku::InitStructHelper();
+    dep_info_src_gfx.bufferMemoryBarrierCount = 1;
+    dep_info_src_gfx.pBufferMemoryBarriers = &barrier_src_gfx;
+
+    VkDependencyInfo dep_info_dst_gfx = vku::InitStructHelper();
+    dep_info_dst_gfx.bufferMemoryBarrierCount = 1;
+    dep_info_dst_gfx.pBufferMemoryBarriers = &barrier_dst_gfx;
+
+    compute_cb.begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-09675");
+    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_src_gfx);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dstStageMask-09676");
+    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_dst_gfx);
+    m_errorMonitor->VerifyFound();
+    compute_cb.end();
+}
+
+TEST_F(NegativeSyncObject, ImageBarrierStageNotSupportedByQueue) {
+    TEST_DESCRIPTION("Image memory barrier without ownership transfer uses pipeline stages not supported by the queue family");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    if (!compute_only_family.has_value()) {
+        GTEST_SKIP() << "Compute-only queue family is required";
+    }
+    vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
+    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
+
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    VkImageMemoryBarrier2 barrier_src_gfx = vku::InitStructHelper();
+    barrier_src_gfx.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_src_gfx.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier_src_gfx.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_src_gfx.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_src_gfx.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier_src_gfx.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier_src_gfx.image = image.handle();
+    barrier_src_gfx.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 barrier_dst_gfx = vku::InitStructHelper();
+    barrier_dst_gfx.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_dst_gfx.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_dst_gfx.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_dst_gfx.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier_dst_gfx.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier_dst_gfx.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier_dst_gfx.image = image.handle();
+    barrier_dst_gfx.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfo dep_info_src_gfx = vku::InitStructHelper();
+    dep_info_src_gfx.imageMemoryBarrierCount = 1;
+    dep_info_src_gfx.pImageMemoryBarriers = &barrier_src_gfx;
+
+    VkDependencyInfo dep_info_dst_gfx = vku::InitStructHelper();
+    dep_info_dst_gfx.imageMemoryBarrierCount = 1;
+    dep_info_dst_gfx.pImageMemoryBarriers = &barrier_dst_gfx;
+
+    compute_cb.begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-09675");
+    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_src_gfx);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dstStageMask-09676");
+    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_dst_gfx);
+    m_errorMonitor->VerifyFound();
+    compute_cb.end();
+}
