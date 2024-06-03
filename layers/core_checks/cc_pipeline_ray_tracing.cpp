@@ -93,8 +93,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
     const auto *groups = create_info.ptr()->pGroups;
 
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
-        StageCreateInfo stage_create_info(&pipeline);
-        skip |= ValidateShaderStage(stage_create_info, pipeline.stage_states[i], create_info_loc.dot(Field::pStages, i));
+        skip |= ValidateShaderStage(pipeline.stage_states[i], &pipeline, create_info_loc.dot(Field::pStages, i));
     }
 
     if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(create_info.pNext)) {

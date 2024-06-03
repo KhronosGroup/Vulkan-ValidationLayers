@@ -25,18 +25,6 @@
 #include "state_tracker/shader_object_state.h"
 #include "chassis/chassis_modification_state.h"
 
-std::vector<VkPushConstantRange> const *StageCreateInfo::GetPushConstantRanges() const {
-    if (pipeline) {
-        return pipeline->PipelineLayoutState()->push_constant_ranges.get();
-    }
-    return shader_object_const_ranges.get();
-}
-
-StageCreateInfo::StageCreateInfo(const vvl::Pipeline *pipeline) : pipeline(pipeline) {}
-StageCreateInfo::StageCreateInfo(const VkShaderCreateInfoEXT &create_info)
-    : pipeline(nullptr),
-      shader_object_const_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)) {}
-
 namespace vvl {
 
 static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGraphicsPipelineCreateInfo &ci,

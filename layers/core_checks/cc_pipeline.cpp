@@ -495,11 +495,11 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
     return skip;
 }
 
-bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_create_info, VkShaderStageFlagBits stage,
-                                                   const ShaderStageState &stage_state, const Location &loc) const {
+bool CoreChecks::ValidateShaderSubgroupSizeControl(VkShaderStageFlagBits stage, const ShaderStageState &stage_state,
+                                                   const Location &loc) const {
     bool skip = false;
 
-    if (stage_create_info.pipeline) {
+    if (stage_state.HasPipeline()) {
         const auto flags = stage_state.pipeline_create_info->flags;
 
         if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
@@ -539,12 +539,9 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *spec, const StageCreateInfo &create_info,
-                                         const Location &loc) const {
+bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *spec, const Location &loc) const {
     bool skip = false;
-    if (!spec) {
-        return skip;
-    }
+    if (!spec) return skip;
 
     for (auto i = 0u; i < spec->mapEntryCount; i++) {
         const Location map_loc = loc.dot(Field::pMapEntries, i);
@@ -572,16 +569,11 @@ bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *s
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const StageCreateInfo &create_info,
+bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const vvl::Pipeline &pipeline,
                                                  const Location &loc) const {
     bool skip = false;
     uint32_t total_resources = 0;
 
-    if (!create_info.pipeline) {
-        return skip;
-    }
-
-    const auto &pipeline = *create_info.pipeline;
     const auto &rp_state = pipeline.RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
         if (rp_state->UsesDynamicRendering()) {

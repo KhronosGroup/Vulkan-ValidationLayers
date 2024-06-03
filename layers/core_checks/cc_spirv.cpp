@@ -100,7 +100,7 @@ bool CoreChecks::ValidateConservativeRasterization(const spirv::Module &module_s
     return skip;
 }
 
-bool CoreChecks::ValidatePushConstantUsage(const StageCreateInfo &create_info, const spirv::Module &module_state,
+bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
                                            const spirv::EntryPoint &entrypoint, const Location &loc) const {
     bool skip = false;
 
@@ -115,11 +115,7 @@ bool CoreChecks::ValidatePushConstantUsage(const StageCreateInfo &create_info, c
         return skip;
     }
 
-    if (!create_info.pipeline) {
-        return skip;
-    }
-    const auto &pipeline = *create_info.pipeline;
-    std::vector<VkPushConstantRange> const *push_constant_ranges = create_info.GetPushConstantRanges();
+    std::vector<VkPushConstantRange> const *push_constant_ranges = pipeline.PipelineLayoutState()->push_constant_ranges.get();
 
     std::string vuid;
     switch (pipeline.GetCreateInfoSType()) {
@@ -813,13 +809,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
 }
 
 bool CoreChecks::ValidateShaderResolveQCOM(const spirv::Module &module_state, VkShaderStageFlagBits stage,
-                                           const StageCreateInfo &create_info, const Location &loc) const {
+                                           const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
-
-    if (!create_info.pipeline) {
-        return skip;
-    }
-    const auto &pipeline = *create_info.pipeline;
 
     // If the pipeline's subpass description contains flag VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // then the fragment shader must not enable the SPIRV SampleRateShading capability.
@@ -1287,17 +1278,17 @@ bool CoreChecks::ValidateExecutionModes(const spirv::Module &module_state, const
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineExecutionModes(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                VkShaderStageFlagBits stage, const StageCreateInfo &create_info,
-                                                const Location &loc) const {
+bool CoreChecks::ValidateShaderExecutionModes(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                              VkShaderStageFlagBits stage, const vvl::Pipeline *pipeline,
+                                              const Location &loc) const {
     bool skip = false;
 
     if (entrypoint.stage == VK_SHADER_STAGE_GEOMETRY_BIT) {
         const uint32_t vertices_out = entrypoint.execution_mode.output_vertices;
         const uint32_t invocations = entrypoint.execution_mode.invocations;
         if (vertices_out == 0 || vertices_out > phys_dev_props.limits.maxGeometryOutputVertices) {
-            const char *vuid = create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-stage-00714"
-                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08454";
+            const char *vuid =
+                pipeline ? "VUID-VkPipelineShaderStageCreateInfo-stage-00714" : "VUID-VkShaderCreateInfoEXT-pCode-08454";
             skip |= LogError(vuid, module_state.handle(), loc,
                              "SPIR-V (Geometry stage) entry point must have an OpExecutionMode instruction that "
                              "specifies a maximum output vertex count that is greater than 0 and less "
@@ -1307,8 +1298,8 @@ bool CoreChecks::ValidatePipelineExecutionModes(const spirv::Module &module_stat
         }
 
         if (invocations == 0 || invocations > phys_dev_props.limits.maxGeometryShaderInvocations) {
-            const char *vuid = create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-stage-00715"
-                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08455";
+            const char *vuid =
+                pipeline ? "VUID-VkPipelineShaderStageCreateInfo-stage-00715" : "VUID-VkShaderCreateInfoEXT-pCode-08455";
             skip |= LogError(vuid, module_state.handle(), loc,
                              "SPIR-V (Geometry stage) entry point must have an OpExecutionMode instruction that "
                              "specifies an invocation count that is greater than 0 and less "
@@ -1318,8 +1309,8 @@ bool CoreChecks::ValidatePipelineExecutionModes(const spirv::Module &module_stat
         }
     } else if (entrypoint.stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
                entrypoint.execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit)) {
-        if (create_info.pipeline) {
-            const auto *ds_state = create_info.pipeline->DepthStencilState();
+        if (pipeline) {
+            const auto *ds_state = pipeline->DepthStencilState();
             if ((ds_state &&
                  (ds_state->flags &
                   (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT |
@@ -1347,8 +1338,8 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(vvl::PipelineLay
     return pipelineLayout->set_layouts[set]->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
 }
 
-bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info, const spirv::Module &module_state,
-                                              const spirv::EntryPoint &entrypoint, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                              const vvl::Pipeline &pipeline, VkShaderStageFlagBits stage,
                                               const Location &loc) const {
     bool skip = false;
     // vkspec.html#primsrast-points describes which is the final stage that needs to check for points
@@ -1360,10 +1351,6 @@ bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info
                    {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT})) {
         return skip;
     }
-    if (!create_info.pipeline) {
-        return skip;
-    }
-    const auto &pipeline = *create_info.pipeline;
 
     const bool output_points = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::output_points_bit);
     const bool point_mode = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit);
@@ -1408,16 +1395,10 @@ bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info
     return skip;
 }
 
-bool CoreChecks::ValidatePrimitiveRateShaderState(const StageCreateInfo &create_info, const spirv::Module &module_state,
-                                                  const spirv::EntryPoint &entrypoint, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidatePrimitiveRateShaderState(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                                  const vvl::Pipeline &pipeline, VkShaderStageFlagBits stage,
                                                   const Location &loc) const {
     bool skip = false;
-
-    if (!create_info.pipeline) {
-        return skip;
-    }
-
-    const auto &pipeline = *create_info.pipeline;
 
     const auto viewport_state = pipeline.ViewportState();
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
@@ -1714,15 +1695,9 @@ bool CoreChecks::ValidateVariables(const spirv::Module &module_state, const Loca
     return skip;
 }
 
-bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_state, const StageCreateInfo &stage_create_info,
+bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
                                                   const spirv::EntryPoint &entrypoint, const Location &loc) const {
     bool skip = false;
-
-    if (!stage_create_info.pipeline) {
-        return skip;
-    }
-
-    const auto &pipeline = *stage_create_info.pipeline;
 
     std::string vuid_07988;
     std::string vuid_07990;
@@ -1830,30 +1805,26 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_st
 }
 
 bool CoreChecks::ValidateTransformFeedbackPipeline(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                   const StageCreateInfo &create_info, const Location &loc) const {
+                                                   const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
-
-    if (!create_info.pipeline) {
-        return skip;
-    }
 
     const bool is_xfb_execution_mode = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::xfb_bit);
     if (is_xfb_execution_mode) {
-        if ((create_info.pipeline->create_info_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) != 0) {
+        if ((pipeline.create_info_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) != 0) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-02322", module_state.handle(), loc,
                              "SPIR-V has OpExecutionMode of Xfb and using mesh shaders (%s).",
-                             string_VkShaderStageFlags(create_info.pipeline->create_info_shaders).c_str());
+                             string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
         }
 
-        if (create_info.pipeline->pre_raster_state && (entrypoint.stage != create_info.pipeline->pre_raster_state->last_stage)) {
+        if (pipeline.pre_raster_state && (entrypoint.stage != pipeline.pre_raster_state->last_stage)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02318", module_state.handle(), loc,
                              "SPIR-V has OpExecutionMode of Xfb in %s, but %s is the last last pre-rasterization shader stage.",
                              string_VkShaderStageFlagBits(entrypoint.stage),
-                             string_VkShaderStageFlagBits(create_info.pipeline->pre_raster_state->last_stage));
+                             string_VkShaderStageFlagBits(pipeline.pre_raster_state->last_stage));
         }
     }
 
-    if (create_info.pipeline->pre_raster_state && (create_info.pipeline->create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) != 0 &&
+    if (pipeline.pre_raster_state && (pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) != 0 &&
         module_state.HasCapability(spv::CapabilityGeometryStreams) && !enabled_features.geometryStreams) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-geometryStreams-02321", module_state.handle(), loc,
                          "SPIR-V uses GeometryStreams capability, but "
@@ -2066,7 +2037,7 @@ static const std::string GetShaderTileImageCapabilitiesString(const spirv::Modul
 }
 
 bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                         const StageCreateInfo &create_info, const VkShaderStageFlagBits stage,
+                                         const vvl::Pipeline *pipeline, const VkShaderStageFlagBits stage,
                                          const Location &loc) const {
     bool skip = false;
 
@@ -2083,9 +2054,8 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
         return skip;
     }
 
-    if (create_info.pipeline) {
-        const auto &pipeline = *create_info.pipeline;
-        auto rp = pipeline.GraphicsCreateInfo().renderPass;
+    if (pipeline) {
+        auto rp = pipeline->GraphicsCreateInfo().renderPass;
         if (rp != VK_NULL_HANDLE) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-08710", module_state.handle(), loc,
                              "SPIR-V (Fragment stage) is using capabilities (%s), but renderpass (%s) is not VK_NULL_HANDLE.",
@@ -2094,9 +2064,9 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
 
         const bool mode_early_fragment_test = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit);
         if (module_state.static_data_.has_shader_tile_image_depth_read) {
-            const auto *ds_state = pipeline.DepthStencilState();
+            const auto *ds_state = pipeline->DepthStencilState();
             const bool write_enabled =
-                !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
+                !pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
             if (mode_early_fragment_test && write_enabled) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-08711", module_state.handle(), loc,
                                  "SPIR-V (Fragment stage) contains OpDepthAttachmentReadEXT, and depthWriteEnable is not false.");
@@ -2104,8 +2074,8 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
         }
 
         if (module_state.static_data_.has_shader_tile_image_stencil_read) {
-            const auto *ds_state = pipeline.DepthStencilState();
-            const bool is_write_mask_set = !pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK) &&
+            const auto *ds_state = pipeline->DepthStencilState();
+            const bool is_write_mask_set = !pipeline->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK) &&
                                            (ds_state && (ds_state->front.writeMask != 0 || ds_state->back.writeMask != 0));
             if (mode_early_fragment_test && is_write_mask_set) {
                 skip |= LogError(
@@ -2119,7 +2089,7 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
         bool using_tile_image_op = module_state.static_data_.has_shader_tile_image_depth_read ||
                                    module_state.static_data_.has_shader_tile_image_stencil_read ||
                                    module_state.static_data_.has_shader_tile_image_color_read;
-        const auto *ms_state = pipeline.MultisampleState();
+        const auto *ms_state = pipeline->MultisampleState();
         if (using_tile_image_op && ms_state && ms_state->sampleShadingEnable && (ms_state->minSampleShading != 1.0)) {
             skip |= LogError("VUID-RuntimeSpirv-minSampleShading-08732", module_state.handle(), loc,
                              "minSampleShading (%f) is not equal to 1.0.", ms_state->minSampleShading);
@@ -2145,27 +2115,28 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
 }
 
 // Validate the VkPipelineShaderStageCreateInfo from the various pipeline types or a Shader Object
-bool CoreChecks::ValidateShaderStage(const StageCreateInfo &stage_create_info, const ShaderStageState &stage_state,
+bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const vvl::Pipeline *pipeline,
                                      const Location &loc) const {
     bool skip = false;
     const VkShaderStageFlagBits stage = stage_state.GetStage();
 
     // First validate all things that don't require valid SPIR-V
     // this is found when using VK_EXT_shader_module_identifier
-    skip |= ValidateShaderSubgroupSizeControl(stage_create_info, stage, stage_state, loc);
-    skip |= ValidateSpecializations(stage_state.GetSpecializationInfo(), stage_create_info, loc.dot(Field::pSpecializationInfo));
-    skip |= ValidateShaderStageMaxResources(stage, stage_create_info, loc);
-    if (const auto *pipeline_robustness_info =
-            vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext())) {
-        skip |= ValidatePipelineRobustnessCreateInfo(*stage_create_info.pipeline, *pipeline_robustness_info, loc);
+    skip |= ValidateShaderSubgroupSizeControl(stage, stage_state, loc);
+    skip |= ValidateSpecializations(stage_state.GetSpecializationInfo(), loc.dot(Field::pSpecializationInfo));
+    if (pipeline) {
+        skip |= ValidateShaderStageMaxResources(stage, *pipeline, loc);
+        if (const auto *pipeline_robustness_info =
+                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext())) {
+            skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, loc);
+        }
     }
 
-    if ((stage_create_info.pipeline && stage_create_info.pipeline->uses_shader_module_id) || !stage_state.spirv_state) {
+    if ((pipeline && pipeline->uses_shader_module_id) || !stage_state.spirv_state) {
         return skip;  // these edge cases should be validated already
     }
     if (!stage_state.entrypoint) {
-        const char *vuid = stage_create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pName-00707"
-                                                      : "VUID-VkShaderCreateInfoEXT-pName-08440";
+        const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pName-00707" : "VUID-VkShaderCreateInfoEXT-pName-08440";
         return LogError(vuid, device, loc.dot(Field::pName), "`%s` entrypoint not found for stage %s.", stage_state.GetPName(),
                         string_VkShaderStageFlagBits(stage));
     }
@@ -2296,9 +2267,9 @@ bool CoreChecks::ValidateShaderStage(const StageCreateInfo &stage_create_info, c
             spv_diagnostic diag = nullptr;
             auto const spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
-                const char *vuid = stage_create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
-                                                              : "VUID-VkShaderCreateInfoEXT-pCode-08460";
-                std::string name = stage_create_info.pipeline ? FormatHandle(module_state.handle()) : "shader object";
+                const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
+                                            : "VUID-VkShaderCreateInfoEXT-pCode-08460";
+                std::string name = pipeline ? FormatHandle(module_state.handle()) : "shader object";
                 skip |= LogError(vuid, device, loc,
                                  "After specialization was applied, %s produces a spirv-val error (stage %s):\n%s", name.c_str(),
                                  string_VkShaderStageFlagBits(stage), diag && diag->error ? diag->error : "(no error text)");
@@ -2325,8 +2296,8 @@ bool CoreChecks::ValidateShaderStage(const StageCreateInfo &stage_create_info, c
             spvContextDestroy(ctx);
         } else {
             // Should never get here, but better then asserting
-            const char *vuid = stage_create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
-                                                          : "VUID-VkShaderCreateInfoEXT-pCode-08460";
+            const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
+                                        : "VUID-VkShaderCreateInfoEXT-pCode-08460";
             skip |= LogError(vuid, device, loc,
                              "%s shader (stage %s) attempted to apply specialization constants with spirv-opt but failed.",
                              FormatHandle(module_state.handle()).c_str(), string_VkShaderStageFlagBits(stage));
@@ -2337,29 +2308,28 @@ bool CoreChecks::ValidateShaderStage(const StageCreateInfo &stage_create_info, c
         }
     }
 
-    // Validate descriptor set layout against what the entrypoint actually uses
-
-    if (enabled_features.transformFeedback) {
-        skip |= ValidateTransformFeedbackPipeline(module_state, entrypoint, stage_create_info, loc);
-    }
-    skip |= ValidateShaderTileImage(module_state, entrypoint, stage_create_info, stage, loc);
+    skip |= ValidateShaderTileImage(module_state, entrypoint, pipeline, stage, loc);
     skip |= ValidateImageWrite(module_state, loc);
-    skip |= ValidatePipelineExecutionModes(module_state, entrypoint, stage, stage_create_info, loc);
-    skip |= ValidatePointSizeShaderState(stage_create_info, module_state, entrypoint, stage, loc);
-    skip |= ValidateBuiltinLimits(module_state, entrypoint, stage_create_info, loc);
-    skip |= ValidatePrimitiveTopology(module_state, entrypoint, stage_create_info, loc);
+    skip |= ValidateShaderExecutionModes(module_state, entrypoint, stage, pipeline, loc);
+    skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline, loc);
     if (enabled_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size_x, loc);
     }
-    if (enabled_features.primitiveFragmentShadingRate) {
-        skip |= ValidatePrimitiveRateShaderState(stage_create_info, module_state, entrypoint, stage, loc);
-    }
-    if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
-        skip |= ValidateShaderResolveQCOM(module_state, stage, stage_create_info, loc);
-    }
-    if (stage_create_info.pipeline) {
-        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
-            stage_create_info.pipeline->GraphicsCreateInfo().renderPass == VK_NULL_HANDLE &&
+
+    if (pipeline) {
+        if (enabled_features.transformFeedback) {
+            skip |= ValidateTransformFeedbackPipeline(module_state, entrypoint, *pipeline, loc);
+        }
+        if (enabled_features.primitiveFragmentShadingRate) {
+            skip |= ValidatePrimitiveRateShaderState(module_state, entrypoint, *pipeline, stage, loc);
+        }
+        if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
+            skip |= ValidateShaderResolveQCOM(module_state, stage, *pipeline, loc);
+        }
+        skip |= ValidatePointSizeShaderState(module_state, entrypoint, *pipeline, stage, loc);
+        skip |= ValidatePrimitiveTopology(module_state, entrypoint, *pipeline, loc);
+
+        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && pipeline->GraphicsCreateInfo().renderPass == VK_NULL_HANDLE &&
             module_state.HasCapability(spv::CapabilityInputAttachment) && !enabled_features.dynamicRenderingLocalRead) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061", device, loc,
                              "is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
@@ -2392,9 +2362,8 @@ bool CoreChecks::ValidateShaderStage(const StageCreateInfo &stage_create_info, c
                              local_size_x, local_size_y, local_size_z, phys_dev_props.limits.maxComputeWorkGroupInvocations);
         }
 
-        const auto *required_subgroup_size_features =
-            vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
-        if (required_subgroup_size_features) {
+        if (const auto *required_subgroup_size_features =
+                vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext())) {
             skip |= ValidateRequiredSubgroupSize(module_state, stage_state, *required_subgroup_size_features, invocations,
                                                  local_size_x, local_size_y, local_size_z, loc);
         }
@@ -2402,14 +2371,15 @@ bool CoreChecks::ValidateShaderStage(const StageCreateInfo &stage_create_info, c
     }
 
     // Validate Push Constants use
-    skip |= ValidatePushConstantUsage(stage_create_info, module_state, entrypoint, loc);
-    skip |= ValidateShaderDescriptorVariable(module_state, stage_create_info, entrypoint, loc);
+    if (pipeline) {
+        skip |= ValidatePushConstantUsage(module_state, *pipeline, entrypoint, loc);
+        skip |= ValidateShaderDescriptorVariable(module_state, *pipeline, entrypoint, loc);
+    }
 
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z, loc);
     } else if (stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
-        skip |=
-            ValidateTaskMeshWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z, loc);
+        skip |= ValidateTaskMeshWorkGroupSizes(module_state, entrypoint, local_size_x, local_size_y, local_size_z, loc);
         if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) {
             skip |= ValidateEmitMeshTasksSize(module_state, entrypoint, stage_state, loc);
         }
@@ -2728,8 +2698,8 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
 }
 
 bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                const ShaderStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
-                                                uint32_t local_size_z, const Location &loc) const {
+                                                uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z,
+                                                const Location &loc) const {
     bool skip = false;
 
     if (local_size_x == 0) {
