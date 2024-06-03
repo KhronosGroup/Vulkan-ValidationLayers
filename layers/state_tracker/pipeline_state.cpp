@@ -68,9 +68,9 @@ static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGra
 }
 
 // static
-StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
-                                       ShaderModuleUniqueIds *shader_unique_id_map) {
-    StageStateVec stage_states;
+std::vector<ShaderStageState> Pipeline::GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
+                                                       ShaderModuleUniqueIds *shader_unique_id_map) {
+    std::vector<ShaderStageState> stage_states;
 
     // stages such as VK_SHADER_STAGE_ALL are find as this code is only looking for exact matches, not bool logic
     for (const auto &stage : AllVkShaderStageFlags) {
@@ -468,7 +468,7 @@ static bool UsesShaderModuleId(const Pipeline &pipe_state) {
     return false;
 }
 
-static vvl::unordered_set<uint32_t> GetFSOutputLocations(const StageStateVec &stage_states) {
+static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<ShaderStageState> &stage_states) {
     vvl::unordered_set<uint32_t> result;
     for (const auto &stage_state : stage_states) {
         if (!stage_state.entrypoint) {

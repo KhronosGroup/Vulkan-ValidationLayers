@@ -113,7 +113,7 @@ class Pipeline : public StateObject {
         fragment_output_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
 
     // Additional metadata needed by pipeline_state initialization and validation
-    const StageStateVec stage_states;
+    const std::vector<ShaderStageState> stage_states;
 
     // Shaders from the pipeline create info
     // Normally used for validating pipeline creation, if stages are linked, they will already have been validated
@@ -404,8 +404,8 @@ class Pipeline : public StateObject {
 
     const VkPipelineRenderingCreateInfo *GetPipelineRenderingCreateInfo() const { return rendering_create_info; }
 
-    static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
-                                        ShaderModuleUniqueIds *shader_unique_id_map);
+    static std::vector<ShaderStageState> GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
+                                                        ShaderModuleUniqueIds *shader_unique_id_map);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const CBDynamicState state) const { return dynamic_state[state]; }

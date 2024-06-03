@@ -496,7 +496,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
 }
 
 bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_create_info, VkShaderStageFlagBits stage,
-                                                   const PipelineStageState &stage_state, const Location &loc) const {
+                                                   const ShaderStageState &stage_state, const Location &loc) const {
     bool skip = false;
 
     if (stage_create_info.pipeline) {

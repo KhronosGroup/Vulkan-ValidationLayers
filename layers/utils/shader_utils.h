@@ -111,7 +111,8 @@ struct EntryPoint;
 class Instruction;
 }  // namespace spirv
 
-struct PipelineStageState {
+// This is a wrapper around the Shader as it may come from a Pipeline or Shader Object.
+struct ShaderStageState {
     // We use this over a spirv::Module because there are times we need to create empty objects
     std::shared_ptr<const vvl::ShaderModule> module_state;
     std::shared_ptr<const spirv::Module> spirv_state;
@@ -120,9 +121,9 @@ struct PipelineStageState {
     // If null, means it is an empty object, no SPIR-V backing it
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
 
-    PipelineStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
-                       const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
-                       std::shared_ptr<const vvl::ShaderModule> module_state, std::shared_ptr<const spirv::Module> spirv_state);
+    ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
+                     const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
+                     std::shared_ptr<const vvl::ShaderModule> module_state, std::shared_ptr<const spirv::Module> spirv_state);
 
     const char *GetPName() const;
     VkShaderStageFlagBits GetStage() const;
@@ -130,8 +131,6 @@ struct PipelineStageState {
     const void *GetPNext() const;
     bool GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const;
 };
-
-using StageStateVec = std::vector<PipelineStageState>;
 
 class ValidationCache {
   public:
@@ -180,7 +179,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
                             spvtools::ValidatorOptions &out_options, uint32_t *out_hash);
 
 void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
-ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states);
+ActiveSlotMap GetActiveSlots(const std::vector<ShaderStageState> &stage_states);
 ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
 
 uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots);
