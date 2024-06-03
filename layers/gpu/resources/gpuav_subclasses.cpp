@@ -121,7 +121,9 @@ void AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bo
 
 CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                              const vvl::CommandPool *pool)
-    : gpu_tracker::CommandBuffer(gpuav, handle, pCreateInfo, pool), state_(gpuav) {
+    : gpu_tracker::CommandBuffer(gpuav, handle, pCreateInfo, pool),
+      gpu_resources_manager(gpuav.vma_allocator_, *gpuav.desc_set_manager_),
+      state_(gpuav) {
     AllocateResources();
 }
 
@@ -366,10 +368,8 @@ void CommandBuffer::ResetCBState() {
     auto gpuav = static_cast<Validator *>(&dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
 
-    for (auto &cmd_info : per_command_resources) {
-        cmd_info->Destroy(*gpuav);
-    }
-    per_command_resources.clear();
+    gpu_resources_manager.DestroyResources();
+    per_command_error_loggers.clear();
 
     for (auto &buffer_info : di_input_buffer_list) {
         vmaDestroyBuffer(gpuav->vma_allocator_, buffer_info.bindless_state_buffer, buffer_info.bindless_state_buffer_allocation);
@@ -382,9 +382,11 @@ void CommandBuffer::ResetCBState() {
     bda_ranges_snapshot_.Destroy(gpuav->vma_allocator_);
     bda_ranges_snapshot_version_ = 0;
 
-    gpuav->desc_set_manager_->PutBackDescriptorSet(validation_cmd_desc_pool_, validation_cmd_desc_set_);
-    validation_cmd_desc_pool_ = VK_NULL_HANDLE;
-    validation_cmd_desc_set_ = VK_NULL_HANDLE;
+    if (validation_cmd_desc_pool_ != VK_NULL_HANDLE && validation_cmd_desc_set_ != VK_NULL_HANDLE) {
+        gpuav->desc_set_manager_->PutBackDescriptorSet(validation_cmd_desc_pool_, validation_cmd_desc_set_);
+        validation_cmd_desc_pool_ = VK_NULL_HANDLE;
+        validation_cmd_desc_set_ = VK_NULL_HANDLE;
+    }
 
     if (instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(gpuav->device, instrumentation_desc_set_layout_, nullptr);
@@ -396,7 +398,9 @@ void CommandBuffer::ResetCBState() {
         validation_cmd_desc_set_layout_ = VK_NULL_HANDLE;
     }
 
-    draw_index = compute_index = trace_rays_index = 0;
+    draw_index = 0;
+    compute_index = 0;
+    trace_rays_index = 0;
 }
 
 void CommandBuffer::ClearCmdErrorsCountsBuffer() const {
@@ -419,7 +423,7 @@ bool CommandBuffer::PreProcess() {
     if (!succeeded) {
         return false;
     }
-    return !per_command_resources.empty() || has_build_as_cmd;
+    return !per_command_error_loggers.empty() || has_build_as_cmd;
 }
 
 bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsNull(); }
@@ -434,7 +438,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     }
 
     auto gpuav = static_cast<Validator *>(&dev_data);
-    bool error_found = false;
+    bool skip = false;
     uint32_t *error_output_buffer_ptr = nullptr;
     VkResult result =
         vmaMapMemory(gpuav->vma_allocator_, error_output_buffer_.allocation, reinterpret_cast<void **>(&error_output_buffer_ptr));
@@ -458,11 +462,11 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
             assert(record_size == glsl::kErrorRecordSize);
 
             while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
-                const uint32_t resource_i = error_record_ptr[glsl::kHeaderCommandResourceIdOffset];
-                assert(resource_i < per_command_resources.size());
-                auto &cmd_info = per_command_resources[resource_i];
+                const uint32_t error_logger_i = error_record_ptr[glsl::kHeaderCommandResourceIdOffset];
+                assert(error_logger_i < per_command_error_loggers.size());
+                auto &error_logger = per_command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
-                cmd_info->LogValidationMessage(*gpuav, queue, VkHandle(), error_record_ptr, cmd_info->operation_index, objlist);
+                skip |= error_logger(*gpuav, error_record_ptr, objlist);
 
                 // Next record
                 error_record_ptr += record_size;
@@ -483,7 +487,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
     // If instrumentation found an error, skip post processing. Errors detected by instrumentation are usually
     // very serious, such as a prematurely destroyed resource and the state needed below is likely invalid.
-    if (!error_found) {
+    if (!skip) {
         ValidateBindlessDescriptorSets();
     }
 

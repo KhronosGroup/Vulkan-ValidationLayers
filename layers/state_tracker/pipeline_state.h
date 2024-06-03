@@ -690,7 +690,7 @@ struct LastBound {
     bool IsAnyGraphicsShaderBound() const;
 };
 
-static inline bool IsBoundSetCompat(uint32_t set, const LastBound &last_bound, const vvl::PipelineLayout &pipeline_layout) {
+static inline bool IsBoundSetCompatible(uint32_t set, const LastBound &last_bound, const vvl::PipelineLayout &pipeline_layout) {
     if ((set >= last_bound.per_set.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
         return false;
     }

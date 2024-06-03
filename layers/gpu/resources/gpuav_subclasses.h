@@ -20,6 +20,7 @@
 #include <vector>
 #include <mutex>
 
+#include "external/inplace_function.h"
 #include "gpu/core/gpu_state_tracker.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpu/resources/gpu_resources.h"
@@ -70,12 +71,12 @@ struct CmdIndirectState {
 
 class CommandBuffer : public gpu_tracker::CommandBuffer {
   public:
-    // per validated command state
-    std::vector<std::unique_ptr<CommandResources>> per_command_resources;
     // per vkCmdBindDescriptorSet() state
     std::vector<DescBindingInfo> di_input_buffer_list;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
-    uint32_t draw_index = 0, compute_index = 0, trace_rays_index = 0;
+    uint32_t draw_index = 0;
+    uint32_t compute_index = 0;
+    uint32_t trace_rays_index = 0;
 
     CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                   const vvl::CommandPool *pool);
@@ -121,6 +122,12 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 
     void Destroy() final;
     void Reset() final;
+
+    gpu::GpuResourcesManager gpu_resources_manager;
+    // Using stdext::inplace_function over std::function to allocate memory in place
+    using ErrorLoggerFunc =
+        stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
+    std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
   private:
     void AllocateResources();

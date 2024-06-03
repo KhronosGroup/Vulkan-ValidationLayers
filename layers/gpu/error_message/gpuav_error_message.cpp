@@ -372,12 +372,12 @@ void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructi
 
 namespace gpuav {
 bool Validator::LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string &out_error_msg,
-                                                 std::string &out_vuid_msg, const CommandResources &cmd_resources,
-                                                 const std::vector<DescSetState> &descriptor_sets, bool &out_oob_access) const {
+                                                 std::string &out_vuid_msg, const std::vector<DescSetState> &descriptor_sets,
+                                                 const Location &loc, bool uses_shader_object, bool &out_oob_access) const {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
-    const GpuVuid vuid = GetGpuVuid(cmd_resources.command);
+    const GpuVuid vuid = GetGpuVuid(loc.function);
 
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeBindlessDescriptorBounds: {
@@ -429,11 +429,9 @@ bool Validator::LogMessageInstBindlessDescriptor(const uint32_t *error_record, s
                          << " access out of bounds. Descriptor size is " << size << " and highest byte accessed was " << offset;
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
                         binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
-                        out_vuid_msg =
-                            cmd_resources.uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
+                        out_vuid_msg = uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
                     } else {
-                        out_vuid_msg =
-                            cmd_resources.uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
+                        out_vuid_msg = uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
                     }
                     error_found = true;
                     break;
@@ -442,11 +440,9 @@ bool Validator::LogMessageInstBindlessDescriptor(const uint32_t *error_record, s
                          << " access out of bounds. Descriptor size is " << size << " texels and highest texel accessed was "
                          << offset;
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-                        out_vuid_msg =
-                            cmd_resources.uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
+                        out_vuid_msg = uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
                     } else {
-                        out_vuid_msg =
-                            cmd_resources.uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
+                        out_vuid_msg = uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
                     }
                     error_found = true;
                     break;
@@ -554,9 +550,10 @@ bool Validator::LogMessageInstRayQuery(const uint32_t *error_record, std::string
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources &cmd_resources,
-                                          uint32_t operation_index, uint32_t *const error_record,
-                                          const std::vector<DescSetState> &descriptor_sets, const Location &loc) {
+bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, const LogObjectList &objlist, uint32_t operation_index,
+                                          const uint32_t *error_record, const std::vector<DescSetState> &descriptor_sets,
+                                          VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
+                                          const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have
     // been written by the shader instrumentation, if there was enough room in the buffer we provided.
     // The number of words actually written by the shaders is determined by the size of the buffer
@@ -573,8 +570,8 @@ bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue qu
     bool error_found = false;
     switch (error_record[glsl::kHeaderErrorGroupOffset]) {
         case glsl::kErrorGroupInstBindlessDescriptor:
-            error_found =
-                LogMessageInstBindlessDescriptor(error_record, error_msg, vuid_msg, cmd_resources, descriptor_sets, oob_access);
+            error_found = LogMessageInstBindlessDescriptor(error_record, error_msg, vuid_msg, descriptor_sets, loc,
+                                                           uses_shader_object, oob_access);
             break;
         case glsl::kErrorGroupInstBufferDeviceAddress:
             error_found = LogMessageInstBufferDeviceAddress(error_record, error_msg, vuid_msg, oob_access);
@@ -611,16 +608,16 @@ bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue qu
         std::string source_message;
         GenerateStageMessage(error_record, stage_message);
         UtilGenerateCommonMessage(debug_report, cmd_buffer, error_record, shader_module_handle, pipeline_handle,
-                                  shader_object_handle, cmd_resources.pipeline_bind_point, operation_index, common_message);
+                                  shader_object_handle, pipeline_bind_point, operation_index, common_message);
         UtilGenerateSourceMessages(instructions, error_record, false, filename_message, source_message);
 
-        if (cmd_resources.uses_robustness && oob_access) {
+        if (uses_robustness && oob_access) {
             if (gpuav_settings.warn_on_robust_oob) {
-                LogWarning(vuid_msg.c_str(), queue, loc, "%s %s %s %s%s", error_msg.c_str(), common_message.c_str(),
+                LogWarning(vuid_msg.c_str(), objlist, loc, "%s %s %s %s%s", error_msg.c_str(), common_message.c_str(),
                            stage_message.c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
-            LogError(vuid_msg.c_str(), queue, loc, "%s %s %s %s%s", error_msg.c_str(), common_message.c_str(),
+            LogError(vuid_msg.c_str(), objlist, loc, "%s %s %s %s%s", error_msg.c_str(), common_message.c_str(),
                      stage_message.c_str(), filename_message.c_str(), source_message.c_str());
         }
     }
@@ -628,248 +625,4 @@ bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue qu
     return error_found;
 }
 
-bool CommandResources::LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                            uint32_t *output_buffer_begin, const uint32_t operation_index,
-                                            const LogObjectList &objlist) {
-    const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
-    const Location loc(command);
-    bool error_logged =
-        validator.AnalyzeAndGenerateMessage(cmd_buffer, queue, *this, operation_index, output_buffer_begin,
-                                            di_info ? di_info->descriptor_set_buffers : std::vector<DescSetState>(), loc);
-
-    if (!error_logged) {
-        error_logged = LogCustomValidationMessage(validator, output_buffer_begin, operation_index, objlist);
-    }
-    return error_logged;
-}
-
-bool PreDrawResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                  const uint32_t operation_index, const LogObjectList &objlist) {
-    using namespace glsl;
-    bool error_logged = false;
-    if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDraw) {
-        return error_logged;
-    }
-
-    const GpuVuid &vuids = GetGpuVuid(command);
-    const Location loc(command);
-
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
-        case kErrorSubCodePreDrawBufferSize: {
-            // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
-            const uint32_t count = error_record[kPreActionParamOffset_0];
-            const uint32_t stride = indirect_buffer_stride;
-            const uint32_t offset =
-                static_cast<uint32_t>(indirect_buffer_offset);  // TODO: why cast to uin32_t? If it is changed, think about
-                                                                // also doing it in the error message
-            const uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
-
-            const char *vuid = nullptr;
-            if (count == 1) {
-                vuid = vuids.count_exceeds_bufsize_1;
-            } else {
-                vuid = vuids.count_exceeds_bufsize;
-            }
-            validator.LogError(vuid, objlist, loc,
-                               "Indirect draw count of %" PRIu32 " would exceed buffer size %" PRIu64
-                               " of buffer %s "
-                               "stride = %" PRIu32 " offset = %" PRIu32
-                               " (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand)) = %" PRIu32 ".",
-                               count, indirect_buffer_size, validator.FormatHandle(indirect_buffer).c_str(), stride, offset,
-                               draw_size);
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreDrawCountLimit: {
-            const uint32_t count = error_record[kPreActionParamOffset_0];
-            validator.LogError(vuids.count_exceeds_device_limit, objlist, loc,
-                               "Indirect draw count of %" PRIu32 " would exceed maxDrawIndirectCount limit of %" PRIu32 ".", count,
-                               validator.phys_dev_props.limits.maxDrawIndirectCount);
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreDrawFirstInstance: {
-            const uint32_t index = error_record[kPreActionParamOffset_0];
-            validator.LogError(
-                vuids.first_instance_not_zero, objlist, loc,
-                "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the %s structure at "
-                "index %" PRIu32 " is not zero.",
-                String(command), index);
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreDrawGroupCountX:
-        case kErrorSubCodePreDrawGroupCountY:
-        case kErrorSubCodePreDrawGroupCountZ: {
-            const uint32_t group_count = error_record[kPreActionParamOffset_0];
-            const uint32_t draw_number = error_record[kPreActionParamOffset_1];
-            const char *count_label;
-            uint32_t index;
-            uint32_t limit;
-            const char *vuid;
-            if (error_record[kHeaderErrorSubCodeOffset] == kErrorSubCodePreDrawGroupCountX) {
-                count_label = "groupCountX";
-                index = 0;
-                vuid = emit_task_error ? vuids.task_group_count_exceeds_max_x : vuids.mesh_group_count_exceeds_max_x;
-                limit = validator.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
-            } else if (error_record[kHeaderErrorSubCodeOffset] == kErrorSubCodePreDrawGroupCountY) {
-                count_label = "groupCountY";
-                index = 1;
-                vuid = emit_task_error ? vuids.task_group_count_exceeds_max_y : vuids.mesh_group_count_exceeds_max_y;
-                limit = validator.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
-            } else {
-                assert(error_record[kHeaderErrorSubCodeOffset] == kErrorSubCodePreDrawGroupCountZ);
-                count_label = "groupCountZ";
-                index = 2;
-                vuid = emit_task_error ? vuids.task_group_count_exceeds_max_z : vuids.mesh_group_count_exceeds_max_z;
-                limit = validator.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
-            }
-            validator.LogError(vuid, objlist, loc,
-                               "In draw %" PRIu32 ", %s is %" PRIu32
-                               " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[%" PRIu32
-                               "] (%" PRIu32 ").",
-                               draw_number, count_label, group_count, index, limit);
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreDrawGroupCountTotal: {
-            const uint32_t total_count = error_record[kPreActionParamOffset_0];
-            const uint32_t draw_number = error_record[kPreActionParamOffset_1];
-            auto vuid = emit_task_error ? vuids.task_group_count_exceeds_max_total : vuids.mesh_group_count_exceeds_max_total;
-            validator.LogError(
-                vuid, objlist, loc,
-                "In draw %" PRIu32 ", The product of groupCountX, groupCountY and groupCountZ (%" PRIu32
-                ") is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupTotalCount (%" PRIu32 ").",
-                draw_number, total_count, validator.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount);
-            error_logged = true;
-            break;
-        }
-        default:
-            break;
-    }
-    return error_logged;
-}
-
-bool PreDispatchResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                      const uint32_t operation_index, const LogObjectList &objlist) {
-    using namespace glsl;
-    bool error_logged = false;
-    if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
-        return error_logged;
-    }
-
-    const Location loc(command);
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
-        case kErrorSubCodePreDispatchCountLimitX: {
-            uint32_t count = error_record[kPreActionParamOffset_0];
-            validator.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc,
-                               "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
-                               " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
-                               count, validator.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreDispatchCountLimitY: {
-            uint32_t count = error_record[kPreActionParamOffset_0];
-            validator.LogError("VUID-VkDispatchIndirectCommand-y-00418", objlist, loc,
-                               "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
-                               " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
-                               count, validator.phys_dev_props.limits.maxComputeWorkGroupCount[1]);
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreDispatchCountLimitZ: {
-            uint32_t count = error_record[kPreActionParamOffset_0];
-            validator.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc,
-                               "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
-                               " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
-                               count, validator.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-            error_logged = true;
-            break;
-        }
-        default:
-            break;
-    }
-    return error_logged;
-}
-
-bool PreTraceRaysResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                       const uint32_t operation_index, const LogObjectList &objlist) {
-    using namespace glsl;
-
-    const Location loc(command);
-    bool error_logged = false;
-    if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreTraceRays) {
-        return error_logged;
-    }
-
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
-        case kErrorSubCodePreTraceRaysLimitWidth: {
-            const uint32_t width = error_record[kPreActionParamOffset_0];
-            validator.LogError("VUID-VkTraceRaysIndirectCommandKHR-width-03638", objlist, loc,
-                               "Indirect trace rays of VkTraceRaysIndirectCommandKHR::width of %" PRIu32
-                               " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] * "
-                               "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0] limit of %" PRIu64 ".",
-                               width,
-                               static_cast<uint64_t>(validator.phys_dev_props.limits.maxComputeWorkGroupCount[0]) *
-                                   static_cast<uint64_t>(validator.phys_dev_props.limits.maxComputeWorkGroupSize[0]));
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreTraceRaysLimitHeight: {
-            uint32_t height = error_record[kPreActionParamOffset_0];
-            validator.LogError("VUID-VkTraceRaysIndirectCommandKHR-height-03639", objlist, loc,
-                               "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
-                               " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] * "
-                               "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1] limit of %" PRIu64 ".",
-                               height,
-                               static_cast<uint64_t>(validator.phys_dev_props.limits.maxComputeWorkGroupCount[1]) *
-                                   static_cast<uint64_t>(validator.phys_dev_props.limits.maxComputeWorkGroupSize[1]));
-            error_logged = true;
-            break;
-        }
-        case kErrorSubCodePreTraceRaysLimitDepth: {
-            uint32_t depth = error_record[kPreActionParamOffset_0];
-            validator.LogError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640", objlist, loc,
-                               "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
-                               " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] * "
-                               "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] limit of %" PRIu64 ".",
-                               depth,
-                               static_cast<uint64_t>(validator.phys_dev_props.limits.maxComputeWorkGroupCount[2]) *
-                                   static_cast<uint64_t>(validator.phys_dev_props.limits.maxComputeWorkGroupSize[2]));
-            error_logged = true;
-            break;
-        }
-        default:
-            break;
-    }
-    return error_logged;
-}
-
-bool PreCopyBufferToImageResources::LogCustomValidationMessage(Validator &validator, const uint32_t *error_record,
-                                                               const uint32_t operation_index, const LogObjectList &objlist) {
-    using namespace glsl;
-    bool error_logged = false;
-    if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuCopyBufferToImage) {
-        return error_logged;
-    }
-
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
-        case kErrorSubCodePreCopyBufferToImageBufferTexel: {
-            uint32_t texel_offset = error_record[kPreActionParamOffset_0];
-            LogObjectList objlist_and_src_buffer = objlist;
-            objlist_and_src_buffer.add(this->src_buffer);
-            const char *vuid = this->command == vvl::Func::vkCmdCopyBufferToImage ? "VUID-vkCmdCopyBufferToImage-pRegions-07931"
-                                                                                  : "VUID-VkCopyBufferToImageInfo2-pRegions-07931";
-            validator.LogError(vuid, objlist_and_src_buffer, command,
-                               "Source buffer %s has a float value at offset %" PRIu32 " that is not in the range [0, 1].",
-                               validator.FormatHandle(this->src_buffer).c_str(), texel_offset);
-            error_logged = true;
-            break;
-        }
-        default:
-            break;
-    }
-    return error_logged;
-}
 }  // namespace gpuav

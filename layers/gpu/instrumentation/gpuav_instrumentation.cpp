@@ -144,12 +144,12 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, uint32_
     return true;
 }
 
-CommandResources Validator::SetupShaderInstrumentationResources(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer,
-                                                                VkPipelineBindPoint bind_point, const Location &loc) {
+void SetupShaderInstrumentationResources(Validator &gpuav, LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer,
+                                         VkPipelineBindPoint bind_point, const Location &loc) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         assert(false);
-        return CommandResources();
+        return;
     }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
@@ -157,26 +157,23 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
-        InternalError(cmd_buffer->VkHandle(), loc, "Neither pipeline state nor shader object states were found, aborting GPU-AV");
-        return CommandResources();
+        gpuav.InternalError(cmd_buffer->VkHandle(), loc,
+                            "Neither pipeline state nor shader object states were found. Aborting GPU-AV.");
+        return;
     }
 
-    VkDescriptorSet instrumentation_desc_set = VK_NULL_HANDLE;
-    VkDescriptorPool instrumentation_desc_pool = VK_NULL_HANDLE;
-    VkResult result = desc_set_manager_->GetDescriptorSet(
-        &instrumentation_desc_pool, cmd_buffer->GetInstrumentationDescriptorSetLayout(), &instrumentation_desc_set);
-    assert(result == VK_SUCCESS);
-    if (result != VK_SUCCESS) {
-        InternalError(cmd_buffer->VkHandle(), loc,
-                      "Unable to allocate instrumentation descriptor sets. Device could become unstable.");
-        return CommandResources();
+    VkDescriptorSet instrumentation_desc_set =
+        cmd_buffer->gpu_resources_manager.GetManagedDescriptorSet(cmd_buffer->GetInstrumentationDescriptorSetLayout());
+    if (!instrumentation_desc_set) {
+        gpuav.InternalError(cmd_buffer->VkHandle(), loc, "Unable to allocate instrumentation descriptor sets. Aborting GPU-AV.");
+        return;
     }
 
     // Update instrumentation descriptor set
     {
         // Pathetic way of trying to make sure we take care of updating all
         // bindings of the instrumentation descriptor set
-        assert(instrumentation_bindings_.size() == 6);
+        assert(gpuav.instrumentation_bindings_.size() == 6);
         std::vector<VkWriteDescriptorSet> desc_writes = {};
 
         // Error output buffer
@@ -199,7 +196,7 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
         VkDescriptorBufferInfo indices_desc_buffer_info = {};
         {
             indices_desc_buffer_info.range = sizeof(uint32_t);
-            indices_desc_buffer_info.buffer = indices_buffer_.buffer;
+            indices_desc_buffer_info.buffer = gpuav.indices_buffer_.buffer;
             indices_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -256,7 +253,7 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
 
         // BDA snapshot buffer
         VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-        if (bda_validation_possible_) {
+        if (gpuav.bda_validation_possible) {
             bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
             bda_input_desc_buffer_info.buffer = cmd_buffer->GetBdaRangesSnapshot().buffer;
             bda_input_desc_buffer_info.offset = 0;
@@ -270,11 +267,11 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
             desc_writes.emplace_back(wds);
         }
 
-        DispatchUpdateDescriptorSets(device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
+        DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
 
     const auto pipeline_layout =
-        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<vvl::PipelineLayout>(last_bound.pipeline_layout);
+        pipeline_state ? pipeline_state->PipelineLayoutState() : gpuav.Get<vvl::PipelineLayout>(last_bound.pipeline_layout);
     // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
     // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
     // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
@@ -287,62 +284,70 @@ CommandResources Validator::SetupShaderInstrumentationResources(const LockedShar
         pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
     }
 
-    CommandResources cmd_resources;
+    uint32_t operation_index = 0;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
-        cmd_resources.operation_index = cmd_buffer->draw_index++;
+        operation_index = cmd_buffer->draw_index++;
     else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
-        cmd_resources.operation_index = cmd_buffer->compute_index++;
+        operation_index = cmd_buffer->compute_index++;
     else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-        cmd_resources.operation_index = cmd_buffer->trace_rays_index++;
+        operation_index = cmd_buffer->trace_rays_index++;
 
-    // Using cmd_buffer->per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a parameter
+    // TODO: Using cmd_buffer->per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a
+    // parameter
+    const uint32_t error_logger_i = static_cast<uint32_t>(cmd_buffer->per_command_error_loggers.size());
     const std::array<uint32_t, 2> dynamic_offsets = {
-        {cmd_resources.operation_index * static_cast<uint32_t>(sizeof(uint32_t)),
-         static_cast<uint32_t>(cmd_buffer->per_command_resources.size()) * static_cast<uint32_t>(sizeof(uint32_t))}};
-    if ((pipeline_layout && pipeline_layout->set_layouts.size() <= desc_set_bind_index_) &&
+        {operation_index * static_cast<uint32_t>(sizeof(uint32_t)), error_logger_i * static_cast<uint32_t>(sizeof(uint32_t))}};
+    if ((pipeline_layout && pipeline_layout->set_layouts.size() <= gpuav.desc_set_bind_index_) &&
         pipeline_layout_handle != VK_NULL_HANDLE) {
-        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, pipeline_layout_handle, desc_set_bind_index_, 1,
+        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
                                       &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, GetDebugPipelineLayout(), desc_set_bind_index_, 1,
-                                      &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
-                                      dynamic_offsets.data());
+        DispatchCmdBindDescriptorSets(cmd_buffer->VkHandle(), bind_point, gpuav.GetDebugPipelineLayout(),
+                                      gpuav.desc_set_bind_index_, 1, &instrumentation_desc_set,
+                                      static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
     }
 
     if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
-        InternalError(cmd_buffer->Handle(), loc, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
-        return CommandResources();
+        gpuav.InternalError(cmd_buffer->Handle(), loc,
+                            "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
+        return;
     }
 
     // It is possible to have no descriptor sets bound, for example if using push constants.
-    const uint32_t di_buf_index =
+    const uint32_t desc_binding_index =
         !cmd_buffer->di_input_buffer_list.empty() ? uint32_t(cmd_buffer->di_input_buffer_list.size()) - 1 : vvl::kU32Max;
 
-    const bool uses_robustness = (enabled_features.robustBufferAccess || enabled_features.robustBufferAccess2 ||
+    const bool uses_robustness = (gpuav.enabled_features.robustBufferAccess || gpuav.enabled_features.robustBufferAccess2 ||
                                   (pipeline_state && pipeline_state->uses_pipeline_robustness));
 
-    cmd_resources.instrumentation_desc_set = instrumentation_desc_set;
-    cmd_resources.instrumentation_desc_pool = instrumentation_desc_pool;
-    cmd_resources.pipeline_bind_point = bind_point;
-    cmd_resources.uses_robustness = uses_robustness;
-    cmd_resources.uses_shader_object = pipeline_state == nullptr;
-    cmd_resources.command = loc.function;
-    cmd_resources.desc_binding_index = di_buf_index;
-    cmd_resources.desc_binding_list = &cmd_buffer->di_input_buffer_list;
-    return cmd_resources;
+    CommandBuffer::ErrorLoggerFunc error_logger = [loc, desc_binding_index, desc_binding_list = &cmd_buffer->di_input_buffer_list,
+                                                   cmd_buffer_handle = cmd_buffer->VkHandle(), bind_point, operation_index,
+                                                   uses_shader_object = pipeline_state == nullptr,
+                                                   uses_robustness](Validator &gpuav, const uint32_t *error_record,
+                                                                    const LogObjectList &objlist) {
+        bool skip = false;
+
+        const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
+        skip |= gpuav.AnalyzeAndGenerateMessage(cmd_buffer_handle, objlist, operation_index, error_record,
+                                                di_info ? di_info->descriptor_set_buffers : std::vector<DescSetState>(), bind_point,
+                                                uses_shader_object, uses_robustness, loc);
+        return skip;
+    };
+
+    cmd_buffer->per_command_error_loggers.emplace_back(error_logger);
 }
 
-CommandResources Validator::SetupShaderInstrumentationResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
-                                                                const Location &loc) {
-    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
+void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
+                                         const Location &loc) {
+    auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
-        InternalError(cmd_buffer, loc, "Unrecognized command buffer");
-        return CommandResources();
+        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer");
+        return;
     }
-    return SetupShaderInstrumentationResources(cb_state, bind_point, loc);
+    return SetupShaderInstrumentationResources(gpuav, cb_state, bind_point, loc);
 }
 
 }  // namespace gpuav

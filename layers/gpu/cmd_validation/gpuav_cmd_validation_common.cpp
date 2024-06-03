@@ -29,17 +29,18 @@ namespace gpuav {
 
 void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
                                      VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
-                                     uint32_t resource_index) {
+                                     uint32_t error_logger_index) {
     assert(cmd_index < cst::indices_count);
-    assert(resource_index < cst::indices_count);
+    assert(error_logger_index < cst::indices_count);
     std::array<uint32_t, 2> dynamic_offsets = {
-        {cmd_index * static_cast<uint32_t>(sizeof(uint32_t)), resource_index * static_cast<uint32_t>(sizeof(uint32_t))}};
+        {cmd_index * static_cast<uint32_t>(sizeof(uint32_t)), error_logger_index * static_cast<uint32_t>(sizeof(uint32_t))}};
     DispatchCmdBindDescriptorSets(cmd_buffer_state->VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
                                   &cmd_buffer_state->GetValidationCmdCommonDescriptorSet(),
                                   static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
 }
 
 void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point) {
+    cmd_buffer_ = cb_state.VkHandle();
     pipeline_bind_point_ = bind_point;
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
 
@@ -80,29 +81,29 @@ void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBin
     }
 }
 
-void RestorablePipelineState::Restore(VkCommandBuffer command_buffer) const {
+void RestorablePipelineState::Restore() const {
     if (pipeline_ != VK_NULL_HANDLE) {
-        DispatchCmdBindPipeline(command_buffer, pipeline_bind_point_, pipeline_);
+        DispatchCmdBindPipeline(cmd_buffer_, pipeline_bind_point_, pipeline_);
         if (!descriptor_sets_.empty()) {
             for (std::size_t i = 0; i < descriptor_sets_.size(); i++) {
                 VkDescriptorSet descriptor_set = descriptor_sets_[i].first;
                 if (descriptor_set != VK_NULL_HANDLE) {
-                    DispatchCmdBindDescriptorSets(command_buffer, pipeline_bind_point_, pipeline_layout, descriptor_sets_[i].second,
-                                                  1, &descriptor_set, static_cast<uint32_t>(dynamic_offsets_[i].size()),
+                    DispatchCmdBindDescriptorSets(cmd_buffer_, pipeline_bind_point_, pipeline_layout, descriptor_sets_[i].second, 1,
+                                                  &descriptor_set, static_cast<uint32_t>(dynamic_offsets_[i].size()),
                                                   dynamic_offsets_[i].data());
                 }
             }
         }
         if (!push_descriptor_set_writes_.empty()) {
-            DispatchCmdPushDescriptorSetKHR(command_buffer, pipeline_bind_point_, pipeline_layout, push_descriptor_set_index_,
+            DispatchCmdPushDescriptorSetKHR(cmd_buffer_, pipeline_bind_point_, pipeline_layout, push_descriptor_set_index_,
                                             static_cast<uint32_t>(push_descriptor_set_writes_.size()),
                                             reinterpret_cast<const VkWriteDescriptorSet *>(push_descriptor_set_writes_.data()));
         }
         if (!push_constants_data_.empty()) {
             for (const auto &push_constant_range : *push_constants_ranges_) {
                 if (push_constant_range.size == 0) continue;
-                DispatchCmdPushConstants(command_buffer, pipeline_layout, push_constant_range.stageFlags,
-                                         push_constant_range.offset, push_constant_range.size, push_constants_data_.data());
+                DispatchCmdPushConstants(cmd_buffer_, pipeline_layout, push_constant_range.stageFlags, push_constant_range.offset,
+                                         push_constant_range.size, push_constants_data_.data());
             }
         }
     }
@@ -113,15 +114,7 @@ void RestorablePipelineState::Restore(VkCommandBuffer command_buffer) const {
             stages.emplace_back(shader_obj->create_info.stage);
             shaders.emplace_back(shader_obj->VkHandle());
         }
-        DispatchCmdBindShadersEXT(command_buffer, static_cast<uint32_t>(shader_objects_.size()), stages.data(), shaders.data());
-    }
-}
-
-void CommandResources::Destroy(Validator &validator) {
-    if (instrumentation_desc_set != VK_NULL_HANDLE) {
-        validator.desc_set_manager_->PutBackDescriptorSet(instrumentation_desc_pool, instrumentation_desc_set);
-        instrumentation_desc_set = VK_NULL_HANDLE;
-        instrumentation_desc_pool = VK_NULL_HANDLE;
+        DispatchCmdBindShadersEXT(cmd_buffer_, static_cast<uint32_t>(shader_objects_.size()), stages.data(), shaders.data());
     }
 }
 

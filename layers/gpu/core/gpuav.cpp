@@ -59,17 +59,4 @@ bool Validator::AllocateErrorLogsBuffer(gpu::DeviceMemoryBlock &error_logs_mem, 
     return true;
 }
 
-void Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
-                                      const Location &loc) {
-    if (!command_resources) return;
-
-    auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_state) {
-        InternalError(cmd_buffer, loc, "Unrecognized command buffer");
-        return;
-    }
-
-    cb_state->per_command_resources.emplace_back(std::move(command_resources));
-}
-
 }  // namespace gpuav

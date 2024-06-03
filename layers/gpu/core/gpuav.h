@@ -66,77 +66,28 @@ class Validator : public gpu::GpuShaderInstrumentor {
         force_buffer_device_address_ = true;
     }
 
-    // gpuav.cpp
-    // ------------------
+    // gpuav_instrumentation.cpp
+    // -------------------------
   public:
     bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
                           std::vector<uint32_t>& out_instrumented_spirv) final;
-
-    [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(
-        const LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard>& cmd_buffer, VkPipelineBindPoint bind_point,
-        const Location& loc);
-    [[nodiscard]] gpuav::CommandResources SetupShaderInstrumentationResources(VkCommandBuffer cmd_buffer,
-                                                                              VkPipelineBindPoint bind_point, const Location& loc);
     // Allocate memory for the output block that the gpu will use to return any error information
     [[nodiscard]] bool AllocateErrorLogsBuffer(gpu::DeviceMemoryBlock& error_logs_mem, const Location& loc);
-
-  private:
-    void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
-                               const Location& loc);
-
-    using TypeInfoRef = std::reference_wrapper<const std::type_info>;
-    struct Hasher {
-        std::size_t operator()(TypeInfoRef code) const { return code.get().hash_code(); }
-    };
-    struct EqualTo {
-        bool operator()(TypeInfoRef lhs, TypeInfoRef rhs) const { return lhs.get() == rhs.get(); }
-    };
-    std::unordered_map<TypeInfoRef, std::unique_ptr<SharedValidationResources>, Hasher, EqualTo> shared_validation_resources_map;
-
-    // cmd/ folder
-    // -----------
-  public:
-    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDrawIndirectValidationResources(
-        const Location& loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset,
-        uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
-    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDispatchIndirectValidationResources(const Location& loc,
-                                                                                                   VkCommandBuffer cmd_buffer,
-                                                                                                   VkBuffer indirect_buffer,
-                                                                                                   VkDeviceSize indirect_offset);
-    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreTraceRaysValidationResources(const Location& loc,
-                                                                                            VkCommandBuffer cmd_buffer,
-                                                                                            VkDeviceAddress indirect_data_address);
-    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreCopyBufferToImageValidationResources(
-        const Location& loc, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2* copy_buffer_to_img_info);
-
-  private:
-    VkPipeline GetDrawValidationPipeline(PreDrawResources::SharedResources& shared_draw_resources, VkRenderPass render_pass,
-                                         const Location& loc);
-    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources(VkDescriptorSetLayout error_output_desc_set,
-                                                                                bool use_shader_objects, const Location& loc);
-    // This overload returns nullptr if shared resources have not been created
-    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources();
-    PreDispatchResources::SharedResources* GetSharedDispatchIndirectValidationResources(VkDescriptorSetLayout error_output_desc_set,
-                                                                                        bool use_shader_objects,
-                                                                                        const Location& loc);
-    PreTraceRaysResources::SharedResources* GetSharedTraceRaysValidationResources(VkDescriptorSetLayout error_output_desc_layout,
-                                                                                  const Location& loc);
-    PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources(
-        VkDescriptorSetLayout error_output_set_layout, const Location& loc);
 
     // gpuav_error_message.cpp
     // ---------------------
   public:
     // Return true iff a error has been found
-    bool AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources& cmd_resources,
-                                   uint32_t operation_index, uint32_t* const error_record,
-                                   const std::vector<DescSetState>& descriptor_sets, const Location& loc);
+    bool AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, const LogObjectList& objlist, uint32_t operation_index,
+                                   const uint32_t* error_record, const std::vector<DescSetState>& descriptor_sets,
+                                   VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
+                                   const Location& loc);
 
   private:
     // Return true iff an error has been found in error_record, among the list of errors this function manages
     bool LogMessageInstBindlessDescriptor(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
-                                          const CommandResources& cmd_resources, const std::vector<DescSetState>& descriptor_sets,
-                                          bool& out_oob_access) const;
+                                          const std::vector<DescSetState>& descriptor_sets, const Location& loc,
+                                          bool uses_shader_object, bool& out_oob_access) const;
     bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
                                            bool& out_oob_access) const;
     bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg) const;
@@ -407,10 +358,11 @@ class Validator : public gpu::GpuShaderInstrumentor {
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
+    gpu::SharedResourcesManager shared_resources_manager;
+    bool bda_validation_possible = false;
 
   private:
     std::string instrumented_shader_cache_path_{};
-    bool bda_validation_possible_ = false;
 };
 
 }  // namespace gpuav

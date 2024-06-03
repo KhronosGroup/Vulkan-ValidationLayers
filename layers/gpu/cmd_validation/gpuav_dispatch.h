@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2018-2024 The Khronos Group Inc.
+ * Copyright (c) 2018-2024 Valve Corporation
+ * Copyright (c) 2018-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 
 #pragma once
 
-#include "gpu/resources/gpuav_subclasses.h"
+#include <vulkan/vulkan.h>
+
+struct Location;
 
 namespace gpuav {
+class Validator;
 
-void SetupShaderInstrumentationResources(Validator& gpuav, LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard>& cmd_buffer,
-                                         VkPipelineBindPoint bind_point, const Location& loc);
-void SetupShaderInstrumentationResources(Validator& gpuav, VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
-                                         const Location& loc);
+void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer,
+                                      VkDeviceSize indirect_offset);
 
 }  // namespace gpuav

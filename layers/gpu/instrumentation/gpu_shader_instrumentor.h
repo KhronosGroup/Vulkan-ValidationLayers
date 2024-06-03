@@ -158,9 +158,10 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                   std::vector<uint32_t> &out_instrumented_spirv) = 0;
 
     VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
-    VkPipelineLayout GetDebugPipelineLayout() { return debug_pipeline_layout_; }
 
   public:
+    VkPipelineLayout GetDebugPipelineLayout() { return debug_pipeline_layout_; }
+
     // When aborting we will disconnect all future chassis calls.
     // If we are deep into a call stack, we can use this to return up to the chassis call.
     // It should only be used after calls that might abort, not to be used for guarding a function (unless a case is found that make

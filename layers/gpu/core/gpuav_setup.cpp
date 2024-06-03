@@ -118,10 +118,10 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
     }
 
     const VkBool32 shaderInt64 = supported_features_.shaderInt64;
-    bda_validation_possible_ = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-                                 IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                                shaderInt64 && enabled_features.bufferDeviceAddress);
-    if (!bda_validation_possible_) {
+    bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+                                IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+                               shaderInt64 && enabled_features.bufferDeviceAddress);
+    if (!bda_validation_possible) {
         if (gpuav_settings.validate_bda) {
             if (!shaderInt64) {
                 LogWarning("WARNING-GPU-Assisted-Validation", device, loc,

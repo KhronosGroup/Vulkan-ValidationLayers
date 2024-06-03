@@ -28,11 +28,13 @@ class Validator;
 class RestorablePipelineState {
   public:
     RestorablePipelineState(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
-
-    void Create(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point);
-    void Restore(VkCommandBuffer command_buffer) const;
+    ~RestorablePipelineState() { Restore(); }
 
   private:
+    void Create(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point);
+    void Restore() const;
+
+    VkCommandBuffer cmd_buffer_;
     VkPipelineBindPoint pipeline_bind_point_ = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -47,7 +49,7 @@ class RestorablePipelineState {
 
 void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard>& cmd_buffer_state,
                                      VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
-                                     uint32_t resource_index);
+                                     uint32_t error_logger_index);
 
 VkDeviceAddress GetBufferDeviceAddress(Validator& gpuav, VkBuffer buffer, const Location& loc);
 
