@@ -2144,9 +2144,9 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
     return skip;
 }
 
-// Function to get the VkPipelineShaderStageCreateInfo from the various pipeline types
-bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create_info, const ShaderStageState &stage_state,
-                                             const Location &loc) const {
+// Validate the VkPipelineShaderStageCreateInfo from the various pipeline types or a Shader Object
+bool CoreChecks::ValidateShaderStage(const StageCreateInfo &stage_create_info, const ShaderStageState &stage_state,
+                                     const Location &loc) const {
     bool skip = false;
     const VkShaderStageFlagBits stage = stage_state.GetStage();
 
