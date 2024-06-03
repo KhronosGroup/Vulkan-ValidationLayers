@@ -622,7 +622,14 @@ class CoreChecks : public ValidationStateTracker {
                                                        const vku::safe_VkSubpassDescription2* subpass_desc,
                                                        const Location& create_info_loc) const;
     bool ValidateComputePipelineShaderState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline& pipeline, const VkPipelineRobustnessCreateInfoEXT& create_info,
+    bool ValidatePipelineDiscardRectangleStateCreateInfo(
+        const vvl::Pipeline& pipeline, const VkPipelineDiscardRectangleStateCreateInfoEXT& discard_rectangle_state,
+        const Location& create_info_loc) const;
+    bool ValidatePipelineAttachmentSampleCountInfo(const vvl::Pipeline& pipeline,
+                                                   const VkAttachmentSampleCountInfoAMD& attachment_sample_count_info,
+                                                   const Location& create_info_loc) const;
+    bool ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline& pipeline,
+                                              const VkPipelineRobustnessCreateInfoEXT& pipeline_robustness_info,
                                               const Location& loc) const;
     uint32_t CalcShaderStageCount(const vvl::Pipeline& pipeline, VkShaderStageFlagBits stageBit) const;
     bool GroupHasValidIndex(const vvl::Pipeline& pipeline, uint32_t group, uint32_t stage) const;
