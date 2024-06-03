@@ -51,8 +51,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                                                       "VUID-VkComputePipelineCreateInfo-flags-09007");
 
         if (const auto *pipeline_robustness_info =
-                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext);
-            pipeline_robustness_info) {
+                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext)) {
             skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, create_info_loc);
         }
     }

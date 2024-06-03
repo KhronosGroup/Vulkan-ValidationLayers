@@ -2156,8 +2156,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     skip |= ValidateSpecializations(stage_state.GetSpecializationInfo(), stage_create_info, loc.dot(Field::pSpecializationInfo));
     skip |= ValidateShaderStageMaxResources(stage, stage_create_info, loc);
     if (const auto *pipeline_robustness_info =
-            vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext());
-        pipeline_robustness_info) {
+            vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext())) {
         skip |= ValidatePipelineRobustnessCreateInfo(*stage_create_info.pipeline, *pipeline_robustness_info, loc);
     }
 

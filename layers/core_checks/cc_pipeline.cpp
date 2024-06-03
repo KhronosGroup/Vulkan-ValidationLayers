@@ -103,39 +103,40 @@ bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPip
 
 // This can be chained in the vkCreate*Pipelines() function or the VkPipelineShaderStageCreateInfo
 bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipeline,
-                                                      const VkPipelineRobustnessCreateInfoEXT &create_info,
+                                                      const VkPipelineRobustnessCreateInfoEXT &pipeline_robustness_info,
                                                       const Location &loc) const {
     bool skip = false;
 
     if (!enabled_features.pipelineRobustness) {
-        if (create_info.storageBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.storageBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfoEXT, Field::storageBuffers),
                              "is %s but the pipelineRobustness feature was not enabled.",
-                             string_VkPipelineRobustnessBufferBehaviorEXT(create_info.storageBuffers));
+                             string_VkPipelineRobustnessBufferBehaviorEXT(pipeline_robustness_info.storageBuffers));
         }
-        if (create_info.uniformBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.uniformBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06927", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfoEXT, Field::uniformBuffers),
                              "is %s but the pipelineRobustness feature was not enabled.",
-                             string_VkPipelineRobustnessBufferBehaviorEXT(create_info.uniformBuffers));
+                             string_VkPipelineRobustnessBufferBehaviorEXT(pipeline_robustness_info.uniformBuffers));
         }
-        if (create_info.vertexInputs != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.vertexInputs != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06928", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfoEXT, Field::vertexInputs),
                              "is %s but the pipelineRobustness feature was not enabled.",
-                             string_VkPipelineRobustnessBufferBehaviorEXT(create_info.vertexInputs));
+                             string_VkPipelineRobustnessBufferBehaviorEXT(pipeline_robustness_info.vertexInputs));
         }
-        if (create_info.images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06929", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfoEXT, Field::images),
                              "is %s but the pipelineRobustness feature was not enabled.",
-                             string_VkPipelineRobustnessImageBehaviorEXT(create_info.images));
+                             string_VkPipelineRobustnessImageBehaviorEXT(pipeline_robustness_info.images));
         }
     }
 
     // These validation depend if the features are exposed (not just enabled)
-    if (!has_robust_image_access && create_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT) {
+    if (!has_robust_image_access &&
+        pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT) {
         skip |= LogError("VUID-VkPipelineRobustnessCreateInfoEXT-robustImageAccess-06930", device,
                          loc.pNext(Struct::VkPipelineRobustnessCreateInfoEXT, Field::images),
                          "is VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT "
@@ -429,65 +430,66 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
                                            const Location &loc) const {
     bool skip = false;
-    auto pool = cb_state.command_pool;
-    if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
-        const VkQueueFlags required_mask = (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)  ? VK_QUEUE_GRAPHICS_BIT
-                                           : (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) ? VK_QUEUE_COMPUTE_BIT
-                                           : (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point)
-                                               ? (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)
-                                               : VK_QUEUE_FLAG_BITS_MAX_ENUM;
+    const auto *pool = cb_state.command_pool;
+    // The loss of a pool in a recording cmd is reported in DestroyCommandPool
+    if (!pool) return skip;
 
-        const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
-        if (0 == (qfp.queueFlags & required_mask)) {
-            const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
-            const char *vuid = kVUIDUndefined;
-            switch (loc.function) {
-                case Func::vkCmdBindDescriptorSets:
-                    vuid = "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361";
-                    break;
-                case Func::vkCmdBindDescriptorSets2KHR:
-                    vuid = "VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467";
-                    break;
-                case Func::vkCmdSetDescriptorBufferOffsetsEXT:
-                    vuid = "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067";
-                    break;
-                case Func::vkCmdSetDescriptorBufferOffsets2EXT:
-                    vuid = "VUID-vkCmdSetDescriptorBufferOffsets2EXT-pSetDescriptorBufferOffsetsInfo-09471";
-                    break;
-                case Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT:
-                    vuid = "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-pipelineBindPoint-08069";
-                    break;
-                case Func::vkCmdBindDescriptorBufferEmbeddedSamplers2EXT:
-                    vuid = "VUID-vkCmdBindDescriptorBufferEmbeddedSamplers2EXT-pBindDescriptorBufferEmbeddedSamplersInfo-09473";
-                    break;
-                case Func::vkCmdPushDescriptorSetKHR:
-                    vuid = "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363";
-                    break;
-                case Func::vkCmdPushDescriptorSet2KHR:
-                    vuid = "VUID-vkCmdPushDescriptorSet2KHR-pPushDescriptorSetInfo-09468";
-                    break;
-                case Func::vkCmdPushDescriptorSetWithTemplateKHR:
-                    vuid = "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366";
-                    break;
-                case Func::vkCmdPushDescriptorSetWithTemplate2KHR:
-                    vuid = "VUID-VkPushDescriptorSetWithTemplateInfoKHR-commandBuffer-00366";
-                    break;
-                case Func::vkCmdBindPipeline:
-                    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
-                        vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-00778";
-                    } else if (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) {
-                        vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-00777";
-                    } else if (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point) {
-                        vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-02391";
-                    }
-                    break;
-                default:
-                    break;
-            }
-            skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support bindpoint %s.",
-                             FormatHandle(cb_state.Handle()).c_str(), FormatHandle(cb_state.allocate_info.commandPool).c_str(),
-                             string_VkPipelineBindPoint(bind_point));
+    const VkQueueFlags required_mask = (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)  ? VK_QUEUE_GRAPHICS_BIT
+                                       : (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) ? VK_QUEUE_COMPUTE_BIT
+                                       : (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point)
+                                           ? (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)
+                                           : VK_QUEUE_FLAG_BITS_MAX_ENUM;
+
+    const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
+    if (0 == (qfp.queueFlags & required_mask)) {
+        const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
+        const char *vuid = kVUIDUndefined;
+        switch (loc.function) {
+            case Func::vkCmdBindDescriptorSets:
+                vuid = "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361";
+                break;
+            case Func::vkCmdBindDescriptorSets2KHR:
+                vuid = "VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467";
+                break;
+            case Func::vkCmdSetDescriptorBufferOffsetsEXT:
+                vuid = "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067";
+                break;
+            case Func::vkCmdSetDescriptorBufferOffsets2EXT:
+                vuid = "VUID-vkCmdSetDescriptorBufferOffsets2EXT-pSetDescriptorBufferOffsetsInfo-09471";
+                break;
+            case Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT:
+                vuid = "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-pipelineBindPoint-08069";
+                break;
+            case Func::vkCmdBindDescriptorBufferEmbeddedSamplers2EXT:
+                vuid = "VUID-vkCmdBindDescriptorBufferEmbeddedSamplers2EXT-pBindDescriptorBufferEmbeddedSamplersInfo-09473";
+                break;
+            case Func::vkCmdPushDescriptorSetKHR:
+                vuid = "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363";
+                break;
+            case Func::vkCmdPushDescriptorSet2KHR:
+                vuid = "VUID-vkCmdPushDescriptorSet2KHR-pPushDescriptorSetInfo-09468";
+                break;
+            case Func::vkCmdPushDescriptorSetWithTemplateKHR:
+                vuid = "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366";
+                break;
+            case Func::vkCmdPushDescriptorSetWithTemplate2KHR:
+                vuid = "VUID-VkPushDescriptorSetWithTemplateInfoKHR-commandBuffer-00366";
+                break;
+            case Func::vkCmdBindPipeline:
+                if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
+                    vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-00778";
+                } else if (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) {
+                    vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-00777";
+                } else if (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point) {
+                    vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-02391";
+                }
+                break;
+            default:
+                break;
         }
+        skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support bindpoint %s.",
+                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(cb_state.allocate_info.commandPool).c_str(),
+                         string_VkPipelineBindPoint(bind_point));
     }
     return skip;
 }
@@ -545,24 +547,23 @@ bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *s
 
     for (auto i = 0u; i < spec->mapEntryCount; i++) {
         const Location map_loc = loc.dot(Field::pMapEntries, i);
-        if (spec->pMapEntries[i].offset >= spec->dataSize) {
+        const auto &map_entry = spec->pMapEntries[i];
+        if (map_entry.offset >= spec->dataSize) {
             skip |= LogError("VUID-VkSpecializationInfo-offset-00773", device, map_loc.dot(Field::offset),
-                             "is %" PRIu32 " but dataSize is %zu (for constantID %" PRIu32 ").", spec->pMapEntries[i].offset,
-                             spec->dataSize, spec->pMapEntries[i].constantID);
+                             "is %" PRIu32 " but dataSize is %zu (for constantID %" PRIu32 ").", map_entry.offset, spec->dataSize,
+                             map_entry.constantID);
 
             continue;
         }
-        if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
-            skip |=
-                LogError("VUID-VkSpecializationInfo-pMapEntries-00774", device, map_loc.dot(Field::size),
-                         "(%zu) plus offset (%" PRIu32 ") is greater than dataSize (%zu) (for constantID %" PRIu32 ").",
-                         spec->pMapEntries[i].size, spec->pMapEntries[i].offset, spec->dataSize, spec->pMapEntries[i].constantID);
+        if (map_entry.offset + map_entry.size > spec->dataSize) {
+            skip |= LogError("VUID-VkSpecializationInfo-pMapEntries-00774", device, map_loc.dot(Field::size),
+                             "(%zu) plus offset (%" PRIu32 ") is greater than dataSize (%zu) (for constantID %" PRIu32 ").",
+                             map_entry.size, map_entry.offset, spec->dataSize, map_entry.constantID);
         }
         for (uint32_t j = i + 1; j < spec->mapEntryCount; ++j) {
-            if (spec->pMapEntries[i].constantID == spec->pMapEntries[j].constantID) {
+            if (map_entry.constantID == spec->pMapEntries[j].constantID) {
                 skip |= LogError("VUID-VkSpecializationInfo-constantID-04911", device, map_loc,
-                                 "and pMapEntries[%" PRIu32 "] both have constantID (%" PRIu32 ").", j,
-                                 spec->pMapEntries[i].constantID);
+                                 "and pMapEntries[%" PRIu32 "] both have constantID (%" PRIu32 ").", j, map_entry.constantID);
             }
         }
     }
