@@ -641,6 +641,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                                VkShaderModuleIdentifierEXT* pIdentifier,
                                                                const ErrorObject& error_obj) const override;
+    bool ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_info, const spirv::Module& spirv,
+                                   const Location& create_info_loc) const;
     bool ValidateCreateShadersLinking(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                       const Location& loc) const;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
