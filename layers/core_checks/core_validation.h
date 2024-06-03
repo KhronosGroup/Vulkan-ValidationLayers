@@ -51,6 +51,7 @@ class CoreChecks : public ValidationStateTracker {
     using QueueFamilyBarrier = sync_utils::QueueFamilyBarrier;
     using BufferBarrier = sync_utils::BufferBarrier;
     using ImageBarrier = sync_utils::ImageBarrier;
+    using OwnershipTransferOp = sync_utils::OwnershipTransferOp;
 
     GlobalQFOTransferBarrierMap<QFOImageTransferBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<QFOBufferTransferBarrier> qfo_release_buffer_barrier_map;
@@ -196,7 +197,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAccessMaskForShaderTileImage(const LogObjectList& objlist, const Location& loc, VkAccessFlags2KHR access_mask,
                                               const std::string& vuid) const;
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
-                               const MemoryBarrier& barrier) const;
+                               const MemoryBarrier& barrier,
+                               OwnershipTransferOp ownership_transfer_op = OwnershipTransferOp::none) const;
 
     bool ValidateSubpassDependency(const ErrorObject& error_obj, const Location& loc, const VkSubpassDependency2& barrier) const;
 
