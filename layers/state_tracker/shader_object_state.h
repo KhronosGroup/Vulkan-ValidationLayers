@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "state_tracker/state_object.h"
-#include "utils/shader_utils.h"
+#include "state_tracker/shader_stage_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 
 namespace vvl {

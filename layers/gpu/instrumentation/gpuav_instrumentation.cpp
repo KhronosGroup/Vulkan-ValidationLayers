@@ -21,7 +21,7 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/spirv/module.h"
-#include "utils/shader_utils.h"
+#include "state_tracker/shader_stage_state.h"
 #include "spirv-tools/optimizer.hpp"
 
 #include <fstream>

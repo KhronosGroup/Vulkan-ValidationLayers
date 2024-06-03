@@ -296,6 +296,8 @@ target_sources(vvl PRIVATE
     state_tracker/shader_module.h
     state_tracker/shader_object_state.cpp
     state_tracker/shader_object_state.h
+    state_tracker/shader_stage_state.cpp
+    state_tracker/shader_stage_state.h
     state_tracker/state_tracker.cpp
     state_tracker/state_tracker.h
     state_tracker/submission_reference.h

@@ -258,6 +258,8 @@ vvl_sources = [
   "layers/state_tracker/shader_module.h",
   "layers/state_tracker/shader_object_state.cpp",
   "layers/state_tracker/shader_object_state.h",
+  "layers/state_tracker/shader_stage_state.cpp",
+  "layers/state_tracker/shader_stage_state.h",
   "layers/state_tracker/state_object.cpp",
   "layers/state_tracker/state_object.h",
   "layers/state_tracker/state_tracker.cpp",

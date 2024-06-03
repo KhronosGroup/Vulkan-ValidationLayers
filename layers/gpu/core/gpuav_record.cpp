@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 #include "utils/cast_utils.h"
-#include "utils/shader_utils.h"
+#include "state_tracker/shader_stage_state.h"
 #include "utils/hash_util.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_validation.h"

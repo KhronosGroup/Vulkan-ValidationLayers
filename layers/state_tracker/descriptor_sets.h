@@ -21,7 +21,7 @@
 #include "state_tracker/state_object.h"
 #include "utils/hash_vk_types.h"
 #include "utils/vk_layer_utils.h"
-#include "utils/shader_utils.h"
+#include "state_tracker/shader_stage_state.h"
 #include "generated/vk_object_types.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <map>
