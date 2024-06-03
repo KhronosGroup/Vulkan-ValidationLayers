@@ -2404,14 +2404,16 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         const ImageBarrier barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
-        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
         skip |= ValidateImageBarrier(objects, barrier_loc, cb_state, barrier);
         skip |= ValidateBarriersToImages(barrier_loc, cb_state, barrier, layout_updates_state);
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(pBufferMemBarriers[i], src_stage_mask, dst_stage_mask);
-        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
         skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
     }
     return skip;
@@ -2427,21 +2429,23 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
 
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
-        const MemoryBarrier mem_barrier(dep_info.pMemoryBarriers[i]);
-        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, mem_barrier);
+        const MemoryBarrier barrier(dep_info.pMemoryBarriers[i]);
+        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier);
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
-        const ImageBarrier mem_barrier(dep_info.pImageMemoryBarriers[i]);
-        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, mem_barrier);
-        skip |= ValidateImageBarrier(objects, barrier_loc, cb_state, mem_barrier);
-        skip |= ValidateBarriersToImages(barrier_loc, cb_state, mem_barrier, layout_updates_state);
+        const ImageBarrier barrier(dep_info.pImageMemoryBarriers[i]);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
+        skip |= ValidateImageBarrier(objects, barrier_loc, cb_state, barrier);
+        skip |= ValidateBarriersToImages(barrier_loc, cb_state, barrier, layout_updates_state);
     }
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
-        const BufferBarrier mem_barrier(dep_info.pBufferMemoryBarriers[i]);
-        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, mem_barrier);
-        skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, mem_barrier);
+        const BufferBarrier barrier(dep_info.pBufferMemoryBarriers[i]);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
+        skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
     }
 
     return skip;
@@ -2544,24 +2548,29 @@ bool CoreChecks::ValidateShaderTileImageCommon(const LogObjectList &objlist, con
 }
 
 bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &barrier_loc,
-                                       const vvl::CommandBuffer &cb_state, const MemoryBarrier &barrier) const {
+                                       const vvl::CommandBuffer &cb_state, const MemoryBarrier &barrier,
+                                       OwnershipTransferOp ownership_transfer_op) const {
     bool skip = false;
-    auto queue_flags = cb_state.GetQueueFlags();
-
+    const VkQueueFlags queue_flags = cb_state.GetQueueFlags();
     const bool is_sync2 =
         IsValueIn(barrier_loc.structure, {Struct::VkMemoryBarrier2, Struct::VkBufferMemoryBarrier2, Struct::VkImageMemoryBarrier2});
 
-    // Validate only Sync2 stages because they are defined for each Sync2 barrier structure.
-    // Sync1 stages are the same for all barrier structures and are validated in other place once per top-level API call.
+    // Validate Sync2 stages in this function because they are defined per barrier structure.
+    // Sync1 stages are shared by all barriers (vkCmdPipelineBarrier api) and are validated once per barrier command call.
     if (is_sync2) {
-        skip |= ValidatePipelineStage(objects, barrier_loc.dot(Field::srcStageMask), queue_flags, barrier.srcStageMask);
-        skip |= ValidatePipelineStage(objects, barrier_loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
+        if (ownership_transfer_op != OwnershipTransferOp::acquire) {
+            skip |= ValidatePipelineStage(objects, barrier_loc.dot(Field::srcStageMask), queue_flags, barrier.srcStageMask);
+        }
+        if (ownership_transfer_op != OwnershipTransferOp::release) {
+            skip |= ValidatePipelineStage(objects, barrier_loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
+        }
     }
-    if (!cb_state.IsAcquireOp(barrier)) {
+
+    if (ownership_transfer_op != OwnershipTransferOp::acquire) {
         skip |= ValidateAccessMask(objects, barrier_loc.dot(Field::srcAccessMask), barrier_loc.dot(Field::srcStageMask),
                                    queue_flags, barrier.srcAccessMask, barrier.srcStageMask);
     }
-    if (!cb_state.IsReleaseOp(barrier)) {
+    if (ownership_transfer_op != OwnershipTransferOp::release) {
         skip |= ValidateAccessMask(objects, barrier_loc.dot(Field::dstAccessMask), barrier_loc.dot(Field::dstStageMask),
                                    queue_flags, barrier.dstAccessMask, barrier.dstStageMask);
     }

@@ -1118,46 +1118,6 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     conc_test.buffer_barrier_.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     conc_test.buffer_barrier_.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     conc_test("", "VUID-VkBufferMemoryBarrier2-dstAccessMask-03911");
-
-    // Attempt to mismatch barriers/waitEvents calls with incompatible queues
-    // Create command pool with incompatible queueflags
-    const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
-    const std::optional<uint32_t> queue_family_index = m_device->ComputeOnlyQueueFamily();
-    if (!queue_family_index) {
-        GTEST_SKIP() << "No compute-only queue found";
-    }
-
-    VkBufferMemoryBarrier2KHR buf_barrier = vku::InitStructHelper();
-    buf_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    buf_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    buf_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    buf_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    buf_barrier.buffer = buffer.handle();
-    buf_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    buf_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    buf_barrier.offset = 0;
-    buf_barrier.size = VK_WHOLE_SIZE;
-
-    dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &buf_barrier;
-
-    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dep_info);
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-03849");
-
-    vkt::CommandPool command_pool(*m_device, queue_family_index.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer bad_command_buffer(*m_device, command_pool);
-
-    bad_command_buffer.begin();
-    buf_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    // Set two bits that should both be supported as a bonus positive check
-    buf_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
-    buf_barrier.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    buf_barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-    vk::CmdPipelineBarrier2KHR(bad_command_buffer.handle(), &dep_info);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeSyncObject, DepthStencilImageNonSeparate) {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2021, 2023 Valve Corporation
- * Copyright (c) 2019-2021, 2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,6 +111,8 @@ struct MemoryBarrier {
           dstAccessMask(barrier.dstAccessMask) {}
 };
 
+enum class OwnershipTransferOp { none, release, acquire };
+
 // QueueFamilyBarrier is not a real barrier (there are no queue family barriers in vulkan),
 // but is part of a buffer/image barrier structure (still can be created separately if needed).
 // This type (and also MemoryBarrier) can be used by the functionality that does not need
@@ -137,6 +139,17 @@ struct QueueFamilyBarrier : MemoryBarrier {
         : MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
+
+    OwnershipTransferOp TransferOp(uint32_t command_pool_queue_family) const {
+        if (srcQueueFamilyIndex != dstQueueFamilyIndex) {
+            if (command_pool_queue_family == srcQueueFamilyIndex) {
+                return OwnershipTransferOp::release;
+            } else if (command_pool_queue_family == dstQueueFamilyIndex) {
+                return OwnershipTransferOp::acquire;
+            }
+        }
+        return OwnershipTransferOp::none;
+    }
 };
 
 struct BufferBarrier : QueueFamilyBarrier {
