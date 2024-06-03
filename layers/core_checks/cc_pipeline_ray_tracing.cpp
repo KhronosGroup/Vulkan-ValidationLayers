@@ -94,7 +94,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
 
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
         StageCreateInfo stage_create_info(&pipeline);
-        skip |= ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[i], create_info_loc.dot(Field::pStages, i));
+        skip |= ValidateShaderStage(stage_create_info, pipeline.stage_states[i], create_info_loc.dot(Field::pStages, i));
     }
 
     if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(create_info.pNext)) {

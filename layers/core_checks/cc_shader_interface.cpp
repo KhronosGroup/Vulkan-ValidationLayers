@@ -831,7 +831,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
         // Only validate the shader state once when added, not again when linked
         if ((stage & pipeline.linking_shaders) == 0) {
             StageCreateInfo stage_create_info(&pipeline);
-            skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc.dot(Field::pStages, i));
+            skip |= ValidateShaderStage(stage_create_info, stage_state, create_info_loc.dot(Field::pStages, i));
         }
         if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage_state;

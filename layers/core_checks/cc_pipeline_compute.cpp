@@ -25,7 +25,7 @@
 
 bool CoreChecks::ValidateComputePipelineShaderState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     StageCreateInfo stage_create_info(&pipeline);
-    return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0], create_info_loc.dot(Field::stage));
+    return ValidateShaderStage(stage_create_info, pipeline.stage_states[0], create_info_loc.dot(Field::stage));
 }
 
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
