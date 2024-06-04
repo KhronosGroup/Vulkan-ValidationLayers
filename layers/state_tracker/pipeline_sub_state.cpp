@@ -257,22 +257,3 @@ bool FragmentOutputState::IsBlendConstantsEnabled(const AttachmentStateVector &a
     }
     return result;
 }
-
-// static
-bool FragmentOutputState::GetDualSourceBlending(const vku::safe_VkPipelineColorBlendStateCreateInfo *color_blend_state) {
-    if (!color_blend_state) {
-        return false;
-    }
-    for (uint32_t i = 0; i < color_blend_state->attachmentCount; ++i) {
-        const auto &attachment = color_blend_state->pAttachments[i];
-        if (attachment.blendEnable) {
-            if (IsSecondaryColorInputBlendFactor(attachment.srcColorBlendFactor) ||
-                IsSecondaryColorInputBlendFactor(attachment.dstColorBlendFactor) ||
-                IsSecondaryColorInputBlendFactor(attachment.srcAlphaBlendFactor) ||
-                IsSecondaryColorInputBlendFactor(attachment.dstAlphaBlendFactor)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}

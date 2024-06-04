@@ -296,13 +296,6 @@ class Pipeline : public StateObject {
         return false;
     }
 
-    bool DualSourceBlending() const {
-        if (fragment_output_state) {
-            return fragment_output_state->dual_source_blending == VK_TRUE;
-        }
-        return false;
-    }
-
     const vku::safe_VkPipelineViewportStateCreateInfo *ViewportState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (pre_raster_state) {

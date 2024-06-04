@@ -735,6 +735,32 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotConsumedButAlphaToCoverageEnabl
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
+TEST_F(PositiveShaderInterface, AlphaToCoverageOutputIndex0) {
+    TEST_DESCRIPTION("DualSource blend has two outputs at location zero, so Index 0 is the one that's required");
+    AddRequiredFeature(vkt::Feature::dualSrcBlend);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget(0u);
+
+    const char *fs_src = R"glsl(
+        #version 460
+        layout(location = 0, index = 0) out vec4 c0;
+        void main() {
+		    c0 = vec4(0.0f);
+        }
+    )glsl";
+    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_TRUE;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.ms_ci_ = ms_state_ci;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
 // Spec doesn't clarify if this is valid or not
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3445
 TEST_F(PositiveShaderInterface, DISABLED_InputOutputMatch2) {
