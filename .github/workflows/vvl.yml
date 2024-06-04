@@ -73,6 +73,11 @@ jobs:
           - config: release
             robin_hood: "OFF"
             sanitize: address
+        exclude:
+          # Have found over time this finds nothing extra, while taking the longest and using the most CI minutes.
+          - config: debug
+            robin_hood: "ON"
+            sanitize: thread
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
