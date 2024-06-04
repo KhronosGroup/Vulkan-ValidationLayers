@@ -5376,7 +5376,7 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
         GTEST_SKIP() << "image format not supported as color attachment.";
     }
 
-    vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 256, 256, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
@@ -6689,13 +6689,18 @@ TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char comp_source[] = R"glsl(
+    VkPhysicalDeviceVulkan11Properties properties11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(properties11);
+
+    std::string comp_src = R"glsl(
         #version 460
-        layout(local_size_x = 32) in;
+        layout(local_size_x = )glsl";
+    comp_src += std::to_string(properties11.subgroupSize);
+    comp_src += R"glsl() in;
         void main() {}
     )glsl";
 
-    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_source);
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
     VkShaderCreateInfoEXT create_info =
         ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
     VkShaderEXT shader;
