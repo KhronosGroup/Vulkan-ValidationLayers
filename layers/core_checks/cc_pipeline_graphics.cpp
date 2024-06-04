@@ -1489,18 +1489,15 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pi
                                                                    const Location &color_loc) const {
     bool skip = false;
     const auto &attachment_states = pipeline.AttachmentStates();
-    if (attachment_states.empty()) {
-        return skip;
-    }
-    if (!enabled_features.independentBlend) {
-        if (attachment_states.size() > 1) {
-            for (size_t i = 1; i < attachment_states.size(); i++) {
-                if (!ComparePipelineColorBlendAttachmentState(attachment_states[0], attachment_states[i])) {
-                    skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605", device,
-                                     color_loc.dot(Field::pAttachments, (uint32_t)i),
-                                     "is different than pAttachments[0] and independentBlend feature was not enabled.");
-                    break;
-                }
+    if (attachment_states.empty()) return skip;
+
+    if (!enabled_features.independentBlend && attachment_states.size() > 1) {
+        for (size_t i = 1; i < attachment_states.size(); i++) {
+            if (!ComparePipelineColorBlendAttachmentState(attachment_states[0], attachment_states[i])) {
+                skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605", device,
+                                 color_loc.dot(Field::pAttachments, (uint32_t)i),
+                                 "is different than pAttachments[0] and independentBlend feature was not enabled.");
+                break;
             }
         }
     }

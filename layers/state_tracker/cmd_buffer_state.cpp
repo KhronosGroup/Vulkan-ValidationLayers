@@ -1871,13 +1871,13 @@ std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &l
 
 std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state) const {
     std::stringstream ss;
-    if (dynamic_state_status.history[dynamic_state]) {
+    if (dynamic_state_status.history[dynamic_state] && !dynamic_state_status.cb[dynamic_state]) {
         ss << " (There was a call to vkCmdBindPipeline";
         if (auto pipeline = dev_data.Get<vvl::Pipeline>(invalidated_state_pipe[dynamic_state])) {
             ss << " with " << dev_data.FormatHandle(*pipeline);
         }
-        ss << " that didn't have the dynamic state and invalidated the prior " << DescribeDynamicStateCommand(dynamic_state)
-           << " call)";
+        ss << " that didn't have " << DynamicStateToString(dynamic_state) << " and invalidated the prior "
+           << DescribeDynamicStateCommand(dynamic_state) << " call)";
     }
     return ss.str();
 }
