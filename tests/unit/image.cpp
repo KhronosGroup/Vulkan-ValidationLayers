@@ -5574,6 +5574,7 @@ TEST_F(NegativeImage, ImageAlignmentControlFeature) {
 
     VkImage image;
     m_errorMonitor->SetDesiredError("VUID-VkImageAlignmentControlCreateInfoMESA-imageAlignmentControl-09657");
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09656");
     vk::CreateImage(*m_device, &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 }
