@@ -60,8 +60,9 @@ struct DecorationBase {
 
     // When being used as an User-defined Variable (input, output, rtx)
     uint32_t location = kInvalidValue;
-    // Component is optional and spec says it is 0 if not defined
+    // Component and Index are optional and spec says it is 0 if not defined
     uint32_t component = 0;
+    uint32_t index = 0;
 
     uint32_t offset = 0;
 

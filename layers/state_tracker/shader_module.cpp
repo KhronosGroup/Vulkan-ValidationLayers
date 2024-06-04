@@ -43,6 +43,9 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationComponent:
             component = value;
             break;
+        case spv::DecorationIndex:
+            index = value;
+            break;
         case spv::DecorationNonWritable:
             flags |= nonwritable_bit;
             break;
@@ -811,7 +814,8 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
                         max_output_slot = &slot;
                         max_output_slot_variable = &variable;
                     }
-                    if (slot.Location() == 0 && slot.Component() == 3) {
+                    // Dual source blending can use a non-index of zero here
+                    if (slot.Location() == 0 && slot.Component() == 3 && variable.decorations.index == 0) {
                         has_alpha_to_coverage_variable = true;
                     }
                 }

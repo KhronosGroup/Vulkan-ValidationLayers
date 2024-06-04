@@ -176,7 +176,6 @@ struct FragmentOutputState : public PipelineSubState {
             color_blend_state = ToSafeColorBlendState(cbci);
             // In case of being dynamic state
             if (cbci.pAttachments) {
-                dual_source_blending = GetDualSourceBlending(color_blend_state.get());
                 if (cbci.attachmentCount) {
                     attachment_states.reserve(cbci.attachmentCount);
                     std::copy(cbci.pAttachments, cbci.pAttachments + cbci.attachmentCount, std::back_inserter(attachment_states));
@@ -195,7 +194,6 @@ struct FragmentOutputState : public PipelineSubState {
     }
 
     static bool IsBlendConstantsEnabled(const AttachmentStateVector &attachment_states);
-    static bool GetDualSourceBlending(const vku::safe_VkPipelineColorBlendStateCreateInfo *color_blend_state);
 
     std::shared_ptr<const vvl::RenderPass> rp_state;
     uint32_t subpass = 0;
@@ -207,5 +205,4 @@ struct FragmentOutputState : public PipelineSubState {
 
     bool blend_constants_enabled = false;  // Blend constants enabled for any attachments
     bool sample_location_enabled = false;
-    bool dual_source_blending = false;
 };

@@ -3175,14 +3175,11 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
         cb_state.dynamic_state_value.alpha_to_coverage_enable) {
         if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point) {
-            // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
-            // Currently lack support to test each index.
-            if (!pipeline.fragment_shader_state->fragment_entry_point->has_alpha_to_coverage_variable &&
-                !pipeline.DualSourceBlending()) {
+            if (!pipeline.fragment_shader_state->fragment_entry_point->has_alpha_to_coverage_variable) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_alpha_to_coverage_component_08919, objlist, vuid.loc(),
                                  "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound pipeline "
-                                 "fragment shader doesn't declare a variable that covers Location 0, Component 3.");
+                                 "fragment shader doesn't declare a variable that covers Location 0, Component 3 (alpha channel).");
             }
         }
     }

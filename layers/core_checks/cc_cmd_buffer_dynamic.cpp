@@ -1570,7 +1570,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             const LogObjectList frag_objlist(cb_state.Handle(), fragment_shader_stage->Handle());
             skip |= LogError(vuid.alpha_component_word_08920, frag_objlist, loc,
                              "alphaToCoverageEnable is set, but fragment shader doesn't declare a variable that covers "
-                             "Location 0, Component 0.");
+                             "Location 0, Component 3 (alpha channel).");
         }
     }
 

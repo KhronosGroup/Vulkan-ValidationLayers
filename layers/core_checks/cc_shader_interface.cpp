@@ -166,13 +166,11 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, 
     bool skip = false;
     const auto *ms_state = pipeline.MultisampleState();
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) && ms_state && ms_state->alphaToCoverageEnable) {
-        // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
-        // Currently lack support to test each index.
-        if (!entrypoint.has_alpha_to_coverage_variable && !pipeline.DualSourceBlending()) {
+        if (!entrypoint.has_alpha_to_coverage_variable) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891", module_state.handle(),
                              create_info_loc.dot(Field::pMultisampleState).dot(Field::alphaToCoverageEnable),
                              "is VK_TRUE, but the fragment shader doesn't declare a variable that covers "
-                             "Location 0, Component 3.");
+                             "Location 0, Component 3 (alpha channel).");
         }
     }
     return skip;
