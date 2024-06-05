@@ -527,89 +527,18 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             }
 
             bool descriptor_written_to = false;
-            bool descriptor_image_read_from = false;
             const auto pipeline = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
             for (const auto &stage : pipeline->stage_states) {
                 if (!stage.entrypoint) continue;
                 for (const auto &interface_variable : stage.entrypoint->resource_interface_variables) {
                     if (interface_variable.decorations.set == set_index && interface_variable.decorations.binding == binding) {
                         descriptor_written_to |= interface_variable.IsWrittenTo();
-                        descriptor_image_read_from |= interface_variable.IsImageReadFrom();
                         break;  // only one set/binding will match
                     }
                 }
             }
 
             const bool layout_read_only = IsImageLayoutReadOnly(subpass.layout);
-            bool color_write_attachment = (subpass.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0;
-            bool depth_write_attachment = (subpass.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0 && !layout_read_only &&
-                                          (subpass.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT);
-            bool stencil_write_attachment = (subpass.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0 &&
-                                            !layout_read_only && (subpass.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT);
-            bool color_feedback_loop = subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
-            bool depth_feedback_loop = subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
-            bool stencil_feedback_loop = subpass.layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
-            if (pipeline && !pipeline->IsDynamic(CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT)) {
-                if ((pipeline->create_flags & VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0) {
-                    color_feedback_loop = false;
-                }
-                if ((pipeline->create_flags & VK_PIPELINE_CREATE_DEPTH_STENCIL_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0) {
-                    depth_feedback_loop = false;
-                    stencil_feedback_loop = false;
-                }
-            } else if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT)) {
-                if ((cb_state.dynamic_state_value.attachment_feedback_loop_enable & VK_IMAGE_ASPECT_COLOR_BIT) == 0) {
-                    color_feedback_loop = false;
-                }
-                if ((cb_state.dynamic_state_value.attachment_feedback_loop_enable & VK_IMAGE_ASPECT_DEPTH_BIT) == 0) {
-                    depth_feedback_loop = false;
-                }
-                if ((cb_state.dynamic_state_value.attachment_feedback_loop_enable & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
-                    stencil_feedback_loop = false;
-                }
-            }
-            if (color_feedback_loop || depth_feedback_loop || stencil_feedback_loop) {
-                bool dependency_found = false;
-                for (uint32_t i = 0; i < cb_state.activeRenderPass->create_info.dependencyCount; ++i) {
-                    const auto &dep = cb_state.activeRenderPass->create_info.pDependencies[i];
-                    if ((dep.dependencyFlags & VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT) != 0 &&
-                        dep.srcSubpass == cb_state.GetActiveSubpass() &&
-                        dep.dstSubpass == cb_state.GetActiveSubpass()) {
-                        dependency_found = true;
-                        break;
-                    }
-                }
-                if (!dependency_found) {
-                    color_feedback_loop = false;
-                    depth_feedback_loop = false;
-                    stencil_feedback_loop = false;
-                }
-            }
-            if (((color_write_attachment && !color_feedback_loop) || (depth_write_attachment && !depth_feedback_loop) ||
-                 (stencil_write_attachment && !stencil_feedback_loop)) &&
-                descriptor_image_read_from) {
-                const auto vuid = color_write_attachment    ? vuids.attachment_access_09000
-                                  : !depth_write_attachment ? vuids.attachment_access_09001
-                                                            : vuids.attachment_access_09002;
-                if (same_view) {
-                    auto set = descriptor_set.Handle();
-                    const LogObjectList objlist(set, image_view, framebuffer);
-                    return dev_state.LogError(vuid, objlist, loc,
-                                    "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                    ") has %s which will be written to as %s attachment %" PRIu32 ".",
-                                    FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                                    FormatHandle(framebuffer).c_str(), att_index);
-                } else if (overlapping_view) {
-                    auto set = descriptor_set.Handle();
-                    const LogObjectList objlist(set, image_view, framebuffer, view_state->Handle());
-                    return dev_state.LogError(vuid, objlist, loc,
-                                              "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                              ") has %s which will be overlap written to as %s in %s attachment %" PRIu32 ".",
-                                              FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                                              FormatHandle(view_state->Handle()).c_str(), FormatHandle(framebuffer).c_str(),
-                                              att_index);
-                }
-            }
             const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
             if (read_attachment && descriptor_written_to) {
                 if (same_view) {

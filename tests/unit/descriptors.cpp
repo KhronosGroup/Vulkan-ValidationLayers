@@ -2919,7 +2919,8 @@ TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8095
+TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments and descriptor set use the same image subresources");
 
     RETURN_IF_SKIP(Init());
@@ -3755,7 +3756,8 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8095
+TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
     TEST_DESCRIPTION("Validate reading from a descriptor that uses same image view as framebuffer write attachment");
 
     RETURN_IF_SKIP(Init());
