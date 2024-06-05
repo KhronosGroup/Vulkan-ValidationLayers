@@ -681,10 +681,9 @@ static void destroyActivity(struct android_app *app) {
     // Wait for APP_CMD_DESTROY
     while (app->destroyRequested == 0) {
         struct android_poll_source *source = nullptr;
-        int result = ALooper_pollOnce(-1, nullptr, nullptr, reinterpret_cast<void **>(&source));
-        if (result == ALOOPER_POLL_ERROR) {
-            __android_log_print(ANDROID_LOG_ERROR, appTag, "ALooper_pollOnce returned an error");
-        }
+        int events = 0;
+        int result = ALooper_pollAll(-1, nullptr, &events, reinterpret_cast<void **>(&source));
+
         if ((result >= 0) && (source)) {
             source->process(app, source);
         } else {
@@ -698,15 +697,9 @@ void android_main(struct android_app *app) {
     app->onInputEvent = processInput;
 
     while (1) {
+        int events;
         struct android_poll_source *source;
-        int result = ALooper_pollOnce(-1, nullptr, nullptr, reinterpret_cast<void **>(&source));
-        if (result == ALOOPER_POLL_ERROR) {
-            __android_log_print(ANDROID_LOG_ERROR, appTag, "ALooper_pollOnce returned an error");
-            VkTestFramework::Finish();
-            return;
-        }
-
-        if (result >= 0) {
+        while (ALooper_pollAll(active ? 0 : -1, NULL, &events, (void **)&source) >= 0) {
             if (source) {
                 source->process(app, source);
             }
@@ -715,7 +708,9 @@ void android_main(struct android_app *app) {
                 VkTestFramework::Finish();
                 return;
             }
-        } else if (initialized && active) {
+        }
+
+        if (initialized && active) {
             // Use the following key to send arguments to gtest, i.e.
             // --es args "--gtest_filter=-VkLayerTest.foo"
             const char key[] = "args";
