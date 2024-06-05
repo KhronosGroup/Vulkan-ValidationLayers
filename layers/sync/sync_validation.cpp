@@ -32,8 +32,7 @@ ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const 
     return reserve;
 }
 
-void SyncValidator::UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update,
-                                             const std::shared_ptr<QueueBatchContext> &last_batch) {
+void SyncValidator::UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update, const QueueBatchContext::Ptr &last_batch) {
     // NOTE: All conserved QueueBatchContexts need to have their access logs reset to use the global
     // logger and the only conserved QBCs are those referenced by unwaited signals and the last batch.
 
@@ -57,7 +56,7 @@ void SyncValidator::UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update,
 }
 
 void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
-    auto tagged_wait_op = [queue_id, tag](const std::shared_ptr<QueueBatchContext> &batch) {
+    auto tagged_wait_op = [queue_id, tag](const QueueBatchContext::Ptr &batch) {
         batch->ApplyTaggedWait(queue_id, tag);
         batch->Trim();
 
@@ -76,7 +75,7 @@ void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
 }
 
 void SyncValidator::ApplyAcquireWait(const AcquiredImage &acquired) {
-    auto acq_wait_op = [&acquired](const std::shared_ptr<QueueBatchContext> &batch) {
+    auto acq_wait_op = [&acquired](const QueueBatchContext::Ptr &batch) {
         batch->ApplyAcquireWait(acquired);
         batch->Trim();
     };
@@ -87,14 +86,20 @@ template <typename BatchOp>
 void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
     // Often we need to go through every queue batch context and apply synchronization operations
     // As usual -- two groups, the "last batch" and the signaled semaphores
-    QueueBatchContext::BatchSet queue_batch_contexts = GetQueueBatchSnapshot();
+    std::vector<QueueBatchContext::Ptr> batch_contexts = GetLastBatches([](auto) { return true; });
+
+    for (auto &[_, signal_info] : signaled_semaphores_) {
+        if (!vvl::Contains(batch_contexts, signal_info.batch)) {
+            batch_contexts.emplace_back(signal_info.batch);
+        }
+    }
 
     // Note: The const is to force the reference to const be on all platforms.
     //
     // It's not obivious (nor cross platform consitent), that the batch reference should be const
     // but since it's pointing to the actual *key* for the set it must be. This doesn't make the
     // object the shared pointer is referencing constant however.
-    for (const auto &batch : queue_batch_contexts) {
+    for (const auto &batch : batch_contexts) {
         op(batch);
     }
 }
@@ -2776,7 +2781,7 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
 
     // We need to treat this a fence waits for all queues... noting that present engine ops will be preserved.
     ForAllQueueBatchContexts(
-        [](const std::shared_ptr<QueueBatchContext> &batch) { batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex); });
+        [](const QueueBatchContext::Ptr &batch) { batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex); });
 
     // As we we've waited for everything on device, any waits are mooted. (except for acquires)
     vvl::EraseIf(waitable_fences_, [](SignaledFences::value_type &waitable) { return waitable.second.acquired.Invalid(); });
@@ -2803,8 +2808,8 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     // The submit id is a mutable automic which is not recoverable on a skip == true condition
     uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
 
-    std::shared_ptr<const QueueBatchContext> last_batch = cmd_state->queue->LastBatch();
-    std::shared_ptr<QueueBatchContext> batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, 0));
+    QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
+    QueueBatchContext::Ptr batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, 0));
 
     ResourceUsageRange tag_range = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
     batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
@@ -2825,7 +2830,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     return skip;
 }
 
-ResourceUsageRange SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, std::shared_ptr<QueueBatchContext> &batch,
+ResourceUsageRange SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
                                                    PresentedImages &presented_images) const {
     const VkSwapchainKHR *const swapchains = present_info.pSwapchains;
     const uint32_t *const image_indices = present_info.pImageIndices;
@@ -2958,8 +2963,8 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // verify each submit batch
     // Since the last batch from the queue state is const, we need to track the last_batch separately from the
     // most recently created batch
-    std::shared_ptr<const QueueBatchContext> last_batch = cmd_state->queue->LastBatch();
-    std::shared_ptr<QueueBatchContext> batch;
+    QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
+    QueueBatchContext::Ptr batch;
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, batch_idx);

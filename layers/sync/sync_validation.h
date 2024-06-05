@@ -63,7 +63,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     // Applies information from update object to signaled_semaphores_.
     // The update object is mutable to be able to std::move SignalInfo from it.
-    void UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update, const std::shared_ptr<QueueBatchContext> &last_batch);
+    void UpdateSignaledSemaphores(SignaledSemaphoresUpdate &update, const QueueBatchContext::Ptr &last_batch);
 
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
@@ -82,17 +82,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }
 
-    QueueBatchContext::BatchSet GetQueueBatchSnapshot();
-
-    template <typename Predicate>
-    QueueBatchContext::ConstBatchSet GetQueueLastBatchSnapshot(Predicate &&pred) const;
-    QueueBatchContext::ConstBatchSet GetQueueLastBatchSnapshot() const {
-        return GetQueueLastBatchSnapshot(QueueBatchContext::TruePred);
-    };
-
-    template <typename Predicate>
-    QueueBatchContext::BatchSet GetQueueLastBatchSnapshot(Predicate &&pred);
-    QueueBatchContext::BatchSet GetQueueLastBatchSnapshot() { return GetQueueLastBatchSnapshot(QueueBatchContext::TruePred); };
+    std::vector<QueueBatchContext::ConstPtr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
+    std::vector<QueueBatchContext::Ptr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter);
 
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                              const vvl::CommandPool *cmd_pool) override;
@@ -544,7 +535,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                         const ErrorObject &error_obj) const override;
-    ResourceUsageRange SetupPresentInfo(const VkPresentInfoKHR &present_info, std::shared_ptr<QueueBatchContext> &batch,
+    ResourceUsageRange SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
                                         PresentedImages &presented_images) const;
     void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                        const RecordObject &record_obj) override;
