@@ -676,7 +676,6 @@ class CommandBuffer : public RefcountedStateObject {
     bool HasValidDynamicDepthAttachment() const;
     bool HasValidDynamicStencilAttachment() const;
     bool HasExternalFormatResolveAttachment() const;
-    bool HasDynamicDualSourceBlend(uint32_t attachmentCount) const;
 
     inline void BindPipeline(LvlBindPoint bind_point, vvl::Pipeline *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;

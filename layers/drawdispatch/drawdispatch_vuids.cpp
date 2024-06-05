@@ -73,6 +73,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDraw-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDraw-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDraw-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDraw-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDraw-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDraw-None-07880";
         dynamic_discard_rectangle_mode_07881     = "VUID-vkCmdDraw-None-07881";
@@ -389,6 +390,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawMultiEXT-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawMultiEXT-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawMultiEXT-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMultiEXT-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMultiEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMultiEXT-None-07880";
         dynamic_discard_rectangle_mode_07881     = "VUID-vkCmdDrawMultiEXT-None-07881";
@@ -706,6 +708,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawIndexed-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawIndexed-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndexed-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawIndexed-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndexed-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndexed-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawIndexed-None-07881";
@@ -1023,6 +1026,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawMultiIndexedEXT-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawMultiIndexedEXT-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawMultiIndexedEXT-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMultiIndexedEXT-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMultiIndexedEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMultiIndexedEXT-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawMultiIndexedEXT-None-07881";
@@ -1340,6 +1344,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawIndirect-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawIndirect-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndirect-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawIndirect-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndirect-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndirect-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawIndirect-None-07881";
@@ -1656,6 +1661,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawIndexedIndirect-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawIndexedIndirect-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndexedIndirect-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawIndexedIndirect-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndexedIndirect-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndexedIndirect-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawIndexedIndirect-None-07881";
@@ -2071,6 +2077,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawIndirectCount-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawIndirectCount-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndirectCount-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawIndirectCount-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndirectCount-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndirectCount-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawIndirectCount-None-07881";
@@ -2390,6 +2397,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawIndexedIndirectCount-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawIndexedIndirectCount-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndexedIndirectCount-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawIndexedIndirectCount-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndexedIndirectCount-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndexedIndirectCount-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawIndexedIndirectCount-None-07881";
@@ -2888,6 +2896,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMeshTasksNV-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMeshTasksNV-logicOp-04878";
         blend_enable_04727                       = "VUID-vkCmdDrawMeshTasksNV-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMeshTasksNV-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMeshTasksNV-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMeshTasksNV-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawMeshTasksNV-None-07881";
@@ -3190,6 +3199,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMeshTasksIndirectNV-logicOp-04878";
         blend_enable_04727                       = "VUID-vkCmdDrawMeshTasksIndirectNV-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMeshTasksIndirectNV-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawMeshTasksIndirectNV-None-07881";
@@ -3495,6 +3505,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-logicOp-04878";
         blend_enable_04727                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07881";
@@ -3794,6 +3805,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMeshTasksEXT-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMeshTasksEXT-logicOp-04878";
         blend_enable_04727                       = "VUID-vkCmdDrawMeshTasksEXT-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMeshTasksEXT-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMeshTasksEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMeshTasksEXT-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawMeshTasksEXT-None-07881";
@@ -4096,6 +4108,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMeshTasksIndirectEXT-logicOp-04878";
         blend_enable_04727                       = "VUID-vkCmdDrawMeshTasksIndirectEXT-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07881";
@@ -4401,6 +4414,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         depth_bias_enable_04877                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-04877";
         logic_op_04878                           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-logicOp-04878";
         blend_enable_04727                       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07881";
@@ -4713,6 +4727,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_input_04914                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-04914";
         vertex_input_08734                       = "VUID-vkCmdDrawIndirectByteCountEXT-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndirectByteCountEXT-blendEnable-04727";
+        blend_dual_source_09239                  = "VUID-vkCmdDrawIndirectByteCountEXT-maxFragmentDualSrcAttachments-09239";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndirectByteCountEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndirectByteCountEXT-None-07880";
         dynamic_discard_rectangle_mode_07881     =  "VUID-vkCmdDrawIndirectByteCountEXT-None-07881";
