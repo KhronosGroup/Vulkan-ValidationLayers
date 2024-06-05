@@ -45,7 +45,7 @@ struct SignalInfo {
     SignalInfo(const std::shared_ptr<QueueBatchContext> &batch, const SyncExecScope &exec_scope);
     SignalInfo(const PresentedImage &presented, ResourceUsageTag acquire_tag);
 
-    // Batch from the first scope of the signal.
+    // Batch from the first scope of the signal. Not null.
     std::shared_ptr<QueueBatchContext> batch;
 
     // Use the SyncExecScope::valid_accesses for first access scope
@@ -109,7 +109,7 @@ struct PresentedImage : public PresentedImageRecord {
 
     PresentedImage() = default;
     void UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const;
-    PresentedImage(const SyncValidator &sync_state, const std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
+    PresentedImage(const SyncValidator &sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
     PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index);
@@ -222,9 +222,9 @@ class QueueBatchContext : public CommandExecutionContext {
         vvl::Func command_;
     };
 
-    using ConstBatchSet = vvl::unordered_set<std::shared_ptr<const QueueBatchContext>>;
-    using BatchSet = vvl::unordered_set<std::shared_ptr<QueueBatchContext>>;
-    static constexpr bool TruePred(const std::shared_ptr<const QueueBatchContext> &) { return true; }
+    using Ptr = std::shared_ptr<QueueBatchContext>;
+    using ConstPtr = std::shared_ptr<const QueueBatchContext>;
+
     struct CmdBufferEntry {
         uint32_t index = 0;
         std::shared_ptr<const syncval_state::CommandBuffer> cb;
@@ -294,12 +294,12 @@ class QueueBatchContext : public CommandExecutionContext {
     void Cleanup();
 
   private:
-    void CommonSetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev,
-                                  QueueBatchContext::ConstBatchSet &batches_resolved);
-    std::shared_ptr<QueueBatchContext> ResolveOneWaitSemaphore(VkSemaphore sem, const PresentedImages &presented_images,
-                                                               SignaledSemaphoresUpdate &signaled_semaphores_update);
-    std::shared_ptr<QueueBatchContext> ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
-                                                               SignaledSemaphoresUpdate &signaled_semaphores_update);
+    void CommonSetupAccessContext(const QueueBatchContext::ConstPtr &prev,
+                                  std::vector<QueueBatchContext::ConstPtr> &batches_resolved);
+    QueueBatchContext::Ptr ResolveOneWaitSemaphore(VkSemaphore sem, const PresentedImages &presented_images,
+                                                   SignaledSemaphoresUpdate &signaled_semaphores_update);
+    QueueBatchContext::Ptr ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
+                                                   SignaledSemaphoresUpdate &signaled_semaphores_update);
 
     void ImportSyncTags(const QueueBatchContext &from);
     const QueueSyncState *queue_state_ = nullptr;
@@ -314,7 +314,7 @@ class QueueBatchContext : public CommandExecutionContext {
     // Clear these after validation and import, not valid after.
     BatchAccessLog::BatchRecord batch_;  // Holds the cumulative tag bias, and command buffer counts for Import support.
     CommandBuffers command_buffers_;
-    ConstBatchSet async_batches_;
+    std::vector<ConstPtr> async_batches_;
     std::vector<std::string> *current_label_stack_ = nullptr;
 };
 
@@ -329,8 +329,8 @@ class QueueSyncState {
         }
         return VulkanTypedHandle(static_cast<VkQueue>(VK_NULL_HANDLE), kVulkanObjectTypeQueue);
     }
-    std::shared_ptr<const QueueBatchContext> LastBatch() const { return last_batch_; }
-    std::shared_ptr<QueueBatchContext> LastBatch() { return last_batch_; }
+    QueueBatchContext::ConstPtr LastBatch() const { return last_batch_; }
+    QueueBatchContext::Ptr LastBatch() { return last_batch_; }
     void UpdateLastBatch();
     const vvl::Queue *GetQueueState() const { return queue_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
@@ -340,15 +340,15 @@ class QueueSyncState {
     uint64_t ReserveSubmitId() const;
 
     // Method is const but updates mutable pending_last_batch and relies on the queue external synchronization
-    void SetPendingLastBatch(std::shared_ptr<QueueBatchContext> &&last) const;
+    void SetPendingLastBatch(QueueBatchContext::Ptr &&last) const;
 
-    std::shared_ptr<QueueBatchContext> PendingLastBatch() const { return pending_last_batch_; }
+    QueueBatchContext::Ptr PendingLastBatch() const { return pending_last_batch_; }
 
   private:
     mutable std::atomic<uint64_t> submit_index_;
-    mutable std::shared_ptr<QueueBatchContext> pending_last_batch_;
+    mutable QueueBatchContext::Ptr pending_last_batch_;
     std::shared_ptr<vvl::Queue> queue_state_;
-    std::shared_ptr<QueueBatchContext> last_batch_;
+    QueueBatchContext::Ptr last_batch_;
     const VkQueueFlags queue_flags_;
     QueueId id_;
 };

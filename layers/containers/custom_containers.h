@@ -1048,6 +1048,14 @@ bool Contains(const Container &container, const Key &key) {
 }
 
 //
+// if (vvl::Contains(objects_vector, candidate)) { candidate->jump(); }
+//
+template <typename T>
+bool Contains(const std::vector<T> &v, const T &value) {
+    return std::find(v.cbegin(), v.cend(), value) != v.cend();
+}
+
+//
 // if (auto* thing = vvl::Find(map, key)) { thing->jump(); }
 //
 template <typename Container, typename Key = typename Container::key_type, typename Value = typename Container::mapped_type>
