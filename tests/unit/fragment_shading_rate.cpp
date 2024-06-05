@@ -2793,3 +2793,87 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
     vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapNonSubsampledImages) {
+    TEST_DESCRIPTION("Test creating framebuffer with non subsampled images");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(fdm_features);
+    if (fdm_features.fragmentDensityMapNonSubsampledImages) {
+        GTEST_SKIP() << "requires fragmentDensityMapNonSubsampledImages to be unsupported";
+    }
+
+    VkFramebuffer fb;
+
+    VkFormat attachment_format = VK_FORMAT_R8G8_UNORM;
+    // Just use the same values for both height and width
+    uint32_t frame_size = 512;
+
+    // Create a render pass with a color attachment and fragment density map attachment
+    VkAttachmentDescription attach[2] = {};
+    attach[0].format = attachment_format;
+    attach[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach[0].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attach[1].format = attachment_format;
+    attach[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach[1].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach[1].finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+    attach[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_create_info = vku::InitStructHelper();
+    fragment_density_map_create_info.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+    fragment_density_map_create_info.fragmentDensityMapAttachment.attachment = 1;
+
+    VkSubpassDescription subpass = {};
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper(&fragment_density_map_create_info);
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 2;
+    rpci.pAttachments = attach;
+
+    vkt::RenderPass rp(*m_device, rpci);
+
+    // Don't use the VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT flag at the color attachment image creation
+    vkt::Image image(*m_device, frame_size, frame_size, 1, attachment_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image_fdm(*m_device, frame_size, frame_size, 1, attachment_format, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = attachment_format;
+    ivci.flags = 0;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.image = image.handle();
+
+    VkImageViewCreateInfo ivci_fdm = ivci;
+    ivci.image = image_fdm.handle();
+
+    vkt::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view_fdm(*m_device, ivci_fdm);
+
+    VkImageView views[2];
+    views[0] = image_view.handle();
+    views[1] = image_view_fdm.handle();
+
+    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
+    fbci.flags = 0;
+    fbci.width = frame_size;
+    fbci.height = frame_size;
+    fbci.layers = 1;
+    fbci.renderPass = rp.handle();
+    fbci.attachmentCount = 2;
+    fbci.pAttachments = views;
+
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-02553");
+    vk::CreateFramebuffer(device(), &fbci, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+}
