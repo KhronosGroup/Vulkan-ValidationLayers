@@ -1108,3 +1108,27 @@ TEST_F(PositiveGpuAV, AliasImageBinding) {
     m_default_queue->Submit(*m_commandBuffer);
     vk::DeviceWaitIdle(*m_device);
 }
+
+TEST_F(PositiveGpuAV, SwapchainImage) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8091");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const vkt::Fence fence(*m_device);
+    uint32_t image_index = 0;
+    {
+        auto result = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+        ASSERT_TRUE(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
+        fence.wait(vvl::kU32Max);
+    }
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.image = swapchain_images[image_index];
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = m_surface_formats[0].format;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView view(*m_device, ivci);
+}
