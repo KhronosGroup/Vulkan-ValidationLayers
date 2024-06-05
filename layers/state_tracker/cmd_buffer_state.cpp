@@ -1715,22 +1715,6 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
     }
     return false;
 }
-bool CommandBuffer::HasDynamicDualSourceBlend(uint32_t attachmentCount) const {
-    if (dynamic_state_value.color_blend_enabled.any()) {
-        if (IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
-            for (uint32_t i = 0; i < dynamic_state_value.color_blend_equations.size() && i < attachmentCount; ++i) {
-                const auto &color_blend_equation = dynamic_state_value.color_blend_equations[i];
-                if (IsSecondaryColorInputBlendFactor(color_blend_equation.srcColorBlendFactor) ||
-                    IsSecondaryColorInputBlendFactor(color_blend_equation.dstColorBlendFactor) ||
-                    IsSecondaryColorInputBlendFactor(color_blend_equation.srcAlphaBlendFactor) ||
-                    IsSecondaryColorInputBlendFactor(color_blend_equation.dstAlphaBlendFactor)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
 
 void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
     auto &lastBoundState = lastBound[ConvertToPipelineBindPoint(shader_stage)];

@@ -1533,6 +1533,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         skip |= ValidateDrawDynamicState(last_bound_state, vuid);
         skip |= ValidateDrawPrimitivesGeneratedQuery(last_bound_state, vuid);
         skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
+        skip |= ValidateDrawDualSourceBlend(last_bound_state, vuid);
 
         if (pipeline) {
             skip |= ValidateDrawPipeline(last_bound_state, *pipeline, vuid);
@@ -1935,6 +1936,96 @@ bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, 
     if (const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer)) {
         skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
                                         " (Buffer is the index buffer)");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+    const auto *pipeline = last_bound_state.pipeline_state;
+    if (pipeline && !pipeline->ColorBlendState()) return skip;
+
+    // TODO - have better way to get fragment shader state
+    std::shared_ptr<const spirv::EntryPoint> entrypoint;
+    if (pipeline) {
+        for (const auto &stage : pipeline->stage_states) {
+            if (stage.entrypoint && (stage.entrypoint->stage == VK_SHADER_STAGE_FRAGMENT_BIT)) {
+                entrypoint = stage.entrypoint;
+                break;
+            }
+        }
+    } else {
+        for (const auto stage : last_bound_state.shader_object_states) {
+            if (stage && stage->entrypoint && (stage->entrypoint->stage == VK_SHADER_STAGE_FRAGMENT_BIT)) {
+                entrypoint = stage->entrypoint;
+                break;
+            }
+        }
+    }
+    if (!entrypoint) return skip;
+
+    uint32_t max_fragment_location = 0;
+    for (const auto *variable : entrypoint->user_defined_interface_variables) {
+        if (variable->storage_class != spv::StorageClassOutput) continue;
+        if (variable->decorations.location != spirv::kInvalidValue) {
+            max_fragment_location = std::max(max_fragment_location, variable->decorations.location);
+        }
+    }
+    if (max_fragment_location < phys_dev_props.limits.maxFragmentDualSrcAttachments) return skip;
+
+    // If color blend is disabled, the blend equation doesn't matter
+    const bool dynamic_blend_enable = !pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    const bool dynamic_blend_equation = !pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    const uint32_t attachment_count = pipeline ? pipeline->ColorBlendState()->attachmentCount
+                                               : (uint32_t)cb_state.dynamic_state_value.color_blend_equations.size();
+    for (uint32_t i = 0; i < attachment_count; ++i) {
+        const bool blend_enable = dynamic_blend_enable ? cb_state.dynamic_state_value.color_blend_enabled[i]
+                                                       : pipeline->ColorBlendState()->pAttachments[i].blendEnable;
+        if (!blend_enable) continue;
+        if (dynamic_blend_equation) {
+            const VkColorBlendEquationEXT &color_blend_equation = cb_state.dynamic_state_value.color_blend_equations[i];
+            if (IsSecondaryColorInputBlendFactor(color_blend_equation.srcColorBlendFactor) ||
+                IsSecondaryColorInputBlendFactor(color_blend_equation.dstColorBlendFactor) ||
+                IsSecondaryColorInputBlendFactor(color_blend_equation.srcAlphaBlendFactor) ||
+                IsSecondaryColorInputBlendFactor(color_blend_equation.dstAlphaBlendFactor)) {
+                const LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                skip |= LogError(vuid.blend_dual_source_09239, objlist, vuid.loc(),
+                                 "Fragment output attachment %" PRIu32
+                                 " is using Dual-Source Blending, but the largest output fragment Location (%" PRIu32
+                                 ") is not less than maxFragmentDualSrcAttachments (%" PRIu32
+                                 "). The following are set by vkCmdSetColorBlendEquationEXT:\n\tsrcColorBlendFactor = "
+                                 "%s\n\tdstColorBlendFactor = %s\n\tsrcAlphaBlendFactor = "
+                                 "%s\n\tdstAlphaBlendFactor = %s\n",
+                                 i, max_fragment_location, phys_dev_props.limits.maxFragmentDualSrcAttachments,
+                                 string_VkBlendFactor(color_blend_equation.srcColorBlendFactor),
+                                 string_VkBlendFactor(color_blend_equation.dstColorBlendFactor),
+                                 string_VkBlendFactor(color_blend_equation.srcAlphaBlendFactor),
+                                 string_VkBlendFactor(color_blend_equation.dstAlphaBlendFactor));
+                break;
+            }
+        } else {
+            const VkPipelineColorBlendAttachmentState &attachment = pipeline->ColorBlendState()->pAttachments[i];
+            if (IsSecondaryColorInputBlendFactor(attachment.srcColorBlendFactor) ||
+                IsSecondaryColorInputBlendFactor(attachment.dstColorBlendFactor) ||
+                IsSecondaryColorInputBlendFactor(attachment.srcAlphaBlendFactor) ||
+                IsSecondaryColorInputBlendFactor(attachment.dstAlphaBlendFactor)) {
+                const LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                skip |= LogError(
+                    vuid.blend_dual_source_09239, objlist, vuid.loc(),
+                    "Fragment output attachment %" PRIu32
+                    " is using Dual-Source Blending, but the largest output fragment Location (%" PRIu32
+                    ") is not less than maxFragmentDualSrcAttachments (%" PRIu32
+                    "). The following are set by VkPipelineColorBlendAttachmentState:\n\tsrcColorBlendFactor = "
+                    "%s\n\tdstColorBlendFactor = %s\n\tsrcAlphaBlendFactor = %s\n\tdstAlphaBlendFactor "
+                    "= %s\n",
+                    i, max_fragment_location, phys_dev_props.limits.maxFragmentDualSrcAttachments,
+                    string_VkBlendFactor(attachment.srcColorBlendFactor), string_VkBlendFactor(attachment.dstColorBlendFactor),
+                    string_VkBlendFactor(attachment.srcAlphaBlendFactor), string_VkBlendFactor(attachment.dstAlphaBlendFactor));
+                break;
+            }
+        }
     }
 
     return skip;

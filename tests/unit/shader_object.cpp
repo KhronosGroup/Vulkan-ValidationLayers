@@ -5987,37 +5987,30 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5208
-TEST_F(NegativeShaderObject, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
+TEST_F(NegativeShaderObject, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     TEST_DESCRIPTION(
         "Test drawing with dual source blending with too many fragment output attachments, but using dynamic blending.");
-
+    AddRequiredFeature(vkt::Feature::dualSrcBlend);
     RETURN_IF_SKIP(InitBasicShaderObject());
-
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.dualSrcBlend == VK_FALSE) {
-        GTEST_SKIP() << "dualSrcBlend feature is not available";
-    }
-
     InitDynamicRenderTarget();
 
-    uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    if (count != 2) {
+        GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
+    }
 
-    std::stringstream fsSource;
-    fsSource << "#version 450\n";
-    for (uint32_t i = 0; i < count; ++i) {
-        fsSource << "layout(location = " << i << ") out vec4 c" << i << ";\n";
-    }
-    fsSource << " void main() {\n";
-    for (uint32_t i = 0; i < count; ++i) {
-        fsSource << "c" << i << " = vec4(0.0f);\n";
-    }
-    fsSource << "}";
+    const char* fs_src = R"glsl(
+        #version 460
+        layout(location = 0) out vec4 c0;
+        layout(location = 1) out vec4 c1;
+        void main() {
+		    c0 = vec4(0.0f);
+		    c1 = vec4(0.0f);
+        }
+    )glsl";
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
-    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fsSource.str().c_str()));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src));
 
     vkt::Image img1(*m_device, m_width, m_height, 1, m_render_target_fmt,
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -6050,35 +6043,25 @@ TEST_F(NegativeShaderObject, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
 
     SetDefaultDynamicStatesExclude();
 
-    VkBool32 color_blend_enabled[2] = {VK_TRUE, VK_FALSE};
-    VkColorBlendEquationEXT color_blend_equation = {
+    VkBool32 color_blend_enabled[2] = {VK_TRUE, VK_TRUE};
+    VkColorBlendEquationEXT dual_color_blend_equation = {
         VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
         VK_BLEND_FACTOR_SRC_ALPHA,  VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
-    VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT;
+    VkColorBlendEquationEXT normal_color_blend_equation = {
+        VK_BLEND_FACTOR_ONE,       VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
+        VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
+    VkColorComponentFlags color_component_flags[2] = {VK_COLOR_COMPONENT_R_BIT, VK_COLOR_COMPONENT_R_BIT};
 
-    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[0]);  // enables
-    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 1, 1, &color_blend_enabled[1]);
-    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0, 1, &color_blend_equation);
-    vk::CmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0, 1, &color_component_flags);
-
-    VkColorBlendAdvancedEXT colorBlendAdvanced;
-    colorBlendAdvanced.advancedBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAdvanced.srcPremultiplied = VK_FALSE;
-    colorBlendAdvanced.dstPremultiplied = VK_FALSE;
-    colorBlendAdvanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
-    colorBlendAdvanced.clampResults = VK_FALSE;
-    vk::CmdSetColorBlendAdvancedEXT(m_commandBuffer->handle(), 0u, 1u, &colorBlendAdvanced);
-    vk::CmdSetColorBlendAdvancedEXT(m_commandBuffer->handle(), 1u, 1u, &colorBlendAdvanced);
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 2, color_blend_enabled);
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0, 1, &normal_color_blend_equation);
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 1, 1, &dual_color_blend_equation);
+    vk::CmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0, 2, color_component_flags);
 
     m_commandBuffer->BindVertFragShader(vertShader, fragShader);
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Fragment-06427");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maxFragmentDualSrcAttachments-09239");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-
-    // disables blending so no error should appear
-    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[1]);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
