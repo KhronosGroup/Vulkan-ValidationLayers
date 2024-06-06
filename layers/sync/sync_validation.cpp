@@ -2811,12 +2811,12 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
     QueueBatchContext::Ptr batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, 0));
 
-    ResourceUsageRange tag_range = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
+    uint32_t present_tag_count = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
     batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
-    batch->SetupBatchTags(tag_range);
-    // Update the present tags
+    const ResourceUsageTag global_range_start = batch->SetupBatchTags(present_tag_count);
+    // Update the present tags (convert to global range)
     for (auto &presented : cmd_state->presented_images) {
-        presented.tag += batch->GetTagRange().begin;
+        presented.tag += global_range_start;
     }
 
     skip |= batch->DoQueuePresentValidate(error_obj.location, cmd_state->presented_images);
@@ -2830,15 +2830,15 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     return skip;
 }
 
-ResourceUsageRange SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
-                                                   PresentedImages &presented_images) const {
+uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
+                                         PresentedImages &presented_images) const {
     const VkSwapchainKHR *const swapchains = present_info.pSwapchains;
     const uint32_t *const image_indices = present_info.pImageIndices;
-    const uint32_t swap_count = present_info.swapchainCount;
+    const uint32_t swapchain_count = present_info.swapchainCount;
 
     // Create the working list of presented images
-    presented_images.reserve(swap_count);
-    for (uint32_t present_index = 0; present_index < swap_count; present_index++) {
+    presented_images.reserve(swapchain_count);
+    for (uint32_t present_index = 0; present_index < swapchain_count; present_index++) {
         // Note: Given the "EraseIf" implementation for acquire fence waits, each presentation needs a unique tag.
         const ResourceUsageTag tag = presented_images.size();
         presented_images.emplace_back(*this, batch, swapchains[present_index], image_indices[present_index], present_index, tag);
@@ -2846,9 +2846,8 @@ ResourceUsageRange SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &prese
             presented_images.pop_back();
         }
     }
-
-    // Present is tagged for each swap.
-    return ResourceUsageRange(0, presented_images.size());
+    // Present is tagged for each swapchain.
+    return static_cast<uint32_t>(presented_images.size());
 }
 
 void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
@@ -2911,9 +2910,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
     // acquire doesn't happen on a queue, but we need a place to put the acquire operation access record.
     auto batch = std::make_shared<QueueBatchContext>(*this);
     batch->SetupAccessContext(presented);
-    ResourceUsageRange acquire_tag_range(0, 1);
-    batch->SetupBatchTags(ResourceUsageRange(0, 1));
-    const ResourceUsageTag acquire_tag = batch->GetTagRange().begin;
+    const ResourceUsageTag acquire_tag = batch->SetupBatchTags(1);
     batch->DoAcquireOperation(presented);
     batch->LogAcquireOperation(presented, record_obj.location.function);
 
@@ -2968,15 +2965,14 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, batch_idx);
-        batch->SetupCommandBufferInfo(submit);
+        const uint32_t tag_count = batch->SetupCommandBufferInfo(submit);
         batch->SetupAccessContext(last_batch, submit, cmd_state->signaled_semaphores_update);
         batch->SetCurrentLabelStack(&current_label_stack);
 
-        // Skip import and validation of empty batches
-        if (batch->GetTagRange().size()) {
-            batch->SetupBatchTags();
+        if (tag_count) {
+            batch->SetupBatchTags(tag_count);
             skip |= batch->DoQueueSubmitValidate(*this, *cmd_state, submit);
-        } else {
+        } else {  // skip import and validation of empty batches
             batch->ReplayLabelCommandsFromEmptyBatch();
         }
 
