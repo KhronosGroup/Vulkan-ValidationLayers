@@ -294,3 +294,53 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+        GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
+    }
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 c0;
+        layout(location=1) out vec4 c1;
+        layout(location=2) out vec4 c2;
+        layout(location=3) out vec4 c3; // at limit
+        void main(){
+           c0 = vec4(1.0);
+           c1 = vec4(1.0);
+           c2 = vec4(1.0);
+           c3 = vec4(1.0);
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+        GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
+    }
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 c[4];
+        void main(){
+           c[3] = vec4(1.0);
+           c[0] = vec4(1.0);
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}

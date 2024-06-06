@@ -1298,19 +1298,23 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
+    if (m_device->phy().limits_.maxFragmentOutputAttachments < 9) {
+        GTEST_SKIP() << "maxFragmentOutputAttachments is too low";
+    }
+
     char const *vsSource = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
-        layout(location=0) out f64vec3[2][2][3] x; // take 2 locations each (total 24)
-        layout(location=24) out float y;
+        layout(location=0) out f64vec3[2][2] x; // take 2 locations each (total 8)
+        layout(location=8) out float y;
         void main() {}
     )glsl";
 
     char const *fsSource = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
-        layout(location=0) flat in f64vec3[2][3][2] x;
-        layout(location=24) out float color;
+        layout(location=0) flat in f64vec3[2][2] x;
+        layout(location=8) out float color;
         void main(){}
     )glsl";
 

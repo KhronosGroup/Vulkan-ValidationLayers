@@ -525,7 +525,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
     AddRequiredFeature(vkt::Feature::protectedMemory);
     AddRequiredFeature(vkt::Feature::pipelineProtectedAccess);
