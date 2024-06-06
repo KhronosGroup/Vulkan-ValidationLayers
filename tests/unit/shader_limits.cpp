@@ -375,3 +375,68 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
+    RETURN_IF_SKIP(Init());
+    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+        GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
+    }
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 c0;
+        layout(location=1) out vec4 c1;
+        layout(location=2) out vec4 c2;
+        layout(location=3) out vec4 c3;
+        layout(location=4) out vec4 c4;
+        void main(){
+           c0 = vec4(1.0);
+           c1 = vec4(1.0);
+           c2 = vec4(1.0);
+           c3 = vec4(1.0);
+           c4 = vec4(1.0);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
+    RETURN_IF_SKIP(Init());
+    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+        GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
+    }
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 c[5];
+        void main(){
+           c[4] = vec4(1.0);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
+    RETURN_IF_SKIP(Init());
+    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+        GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
+    }
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=3) out vec4 c[2];
+        void main(){
+           c[1] = vec4(1.0);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->VerifyFound();
+}

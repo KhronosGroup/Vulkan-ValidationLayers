@@ -1947,27 +1947,18 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
     const auto *pipeline = last_bound_state.pipeline_state;
     if (pipeline && !pipeline->ColorBlendState()) return skip;
 
-    // TODO - have better way to get fragment shader state
-    std::shared_ptr<const spirv::EntryPoint> entrypoint;
-    if (pipeline) {
-        for (const auto &stage : pipeline->stage_states) {
-            if (stage.entrypoint && (stage.entrypoint->stage == VK_SHADER_STAGE_FRAGMENT_BIT)) {
-                entrypoint = stage.entrypoint;
-                break;
-            }
-        }
+    const spirv::EntryPoint *fragment_entry_point = nullptr;
+    if (pipeline && pipeline->fragment_shader_state) {
+        fragment_entry_point = pipeline->fragment_shader_state->fragment_entry_point.get();
     } else {
-        for (const auto stage : last_bound_state.shader_object_states) {
-            if (stage && stage->entrypoint && (stage->entrypoint->stage == VK_SHADER_STAGE_FRAGMENT_BIT)) {
-                entrypoint = stage->entrypoint;
-                break;
-            }
+        if (const auto *shader_object = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT)) {
+            fragment_entry_point = shader_object->entrypoint.get();
         }
     }
-    if (!entrypoint) return skip;
+    if (!fragment_entry_point) return skip;
 
     uint32_t max_fragment_location = 0;
-    for (const auto *variable : entrypoint->user_defined_interface_variables) {
+    for (const auto *variable : fragment_entry_point->user_defined_interface_variables) {
         if (variable->storage_class != spv::StorageClassOutput) continue;
         if (variable->decorations.location != spirv::kInvalidValue) {
             max_fragment_location = std::max(max_fragment_location, variable->decorations.location);

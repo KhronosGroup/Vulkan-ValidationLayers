@@ -1377,7 +1377,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageArrayIndex) {
 
     char const *fsSource = R"glsl(
         #version 450
-        layout(location=1) out vec4 fragData[4];
+        layout(location=1) out vec4 fragData[3];
         void main() {
             fragData[0] = vec4(1.0);
         }
@@ -1489,6 +1489,10 @@ TEST_F(NegativeShaderInterface, MultidimensionalArray64bit) {
     AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    if (m_device->phy().limits_.maxFragmentOutputAttachments < 25) {
+        GTEST_SKIP() << "maxFragmentOutputAttachments is too low";
+    }
 
     char const *vsSource = R"glsl(
         #version 450

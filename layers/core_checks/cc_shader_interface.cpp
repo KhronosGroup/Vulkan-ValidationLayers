@@ -384,6 +384,17 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &modul
                                  max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
                                  limits.maxFragmentInputComponents);
             }
+
+            // Fragment output doesn't have built ins
+            // 1 Location == 1 color attachment
+            if (max_output_slot.Location() >= limits.maxFragmentOutputAttachments) {
+                skip |=
+                    LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
+                             "SPIR-V (Fragment stage) output interface variable at Location %" PRIu32
+                             " "
+                             "exceeds the limit maxFragmentOutputAttachments (%" PRIu32 ") (note: Location are zero index based).",
+                             max_output_slot.Location(), limits.maxFragmentOutputAttachments);
+            }
             break;
 
         case VK_SHADER_STAGE_RAYGEN_BIT_KHR:

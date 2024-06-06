@@ -986,7 +986,7 @@
                         "maxFragmentCombinedOutputResources": 4294967000,
                         "maxFragmentDualSrcAttachments": 1,
                         "maxFragmentInputComponents": 128,
-                        "maxFragmentOutputAttachments": 8,
+                        "maxFragmentOutputAttachments": 4,
                         "maxFramebufferHeight": 32768,
                         "maxFramebufferLayers": 2048,
                         "maxFramebufferWidth": 32768,
