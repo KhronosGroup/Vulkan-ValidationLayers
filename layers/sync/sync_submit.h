@@ -250,20 +250,16 @@ class QueueBatchContext : public CommandExecutionContext {
     QueueId GetQueueId() const override;
     ExecutionType Type() const override { return kSubmitted; }
 
-    void SetupBatchTags(const ResourceUsageRange &tag_range);
-    void SetupBatchTags();
+    ResourceUsageTag SetupBatchTags(uint32_t tag_count);
     void SetCurrentLabelStack(std::vector<std::string>* current_label_stack);
     void ResetEventsContext() { events_context_.Clear(); }
     ResourceUsageTag GetTagLimit() const override { return batch_.bias; }
-    // begin is the tag bias  / .size() is the number of total records that should eventually be in access_log_
-    ResourceUsageRange GetTagRange() const { return tag_range_; }
     void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
 
-    void SetTagBias(ResourceUsageTag);
     // For Submit
     void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
                             SignaledSemaphoresUpdate &signaled_semaphores_update);
-    void SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info);
+    uint32_t SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info);
     bool DoQueueSubmitValidate(const SyncValidator &sync_state, QueueSubmitCmdState &cmd_state, const VkSubmitInfo2 &submit_info);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 

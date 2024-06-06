@@ -477,7 +477,7 @@ void QueueBatchContext::CommonSetupAccessContext(const QueueBatchContext::ConstP
             sync_tag = queue_sync_tag_[async_queue];
         } else {
             // If this isn't from a tracked queue, just check the batch itself
-            sync_tag = async_batch->GetTagRange().begin;
+            sync_tag = async_batch->tag_range_.begin;
         }
 
         // The start of the asynchronous access range for a given queue is one more than the highest tagged reference
@@ -487,19 +487,21 @@ void QueueBatchContext::CommonSetupAccessContext(const QueueBatchContext::ConstP
     }
 }
 
-void QueueBatchContext::SetupCommandBufferInfo(const VkSubmitInfo2& submit_info) {
+uint32_t QueueBatchContext::SetupCommandBufferInfo(const VkSubmitInfo2& submit_info) {
     // Create the list of command buffers to submit
     const uint32_t cb_count = submit_info.commandBufferInfoCount;
     const VkCommandBufferSubmitInfo* const cb_infos = submit_info.pCommandBufferInfos;
     command_buffers_.reserve(cb_count);
 
+    uint32_t tag_count = 0;
     for (const auto& cb_info : vvl::make_span(cb_infos, cb_count)) {
         auto cb_state = sync_state_->Get<syncval_state::CommandBuffer>(cb_info.commandBuffer);
         if (cb_state) {
-            tag_range_.end += cb_state->access_context.GetTagLimit();
+            tag_count += static_cast<uint32_t>(cb_state->access_context.GetTagLimit());
             command_buffers_.emplace_back(static_cast<uint32_t>(&cb_info - cb_infos), std::move(cb_state));
         }
     }
+    return tag_count;
 }
 
 // Look up the usage informaiton from the local or global logger
@@ -529,18 +531,19 @@ QueueId QueueBatchContext::GetQueueId() const {
     return id;
 }
 
-// For QueuePresent, the tag range is defined externally and must be passed in
-void QueueBatchContext::SetupBatchTags(const ResourceUsageRange& tag_range) {
-    tag_range_ = tag_range;
-    SetupBatchTags();
-}
+ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
+    const ResourceUsageRange global_range = sync_state_->ReserveGlobalTagRange(tag_count);
+    tag_range_ = global_range;
+    access_context_.SetStartTag(global_range.begin);
+    batch_.bias = global_range.begin;
 
-// For QueueSubmit, the tag range is defined by the CommandBuffer setup.
-// For QueuePresent, this is called when the tag_range is specified
-void QueueBatchContext::SetupBatchTags() {
-    // Need new global tags for all accesses... the Reserve updates a mutable atomic
-    ResourceUsageRange global_tags = sync_state_->ReserveGlobalTagRange(GetTagRange().size());
-    SetTagBias(global_tags.begin);
+    // Needed for ImportSyncTags to pick up the "from" own sync tag.
+    const QueueId this_q = GetQueueId();
+    if (this_q < queue_sync_tag_.size()) {
+        // If this is a non-queued operation we'll get a "special" value like invalid
+        queue_sync_tag_[this_q] = global_range.end;
+    }
+    return global_range.begin;
 }
 
 void QueueBatchContext::SetCurrentLabelStack(std::vector<std::string>* current_label_stack) {
@@ -552,21 +555,6 @@ void QueueBatchContext::InsertRecordedAccessLogEntries(const CommandBufferAccess
     const ResourceUsageTag end_tag = batch_log_.Import(batch_, submitted_cb, *current_label_stack_);
     batch_.bias = end_tag;
     batch_.cb_index++;
-}
-
-void QueueBatchContext::SetTagBias(ResourceUsageTag bias) {
-    const auto size = tag_range_.size();
-    tag_range_.begin = bias;
-    tag_range_.end = bias + size;
-    access_context_.SetStartTag(bias);
-    batch_.bias = bias;
-
-    // Needed for ImportSyncTags to pick up the "from" own sync tag.
-    const QueueId this_q = GetQueueId();
-    if (this_q < queue_sync_tag_.size()) {
-        // If this is a non-queued operation we'll get a "special" value like invalid
-        queue_sync_tag_[this_q] = tag_range_.end;
-    }
 }
 
 bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator& sync_state, QueueSubmitCmdState& cmd_state,
