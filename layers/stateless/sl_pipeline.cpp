@@ -99,14 +99,16 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
     return skip;
 }
 
-bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo &create_info,
-                                                                const Location &loc) const {
+// Called from graphics, compute, raytracing, etc
+bool StatelessValidation::ValidatePipelineShaderStageCreateInfoCommon(const VkPipelineShaderStageCreateInfo &create_info,
+                                                                      const Location &loc) const {
     bool skip = false;
 
-    const auto *required_subgroup_size_features =
-        vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(create_info.pNext);
+    if (create_info.pName) {
+        skip |= ValidateString(loc.dot(Field::pName), "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", create_info.pName);
+    }
 
-    if (required_subgroup_size_features) {
+    if (vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(create_info.pNext)) {
         if ((create_info.flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02754", device, loc.dot(Field::flags),
                              "(%s) includes VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT while "
@@ -463,15 +465,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 active_shaders |= create_info.pStages[stage_index].stage;
                 const Location stage_loc = create_info_loc.dot(Field::pStages, stage_index);
 
-                skip |= ValidateRequiredPointer(stage_loc.dot(Field::pName), create_info.pStages[stage_index].pName,
-                                                "VUID-VkPipelineShaderStageCreateInfo-pName-parameter");
+                skip |= ValidateStructType(stage_loc, &create_info.pStages[stage_index],
+                                           VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, false, kVUIDUndefined,
+                                           "VUID-VkPipelineShaderStageCreateInfo-sType-sType");
 
-                if (create_info.pStages[stage_index].pName) {
-                    skip |= ValidateString(stage_loc.dot(Field::pName), "VUID-VkPipelineShaderStageCreateInfo-pName-parameter",
-                                           create_info.pStages[stage_index].pName);
-                }
-
-                ValidatePipelineShaderStageCreateInfo(create_info.pStages[stage_index], stage_loc);
+                // special graphics-only generated call
+                skip |= ValidatePipelineShaderStageCreateInfo(create_info.pStages[stage_index], stage_loc);
+                skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.pStages[stage_index], stage_loc);
             }
         }
 
@@ -1244,7 +1244,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
             }
         }
 
-        ValidatePipelineShaderStageCreateInfo(create_info.stage, create_info_loc.dot(Field::stage));
+        skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.stage, create_info_loc.dot(Field::stage));
     }
     return skip;
 }

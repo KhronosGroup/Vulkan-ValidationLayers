@@ -842,6 +842,8 @@ std::optional<VkPrimitiveTopology> Module::GetTopology(const EntryPoint& entrypo
 }
 
 Module::StaticData::StaticData(const Module& module_state, StatelessData* stateless_data) {
+    if (!module_state.valid_spirv) return;
+
     // Parse the words first so we have instruction class objects to use
     {
         std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
@@ -1331,6 +1333,7 @@ std::string Module::DescribeVariable(uint32_t id) const {
 }
 
 std::shared_ptr<const EntryPoint> Module::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
+    if (!name) return nullptr;
     for (const auto& entry_point : static_data_.entry_points) {
         if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
             return entry_point;

@@ -618,6 +618,11 @@ struct Module {
         vvl::unordered_map<const Instruction *, uint32_t> image_write_load_id_map;  // <OpImageWrite, load id>
     };
 
+    // VK_KHR_maintenance5 allows VkShaderModuleCreateInfo (the SPIR-V binary) to be passed at pipeline creation time, because the
+    // way we create our pipeline state objects first, we need to still create a valid Module object, but can signal that the
+    // underlying spirv is not worth validating further
+    const bool valid_spirv;
+
     // This is the SPIR-V module data content
     const std::vector<uint32_t> words_;
 
@@ -628,11 +633,13 @@ struct Module {
     VulkanTypedHandle handle() const { return handle_; }  // matches normal convention to get handle
 
     // Used for when modifying the SPIR-V (spirv-opt, GPU-AV instrumentation, etc) and need reparse it for VVL validaiton
-    Module(vvl::span<const uint32_t> code) : words_(code.begin(), code.end()), static_data_(*this) {}
+    Module(vvl::span<const uint32_t> code) : valid_spirv(true), words_(code.begin(), code.end()), static_data_(*this) {}
 
     // StatelessData is a pointer as we have cases were we don't need it and simpler to just null check the few cases that use it
     Module(size_t codeSize, const uint32_t *pCode, StatelessData *stateless_data = nullptr)
-        : words_(pCode, pCode + codeSize / sizeof(uint32_t)), static_data_(*this, stateless_data) {}
+        : valid_spirv(pCode && pCode[0] == spv::MagicNumber && ((codeSize % 4) == 0)),
+          words_(pCode, pCode + codeSize / sizeof(uint32_t)),
+          static_data_(*this, stateless_data) {}
 
     const Instruction *FindDef(uint32_t id) const {
         auto it = static_data_.definitions.find(id);
