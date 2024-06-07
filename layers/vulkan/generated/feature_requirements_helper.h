@@ -774,6 +774,8 @@ enum class Feature {
     shaderObject,
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR
     shaderQuadControl,
+    // VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT
+    shaderReplicatedComposites,
     // VkPhysicalDeviceShaderSMBuiltinsFeaturesNV
     shaderSMBuiltins,
     // VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceVulkan12Features

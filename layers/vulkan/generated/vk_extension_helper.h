@@ -607,6 +607,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_descriptor_pool_overallocation{kNotEnabled};
     ExtEnabled vk_nv_raw_access_chains{kNotEnabled};
     ExtEnabled vk_nv_shader_atomic_float16_vector{kNotEnabled};
+    ExtEnabled vk_ext_shader_replicated_composites{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_validation{kNotEnabled};
     ExtEnabled vk_mesa_image_alignment_control{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
@@ -1646,6 +1647,8 @@ struct DeviceExtensions : public InstanceExtensions {
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {vvl::Extension::_VK_NV_raw_access_chains, Info(&DeviceExtensions::vk_nv_raw_access_chains, {})},
             {vvl::Extension::_VK_NV_shader_atomic_float16_vector, Info(&DeviceExtensions::vk_nv_shader_atomic_float16_vector, {})},
+            {vvl::Extension::_VK_EXT_shader_replicated_composites,
+             Info(&DeviceExtensions::vk_ext_shader_replicated_composites, {})},
             {vvl::Extension::_VK_NV_ray_tracing_validation, Info(&DeviceExtensions::vk_nv_ray_tracing_validation, {})},
             {vvl::Extension::_VK_MESA_image_alignment_control, Info(&DeviceExtensions::vk_mesa_image_alignment_control,
                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
@@ -2065,6 +2068,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_descriptor_pool_overallocation:
         case vvl::Extension::_VK_NV_raw_access_chains:
         case vvl::Extension::_VK_NV_shader_atomic_float16_vector:
+        case vvl::Extension::_VK_EXT_shader_replicated_composites:
         case vvl::Extension::_VK_NV_ray_tracing_validation:
         case vvl::Extension::_VK_MESA_image_alignment_control:
         case vvl::Extension::_VK_KHR_acceleration_structure:

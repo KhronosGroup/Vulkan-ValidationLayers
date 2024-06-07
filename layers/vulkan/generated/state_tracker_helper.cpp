@@ -1508,6 +1508,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderFloat16VectorAtomics |= enabled->shaderFloat16VectorAtomics == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT: {
+                const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT *>(pNext);
+                features->shaderReplicatedComposites |= enabled->shaderReplicatedComposites == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV: {
                 const VkPhysicalDeviceRayTracingValidationFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceRayTracingValidationFeaturesNV *>(pNext);

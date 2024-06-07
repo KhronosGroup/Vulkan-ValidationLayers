@@ -8626,8 +8626,8 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                                                    const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo) {
+VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRenderingInputAttachmentIndicesKHR,
@@ -8635,20 +8635,21 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuf
     for (const ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetRenderingInputAttachmentIndicesKHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pLocationInfo, error_obj);
+        skip |=
+            intercept->PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo, error_obj);
         if (skip) return;
     }
     RecordObject record_obj(vvl::Func::vkCmdSetRenderingInputAttachmentIndicesKHR);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetRenderingInputAttachmentIndicesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pLocationInfo, record_obj);
+        intercept->PreCallRecordCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo, record_obj);
     }
-    DispatchCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pLocationInfo);
+    DispatchCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo);
     for (ValidationObject* intercept :
          layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetRenderingInputAttachmentIndicesKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pLocationInfo, record_obj);
+        intercept->PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo, record_obj);
     }
 }
 

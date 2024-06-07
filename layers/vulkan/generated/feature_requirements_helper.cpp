@@ -5488,6 +5488,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->shaderQuadControl, "VkPhysicalDeviceShaderQuadControlFeaturesKHR::shaderQuadControl"};
         }
+        case Feature::shaderReplicatedComposites: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderReplicatedComposites,
+                    "VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT::shaderReplicatedComposites"};
+        }
         case Feature::shaderSMBuiltins: {
             auto vk_struct = const_cast<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV>(*inout_pnext_chain));
