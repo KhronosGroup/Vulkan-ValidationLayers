@@ -250,7 +250,8 @@ TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
     }
 }
 
-TEST_F(NegativeInstanceless, DestroyInstanceHandleLeak) {
+// When address/tread sanitizer is on, this tends to fail tests after it
+TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     TEST_DESCRIPTION("Test vkDestroyInstance while leaking a VkDevice object.");
     RETURN_IF_SKIP(InitFramework());
     if (!IsPlatformMockICD()) {

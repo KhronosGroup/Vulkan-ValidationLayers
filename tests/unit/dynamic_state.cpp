@@ -3470,35 +3470,17 @@ TEST_F(NegativeDynamicState, DiscardRectanglesVersion) {
 }
 
 // Not possible to hit the desired failure messages given invalid enums.
-TEST_F(NegativeDynamicState, DISABLED_ExtensionDynamicStatesSetWOExtensionEnabled) {
+TEST_F(NegativeDynamicState, ExtensionNotEnabled) {
     TEST_DESCRIPTION("Create a graphics pipeline with Extension dynamic states without enabling the required Extensions.");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    using std::vector;
-    struct TestCase {
-        uint32_t dynamic_state_count;
-        VkDynamicState dynamic_state;
-
-        char const *errmsg;
-    };
-
-    vector<TestCase> dyn_test_cases = {
-        {1, VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV,
-         "contains VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, but VK_NV_clip_space_w_scaling"},
-        {1, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT,
-         "contains VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, but VK_EXT_discard_rectangles"},
-        {1, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, "contains VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, but VK_EXT_sample_locations"},
-    };
-
-    for (const auto &test_case : dyn_test_cases) {
-        CreatePipelineHelper pipe(*this);
-        pipe.AddDynamicState(test_case.dynamic_state);
-        m_errorMonitor->SetDesiredError(test_case.errmsg);
-        pipe.CreateGraphicsPipeline();
-        m_errorMonitor->VerifyFound();
-    }
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-parameter", 3);
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, ViewportAndScissorUndefinedDrawState) {

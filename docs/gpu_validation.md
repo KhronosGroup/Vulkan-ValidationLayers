@@ -939,18 +939,22 @@ as "self validation".
 How to setup self validation:
 - Build the self validation layer:
     - Make sure to use a Release build
-    - Use the the `-DBUILD_SELF_VVL` cmake option when generating the Cmake project
+    - Use the the `-DBUILD_SELF_VVL=ON` cmake option when generating the Cmake project
     - Manifest file modification:
         - The build will produce a manifest file used by the Vulkan loader, `VkLayer_khronos_validation.json`.
         The `name` field in this file needs to be changed, to be able to differentiate the self validation layer from the one you work on.
         For instance, rename it to "VK_LAYER_DEV_self_validation"
+        ```patch
+        - "name": "VK_LAYER_KHRONOS_validation",
+        + "name": "VK_LAYER_DEV_self_validation",
+        ```
 - Then use it:
         - you need to ask the loader to load the self validation layer, and tell it where to find it.
         Do this by modifying the `VK_INSTANCE_LAYERS` and `VK_LAYER_PATH`, like so for instance:
-```
+```bash
 VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation;VK_LAYER_DEV_self_validation
 VK_LAYER_PATH=/Path/To/Vulkan-ValidationLayers/build/debug/layers/Debug;/Path/To/Vulkan-ValidationLayers/build/selfvvl/layers/Release
 ```
 
 ⚠️ Make sure to load the self validation layer **after** the validation layer you work on, by putting its name in `VK_INSTANCE_LAYERS` after the validation layer you work on. Otherwise your Vulkan calls will not be intercepted by the self validation layer.
-To make sure you did it properly, you can use the environment variable `VK_LOADER_DEBUG=all` to see how the loader sets up layers.
+To make sure you did it properly, you can use the environment variable `VK_LOADER_DEBUG=layer` to see how the loader sets up layers.
