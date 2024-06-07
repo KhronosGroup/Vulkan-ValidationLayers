@@ -1134,7 +1134,8 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         uint32_t view_mask = 0;
         bool external_format_resolve = false;
 
-        if (cb_state.activeRenderPass->UsesDynamicRendering()) {
+        const bool is_dynamic_rendering = cb_state.activeRenderPass->UsesDynamicRendering();
+        if (is_dynamic_rendering) {
             uint32_t colorAttachment = clear_desc->colorAttachment;
 
             if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0 && cb_state.rendering_attachments.set_color_locations &&
@@ -1215,6 +1216,16 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             }
         }
 
+        auto describe_color_count = [is_dynamic_rendering, &cb_state]() {
+            std::stringstream ss;
+            if (is_dynamic_rendering) {
+                ss << "VkRenderingInfo::colorAttachmentCount";
+            } else {
+                ss << "pSubpasses[" << cb_state.GetActiveSubpass() << "].colorAttachmentCount";
+            }
+            return ss.str();
+        };
+
         if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
             const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
             skip |= LogError("VUID-VkClearAttachment-aspectMask-00020", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
@@ -1229,11 +1240,12 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
                 skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
                                  "is VK_ATTACHMENT_UNUSED, but aspectMask is VK_IMAGE_ASPECT_COLOR_BIT.");
-            } else if (clear_desc->colorAttachment > color_attachment_count) {
+            } else if (clear_desc->colorAttachment >= color_attachment_count) {
                 const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
-                skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
-                                 "(%" PRIu32 ") is larger than colorAttachmentCount (%" PRIu32 ").", clear_desc->colorAttachment,
-                                 color_attachment_count);
+                skip |=
+                    LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
+                             "is index %" PRIu32 ", which is not less than colorAttachmentCount (%" PRIu32 ") which was set by %s",
+                             clear_desc->colorAttachment, color_attachment_count, describe_color_count().c_str());
             }
 
             if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) || (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
