@@ -234,6 +234,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         self.imageAccessOperand[imageRef].append(opname)
                     elif sampledImageRef != 0:
                         self.imageAccessOperand[sampledImageRef].append(opname)
+                # exceptions that don't fit the OpImage naming
+                if opname == 'OpFragmentFetchAMD' or opname == 'OpFragmentMaskFetchAMD':
+                    self.imageAccessOperand[3].append(opname)
 
                 # We want to manually mark "Label" if an ID is used for Control Flow
                 # It is easier to manage the few cases here then complex the operand logic above

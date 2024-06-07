@@ -1102,6 +1102,8 @@ static constexpr uint32_t OpcodeImageAccessPosition(uint32_t opcode) {
         case spv::OpImageSparseGather:
         case spv::OpImageSparseDrefGather:
         case spv::OpImageSparseRead:
+        case spv::OpFragmentMaskFetchAMD:
+        case spv::OpFragmentFetchAMD:
         case spv::OpImageSampleFootprintNV:
             return 3;
 

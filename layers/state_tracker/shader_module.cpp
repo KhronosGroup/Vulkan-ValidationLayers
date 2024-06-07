@@ -372,6 +372,8 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
         case spv::OpImageSparseGather:
         case spv::OpImageSparseDrefGather:
         case spv::OpImageTexelPointer:
+        case spv::OpFragmentFetchAMD:
+        case spv::OpFragmentMaskFetchAMD:
             // Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
             //  - NOT the shader input/output interfaces.
             result.insert(insn.Word(3));  // Image or sampled image
@@ -609,6 +611,8 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
         case spv::OpImageGather:
         case spv::OpImageSparseGather:
         case spv::OpImageQueryLod:
+        case spv::OpFragmentFetchAMD:
+        case spv::OpFragmentMaskFetchAMD:
             break;
 
         case spv::OpImageSparseTexelsResident:
@@ -1002,7 +1006,9 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
             case spv::OpImageGather:
             case spv::OpImageQueryLod:
             case spv::OpImageSparseFetch:
-            case spv::OpImageSparseGather: {
+            case spv::OpImageSparseGather:
+            case spv::OpFragmentFetchAMD:
+            case spv::OpFragmentMaskFetchAMD: {
                 image_instructions.push_back(&insn);
                 break;
             }
@@ -1950,21 +1956,21 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
 
     // Handle anything specific to the base type
     if (base_type.Opcode() == spv::OpTypeImage) {
+        // Things marked regardless of the image being accessed or not
+        const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
+        if (is_sampled_without_sampler) {
+            if (info.image_dim == spv::DimSubpassData) {
+                is_input_attachment = true;
+                input_attachment_index_read.resize(array_length);  // is zero if runtime array
+            } else if (info.image_dim == spv::DimBuffer) {
+                is_storage_texel_buffer = true;
+            } else {
+                is_storage_image = true;
+            }
+        }
+
         const auto image_access_it = image_access_map.find(id);
         if (image_access_it != image_access_map.end()) {
-            const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
-            if (is_sampled_without_sampler) {
-                if (info.image_dim == spv::DimSubpassData) {
-                    is_input_attachment = true;
-                    input_attachment_index_read.resize(array_length);  // is zero if runtime array
-                } else if (info.image_dim == spv::DimBuffer) {
-                    is_storage_texel_buffer = true;
-                } else {
-                    is_storage_image = true;
-                }
-            }
-            const bool is_image_without_format = ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));
-
             for (const auto& image_access_ptr : image_access_it->second) {
                 const auto& image_access = *image_access_ptr;
 
@@ -1982,6 +1988,8 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     image_access_chain_indexes.insert(image_access.image_access_chain_index);
                 }
 
+                const bool is_image_without_format =
+                    ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));
                 if (image_access.access_mask & AccessBit::image_write) {
                     if (is_image_without_format) {
                         info.is_write_without_format |= true;
