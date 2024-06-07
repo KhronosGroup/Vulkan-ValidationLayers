@@ -200,7 +200,10 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             }
         }
         skip |= ValidateRayTracingPipeline(*pipeline, create_info, pCreateInfos[i].flags, create_info_loc);
-        skip |= ValidateShaderModuleId(*pipeline, create_info_loc);
+        uint32_t stage_index = 0;
+        for (const auto &stage_ci : pipeline->shader_stages_ci) {
+            skip |= ValidatePipelineShaderStage(*pipeline, stage_ci, create_info_loc.dot(Field::pStages, stage_index++));
+        }
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905");
     }
@@ -246,7 +249,10 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             }
         }
         skip |= ValidateRayTracingPipeline(*pipeline, create_info, pCreateInfos[i].flags, create_info_loc);
-        skip |= ValidateShaderModuleId(*pipeline, create_info_loc);
+        uint32_t stage_index = 0;
+        for (const auto &stage_ci : pipeline->shader_stages_ci) {
+            skip |= ValidatePipelineShaderStage(*pipeline, stage_ci, create_info_loc.dot(Field::pStages, stage_index++));
+        }
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");
         if (create_info.pLibraryInfo) {

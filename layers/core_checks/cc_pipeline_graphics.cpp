@@ -116,7 +116,10 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
 
     // pStages are ignored if not using one of these sub states
     if (pipeline.OwnsSubState(pipeline.fragment_shader_state) || pipeline.OwnsSubState(pipeline.pre_raster_state)) {
-        skip |= ValidateShaderModuleId(pipeline, create_info_loc);
+        uint32_t stage_index = 0;
+        for (const auto &stage_ci : pipeline.shader_stages_ci) {
+            skip |= ValidatePipelineShaderStage(pipeline, stage_ci, create_info_loc.dot(Field::pStages, stage_index++));
+        }
     }
 
     skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, create_info_loc.dot(Field::flags),

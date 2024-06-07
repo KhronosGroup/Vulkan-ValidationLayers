@@ -731,7 +731,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateTransformFeedbackDecorations(const spirv::Module& module_state, const Location& loc) const;
     bool ValidateTransformFeedbackEmitStreams(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                               const spirv::StatelessData& stateless_data, const Location& loc) const;
-    virtual bool ValidateShaderModuleId(const vvl::Pipeline& pipeline, const Location& loc) const;
+    virtual bool ValidatePipelineShaderStage(const vvl::Pipeline& pipeline,
+                                             const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci, const Location& loc) const;
     bool ValidateShaderClock(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
                              const Location& loc) const;
     bool ValidateImageWrite(const spirv::Module& module_state, const Location& loc) const;
