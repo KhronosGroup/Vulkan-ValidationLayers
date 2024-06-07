@@ -655,6 +655,7 @@ class CoreChecks : public ValidationStateTracker {
     bool RunSpirvValidation(spv_const_binary_t& binary, const Location& loc, ValidationCache* cache) const;
     bool ValidateSpirvStateless(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
                                 const Location& loc) const;
+    bool ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo& create_info, const Location& create_info_loc) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                            const ErrorObject& error_obj) const override;

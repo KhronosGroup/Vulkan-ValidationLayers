@@ -1672,11 +1672,12 @@ TEST_F(PositivePipeline, InterpolateAtSample) {
 
 TEST_F(PositivePipeline, ShaderModuleIdentifierZeroLength) {
     TEST_DESCRIPTION("Use shader module identifier with zero size and provide a shader module");
-
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT moduleIdentifier = vku::InitStructHelper();
+    moduleIdentifier.identifierSize = 0;
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0].pNext = &moduleIdentifier;

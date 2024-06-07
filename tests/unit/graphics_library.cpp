@@ -1605,8 +1605,10 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
+    uint8_t data[4] = {0, 0, 0, 0};
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     sm_id_create_info.identifierSize = 4;
+    sm_id_create_info.pIdentifier = data;
     stage_ci.pNext = &sm_id_create_info;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850");
     pipe.CreateGraphicsPipeline();

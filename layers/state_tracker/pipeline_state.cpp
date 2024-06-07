@@ -87,9 +87,9 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const ValidationStateTrac
                 if (!module_state || !module_state->spirv) {
                     // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                     // module is part of a library and the state must be created
-                    const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
+                    // This support was also added in VK_KHR_maintenance5
                     const uint32_t unique_shader_id = (shader_unique_id_map) ? (*shader_unique_id_map)[stage] : 0;
-                    if (shader_ci) {
+                    if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                         // don't need to worry about GroupDecoration in GPL
                         auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
                         module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, unique_shader_id);

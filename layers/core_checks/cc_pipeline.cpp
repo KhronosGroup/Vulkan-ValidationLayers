@@ -699,6 +699,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
                              "VkPipelineShaderStageModuleIdentifierCreateInfoEXT or VkShaderModuleCreateInfo found in the "
                              "pNext chain. (stage %s).",
                              string_VkShaderStageFlagBits(stage_ci.stage));
+        } else {
+            skip |= ValidateShaderModuleCreateInfo(*module_create_info, loc.pNext(Struct::VkShaderModuleCreateInfo));
         }
     }
     return skip;

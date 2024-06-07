@@ -78,9 +78,9 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
         auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
         if (!module_state) {
             // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
-            // module is part of a library and the state must be created
-            const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
-            if (shader_ci) {
+            // module is part of a library and the state must be created.
+            // This support was also added in VK_KHR_maintenance5
+            if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                 // don't need to worry about GroupDecoration in GPL
                 auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
                 module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
@@ -188,8 +188,8 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
-                const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
-                if (shader_ci) {
+                // This support was also added in VK_KHR_maintenance5
+                if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext)) {
                     // don't need to worry about GroupDecoration in GPL
                     auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
                     module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);

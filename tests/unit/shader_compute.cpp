@@ -660,12 +660,9 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
 
 TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
     TEST_DESCRIPTION("Test LocalSizeId spirv execution mode");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddDisabledFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(Init());
-    if (DeviceValidationVersion() != VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "Test requires Vulkan exactly 1.3";
-    }
 
     const char *source = R"(
                OpCapability Shader
@@ -685,6 +682,53 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
         )";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-LocalSizeId-06434");
     VkShaderObj::CreateFromASM(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_UNIVERSAL_1_6);
+    m_errorMonitor->VerifyFound();
+}
+
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8103
+TEST_F(NegativeShaderCompute, DISABLED_LocalSizeIdExecutionModeMaintenance5) {
+    TEST_DESCRIPTION("Test SPIRV is still checked if using new pNext in VkPipelineShaderStageCreateInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddDisabledFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
+
+    const char *source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %uint_1 %uint_1 %uint_1
+               OpSource GLSL 450
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+    std::vector<uint32_t> shader;
+    ASMtoSPV(SPV_ENV_UNIVERSAL_1_6, 0, source, shader);
+
+    VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
+    module_create_info.pCode = shader.data();
+    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
+    stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+
+    vkt::PipelineLayout layout(*m_device, {});
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.stage = stage_ci;
+    pipe.cp_ci_.layout = layout.handle();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-LocalSizeId-06434");
+    pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }
 

@@ -234,6 +234,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'VkPipelineDepthStencilStateCreateInfo',
             'VkPipelineInputAssemblyStateCreateInfo',
             'VkPipelineRasterizationStateCreateInfo',
+            'VkPipelineShaderStageCreateInfo',
             'VkDescriptorAddressInfoEXT',
         ]
 
@@ -929,9 +930,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         sType = self.vk.structs[member.type].sType
                         usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), &({valuePrefix}{member.name}), {sType}, false, kVUIDUndefined, {vuid});\n')
                     elif member.name == 'sType' and structTypeName in self.generateStructHelper:
-                        # special case when dealing with isolated struct helper functions
-                        vuid = self.GetVuid(struct.name, "sType-sType")
-                        usedLines.append(f'skip |= ValidateStructType(loc, &info, {struct.sType}, false, kVUIDUndefined, {vuid});\n')
+                        # TODO - This workaround is because this is shared by other pipeline calls that don't need generateStructHelper
+                        if structTypeName != 'VkPipelineShaderStageCreateInfo':
+                            # special case when dealing with isolated struct helper functions.
+                            vuid = self.GetVuid(struct.name, "sType-sType")
+                            usedLines.append(f'skip |= ValidateStructType(loc, &info, {struct.sType}, false, kVUIDUndefined, {vuid});\n')
                     elif member.type in self.vk.handles:
                         if not member.optional:
                             usedLines.append(f'skip |= ValidateRequiredHandle({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')

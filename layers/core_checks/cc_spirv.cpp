@@ -2142,13 +2142,15 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     if ((pipeline && pipeline->uses_shader_module_id) || !stage_state.spirv_state) {
         return skip;  // these edge cases should be validated already
     }
+
+    const spirv::Module &module_state = *stage_state.spirv_state.get();
+    if (!module_state.valid_spirv) return skip;  // checked elsewhere
+
     if (!stage_state.entrypoint) {
         const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pName-00707" : "VUID-VkShaderCreateInfoEXT-pName-08440";
         return LogError(vuid, device, loc.dot(Field::pName), "`%s` entrypoint not found for stage %s.", stage_state.GetPName(),
                         string_VkShaderStageFlagBits(stage));
     }
-
-    const spirv::Module &module_state = *stage_state.spirv_state.get();
     const spirv::EntryPoint &entrypoint = *stage_state.entrypoint;
 
     // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
@@ -2485,8 +2487,10 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
     spv_diagnostic diag = nullptr;
     const spv_result_t spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
     if (spv_valid != SPV_SUCCESS) {
-        const char *vuid = loc.function == Func::vkCreateShaderModule ? "VUID-VkShaderModuleCreateInfo-pCode-08737"
-                                                                      : "VUID-VkShaderCreateInfoEXT-pCode-08737";
+        // VkShaderModuleCreateInfo can come from many functions
+        const char *vuid = loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-pCode-08737"
+                                                                    : "VUID-VkShaderModuleCreateInfo-pCode-08737";
+
         if (spv_valid == SPV_WARNING) {
             skip |= LogWarning(vuid, device, loc.dot(Field::pCode), "(spirv-val produced a warning):\n%s",
                                diag && diag->error ? diag->error : "(no error text)");
@@ -2505,43 +2509,46 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                   const ErrorObject &error_obj) const {
+bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &create_info,
+                                                const Location &create_info_loc) const {
     bool skip = false;
 
     if (disabled[shader_validation]) {
-        return false;
+        return skip;
     }
 
-    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-
-    if (pCreateInfo->pCode[0] != spv::MagicNumber) {
+    if (!create_info.pCode) {
+        return skip;  // will be caught elsewhere
+    } else if (create_info.pCode[0] != spv::MagicNumber) {
         if (!IsExtEnabled(device_extensions.vk_nv_glsl_shader)) {
             skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-07912", device, create_info_loc.dot(Field::pCode),
-                             "doesn't point to a SPIR-V module.");
+                             "doesn't point to a SPIR-V module (The first dword is not the SPIR-V MagicNumber 0x07230203).");
         }
-    } else if (SafeModulo(pCreateInfo->codeSize, 4) != 0) {
+    } else if (SafeModulo(create_info.codeSize, 4) != 0) {
         skip |= LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
-                         "(%zu) must be a multiple of 4.", pCreateInfo->codeSize);
-    }
+                         "(%zu) must be a multiple of 4.", create_info.codeSize);
+    } else {
+        // if pCode is garbage, don't pass along to spirv-val
 
-    if (skip) {
-        return skip;  // if pCode is garbage, don't pass along to spirv-val
-    }
+        const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(create_info.pNext);
+        ValidationCache *cache =
+            validation_cache_ci ? CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache) : nullptr;
+        // If app isn't using a shader validation cache, use the default one from CoreChecks
+        if (!cache) {
+            cache = CastFromHandle<ValidationCache *>(core_validation_cache);
+        }
 
-    const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
-    ValidationCache *cache =
-        validation_cache_ci ? CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache) : nullptr;
-    // If app isn't using a shader validation cache, use the default one from CoreChecks
-    if (!cache) {
-        cache = CastFromHandle<ValidationCache *>(core_validation_cache);
+        spv_const_binary_t binary{create_info.pCode, create_info.codeSize / sizeof(uint32_t)};
+        skip |= RunSpirvValidation(binary, create_info_loc, cache);
     }
-
-    spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
-    skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                   const ErrorObject &error_obj) const {
+    return ValidateShaderModuleCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
 }
 
 bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,

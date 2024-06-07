@@ -362,8 +362,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
         const VkRayTracingPipelineCreateInfoNV &create_info = pCreateInfos[i];
 
         for (uint32_t stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
-            ValidatePipelineShaderStageCreateInfo(create_info.pStages[stage_index],
-                                                  create_info_loc.dot(Field::pStages, stage_index));
+            skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.pStages[stage_index],
+                                                                create_info_loc.dot(Field::pStages, stage_index));
         }
         auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
@@ -488,7 +488,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
 
         for (uint32_t stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
             const Location stage_loc = create_info_loc.dot(Field::pStages, stage_index);
-            ValidatePipelineShaderStageCreateInfo(create_info.pStages[stage_index], stage_loc);
+            skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.pStages[stage_index], stage_loc);
 
             const auto stage = create_info.pStages[stage_index].stage;
             if ((stage & kShaderStageAllRayTracing) == 0) {
