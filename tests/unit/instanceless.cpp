@@ -250,8 +250,7 @@ TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
     }
 }
 
-// TODO - Currently can not be ran with Profile layer
-TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
+TEST_F(NegativeInstanceless, DestroyInstanceHandleLeak) {
     TEST_DESCRIPTION("Test vkDestroyInstance while leaking a VkDevice object.");
     RETURN_IF_SKIP(InitFramework());
     if (!IsPlatformMockICD()) {

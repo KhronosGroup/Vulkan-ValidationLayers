@@ -87,7 +87,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     CreateBufferViewTest(*this, &buff_view_ci, {});
 }
 
-TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
+TEST_F(PositiveBuffer, PerfGetBufferAddressWorstCase) {
     TEST_DESCRIPTION("Add elements to buffer_address_map, worst case scenario");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -130,7 +130,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     }
 }
 
-TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
+TEST_F(PositiveBuffer, PerfGetBufferAddressGoodCase) {
     TEST_DESCRIPTION("Add elements to buffer_address_map, good case scenario");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
