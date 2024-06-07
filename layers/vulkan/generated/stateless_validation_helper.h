@@ -857,9 +857,9 @@ bool PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, 
 bool PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                           const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
                                                           const ErrorObject& error_obj) const override;
-bool PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                                             const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
-                                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo,
+    const ErrorObject& error_obj) const override;
 bool PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
                                       const ErrorObject& error_obj) const override;
 bool PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,

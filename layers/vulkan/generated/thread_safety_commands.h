@@ -1858,11 +1858,11 @@ void PostCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer command
                                                          const RecordObject& record_obj) override;
 
 void PreCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                                           const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                           const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo,
                                                            const RecordObject& record_obj) override;
 
 void PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                                            const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                            const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo,
                                                             const RecordObject& record_obj) override;
 
 void PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,

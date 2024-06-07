@@ -1404,6 +1404,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderObjectFeaturesEXT", 40},
     {"VkPhysicalDeviceShaderObjectPropertiesEXT", 42},
     {"VkPhysicalDeviceShaderQuadControlFeaturesKHR", 45},
+    {"VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT", 54},
     {"VkPhysicalDeviceShaderSMBuiltinsFeaturesNV", 43},
     {"VkPhysicalDeviceShaderSMBuiltinsPropertiesNV", 45},
     {"VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures", 52},
@@ -3276,6 +3277,7 @@ const char* String(Field field) {
     {"pInitializeInfo", 16},
     {"pInputAssemblyState", 20},
     {"pInputAttachmentImage", 22},
+    {"pInputAttachmentIndexInfo", 26},
     {"pInputAttachments", 18},
     {"pInstance", 10},
     {"pInternalRepresentationCount", 29},
@@ -3954,6 +3956,7 @@ const char* String(Field field) {
     {"shaderOutputViewportIndex", 26},
     {"shaderQuadControl", 18},
     {"shaderRawAccessChains", 22},
+    {"shaderReplicatedComposites", 27},
     {"shaderResourceMinLod", 21},
     {"shaderResourceResidency", 24},
     {"shaderRoundingModeRTEFloat16", 29},
@@ -4802,6 +4805,7 @@ const char* String(Extension extension) {
     {"VK_EXT_shader_image_atomic_int64", 33},
     {"VK_EXT_shader_module_identifier", 32},
     {"VK_EXT_shader_object", 21},
+    {"VK_EXT_shader_replicated_composites", 36},
     {"VK_EXT_shader_stencil_export", 29},
     {"VK_EXT_shader_subgroup_ballot", 30},
     {"VK_EXT_shader_subgroup_vote", 28},
@@ -5281,6 +5285,7 @@ bool IsFieldPointer(Field field) {
     case Field::pInitializeInfo:
     case Field::pInputAssemblyState:
     case Field::pInputAttachmentImage:
+    case Field::pInputAttachmentIndexInfo:
     case Field::pInputAttachments:
     case Field::pInstance:
     case Field::pInternalRepresentationCount:

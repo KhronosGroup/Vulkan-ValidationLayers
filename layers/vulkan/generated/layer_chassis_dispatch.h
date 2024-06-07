@@ -588,7 +588,7 @@ void DispatchCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const V
 void DispatchCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                    const VkRenderingAttachmentLocationInfoKHR* pLocationInfo);
 void DispatchCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                                      const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo);
+                                                      const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo);
 VkResult DispatchWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout);
 VkDeviceAddress DispatchGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
 uint64_t DispatchGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
