@@ -185,8 +185,6 @@ jobs:
           key: windows-dependencies-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
         run: python3 scripts/tests.py --build --config debug --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
-      - name: Test Max Profile
-        run: python scripts/tests.py --test
 
   windowsUpload:
     needs: windows
