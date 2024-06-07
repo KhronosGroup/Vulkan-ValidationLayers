@@ -2067,6 +2067,44 @@ TEST_F(PositiveShaderSpirv, ScalarBlockLayoutShaderCache) {
     VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
 }
 
+TEST_F(PositiveShaderSpirv, ExtendedTypesEnabled) {
+    TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderSubgroupExtendedTypes);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_prop);
+    if (!(subgroup_prop.supportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) ||
+        !(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT)) {
+        GTEST_SKIP() << "Required features not supported";
+    }
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
+
+    char const *csSource = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_arithmetic : enable
+        #extension GL_EXT_shader_subgroup_extended_types_float16 : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        layout(local_size_x = 32) in;
+        void main() {
+           subgroupAdd(float16_t(0.0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveShaderSpirv, RayQueryPositionFetch) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8055");
     SetTargetApiVersion(VK_API_VERSION_1_2);

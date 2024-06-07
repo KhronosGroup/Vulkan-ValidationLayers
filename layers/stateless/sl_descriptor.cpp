@@ -202,8 +202,9 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         }
     }
     if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-        if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
-            if (pCreateInfo->magFilter == VK_FILTER_CUBIC_EXT || pCreateInfo->minFilter == VK_FILTER_CUBIC_EXT) {
+        // This VU is the one feature difference between the IMG and EXT version of the extension
+        if (pCreateInfo->magFilter == VK_FILTER_CUBIC_IMG || pCreateInfo->minFilter == VK_FILTER_CUBIC_IMG) {
+            if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
                 skip |= LogError("VUID-VkSamplerCreateInfo-magFilter-07911", device,
                                  create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
                                  "is %s, magFilter is %s and minFilter is %s, but "

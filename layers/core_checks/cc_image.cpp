@@ -1216,16 +1216,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             }
         }
 
-        auto describe_color_count = [is_dynamic_rendering, &cb_state]() {
-            std::stringstream ss;
-            if (is_dynamic_rendering) {
-                ss << "VkRenderingInfo::colorAttachmentCount";
-            } else {
-                ss << "pSubpasses[" << cb_state.GetActiveSubpass() << "].colorAttachmentCount";
-            }
-            return ss.str();
-        };
-
         if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
             const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
             skip |= LogError("VUID-VkClearAttachment-aspectMask-00020", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
@@ -1240,7 +1230,16 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
                 skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
                                  "is VK_ATTACHMENT_UNUSED, but aspectMask is VK_IMAGE_ASPECT_COLOR_BIT.");
-            } else if (clear_desc->colorAttachment >= color_attachment_count) {
+            } else if (clear_desc->colorAttachment >= color_attachment_count && color_attachment_count > 0) {
+                auto describe_color_count = [is_dynamic_rendering, &cb_state]() {
+                    std::stringstream ss;
+                    if (is_dynamic_rendering) {
+                        ss << "VkRenderingInfo::colorAttachmentCount";
+                    } else {
+                        ss << "pSubpasses[" << cb_state.GetActiveSubpass() << "].colorAttachmentCount";
+                    }
+                    return ss.str();
+                };
                 const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
                 skip |=
                     LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),

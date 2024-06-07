@@ -268,60 +268,6 @@ TEST_F(NegativeSubgroup, Properties) {
     }
 }
 
-TEST_F(NegativeSubgroup, PNextDisabled) {
-    TEST_DESCRIPTION("Try to use structs with 1.0");
-    SetTargetApiVersion(VK_API_VERSION_1_0);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-
-    VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
-    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&subgroup_prop);
-    vk::GetPhysicalDeviceProperties2(gpu_, &props2);
-}
-
-TEST_F(NegativeSubgroup, ExtendedTypesEnabled) {
-    TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR extended_types_features = vku::InitStructHelper(&float16_features);
-    auto features2 = GetPhysicalDeviceFeatures2(extended_types_features);
-
-    VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(subgroup_prop);
-    if (!(subgroup_prop.supportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) ||
-        !(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) || !float16_features.shaderFloat16 ||
-        !extended_types_features.shaderSubgroupExtendedTypes) {
-        GTEST_SKIP() << "Required features not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
-    char const *csSource = R"glsl(
-        #version 450
-        #extension GL_KHR_shader_subgroup_arithmetic : enable
-        #extension GL_EXT_shader_subgroup_extended_types_float16 : enable
-        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
-        layout(local_size_x = 32) in;
-        void main() {
-           subgroupAdd(float16_t(0.0));
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
-    pipe.CreateComputePipeline();
-}
-
 TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);

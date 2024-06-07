@@ -1509,18 +1509,16 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
     CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-pNext-06726");
 }
 
-// Not possible to hit 07911 without first hitting an early return in parameter validation.
-TEST_F(NegativeSampler, DISABLED_ReductionMode) {
+TEST_F(NegativeSampler, ReductionModeCubicIMG) {
     TEST_DESCRIPTION("Create sampler with invalid combination of filter and reduction mode.");
     AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkSamplerReductionModeCreateInfo sampler_reduction_mode_ci = vku::InitStructHelper();
     sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MAX;
     VkSamplerCreateInfo sampler_ci = vku::InitStructHelper(&sampler_reduction_mode_ci);
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
-
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerCreateInfo-magFilter-parameter");
     CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-magFilter-07911");
 }
 
