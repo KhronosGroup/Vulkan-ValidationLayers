@@ -2947,7 +2947,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (disabled[sync_validation_queue_submit]) return skip;
 
-    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, error_obj, *this);
+    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, *this);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -2957,33 +2957,15 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Update label stack as we progress through batches and command buffers
     auto current_label_stack = cmd_state->queue->GetQueueState()->cmdbuf_label_stack;
 
-    // verify each submit batch
-    // Since the last batch from the queue state is const, we need to track the last_batch separately from the
-    // most recently created batch
     QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
     QueueBatchContext::Ptr batch;
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, batch_idx);
-        const uint32_t tag_count = batch->SetupCommandBufferInfo(submit);
-        batch->SetupAccessContext(last_batch, submit, cmd_state->signaled_semaphores_update);
-        batch->SetCurrentLabelStack(&current_label_stack);
+        skip |= batch->ProcessSubmit(submit, last_batch, error_obj, &current_label_stack, cmd_state->signaled_semaphores_update);
 
-        if (tag_count) {
-            batch->SetupBatchTags(tag_count);
-            skip |= batch->DoQueueSubmitValidate(*this, *cmd_state, submit);
-        } else {  // skip import and validation of empty batches
-            batch->ReplayLabelCommandsFromEmptyBatch();
-        }
-
-        // Empty batches could have semaphores, though.
-        for (uint32_t sem_idx = 0; sem_idx < submit.signalSemaphoreInfoCount; ++sem_idx) {
-            const VkSemaphoreSubmitInfo &semaphore_info = submit.pSignalSemaphoreInfos[sem_idx];
-            cmd_state->signaled_semaphores_update.OnSignal(batch, semaphore_info);
-        }
-        // Unless the previous batch was referenced by a signal, the QueueBatchContext will self destruct, but as
-        // we ResolvePrevious as we can let any contexts we've fully referenced go.
-        batch->Cleanup();  // Clear the temporaries that the batch holds.
+        // Unless the previous batch was referenced by a signal it will self destruct
+        // in the record phase when the last batch is updated.
         last_batch = batch;
     }
     // The most recently created batch will become the queue's "last batch" in the record phase

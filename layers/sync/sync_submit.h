@@ -194,7 +194,7 @@ class BatchAccessLog {
     CBSubmitLogRangeMap log_map_;
 };
 
-class QueueBatchContext : public CommandExecutionContext {
+class QueueBatchContext : public CommandExecutionContext, public std::enable_shared_from_this<QueueBatchContext> {
   public:
     class PresentResourceRecord : public AlternateResourceUsage::RecordBase {
       public:
@@ -251,16 +251,16 @@ class QueueBatchContext : public CommandExecutionContext {
     ExecutionType Type() const override { return kSubmitted; }
 
     ResourceUsageTag SetupBatchTags(uint32_t tag_count);
-    void SetCurrentLabelStack(std::vector<std::string>* current_label_stack);
     void ResetEventsContext() { events_context_.Clear(); }
     ResourceUsageTag GetTagLimit() const override { return batch_.bias; }
     void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
 
     // For Submit
+    bool ProcessSubmit(const VkSubmitInfo2 &submit, const QueueBatchContext::ConstPtr &last_batch, const ErrorObject &error_obj,
+                       std::vector<std::string> *current_label_stack, SignaledSemaphoresUpdate &signaled_semaphores_update);
     void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
                             SignaledSemaphoresUpdate &signaled_semaphores_update);
     uint32_t SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info);
-    bool DoQueueSubmitValidate(const SyncValidator &sync_state, QueueSubmitCmdState &cmd_state, const VkSubmitInfo2 &submit_info);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     // For Present
@@ -286,7 +286,6 @@ class QueueBatchContext : public CommandExecutionContext {
     void NextSubpassReplaySetup(ReplayState &replay) override;
     void EndRenderPassReplayCleanup(ReplayState &replay) override;
 
-    void ReplayLabelCommandsFromEmptyBatch();
     void Cleanup();
 
   private:
@@ -378,8 +377,6 @@ struct SubmitInfoConverter {
 
 struct QueueSubmitCmdState {
     std::shared_ptr<const QueueSyncState> queue;
-    const ErrorObject &error_obj;
     SignaledSemaphoresUpdate signaled_semaphores_update;
-    QueueSubmitCmdState(const ErrorObject &error_obj, const SyncValidator &sync_validator)
-        : error_obj(error_obj), signaled_semaphores_update(sync_validator) {}
+    QueueSubmitCmdState(const SyncValidator &sync_validator) : signaled_semaphores_update(sync_validator) {}
 };
