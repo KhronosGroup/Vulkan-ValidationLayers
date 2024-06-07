@@ -1572,3 +1572,86 @@ TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeDebugPrintf, LocalSizeId) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+         %30 = OpExtInstImport "NonSemantic.DebugPrintf"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_GlobalInvocationID
+               OpExecutionModeId %main LocalSizeId %8 %9 %10
+         %29 = OpString "TEST"
+               OpDecorate %8 SpecId 0
+               OpDecorate %9 SpecId 1
+               OpDecorate %10 SpecId 2
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+          %8 = OpSpecConstant %uint 1
+          %9 = OpSpecConstant %uint 1
+         %10 = OpSpecConstant %uint 1
+       %bool = OpTypeBool
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+     %uint_1 = OpConstant %uint 1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %17 = OpAccessChain %_ptr_Input_uint %gl_GlobalInvocationID %uint_0
+         %18 = OpLoad %uint %17
+         %19 = OpIEqual %bool %18 %uint_0
+               OpSelectionMerge %21 None
+               OpBranchConditional %19 %20 %21
+         %20 = OpLabel
+         %23 = OpAccessChain %_ptr_Input_uint %gl_GlobalInvocationID %uint_1
+         %24 = OpLoad %uint %23
+         %25 = OpIEqual %bool %24 %uint_0
+               OpBranch %21
+         %21 = OpLabel
+         %26 = OpPhi %bool %19 %6 %25 %20
+               OpSelectionMerge %28 None
+               OpBranchConditional %26 %27 %28
+         %27 = OpLabel
+         %31 = OpExtInst %void %30 1 %29
+               OpBranch %28
+         %28 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    uint32_t workgroup_size[3] = {32, 32, 1};
+    VkSpecializationMapEntry entries[3];
+    entries[0] = {0, 0, sizeof(uint32_t)};
+    entries[1] = {1, sizeof(uint32_t), sizeof(uint32_t)};
+    entries[2] = {2, sizeof(uint32_t) * 2, sizeof(uint32_t)};
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 3;
+    specialization_info.pMapEntries = entries;
+    specialization_info.dataSize = sizeof(uint32_t) * 3;
+    specialization_info.pData = workgroup_size;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM,
+                                             &specialization_info);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 32, 32, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "TEST");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
