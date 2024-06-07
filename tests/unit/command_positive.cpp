@@ -661,27 +661,6 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
     m_commandBuffer->end();
 }
 
-// TODO - Currently crashing on Linux-Mesa-6800
-// added in https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6769
-TEST_F(PositiveCommand, DISABLED_ClearAttachmentBasicUsage) {
-    TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    CreatePipelineHelper pipe(*this);
-    pipe.CreateGraphicsPipeline();
-
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-
-    VkClearAttachment color_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VkClearValue{}};
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
-
-    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
-}
-
 TEST_F(PositiveCommand, DeviceLost) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
