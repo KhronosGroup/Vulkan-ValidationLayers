@@ -2404,7 +2404,7 @@ TEST_F(NegativeCopyBufferImage, CopyCommands2V13) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO 6898
+// TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6898
 TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
     TEST_DESCRIPTION("Validate Copy Image from/to Buffer with overlapping memory");
     SetTargetApiVersion(VK_API_VERSION_1_3);

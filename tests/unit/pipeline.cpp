@@ -447,8 +447,7 @@ TEST_F(NegativePipeline, SamplePNextUnknown) {
     CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
-// TODO 5600 - Not all pNext structs are being passed in to check extensions
-TEST_F(NegativePipeline, DISABLED_SamplePNextDisabled) {
+TEST_F(NegativePipeline, SamplePNextDisabled) {
     TEST_DESCRIPTION("Pass valid pNext VkPipelineMultisampleStateCreateInfo, but without extension enabled");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());

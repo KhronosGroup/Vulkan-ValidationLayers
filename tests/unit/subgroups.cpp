@@ -268,8 +268,7 @@ TEST_F(NegativeSubgroup, Properties) {
     }
 }
 
-// TODO 5600 - Not all pNext structs are being passed in to check version
-TEST_F(NegativeSubgroup, DISABLED_pNextDisabled) {
+TEST_F(NegativeSubgroup, PNextDisabled) {
     TEST_DESCRIPTION("Try to use structs with 1.0");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

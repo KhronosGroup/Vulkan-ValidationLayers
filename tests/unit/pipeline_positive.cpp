@@ -1339,9 +1339,9 @@ TEST_F(PositivePipeline, DualBlendShader) {
     m_commandBuffer->end();
 }
 
-// TODO: CTS was written, but still fails on many older drivers in CI
+// CTS was written, but may fail on older drivers
 // https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/3736
-TEST_F(PositivePipeline, DISABLED_CreationFeedbackCount0) {
+TEST_F(PositivePipeline, CreationFeedbackCount0) {
     TEST_DESCRIPTION("Test graphics pipeline feedback stage count check with 0.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
