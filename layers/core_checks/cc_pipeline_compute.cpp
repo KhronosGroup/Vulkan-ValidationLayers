@@ -38,8 +38,13 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
             continue;
         }
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        skip |= ValidateShaderStage(pipeline->stage_states[0], pipeline, create_info_loc.dot(Field::stage));
-        skip |= ValidateShaderModuleId(*pipeline, create_info_loc);
+        const Location stage_info = create_info_loc.dot(Field::stage);
+        const auto &stage_state = pipeline->stage_states[0];
+        skip |= ValidateShaderStage(stage_state, pipeline, stage_info);
+        if (stage_state.pipeline_create_info) {
+            skip |= ValidatePipelineShaderStage(*pipeline, *stage_state.pipeline_create_info, stage_info);
+        }
+
         skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
         skip |= ValidatePipelineIndirectBindableFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),

@@ -643,66 +643,62 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     return skip;
 }
 
-bool CoreChecks::ValidateShaderModuleId(const vvl::Pipeline &pipeline, const Location &loc) const {
+bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
+                                             const vku::safe_VkPipelineShaderStageCreateInfo &stage_ci, const Location &loc) const {
     bool skip = false;
 
-    for (const auto &stage_ci : pipeline.shader_stages_ci) {
-        const auto module_identifier = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
-        const auto module_create_info = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
-        if (module_identifier) {
-            if (module_identifier->identifierSize > 0) {
-                if (!(enabled_features.shaderModuleIdentifier)) {
-                    skip |= LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850", device, loc,
-                                     "has a "
-                                     "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                                     "struct in the pNext chain but the shaderModuleIdentifier feature was not enabled. (stage %s)",
-                                     string_VkShaderStageFlagBits(stage_ci.stage));
-                }
-                if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)) {
-                    skip |=
-                        LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851", pipeline.Handle(),
+    const auto module_create_info = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
+    if (const auto module_identifier =
+            vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext)) {
+        if (module_identifier->identifierSize > 0) {
+            if (!(enabled_features.shaderModuleIdentifier)) {
+                skip |=
+                    LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850", device, loc.dot(Field::pNext),
+                             "has a "
+                             "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                             "struct in the pNext chain but the shaderModuleIdentifier feature was not enabled. (stage %s)",
+                             string_VkShaderStageFlagBits(stage_ci.stage));
+            }
+            if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)) {
+                skip |= LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851", pipeline.Handle(),
                                  loc.pNext(Struct::VkPipelineShaderStageModuleIdentifierCreateInfoEXT, Field::identifierSize),
                                  "(%" PRIu32 "), but the pipeline was created with %s. (stage %s)",
                                  module_identifier->identifierSize, string_VkPipelineCreateFlags2KHR(pipeline.create_flags).c_str(),
                                  string_VkShaderStageFlagBits(stage_ci.stage));
-                }
-                if (module_identifier->identifierSize > VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT) {
-                    skip |=
-                        LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-identifierSize-06852", device,
+            }
+            if (module_identifier->identifierSize > VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT) {
+                skip |= LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-identifierSize-06852", device,
                                  loc.pNext(Struct::VkPipelineShaderStageModuleIdentifierCreateInfoEXT, Field::identifierSize),
                                  "(%" PRIu32 ") is larger than VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT (%" PRIu32 "). (stage %s).",
                                  module_identifier->identifierSize, VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT,
                                  string_VkShaderStageFlagBits(stage_ci.stage));
-                }
-                if (stage_ci.module != VK_NULL_HANDLE) {
-                    skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06848", device, loc,
-                                     "has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                                     "struct in the pNext chain, but module is not VK_NULL_HANDLE. (stage %s).",
-                                     string_VkShaderStageFlagBits(stage_ci.stage));
-                }
             }
-            if (module_create_info) {
-                skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06844", device, loc,
-                                 "has both a "
-                                 "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                                 "struct and a VkShaderModuleCreateInfo struct in the pNext chain. (stage %s).",
+            if (stage_ci.module != VK_NULL_HANDLE) {
+                skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06848", device, loc.dot(Field::pNext),
+                                 "has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                                 "struct in the pNext chain, but module is not VK_NULL_HANDLE. (stage %s).",
                                  string_VkShaderStageFlagBits(stage_ci.stage));
             }
-        } else {
-            if (enabled_features.graphicsPipelineLibrary) {
-                if (stage_ci.module == VK_NULL_HANDLE && !module_create_info) {
-                    skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06845", device, loc,
-                                     "module is not a valid VkShaderModule, but no "
-                                     "VkPipelineShaderStageModuleIdentifierCreateInfoEXT or VkShaderModuleCreateInfo found in the "
-                                     "pNext chain. (stage %s).",
-                                     string_VkShaderStageFlagBits(stage_ci.stage));
-                }
-            } else if (stage_ci.module == VK_NULL_HANDLE && !enabled_features.maintenance5) {
-                skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-08771", device, loc,
-                                 "module is not a valid VkShaderModule and both the graphicsPipelineLibrary and maintenance5 "
-                                 "features were not enabled. (stage %s).",
-                                 string_VkShaderStageFlagBits(stage_ci.stage));
-            }
+        }
+        if (module_create_info) {
+            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06844", device, loc.dot(Field::pNext),
+                             "has both a "
+                             "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                             "struct and a VkShaderModuleCreateInfo struct in the pNext chain. (stage %s).",
+                             string_VkShaderStageFlagBits(stage_ci.stage));
+        }
+    } else if (stage_ci.module == VK_NULL_HANDLE) {
+        if (!enabled_features.maintenance5 && !enabled_features.graphicsPipelineLibrary) {
+            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-08771", device, loc.dot(Field::module),
+                             "is VK_NULL_HANDLE and both the graphicsPipelineLibrary and maintenance5 "
+                             "features were not enabled. (stage %s).",
+                             string_VkShaderStageFlagBits(stage_ci.stage));
+        } else if (!module_create_info) {
+            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06845", device, loc.dot(Field::module),
+                             "is VK_NULL_HANDLE, but no "
+                             "VkPipelineShaderStageModuleIdentifierCreateInfoEXT or VkShaderModuleCreateInfo found in the "
+                             "pNext chain. (stage %s).",
+                             string_VkShaderStageFlagBits(stage_ci.stage));
         }
     }
     return skip;
