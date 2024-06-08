@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2023 LunarG, Inc. -->
+<!-- Copyright 2015-2024 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -111,6 +111,7 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - Indirectly accessed (indirect/indexed) buffers validated at *binding* granularity. (Every valid location assumed to be accessed.)
 - Host synchronization not supported, except Fences (above).
 - Timeline Semaphore not supported
+- Queue family ownership transfer not supported
 
 ## Typical Synchronization Validation Usage
 
