@@ -1534,3 +1534,113 @@ TEST_F(PositiveSyncVal, SignalUnsignalSignalSingleSubmit) {
     vk::QueueSubmit2(*m_default_queue, 3, submits, VK_NULL_HANDLE);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
+    TEST_DESCRIPTION("Specify non-verlapped regions using offset in VkDescriptorBufferInfo");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // 32 bytes
+    const VkDeviceSize uniform_data_size = 8 * sizeof(uint32_t);
+    // 128 bytes or more (depending on minUniformBufferOffsetAlignment)
+    const VkDeviceSize copy_dst_area_size = std::max((VkDeviceSize)128, m_device->phy().limits_.minUniformBufferOffsetAlignment);
+    // 160 bytes or more (depending on minUniformBufferOffsetAlignment)
+    const VkDeviceSize size = copy_dst_area_size + uniform_data_size;
+
+    // We have at least 128 bytes of copy destination region, followed by 32 bytes of uniform data.
+    // Copying data to the first region (WRITE) should not conflict with uniform READ from the second region.
+    vkt::Buffer buffer_a(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer buffer_b(*m_device, copy_dst_area_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    // copy_dst_area_size offset ensures uniform region does not overlap with copy destination.
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), copy_dst_area_size, uniform_data_size,
+                                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
+        void main(){
+            uint x = constants.x[0];
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+
+    // Writes into region [0..127]
+    VkBufferCopy region{};
+    region.size = copy_dst_area_size;
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_b, buffer_a, 1, &region);
+
+    // Reads from region [128..159]
+    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8084
+    TEST_DESCRIPTION("Specify non-verlapped regions using dynamic offset in vkCmdBindDescriptorSets");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // 32 bytes
+    const VkDeviceSize uniform_data_size = 8 * sizeof(uint32_t);
+    // 128 bytes or more (depending on minUniformBufferOffsetAlignment)
+    const VkDeviceSize copy_dst_area_size = std::max((VkDeviceSize)128, m_device->phy().limits_.minUniformBufferOffsetAlignment);
+    // 160 bytes or more (depending on minUniformBufferOffsetAlignment)
+    const VkDeviceSize size = copy_dst_area_size + uniform_data_size;
+
+    // We have at least 128 bytes of copy destination region, followed by 32 bytes of uniform data.
+    // Copying data to the first region (WRITE) should not conflict with uniform READ from the second region.
+    vkt::Buffer buffer_a(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer buffer_b(*m_device, copy_dst_area_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+
+    // Specify 0 base offset, but dynamic offset will ensure that uniform data does not overlap with copy destination.
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
+        void main(){
+            uint x = constants.x[0];
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    // this ensures copy region does not overlap with uniform data region
+    uint32_t dynamic_offset = static_cast<uint32_t>(copy_dst_area_size);
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              1, &dynamic_offset);
+
+    // Writes into region [0..127]
+    VkBufferCopy region{};
+    region.size = copy_dst_area_size;
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_b, buffer_a, 1, &region);
+
+    // Reads from region [128..159]
+    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_commandBuffer->end();
+}
