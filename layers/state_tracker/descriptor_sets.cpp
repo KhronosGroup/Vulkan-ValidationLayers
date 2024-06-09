@@ -519,6 +519,21 @@ void vvl::DescriptorSet::NotifyInvalidate(const NodeList &invalid_nodes, bool un
     }
 }
 
+uint32_t vvl::DescriptorSet::GetDynamicOffsetIndexFromBinding(uint32_t dynamic_binding) const {
+    const uint32_t index = layout_->GetIndexFromBinding(dynamic_binding);
+    if (index == bindings_.size()) {  // binding not found
+        return vvl::kU32Max;
+    }
+    assert(IsDynamicDescriptor(bindings_[index]->type));
+    uint32_t dynamic_offset_index = 0;
+    for (uint32_t i = 0; i < index; i++) {
+        if (IsDynamicDescriptor(bindings_[i]->type)) {
+            dynamic_offset_index += bindings_[i]->count;
+        }
+    }
+    return dynamic_offset_index;
+}
+
 void vvl::DescriptorSet::Destroy() {
     for (auto &binding : bindings_) {
         binding->RemoveParent(this);

@@ -305,7 +305,8 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                 // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
                 continue;
             }
-            const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
+            const auto &per_set = (*per_sets)[variable.decorations.set];
+            const auto *descriptor_set = per_set.bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
@@ -397,9 +398,18 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (buffer_descriptor->Invalid()) {
                             continue;
                         }
+                        VkDeviceSize offset = buffer_descriptor->GetOffset();
+                        if (vvl::IsDynamicDescriptor(descriptor_type)) {
+                            const uint32_t dynamic_offset_index =
+                                descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
+                            if (dynamic_offset_index >= per_set.dynamicOffsets.size()) {
+                                continue;  // core validation error
+                            }
+                            offset += per_set.dynamicOffsets[dynamic_offset_index];
+                        }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
                         const ResourceAccessRange range =
-                            MakeRange(*buf_state, buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
+                            MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
