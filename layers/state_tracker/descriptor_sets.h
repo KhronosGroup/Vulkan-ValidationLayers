@@ -878,6 +878,12 @@ class DescriptorSet : public StateObject {
         auto pos = dynamic_offset_idx_to_descriptor_list_.at(index);
         return bindings_[pos.first]->GetDescriptor(pos.second);
     }
+
+    // Returns index in the dynamic offset array (specified by
+    // vkCmdBindDescriptorSets) for the given dynamic descriptor binding.
+    // The caller has to ensure that binding has dynamic descriptor type.
+    uint32_t GetDynamicOffsetIndexFromBinding(uint32_t dynamic_binding) const;
+
     uint64_t GetChangeCount() const { return change_count_; }
 
     const std::vector<vku::safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }
