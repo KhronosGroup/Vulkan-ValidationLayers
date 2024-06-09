@@ -122,6 +122,7 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         -Wextra
         -Wpointer-arith
     )
+    add_link_options(-Wl,-soname=libVkLayer_khronos_validation.so)
     if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
         add_compile_options(
             -Wconversion
