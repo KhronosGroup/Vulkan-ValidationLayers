@@ -225,14 +225,12 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     using Ptr = std::shared_ptr<QueueBatchContext>;
     using ConstPtr = std::shared_ptr<const QueueBatchContext>;
 
-    struct CmdBufferEntry {
+    struct CommandBufferInfo {
         uint32_t index = 0;
-        std::shared_ptr<const syncval_state::CommandBuffer> cb;
-        CmdBufferEntry(uint32_t index_, std::shared_ptr<const syncval_state::CommandBuffer> &&cb_)
-            : index(index_), cb(std::move(cb_)) {}
+        std::shared_ptr<const syncval_state::CommandBuffer> cb_state;
+        CommandBufferInfo(uint32_t index, std::shared_ptr<const syncval_state::CommandBuffer> &&cb_state)
+            : index(index), cb_state(std::move(cb_state)) {}
     };
-
-    using CommandBuffers = std::vector<CmdBufferEntry>;
 
     QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state, uint64_t submit_index,
                       uint32_t batch_index);
@@ -260,7 +258,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
                        std::vector<std::string> *current_label_stack, SignaledSemaphoresUpdate &signaled_semaphores_update);
     void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
                             SignaledSemaphoresUpdate &signaled_semaphores_update);
-    uint32_t SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info);
+    std::vector<CommandBufferInfo> GetCommandBuffers(const VkSubmitInfo2 &submit_info);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     // For Present
@@ -308,7 +306,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
 
     // Clear these after validation and import, not valid after.
     BatchAccessLog::BatchRecord batch_;  // Holds the cumulative tag bias, and command buffer counts for Import support.
-    CommandBuffers command_buffers_;
     std::vector<ConstPtr> async_batches_;
     std::vector<std::string> *current_label_stack_ = nullptr;
 };
