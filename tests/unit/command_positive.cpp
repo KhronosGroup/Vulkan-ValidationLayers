@@ -429,6 +429,22 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     }
 }
 
+TEST_F(PositiveCommand, ClearColor64Bit) {
+    TEST_DESCRIPTION("Clear with a 64-bit format");
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R64_UINT, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_R64_UINT format not supported";
+    }
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    m_commandBuffer->begin();
+    const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), image.Layout(), &clear_color, 1, &range);
+}
+
 TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
     TEST_DESCRIPTION(
         "Use a command buffer with vkCmdFillBuffer that was allocated from a command pool that does not support graphics or "

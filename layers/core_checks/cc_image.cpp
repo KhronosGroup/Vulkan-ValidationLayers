@@ -904,6 +904,12 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         skip |= LogError("VUID-vkCmdClearColorImage-image-00007", objlist, image_loc,
                          "(%s) was created with a compressed format (%s).", FormatHandle(image).c_str(), string_VkFormat(format));
     }
+    if (vkuFormatIs64bit(format) && vkuFormatComponentCount(format) > 2) {
+        skip |= LogError("VUID-vkCmdClearColorImage-image-09678", objlist, image_loc,
+                         "(%s) was created with a 64-bit format (%s) but it has more than 2 components. The clear command can only "
+                         "clear 16 bytes so this format is too large",
+                         FormatHandle(image).c_str(), string_VkFormat(format));
+    }
 
     if (!(image_state.create_info.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         skip |= LogError("VUID-vkCmdClearColorImage-image-00002", objlist, image_loc,
@@ -1277,11 +1283,18 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         }
 
         for (auto image_view : image_views) {
-            if (image_view) {
-                skip |= ValidateProtectedImage(cb_state, *image_view->image_state, error_obj.location,
-                                               "VUID-vkCmdClearAttachments-commandBuffer-02504");
-                skip |= ValidateUnprotectedImage(cb_state, *image_view->image_state, error_obj.location,
-                                                 "VUID-vkCmdClearAttachments-commandBuffer-02505");
+            if (!image_view || !image_view->image_state) continue;
+            skip |= ValidateProtectedImage(cb_state, *image_view->image_state, attachment_loc,
+                                           "VUID-vkCmdClearAttachments-commandBuffer-02504");
+            skip |= ValidateUnprotectedImage(cb_state, *image_view->image_state, attachment_loc,
+                                             "VUID-vkCmdClearAttachments-commandBuffer-02505");
+            const VkFormat image_view_format = image_view->create_info.format;
+            if (vkuFormatIs64bit(image_view_format) && vkuFormatComponentCount(image_view_format) > 2) {
+                const LogObjectList objlist(commandBuffer, image_view->Handle());
+                skip |= LogError("VUID-vkCmdClearAttachments-None-09679", objlist, attachment_loc,
+                                 "(%s) was created with a 64-bit format (%s) but it has more than 2 components. The clear command "
+                                 "can only clear 16 bytes so this format is too large",
+                                 FormatHandle(image_view->Handle()).c_str(), string_VkFormat(image_view_format));
             }
         }
 
