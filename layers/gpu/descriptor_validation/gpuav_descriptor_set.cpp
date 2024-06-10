@@ -374,7 +374,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState() {
     return next_state;
 }
 
-std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState() {
+std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &gpuav) {
     auto guard = Lock();
     Validator *gv_dev = static_cast<Validator *>(state_data_);
     uint32_t cur_version = current_version_.load();
@@ -412,10 +412,13 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState() {
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     VkResult result =
         vmaCreateBuffer(next_state->allocator, &buffer_info, &alloc_info, &next_state->buffer, &next_state->allocation, nullptr);
+    assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
+        gpuav.InternalError(gpuav.device, Location(vvl::Func::vkCreateBuffer),
+                            "Unable to allocate device memory for error output buffer. Aborting GPU-AV.", true);
         return nullptr;
     }
-    uint32_t *data{};
+    uint32_t *data = nullptr;
     result = vmaMapMemory(next_state->allocator, next_state->allocation, reinterpret_cast<void **>(&data));
     assert(result == VK_SUCCESS);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
@@ -436,6 +439,12 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState() {
     result = vmaFlushAllocation(next_state->allocator, next_state->allocation, 0, VK_WHOLE_SIZE);
     // No good way to handle this error, we should still try to unmap.
     assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(gpuav.device, Location(vvl::Func::vkFlushMappedMemoryRanges),
+                            "Unable flush memory allocation. Aborting GPU-AV.", true);
+        vmaUnmapMemory(next_state->allocator, next_state->allocation);
+        return nullptr;
+    }
     vmaUnmapMemory(next_state->allocator, next_state->allocation);
 
     output_state_ = next_state;
@@ -449,10 +458,10 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::State::UsedDescriptors(
         return used_descs;
     }
 
-    glsl::BindingLayout *layout_data;
+    glsl::BindingLayout *layout_data = nullptr;
     [[maybe_unused]] auto result = vmaMapMemory(allocator, set.layout_.allocation, reinterpret_cast<void **>(&layout_data));
 
-    uint32_t *data{nullptr};
+    uint32_t *data = nullptr;
     result = vmaMapMemory(allocator, allocation, reinterpret_cast<void **>(&data));
     result = vmaInvalidateAllocation(allocator, allocation, 0, VK_WHOLE_SIZE);
 

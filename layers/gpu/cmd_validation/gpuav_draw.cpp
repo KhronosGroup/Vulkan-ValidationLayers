@@ -87,7 +87,7 @@ struct SharedDrawValidationResources final {
             shader_ci.pPushConstantRanges = &push_constant_range;
             result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &shader_object);
             if (result != VK_SUCCESS) {
-                gpuav.InternalError(device, loc, "Unable to create shader object. Aborting GPU-AV");
+                gpuav.InternalError(device, loc, "Unable to create shader object. Aborting GPU-AV.");
                 return;
             }
         } else {
@@ -96,7 +96,7 @@ struct SharedDrawValidationResources final {
             shader_module_ci.pCode = cmd_validation_draw_vert;
             result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &shader_module);
             if (result != VK_SUCCESS) {
-                gpuav.InternalError(device, loc, "Unable to create shader module. Aborting GPU-AV");
+                gpuav.InternalError(device, loc, "Unable to create shader module. Aborting GPU-AV.");
                 return;
             }
         }
@@ -171,7 +171,7 @@ static VkPipeline GetDrawValidationPipeline(Validator &gpuav, SharedDrawValidati
 
     VkResult result = DispatchCreateGraphicsPipelines(gpuav.device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &validation_pipeline);
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, loc, "Unable to create graphics pipeline. Aborting GPU-AV");
+        gpuav.InternalError(gpuav.device, loc, "Unable to create graphics pipeline. Aborting GPU-AV.");
         return VK_NULL_HANDLE;
     }
 
@@ -201,7 +201,7 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, VkComma
 
     auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer");
+        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer. Aborting GPU-AV.");
         return;
     }
 
@@ -277,7 +277,7 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, VkComma
         // Validate count buffer
         if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
             gpuav.InternalError(cmd_buffer, loc,
-                                "Count buffer offset is larger than can be contained in an unsigned int. Aborting GPU-AV");
+                                "Count buffer offset is larger than can be contained in an unsigned int. Aborting GPU-AV.");
             return;
         }
 

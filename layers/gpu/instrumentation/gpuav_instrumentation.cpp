@@ -111,7 +111,7 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, uint32_
                                device_extensions.vk_ext_scalar_block_layout, target_env, instrumented_error)) {
             std::ostringstream strm;
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
-                 << instrumented_error << " Proceeding with non instrumented shader.";
+                 << instrumented_error << " Proceeding with non instrumented shader. Aborting GPU-AV.";
             InternalError(device, loc, strm.str().c_str());
             assert(false);
             return false;
@@ -127,8 +127,9 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, uint32_
         // Call CreateAggressiveDCEPass with preserve_interface == true
         dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
         if (!dce_pass.Run(out_instrumented_spirv.data(), out_instrumented_spirv.size(), &out_instrumented_spirv, opt_options)) {
-            InternalError(device, loc,
-                          "Failure to run spirv-opt DCE on instrumented shader.  Proceeding with non-instrumented shader.");
+            InternalError(
+                device, loc,
+                "Failure to run spirv-opt DCE on instrumented shader. Proceeding with non-instrumented shader. Aborting GPU-AV.");
             assert(false);
             return false;
         }
@@ -344,7 +345,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
                                          const Location &loc) {
     auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer");
+        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer. Aborting GPU-AV.");
         return;
     }
     return SetupShaderInstrumentationResources(gpuav, cb_state, bind_point, loc);
