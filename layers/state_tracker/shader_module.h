@@ -193,8 +193,6 @@ const uint32_t read = 1 << 0;
 const uint32_t write = 1 << 1;
 const uint32_t atomic_read = 1 << 2;
 const uint32_t atomic_write = 1 << 3;
-// For Images, we might only want to know if the read/write came from an image operation
-// (a storage image is always "loaded" before it is written, but that is not a image read, just a memory read)
 const uint32_t image_read = 1 << 4;
 const uint32_t image_write = 1 << 5;
 
@@ -306,10 +304,24 @@ struct VariableBase {
     VariableBase(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
                  const VariableAccessMap &variable_access_map);
 
+    // These are helpers to show how the variable will be STATICALLY accessed.
+    // (It would require a lot of GPU-AV overhead to detect if the access is dynamic and that level of fine control is currently not
+    // required) While SPIR-V has its own terms/concepts, the following is designed to match the Vulkan Spec.
+    // -------
+    // Accessed == (read | write | atomic)
+    // It is possible to have descriptors/inout/push constant/etc declared but never used
     bool IsAccessed() const { return access_mask != AccessBit::empty; }
+    // Atomics are really both a read/write, but some HW doesn't support atomic on all int/float bit-width
     bool IsAtomic() const { return access_mask & AccessBit::atomic_mask; }
+    // Read/Write here refer to the variable itself. For a buffer this means the memory has been accessed. For an Image, this only
+    // means the descriptor itself has been accessed
     bool IsReadFrom() const { return access_mask & AccessBit::read_mask; }
     bool IsWrittenTo() const { return access_mask & AccessBit::write_mask; }
+    // Images are special and will first have a read/write to the descriptor, then an Image Operation to the image memory itself.
+    // - Some operations such as ImageSize() will read data from the descriptor and never actually read the image memory (it would
+    // return false for IsImageReadFrom()).
+    // - A storage image is always "loaded" before it is written, but it will only return true for IsImageReadFrom() if the image
+    // memory was read
     bool IsImageReadFrom() const { return access_mask & AccessBit::image_read; }
     bool IsImageWrittenTo() const { return access_mask & AccessBit::image_write; }
 };
