@@ -22,6 +22,7 @@
 #include "sync/sync_utils.h"
 #include "utils/vk_layer_utils.h"
 #include "generated/chassis.h"
+#include "generated/state_tracker_helper.h"
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
@@ -33,10 +34,12 @@ class StatelessValidation : public ValidationObject {
   public:
     VkPhysicalDeviceLimits device_limits = {};
     vku::safe_VkPhysicalDeviceFeatures2 physical_device_features2;
-    void *device_createinfo_pnext;
     const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
     vvl::unordered_map<VkPhysicalDevice, vvl::unordered_set<vvl::Extension>> device_extensions_enumerated{};
+    // We have a copy of this in Stateless and ValidationStateTracker, could move the ValidationObject, but we don't have a way to
+    // set it at the ValidationObject level
+    DeviceFeatures enabled_features = {};
 
     // This was a special case where it was decided to use the extension version for validation
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5671
@@ -78,12 +81,8 @@ class StatelessValidation : public ValidationObject {
     vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
 
     // Constructor for stateles validation tracking
-    StatelessValidation() : device_createinfo_pnext(nullptr) { container_type = LayerObjectTypeParameterValidation; }
-    ~StatelessValidation() {
-        if (device_createinfo_pnext) {
-            vku::FreePnextChain(device_createinfo_pnext);
-        }
-    }
+    StatelessValidation() { container_type = LayerObjectTypeParameterValidation; }
+    ~StatelessValidation() {}
 
     bool ValidateNotZero(bool is_zero, const std::string &vuid, const Location &loc) const;
 
@@ -795,8 +794,7 @@ class StatelessValidation : public ValidationObject {
                                                                           VkQueryType queryType, VkQueryPool queryPool,
                                                                           uint32_t firstQuery, const ErrorObject &error_obj) const;
     bool ValidateCreateRayTracingPipelinesFlagsNV(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
-    bool ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc,
-                                                   const VkPhysicalDeviceRayTracingPipelineFeaturesKHR *raytracing_features) const;
+    bool ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,

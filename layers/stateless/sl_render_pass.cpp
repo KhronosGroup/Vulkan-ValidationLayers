@@ -60,50 +60,10 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
     const char *vuid = nullptr;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    VkBool32 separate_depth_stencil_layouts = false;
-    const auto *vulkan_12_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
-    if (vulkan_12_features) {
-        separate_depth_stencil_layouts = vulkan_12_features->separateDepthStencilLayouts;
-    } else {
-        const auto *separate_depth_stencil_layouts_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(device_createinfo_pnext);
-        if (separate_depth_stencil_layouts_features) {
-            separate_depth_stencil_layouts = separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
-        }
-    }
-
-    VkBool32 attachment_feedback_loop_layout = false;
-    const auto *attachment_feedback_loop_layout_features =
-        vku::FindStructInPNextChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(device_createinfo_pnext);
-    if (attachment_feedback_loop_layout_features) {
-        attachment_feedback_loop_layout = attachment_feedback_loop_layout_features->attachmentFeedbackLoopLayout;
-    }
-
-    VkBool32 dynamic_rendering_local_read = false;
-    const auto *dynamic_rendering_local_read_features =
-        vku::FindStructInPNextChain<VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR>(device_createinfo_pnext);
-    if (dynamic_rendering_local_read_features) {
-        dynamic_rendering_local_read = dynamic_rendering_local_read_features->dynamicRenderingLocalRead;
-    }
-
-    VkBool32 synchronization2 = false;
-    const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
-    if (vulkan_13_features) {
-        synchronization2 = vulkan_13_features->synchronization2;
-    } else {
-        const auto *synchronization2_features = vku::FindStructInPNextChain<VkPhysicalDeviceSynchronization2Features>(device_createinfo_pnext);
-        if (synchronization2_features) {
-            synchronization2 = synchronization2_features->synchronization2;
-        }
-    }
 
     VkBool32 android_external_format_resolve_feature = false;
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    const auto *external_format_resolve_features =
-        vku::FindStructInPNextChain<VkPhysicalDeviceExternalFormatResolveFeaturesANDROID>(device_createinfo_pnext);
-    if (external_format_resolve_features) {
-        android_external_format_resolve_feature = external_format_resolve_features->externalFormatResolve;
-    }
+    android_external_format_resolve_feature = enabled_features.externalFormatResolve;
 #endif
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
@@ -133,7 +93,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
             vuid = use_rp2 ? "VUID-VkAttachmentDescription2-finalLayout-00843" : "VUID-VkAttachmentDescription-finalLayout-00843";
             skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
         }
-        if (!separate_depth_stencil_layouts) {
+        if (!enabled_features.separateDepthStencilLayouts) {
             if (IsImageLayoutDepthOnly(initial_layout) || IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284"
                                : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284";
@@ -147,7 +107,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                     LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
             }
         }
-        if (!attachment_feedback_loop_layout) {
+        if (!enabled_features.attachmentFeedbackLoopLayout) {
             if (initial_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-attachmentFeedbackLoopLayout-07309"
                                : "VUID-VkAttachmentDescription-attachmentFeedbackLoopLayout-07309";
@@ -163,7 +123,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                                  "attachmentFeedbackLoopLayout feature is not enabled.");
             }
         }
-        if (!synchronization2) {
+        if (!enabled_features.synchronization2) {
             if (initial_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR ||
                 initial_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-synchronization2-06908"
@@ -178,7 +138,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                                  "is %s but the synchronization2 feature is not enabled.", string_VkImageLayout(final_layout));
             }
         }
-        if (!dynamic_rendering_local_read) {
+        if (!enabled_features.dynamicRenderingLocalRead) {
             if (initial_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09544"
                                : "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09544";

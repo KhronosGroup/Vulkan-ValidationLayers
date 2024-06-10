@@ -70,8 +70,7 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
                          string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
     }
 
-    const auto *maintenance4_features = vku::FindStructInPNextChain<VkPhysicalDeviceMaintenance4FeaturesKHR>(device_createinfo_pnext);
-    if (maintenance4_features && maintenance4_features->maintenance4) {
+    if (enabled_features.maintenance4) {
         if (pCreateInfo->size > phys_dev_ext_props.maintenance4_props.maxBufferSize) {
             skip |= LogError("VUID-VkBufferCreateInfo-size-06409", device, create_info_loc.dot(Field::size),
                              "(%" PRIu64

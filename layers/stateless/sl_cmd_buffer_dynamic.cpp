@@ -121,8 +121,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions, const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *vertex_attribute_divisor_features =
-        vku::FindStructInPNextChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(device_createinfo_pnext);
 
     if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791", commandBuffer,
@@ -196,8 +194,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                              pVertexBindingDescriptions[binding].stride, device_limits.maxVertexInputBindingStride);
         }
 
-        if (pVertexBindingDescriptions[binding].divisor == 0 &&
-            (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateZeroDivisor)) {
+        if (pVertexBindingDescriptions[binding].divisor == 0 && (!enabled_features.vertexAttributeInstanceRateZeroDivisor)) {
             skip |=
                 LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04798", commandBuffer, binding_loc.dot(Field::divisor),
                          "is zero but "
@@ -205,7 +202,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
         }
 
         if (pVertexBindingDescriptions[binding].divisor > 1) {
-            if (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateDivisor) {
+            if (!enabled_features.vertexAttributeInstanceRateDivisor) {
                 skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04799", commandBuffer,
                                  binding_loc.dot(Field::divisor),
                                  "is %" PRIu32

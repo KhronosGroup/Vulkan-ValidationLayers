@@ -335,11 +335,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     const auto *border_color_component_mapping =
         vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(pCreateInfo->pNext);
     if (border_color_component_mapping) {
-        const auto *border_color_swizzle_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceBorderColorSwizzleFeaturesEXT>(device_createinfo_pnext);
-        bool border_color_swizzle_features_enabled =
-            border_color_swizzle_features && border_color_swizzle_features->borderColorSwizzle;
-        if (!border_color_swizzle_features_enabled) {
+        if (!enabled_features.borderColorSwizzle) {
             skip |=
                 LogError("VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-borderColorSwizzle-06437", device, create_info_loc,
                          "The borderColorSwizzle feature must be enabled to use "
@@ -480,10 +476,6 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
                                                                 const Location &create_info_loc) const {
     bool skip = false;
     const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(create_info.pNext);
-    const auto *mutable_descriptor_type_features =
-        vku::FindStructInPNextChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
-    bool mutable_descriptor_type_features_enabled =
-        mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (create_info.pBindings != nullptr) {
@@ -531,7 +523,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
                                      binding_loc.dot(Field::descriptorType),
                                      "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but pImmutableSamplers is not NULL.");
                 }
-                if (!mutable_descriptor_type_features_enabled) {
+                if (!enabled_features.mutableDescriptorType) {
                     skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-mutableDescriptorType-04595", device,
                                      binding_loc.dot(Field::descriptorType),
                                      "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but "
@@ -570,7 +562,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04592", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
-    if (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT && !mutable_descriptor_type_features_enabled) {
+    if (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT && !enabled_features.mutableDescriptorType) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04596", device, create_info_loc.dot(Field::flags),
                          "is %s, but mutableDescriptorType feature was not enabled.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
@@ -678,8 +670,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00324", device, writes_loc.dot(Field::descriptorType),
                                  "is %s but pBufferInfo is NULL.", string_VkDescriptorType(descriptor_type));
             } else {
-                const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                if (robustness2_features && robustness2_features->nullDescriptor) {
+                if (enabled_features.nullDescriptor) {
                     for (uint32_t descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
                         if (descriptor_writes.pBufferInfo[descriptor_index].buffer == VK_NULL_HANDLE &&
                             (descriptor_writes.pBufferInfo[descriptor_index].offset != 0 ||
@@ -761,8 +752,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                         writes_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::accelerationStructureCount),
                         "is zero.");
                 }
-                const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
+                if (!enabled_features.nullDescriptor) {
                     for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                         if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
                             skip |=
@@ -798,8 +788,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                     skip |= LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
                                      device, loc, "accelerationStructureCount must be greater than 0 .");
                 }
-                const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
+                if (!enabled_features.nullDescriptor) {
                     for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                         if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
                             skip |= LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749",
@@ -903,11 +892,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                          create_info_loc.dot(Field::maxSets), "is zero.");
     }
 
-    const auto *mutable_descriptor_type_features =
-        vku::FindStructInPNextChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
-    const bool mutable_descriptor_type_enabled =
-        mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
-
     const auto *inline_uniform_info = vku::FindStructInPNextChain<VkDescriptorPoolInlineUniformBlockCreateInfo>(pCreateInfo->pNext);
     const bool non_zero_inline_uniform_count = inline_uniform_info && inline_uniform_info->maxInlineUniformBlockBindings != 0;
 
@@ -931,7 +915,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                                  "is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK but no maxInlineUniformBlockBindings was provided.");
                 }
             }
-            if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT && !mutable_descriptor_type_enabled) {
+            if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT && !enabled_features.mutableDescriptorType) {
                 skip |= LogError("VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608", device, pool_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT "
                                  ", but mutableDescriptorType feature was not enabled.");
@@ -952,7 +936,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
         }
     }
 
-    if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT && (!mutable_descriptor_type_enabled)) {
+    if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT && !enabled_features.mutableDescriptorType) {
         skip |= LogError("VUID-VkDescriptorPoolCreateInfo-flags-04609", device, create_info_loc.dot(Field::flags),
                          "includes VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT, "
                          "but mutableDescriptorType feature was not enabled.");
@@ -997,13 +981,9 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
     bool skip = false;
 
     // Check samplerYcbcrConversion feature is set
-    const auto *ycbcr_features = vku::FindStructInPNextChain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(device_createinfo_pnext);
-    if ((ycbcr_features == nullptr) || (ycbcr_features->samplerYcbcrConversion == VK_FALSE)) {
-        const auto *vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(device_createinfo_pnext);
-        if ((vulkan_11_features == nullptr) || (vulkan_11_features->samplerYcbcrConversion == VK_FALSE)) {
-            skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-None-01648", device, error_obj.location,
-                             "samplerYcbcrConversion feature must be enabled.");
-        }
+    if (!enabled_features.samplerYcbcrConversion) {
+        skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-None-01648", device, error_obj.location,
+                         "samplerYcbcrConversion feature must be enabled.");
     }
 
     const VkFormat format = pCreateInfo->format;
