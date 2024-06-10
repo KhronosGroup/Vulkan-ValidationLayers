@@ -191,6 +191,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/valid_enum_values.h
     ${API_TYPE}/generated/valid_flag_values.cpp
     ${API_TYPE}/generated/command_validation.cpp
+    ${API_TYPE}/generated/device_features.cpp
+    ${API_TYPE}/generated/device_features.h
     ${API_TYPE}/generated/dynamic_state_helper.cpp
     ${API_TYPE}/generated/dynamic_state_helper.h
     ${API_TYPE}/generated/enum_flag_bits.h
@@ -199,8 +201,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/object_tracker.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
     ${API_TYPE}/generated/spirv_validation_helper.cpp
-    ${API_TYPE}/generated/state_tracker_helper.cpp
-    ${API_TYPE}/generated/state_tracker_helper.h
     ${API_TYPE}/generated/stateless_validation_helper.cpp
     ${API_TYPE}/generated/stateless_validation_helper.h
     ${API_TYPE}/generated/sync_validation_types.cpp

@@ -22,8 +22,8 @@ from generators.base_generator import BaseGenerator
 featuresStructPattern = re.compile(r'VkPhysicalDevice.*Features[A-Z0-9]*')
 
 #
-# StateTrackerHelperOutputGenerator - Generate helpers to discover enabled features.
-class StateTrackerHelperOutputGenerator(BaseGenerator):
+# DeviceFeaturesOutputGenerator - Generate helpers to discover enabled features.
+class DeviceFeaturesOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
@@ -59,9 +59,9 @@ class StateTrackerHelperOutputGenerator(BaseGenerator):
 
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'state_tracker_helper.h':
+        if self.filename == 'device_features.h':
             self.generateHeader()
-        elif self.filename == 'state_tracker_helper.cpp':
+        elif self.filename == 'device_features.cpp':
             self.generateSource()
         else:
             self.write(f'\nFile name {self.filename} has no code to generate\n')

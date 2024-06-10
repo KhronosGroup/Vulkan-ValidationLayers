@@ -70,7 +70,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
     from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
     from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
-    from generators.state_tracker_helper_generator import StateTrackerHelperOutputGenerator
+    from generators.device_features_generator import DeviceFeaturesOutputGenerator
     from generators.feature_requirements import FeatureRequirementsGenerator
     from generators.test_icd_generator import TestIcdGenerator
 
@@ -267,12 +267,12 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : PnextChainExtractionGenerator,
             'genCombined': True,
         },
-        'state_tracker_helper.h' : {
-            'generator' : StateTrackerHelperOutputGenerator,
+        'device_features.h' : {
+            'generator' : DeviceFeaturesOutputGenerator,
             'genCombined': True,
         },
-        'state_tracker_helper.cpp' : {
-            'generator' : StateTrackerHelperOutputGenerator,
+        'device_features.cpp' : {
+            'generator' : DeviceFeaturesOutputGenerator,
             'genCombined': True,
         },
         'feature_requirements_helper.h' : {
