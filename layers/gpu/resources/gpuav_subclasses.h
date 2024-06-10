@@ -84,7 +84,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 
     bool PreProcess() final;
     void PostProcess(VkQueue queue, const Location &loc) final;
-    void ValidateBindlessDescriptorSets();
+    [[nodiscard]] bool ValidateBindlessDescriptorSets();
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
