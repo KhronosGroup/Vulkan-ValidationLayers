@@ -238,10 +238,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV), but samples is %s.",
                              string_VkSampleCountFlagBits(pCreateInfo->samples));
         }
-        const auto *shading_rate_image_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(device_createinfo_pnext);
-        if (shading_rate_image_features && shading_rate_image_features->shadingRateImage &&
-            pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
+        if (enabled_features.shadingRateImage && pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
             // KHR flag can be non-optimal
             skip |= LogError("VUID-VkImageCreateInfo-shadingRateImage-07727", device, create_info_loc.dot(Field::usage),
                              "includes VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, tiling must be "

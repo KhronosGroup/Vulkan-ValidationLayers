@@ -181,9 +181,7 @@ bool StatelessValidation::ValidateCreateGraphicsPipelinesFlags(const VkPipelineC
     }
 
     if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
-        const auto *device_generated_commands_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
-        if (!device_generated_commands_features || !device_generated_commands_features->deviceGeneratedCommands) {
+        if (!enabled_features.deviceGeneratedCommands) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-flags-02877", device, flags_loc,
                          "(%s) contains VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV, but deviceGeneratedCommands was not enabled.",
@@ -192,9 +190,7 @@ bool StatelessValidation::ValidateCreateGraphicsPipelinesFlags(const VkPipelineC
     }
 
     if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
-        const auto *gpl_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(device_createinfo_pnext);
-        if (!gpl_features || !gpl_features->graphicsPipelineLibrary) {
+        if (!enabled_features.graphicsPipelineLibrary) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device, flags_loc,
                              "(%s) contains VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but graphicsPipelineLibrary was not enabled.",
                              string_VkPipelineCreateFlags2KHR(flags).c_str());
@@ -877,11 +873,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 }
 
                 if (depth_clip_control_struct) {
-                    const auto *depth_clip_control_features =
-                        vku::FindStructInPNextChain<VkPhysicalDeviceDepthClipControlFeaturesEXT>(device_createinfo_pnext);
-                    const bool enabled_depth_clip_control =
-                        depth_clip_control_features && depth_clip_control_features->depthClipControl;
-                    if (depth_clip_control_struct->negativeOneToOne && !enabled_depth_clip_control) {
+                    if (depth_clip_control_struct->negativeOneToOne && !enabled_features.depthClipControl) {
                         skip |= LogError(
                             "VUID-VkPipelineViewportDepthClipControlCreateInfoEXT-negativeOneToOne-06470", device,
                             viewport_loc.pNext(Struct::VkPhysicalDeviceDepthClipControlFeaturesEXT, Field::negativeOneToOne),
@@ -1051,10 +1043,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                         }
                     }
 
-                    const auto *line_features =
-                        vku::FindStructInPNextChain<VkPhysicalDeviceLineRasterizationFeaturesKHR>(device_createinfo_pnext);
                     if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR &&
-                        (!line_features || !line_features->rectangularLines)) {
+                        (!enabled_features.rectangularLines)) {
                         skip |= LogError(
                             "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-lineRasterizationMode-02768", device,
                             rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
@@ -1062,7 +1052,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                             "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR but the rectangularLines feature was not enabled.");
                     }
                     if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR &&
-                        (!line_features || !line_features->bresenhamLines)) {
+                        (!enabled_features.bresenhamLines)) {
                         skip |=
                             LogError("VUID-VkPipelineRasterizationLineStateCreateInfoKHR-lineRasterizationMode-02769", device,
                                      rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
@@ -1070,7 +1060,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                      "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR but the bresenhamLines feature was not enabled.");
                     }
                     if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR &&
-                        (!line_features || !line_features->smoothLines)) {
+                        (!enabled_features.smoothLines)) {
                         skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoKHR-lineRasterizationMode-02770", device,
                                          rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                  Field::lineRasterizationMode),
@@ -1079,7 +1069,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     }
                     if (line_state->stippledLineEnable && !dynamic_line_stipple_enable) {
                         if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR &&
-                            (!line_features || !line_features->stippledRectangularLines)) {
+                            (!enabled_features.stippledRectangularLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02771", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
@@ -1087,7 +1077,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                              "but the stippledRectangularLines feature was not enabled.");
                         }
                         if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR &&
-                            (!line_features || !line_features->stippledBresenhamLines)) {
+                            (!enabled_features.stippledBresenhamLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02772", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
@@ -1095,7 +1085,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                              "the stippledBresenhamLines feature was not enabled.");
                         }
                         if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR &&
-                            (!line_features || !line_features->stippledSmoothLines)) {
+                            (!enabled_features.stippledSmoothLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02773", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
@@ -1103,7 +1093,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                              "VK_TRUE, but the stippledSmoothLines feature was not enabled.");
                         }
                         if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR &&
-                            (!line_features || !line_features->stippledRectangularLines || !device_limits.strictLines)) {
+                            (!enabled_features.stippledRectangularLines || !device_limits.strictLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02774", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
@@ -1138,9 +1128,7 @@ bool StatelessValidation::ValidateCreateComputePipelinesFlags(const VkPipelineCr
                                                               const Location &flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
-        const auto *shader_enqueue_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceShaderEnqueueFeaturesAMDX>(device_createinfo_pnext);
-        if (!shader_enqueue_features || shader_enqueue_features->shaderEnqueue) {
+        if (!enabled_features.shaderEnqueue) {
             skip |= LogError("VUID-VkComputePipelineCreateInfo-shaderEnqueue-09177", device, flags_loc,
                              "%s must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
                              string_VkPipelineCreateFlags2KHR(flags).c_str());
@@ -1283,9 +1271,7 @@ bool StatelessValidation::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevic
                                                                          const ErrorObject &error_obj) const {
     bool skip = false;
 
-    const auto *pipeline_props_features =
-        vku::FindStructInPNextChain<VkPhysicalDevicePipelinePropertiesFeaturesEXT>(device_createinfo_pnext);
-    if (!pipeline_props_features || !pipeline_props_features->pipelinePropertiesIdentifier) {
+    if (!enabled_features.pipelinePropertiesIdentifier) {
         skip |= LogError("VUID-vkGetPipelinePropertiesEXT-None-06766", device, error_obj.location,
                          "the pipelinePropertiesIdentifier feature was not enabled.");
     }

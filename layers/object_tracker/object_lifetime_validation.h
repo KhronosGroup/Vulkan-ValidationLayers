@@ -62,18 +62,13 @@ class ObjectLifetimes : public ValidationObject {
     object_map_type swapchain_image_map;
     object_list_map_type linked_graphics_pipeline_map;
 
-    void *device_createinfo_pnext;
     bool null_descriptor_enabled;
 
     // Constructor for object lifetime tracking
-    ObjectLifetimes() : num_objects{}, num_total_objects(0), device_createinfo_pnext(nullptr), null_descriptor_enabled(false) {
+    ObjectLifetimes() : num_objects{}, num_total_objects(0), null_descriptor_enabled(false) {
         container_type = LayerObjectTypeObjectTracker;
     }
-    ~ObjectLifetimes() {
-        if (device_createinfo_pnext) {
-            vku::FreePnextChain(device_createinfo_pnext);
-        }
-    }
+    ~ObjectLifetimes() {}
 
     template <typename T1>
     void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, const Location &loc,

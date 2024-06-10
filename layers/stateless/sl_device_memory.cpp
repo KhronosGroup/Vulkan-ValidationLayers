@@ -41,25 +41,12 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 
     if (flags) {
         const Location flags_loc = allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
-        VkBool32 capture_replay = false;
-        VkBool32 buffer_device_address = false;
-        const auto *vulkan_12_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
-        if (vulkan_12_features) {
-            capture_replay = vulkan_12_features->bufferDeviceAddressCaptureReplay;
-            buffer_device_address = vulkan_12_features->bufferDeviceAddress;
-        } else {
-            const auto *bda_features = vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(device_createinfo_pnext);
-            if (bda_features) {
-                capture_replay = bda_features->bufferDeviceAddressCaptureReplay;
-                buffer_device_address = bda_features->bufferDeviceAddress;
-            }
-        }
-        if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) && !capture_replay) {
+        if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) && !enabled_features.bufferDeviceAddressCaptureReplay) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03330", device, flags_loc,
                              "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set, but"
                              "bufferDeviceAddressCaptureReplay feature is not enabled.");
         }
-        if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) && !buffer_device_address) {
+        if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) && !enabled_features.bufferDeviceAddress) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03331", device, flags_loc,
                              "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT set, but bufferDeviceAddress feature is not enabled.");
         }

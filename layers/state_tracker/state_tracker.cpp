@@ -27,7 +27,6 @@
 #include "utils/vk_layer_utils.h"
 
 #include "generated/chassis.h"
-#include "generated/state_tracker_helper.h"
 #include "state_tracker/state_tracker.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/shader_stage_state.h"

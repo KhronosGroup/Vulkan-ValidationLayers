@@ -32,8 +32,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
                          "is VK_INDEX_TYPE_NONE_KHR.");
     }
 
-    const auto *index_type_uint8_features = vku::FindStructInPNextChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
-    if (indexType == VK_INDEX_TYPE_UINT8_KHR && (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8)) {
+    if (indexType == VK_INDEX_TYPE_UINT8_KHR && (!enabled_features.indexTypeUint8)) {
         skip |= LogError("VUID-vkCmdBindIndexBuffer-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
                          "is VK_INDEX_TYPE_UINT8_KHR but indexTypeUint8 feature was not enabled.");
     }
@@ -50,8 +49,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommand
         skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08786", commandBuffer, error_obj.location.dot(Field::indexType),
                          "is VK_INDEX_TYPE_NONE_KHR.");
     } else if (indexType == VK_INDEX_TYPE_UINT8_KHR) {
-        const auto *index_type_uint8_features = vku::FindStructInPNextChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
-        if (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8) {
+        if (!enabled_features.indexTypeUint8) {
             skip |=
                 LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
                          "is VK_INDEX_TYPE_UINT8_KHR but indexTypeUint8 feature was not enabled.");
@@ -86,8 +84,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
         }
         if (pBuffers[i] == VK_NULL_HANDLE) {
             const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
-            const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-            if (!(robustness2_features && robustness2_features->nullDescriptor)) {
+            if (!enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-04001", commandBuffer, buffer_loc, "is VK_NULL_HANDLE.");
             } else {
                 if (pOffsets[i] != 0) {
@@ -250,8 +247,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
         }
         if (pBuffers[i] == VK_NULL_HANDLE) {
             const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
-            const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-            if (!(robustness2_features && robustness2_features->nullDescriptor)) {
+            if (!enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04111", commandBuffer, buffer_loc, "is VK_NULL_HANDLE.");
             } else if (pOffsets && pOffsets[i] != 0) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04112", commandBuffer, buffer_loc,
@@ -723,9 +719,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
 
         const auto *conditional_rendering = vku::FindStructInPNextChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
         if (conditional_rendering) {
-            const auto *cr_features = vku::FindStructInPNextChain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
-            const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
-            if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
+            if (!enabled_features.inheritedConditionalRendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
                 skip |= LogError(
                     "VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977", commandBuffer,
                     error_obj.location,
