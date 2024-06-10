@@ -112,6 +112,7 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - Host synchronization not supported, except Fences (above).
 - Timeline Semaphore not supported
 - Queue family ownership transfer not supported
+- Hazards related to memory aliasing are not detected properly
 
 ## Typical Synchronization Validation Usage
 
