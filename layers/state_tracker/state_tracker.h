@@ -605,7 +605,7 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                     const RecordObject& record_obj) override;
-    virtual void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc);
+    virtual void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc);
 
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;

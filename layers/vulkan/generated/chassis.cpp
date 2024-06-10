@@ -593,6 +593,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         item->device_extensions = device_extensions;
     }
 
+    // Make copy to modify as some ValidationObjects will want to add extensions/features on
     vku::safe_VkDeviceCreateInfo modified_create_info(pCreateInfo);
 
     bool skip = false;

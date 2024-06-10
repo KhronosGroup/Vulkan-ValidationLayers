@@ -61,7 +61,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, const RecordObject &record_obj,
                                    vku::safe_VkDeviceCreateInfo *modified_create_info) override;
-    void CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
+    void PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
 
@@ -170,8 +170,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     bool force_buffer_device_address_;
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
-    VkPhysicalDeviceFeatures supported_features_{};
-    VkPhysicalDeviceFeatures desired_features_{};
     uint32_t adjusted_max_desc_sets_ = 0;
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
     uint32_t output_buffer_byte_size_ = 0;

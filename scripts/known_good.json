@@ -15,7 +15,7 @@
             "sub_dir": "Vulkan-Utility-Libraries",
             "build_dir": "Vulkan-Utility-Libraries/build",
             "install_dir": "Vulkan-Utility-Libraries/build/install",
-            "commit": "v1.3.287",
+            "commit": "07759f04791dc3fbb390174f0d24d4a792e0d357",
             "deps": [
                 {
                     "var_name": "VULKAN_HEADERS_INSTALL_DIR",

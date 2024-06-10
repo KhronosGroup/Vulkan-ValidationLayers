@@ -25,7 +25,7 @@ from generators.generator_utils import PlatformGuardHelper
 class FeatureRequirementsGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
-        
+
         # Features of the VkPhysicalDeviceBufferDeviceAddressFeaturesEXT have
         # the same name as Vulkan 1.2 and
         # VkPhysicalDeviceBufferDeviceAddressFeaturesKHR features, but are
@@ -33,7 +33,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
         self.identical_but_different_features = {
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT',
         }
-        
+
     def generate(self):
         out = []
         out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -68,9 +68,9 @@ class FeatureRequirementsGenerator(BaseGenerator):
 
         out.append('\n// NOLINTEND') # Wrap for clang-tidy to ignore
         self.write("".join(out))
-        
+
     def getFeaturesAndOrigins(self) -> dict:
-        # Get all Vulkan Physical Device Features 
+        # Get all Vulkan Physical Device Features
         featureMap = dict()
         feature_structs = self.vk.structs['VkPhysicalDeviceFeatures2'].extendedBy
         feature_structs.append('VkPhysicalDeviceFeatures')
@@ -78,7 +78,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
             if extending_struct_name in self.identical_but_different_features:
                 continue
             extending_struct = self.vk.structs[extending_struct_name]
-            
+
             for feature in extending_struct.members:
                 if feature.type == 'VkBool32':
                     if feature.name not in featureMap:
@@ -89,7 +89,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
         # features by that comment.  That ensures features of the same struct end up together.
         featuresAndOrigins = sorted([(sorted(structs), feature)
                                      for feature, structs in featureMap.items()])
-        
+
         return featuresAndOrigins
 
     def generateHeader(self):
@@ -97,9 +97,9 @@ class FeatureRequirementsGenerator(BaseGenerator):
         out.append('''
             #include "vk_api_version.h"
 
-            #include <vulkan/vulkan.h>   
+            #include <vulkan/vulkan.h>
 
-            namespace vkt {                                                      
+            namespace vkt {
         ''')
 
         # Physical device features enum
@@ -108,22 +108,22 @@ class FeatureRequirementsGenerator(BaseGenerator):
             out.append(f'// {", ".join(origins)}\n')
             out.append(f'{feature},\n')
         out.append('};\n')
-        
+
         # Functions declarations
         out.append('''
             struct FeatureAndName {
                 VkBool32 *feature;
                 const char *name;
             };
-                   
-            // Find or add the correct VkPhysicalDeviceFeature struct in `pnext_chain` based on `feature`, 
+
+            // Find or add the correct VkPhysicalDeviceFeature struct in `pnext_chain` based on `feature`,
             // a vkt::Feature enum value, and set feature to VK_TRUE
             FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **inout_pnext_chain);
-            
+
             }// namespace vkt
         ''')
         return "".join(out)
-    
+
     # Find the Vulkan version in a VkPhysicalDeviceVulkan<N>Features struct
     def getApiVersion(self, structs):
         if structs.find('11') != -1:
@@ -133,7 +133,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
         if structs.find('13') != -1:
             return 'VK_API_VERSION_1_3'
         else:
-            assert False 
+            assert False
 
     def generateSource(self):
         out = []
@@ -156,7 +156,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
                     vulkan_feature_struct_i = i
                     break
             if len(origins) == 1 or vulkan_feature_struct_i == -1:
-                    feature_struct_name = origins[0]    
+                    feature_struct_name = origins[0]
                     out.extend(guard_helper.add_guard(self.vk.structs[feature_struct_name].protect))
                     out.append(f''' case Feature::{feature}: {{
                         auto vk_struct = const_cast<{feature_struct_name} *>(vku::FindStructInPNextChain<{feature_struct_name}>(*inout_pnext_chain));
@@ -167,7 +167,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
                                 vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
                             }} else {{
                                 *inout_pnext_chain = vk_struct;
-                            }} 
+                            }}
                         }}
                         return {{&vk_struct->{feature}, "{feature_struct_name}::{feature}"}};
                         }}
@@ -180,41 +180,41 @@ class FeatureRequirementsGenerator(BaseGenerator):
                 ref_api_version = self.getApiVersion(api_struct_name)
                 out.extend(guard_helper.add_guard(self.vk.structs[feature_struct_name].protect))
                 out.append(f'''
-case Feature::{feature}: 
-    if (api_version >= {ref_api_version}) {{
-        auto vk_struct = const_cast<{api_struct_name} *>(vku::FindStructInPNextChain<{api_struct_name}>(*inout_pnext_chain));
-        if (!vk_struct) {{
-            vk_struct = new {api_struct_name};
-            *vk_struct = vku::InitStructHelper();
-            if (*inout_pnext_chain) {{
-                vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-            }} else {{
-                *inout_pnext_chain = vk_struct;
-            }} 
-        }}
-        return {{&vk_struct->{feature}, "{api_struct_name}::{feature}"}};
-    }} else {{
-        auto vk_struct = const_cast<{feature_struct_name} *>(vku::FindStructInPNextChain<{feature_struct_name}>(*inout_pnext_chain));
-        if (!vk_struct) {{
-            vk_struct = new {feature_struct_name};
-            *vk_struct = vku::InitStructHelper();
-            if (*inout_pnext_chain) {{
-                vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-            }} else {{
-                *inout_pnext_chain = vk_struct;
-            }} 
-        }}
-        return {{&vk_struct->{feature}, "{feature_struct_name}::{feature}"}};
-    }}''')
+                    case Feature::{feature}:
+                        if (api_version >= {ref_api_version}) {{
+                            auto vk_struct = const_cast<{api_struct_name} *>(vku::FindStructInPNextChain<{api_struct_name}>(*inout_pnext_chain));
+                            if (!vk_struct) {{
+                                vk_struct = new {api_struct_name};
+                                *vk_struct = vku::InitStructHelper();
+                                if (*inout_pnext_chain) {{
+                                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                                }} else {{
+                                    *inout_pnext_chain = vk_struct;
+                                }}
+                            }}
+                            return {{&vk_struct->{feature}, "{api_struct_name}::{feature}"}};
+                        }} else {{
+                            auto vk_struct = const_cast<{feature_struct_name} *>(vku::FindStructInPNextChain<{feature_struct_name}>(*inout_pnext_chain));
+                            if (!vk_struct) {{
+                                vk_struct = new {feature_struct_name};
+                                *vk_struct = vku::InitStructHelper();
+                                if (*inout_pnext_chain) {{
+                                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                                }} else {{
+                                    *inout_pnext_chain = vk_struct;
+                                }}
+                            }}
+                            return {{&vk_struct->{feature}, "{feature_struct_name}::{feature}"}};
+                        }}''')
                 out.extend(guard_helper.add_guard(None))
 
         out.append('''default:
             assert(false);
             return {nullptr, ""};
             }''')
-        
+
         out.append('}\n')
-            
+
         out.append('}// namespace vkt')
 
         return "".join(out)

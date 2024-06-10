@@ -81,13 +81,12 @@ namespace debug_printf {
 class Validator : public gpu::GpuShaderInstrumentor {
   public:
     using BaseClass = gpu::GpuShaderInstrumentor;
-    Validator() {
-        container_type = LayerObjectTypeDebugPrintf;
-        desired_features_.vertexPipelineStoresAndAtomics = true;
-        desired_features_.fragmentStoresAndAtomics = true;
-    }
+    Validator() { container_type = LayerObjectTypeDebugPrintf; }
 
-    void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
+    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
+                                   vku::safe_VkDeviceCreateInfo* modified_create_info) final;
+    void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
                           std::vector<uint32_t>& out_instrumented_spirv) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
