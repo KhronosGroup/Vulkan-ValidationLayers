@@ -1132,3 +1132,132 @@ TEST_F(PositiveGpuAV, SwapchainImage) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, ivci);
 }
+
+TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
+    TEST_DESCRIPTION("Validate illegal firstInstance values");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
+
+    std::vector<const char *> setting_names = std::get<0>(GetParam());
+    const uint32_t setting_values = std::get<1>(GetParam());
+
+    std::vector<VkLayerSettingEXT> layer_settings(setting_names.size());
+    std::vector<VkBool32> layer_settings_values(setting_names.size());
+    for (const auto [setting_name_i, setting_name] : vvl::enumerate(setting_names)) {
+        VkLayerSettingEXT &layer_setting = layer_settings[setting_name_i];
+        VkBool32 &layer_setting_value = layer_settings_values[setting_name_i];
+
+        layer_setting_value = (setting_values & (1u << setting_name_i)) ? VK_TRUE : VK_FALSE;
+        layer_setting = {OBJECT_LAYER_NAME, *setting_name, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &layer_setting_value};
+    }
+
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
+    layer_settings_create_info.settingCount = static_cast<uint32_t>(layer_settings.size());
+    layer_settings_create_info.pSettings = layer_settings.data();
+    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
+    for (uint32_t i = 0; i < 4; i++) {
+        draw_ptr->vertexCount = 3;
+        draw_ptr->instanceCount = 1;
+        draw_ptr->firstVertex = 0;
+        draw_ptr->firstInstance = (i == 3) ? 1 : 0;
+        draw_ptr++;
+    }
+    draw_buffer.memory().unmap();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+
+    // Now with an offset and indexed draw
+    vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+    for (uint32_t i = 0; i < 4; i++) {
+        indexed_draw_ptr->indexCount = 3;
+        indexed_draw_ptr->instanceCount = 1;
+        indexed_draw_ptr->firstIndex = 0;
+        indexed_draw_ptr->vertexOffset = 0;
+        indexed_draw_ptr->firstInstance = (i == 3) ? 1 : 0;
+        indexed_draw_ptr++;
+    }
+    indexed_draw_buffer.memory().unmap();
+
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_draw_buffer.handle(), sizeof(VkDrawIndexedIndirectCommand), 3,
+                               sizeof(VkDrawIndexedIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}
+
+static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+    std::vector<const char *> setting_names = std::get<0>(info.param);
+    const uint32_t setting_values = std::get<1>(info.param);
+    std::stringstream test_name;
+    for (auto [setting_name_i, setting_name] : vvl::enumerate(setting_names)) {
+        const char *enabled_str = (setting_values & (1u << setting_name_i)) ? "_1" : "_0";
+        if (setting_name_i != 0) {
+            test_name << "_";
+        }
+        test_name << *setting_name << enabled_str;
+    }
+
+    return test_name.str();
+}
+
+// /!\ Note when copy pasting this:
+// Be mindful that the constant number specified as the end range parameter in ::testing::Range
+// is based on the number of settings in the settings list. If you have N settings, you want your range end to be uint32_t(1) << N
+INSTANTIATE_TEST_SUITE_P(ShaderInstrumentationMainSettings, PositiveGpuAVParameterized,
+
+                         ::testing::Combine(::testing::Values(std::vector<const char *>(
+                                                {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_vma_linear_output",
+                                                 "gpuav_validate_ray_query", "gpuav_cache_instrumented_shaders",
+                                                 "gpuav_select_instrumented_shaders"})),
+                                            ::testing::Range(uint32_t(0), uint32_t(1) << 6)),
+
+                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+                             return GetGpuAvSettingsCombinationTestName(info);
+                         });
+
+INSTANTIATE_TEST_SUITE_P(GpuAvMainSettings, PositiveGpuAVParameterized,
+
+                         ::testing::Combine(::testing::Values(std::vector<const char *>(
+                                                {"gpuav_shader_instrumentation", "gpuav_buffers_validation",
+                                                 "gpuav_vma_linear_output", "gpuav_cache_instrumented_shaders"})),
+                                            ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
+
+                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+                             return GetGpuAvSettingsCombinationTestName(info);
+                         });
+
+INSTANTIATE_TEST_SUITE_P(GpuAvBufferContentValidationSettings, PositiveGpuAVParameterized,
+                         ::testing::Combine(::testing::Values(std::vector<const char *>(
+                                                {"gpuav_indirect_draws_buffers", "gpuav_indirect_dispatches_buffers",
+                                                 "gpuav_indirect_trace_rays_buffers", "gpuav_buffer_copies"})),
+                                            ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
+
+                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+                             return GetGpuAvSettingsCombinationTestName(info);
+                         });
