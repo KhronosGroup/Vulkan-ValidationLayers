@@ -38,7 +38,7 @@ bool Validator::AllocateErrorLogsBuffer(gpu::DeviceMemoryBlock &error_logs_mem, 
     VkResult result =
         vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &error_logs_mem.buffer, &error_logs_mem.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        InternalError(device, loc, "Unable to allocate device memory for error output buffer. Device could become unstable.", true);
+        InternalError(device, loc, "Unable to allocate device memory for error output buffer. Aborting GPU-AV.", true);
         return false;
     }
 
@@ -51,8 +51,7 @@ bool Validator::AllocateErrorLogsBuffer(gpu::DeviceMemoryBlock &error_logs_mem, 
         }
         vmaUnmapMemory(vma_allocator_, error_logs_mem.allocation);
     } else {
-        InternalError(device, loc, "Unable to map device memory allocated for error output buffer. Device could become unstable.",
-                      true);
+        InternalError(device, loc, "Unable to map device memory allocated for error output buffer. Aborting GPU-AV.", true);
         return false;
     }
 

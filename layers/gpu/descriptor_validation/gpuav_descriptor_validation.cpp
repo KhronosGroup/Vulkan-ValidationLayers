@@ -131,23 +131,32 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
                 if (!desc_set_state.state->IsUpdateAfterBind()) {
                     desc_set_state.gpu_state = desc_set_state.state->GetCurrentState();
                     bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->device_addr;
-                    desc_set_state.output_state = desc_set_state.state->GetOutputState();
+                    desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav);
+                    if (!desc_set_state.output_state) {
+                        goto exit;
+                    }
                     bindless_state->desc_sets[i].out_data = desc_set_state.output_state->device_addr;
                 }
                 di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
             }
         }
         cb_state->di_input_buffer_list.emplace_back(di_buffers);
-        vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation);
+exit:
+    vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation);
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-void UpdateBindlessStateBuffer(CommandBuffer &cb_state, VmaAllocator vma_allocator) {
+[[nodiscard]] bool UpdateBindlessStateBuffer(Validator &gpuav, CommandBuffer &cb_state, VmaAllocator vma_allocator) {
     for (auto &cmd_info : cb_state.di_input_buffer_list) {
         glsl::BindlessStateBuffer *bindless_state{nullptr};
         [[maybe_unused]] VkResult result;
         result = vmaMapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
         assert(result == VK_SUCCESS);
+        if (result != VK_SUCCESS) {
+            gpuav.InternalError(gpuav.device, Location(vvl::Func::vkMapMemory),
+                                "Unable to map device memory allocated for error output buffer. Aborting GPU-AV.", true);
+            return false;
+        }
         for (size_t i = 0; i < cmd_info.descriptor_set_buffers.size(); i++) {
             auto &set_buffer = cmd_info.descriptor_set_buffers[i];
             bindless_state->desc_sets[i].layout_data = set_buffer.state->GetLayoutState();
@@ -156,12 +165,17 @@ void UpdateBindlessStateBuffer(CommandBuffer &cb_state, VmaAllocator vma_allocat
                 bindless_state->desc_sets[i].in_data = set_buffer.gpu_state->device_addr;
             }
             if (!set_buffer.output_state) {
-                set_buffer.output_state = set_buffer.state->GetOutputState();
+                set_buffer.output_state = set_buffer.state->GetOutputState(gpuav);
+                if (!set_buffer.output_state) {
+                    vmaUnmapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation);
+                    return false;
+                }
                 bindless_state->desc_sets[i].out_data = set_buffer.output_state->device_addr;
             }
         }
         vmaUnmapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation);
     }
+    return true;
 }
 
 void CommandBuffer::ValidateBindlessDescriptorSets() {
