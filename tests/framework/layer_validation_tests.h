@@ -268,6 +268,8 @@ class GpuAVTest : public virtual VkLayerTest {
 
 class NegativeGpuAV : public GpuAVTest {};
 class PositiveGpuAV : public GpuAVTest {};
+class PositiveGpuAVParameterized : public GpuAVTest,
+                                   public ::testing::WithParamInterface<std::tuple<std::vector<const char *>, uint32_t>> {};
 
 class GpuAVBufferDeviceAddressTest : public GpuAVTest {
   public:
