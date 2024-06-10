@@ -71,19 +71,19 @@ const char *VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 // GPU-AV
 // ---
 const char *VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
-const char *VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS = "gpuav_descriptor_checks";
+const char *VK_LAYER_GPUAV_DESCRIPTORS_CHECKS = "gpuav_descriptor_checks";
 const char *VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB = "gpuav_warn_on_robust_oob";
 const char *VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
-const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS = "gpuav_max_buffer_device_addresses";
+const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES = "gpuav_max_buffer_device_addresses";
 const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 const char *VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS = "gpuav_cache_instrumented_shaders";
 const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
 
 const char *VK_LAYER_GPUAV_BUFFERS_VALIDATION = "gpuav_buffers_validation";
-const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_DRAWS_BUFFERS = "gpuav_indirect_draws_buffers";
-const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_DISPATCHES_BUFFERS = "gpuav_indirect_dispatches_buffers";
-const char *VK_LAYER_GPUAV_VALIDATE_INDIRECT_TRACE_RAYS_BUFFERS = "gpuav_indirect_trace_rays_buffers";
-const char *VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES = "gpuav_buffer_copies";
+const char *VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS = "gpuav_indirect_draws_buffers";
+const char *VK_LAYER_GPUAV_INDIRECT_DISPATCHES_BUFFERS = "gpuav_indirect_dispatches_buffers";
+const char *VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS = "gpuav_indirect_trace_rays_buffers";
+const char *VK_LAYER_GPUAV_BUFFER_COPIES = "gpuav_buffer_copies";
 
 const char *VK_LAYER_GPUAV_RESERVE_BINDING_SLOT = "gpuav_reserve_binding_slot";
 const char *VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
@@ -462,8 +462,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (!gpuav_settings.shader_instrumentation_enabled) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();
     } else {
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_DESCRIPTORS, gpuav_settings.validate_descriptors);
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTORS_CHECKS)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTORS_CHECKS, gpuav_settings.validate_descriptors);
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB)) {
@@ -477,9 +477,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB, gpuav_settings.validate_bda);
         }
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS,
-                                    gpuav_settings.max_bda_in_use);
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, gpuav_settings.max_bda_in_use);
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
@@ -518,26 +517,25 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (!gpuav_settings.buffers_validation_enabled) {
         gpuav_settings.SetBufferValidationEnabled(false);
     } else {
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DRAWS_BUFFERS)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DRAWS_BUFFERS,
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS,
                                     gpuav_settings.validate_indirect_draws_buffers);
         }
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DISPATCHES_BUFFERS)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_DISPATCHES_BUFFERS,
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDIRECT_DISPATCHES_BUFFERS)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_INDIRECT_DISPATCHES_BUFFERS,
                                     gpuav_settings.validate_indirect_dispatches_buffers);
         }
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_TRACE_RAYS_BUFFERS)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_INDIRECT_TRACE_RAYS_BUFFERS,
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS,
                                     gpuav_settings.validate_indirect_trace_rays_buffers);
         }
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES,
-                                    gpuav_settings.validate_buffer_copies);
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFER_COPIES)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFER_COPIES, gpuav_settings.validate_buffer_copies);
         } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES)) {
             vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES,
                                     gpuav_settings.validate_buffer_copies);
             printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-                   DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES, VK_LAYER_GPUAV_VALIDATE_BUFFER_COPIES);
+                   DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES, VK_LAYER_GPUAV_BUFFER_COPIES);
         }
     }
 
