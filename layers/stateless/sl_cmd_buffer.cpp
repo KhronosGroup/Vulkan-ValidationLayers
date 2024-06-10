@@ -674,8 +674,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
     const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
     const Location inheritance_loc = begin_info_loc.dot(Field::pInheritanceInfo);
-    skip |= ValidateStructType(inheritance_loc, "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO", info,
-                               VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
+    skip |= ValidateStructType(inheritance_loc, info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
                                "VUID-VkCommandBufferInheritanceInfo-sType-sType");
 
     if (info) {
