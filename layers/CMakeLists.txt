@@ -392,6 +392,11 @@ else()
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.map)
 endif()
 
+if(ANDROID)
+    # See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7385#issuecomment-2155788105
+    target_link_options(vvl PRIVATE -Wl,-soname=libVkLayer_khronos_validation.so)
+endif()
+
 target_compile_options(vvl PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
