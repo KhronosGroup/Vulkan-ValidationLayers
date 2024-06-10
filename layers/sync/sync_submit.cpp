@@ -242,7 +242,6 @@ void QueueBatchContext::EndRenderPassReplayCleanup(ReplayState& replay) {
 void QueueBatchContext::Cleanup() {
     // Clear these after validation and import, not valid after.
     batch_ = BatchAccessLog::BatchRecord();
-    command_buffers_.clear();
     async_batches_.clear();
     current_label_stack_ = nullptr;
 }
@@ -480,17 +479,16 @@ void QueueBatchContext::CommonSetupAccessContext(const QueueBatchContext::ConstP
     }
 }
 
-uint32_t QueueBatchContext::SetupCommandBufferInfo(const VkSubmitInfo2& submit_info) {
-    command_buffers_.reserve(submit_info.commandBufferInfoCount);
-    uint32_t tag_count = 0;
+std::vector<QueueBatchContext::CommandBufferInfo> QueueBatchContext::GetCommandBuffers(const VkSubmitInfo2& submit_info) {
+    std::vector<CommandBufferInfo> command_buffers;
+    command_buffers.reserve(submit_info.commandBufferInfoCount);
     for (uint32_t i = 0; i < submit_info.commandBufferInfoCount; i++) {
-        auto cb_state = sync_state_->Get<syncval_state::CommandBuffer>(submit_info.pCommandBufferInfos[i].commandBuffer);
-        if (cb_state) {
-            tag_count += static_cast<uint32_t>(cb_state->access_context.GetTagLimit());
-            command_buffers_.emplace_back(i, std::move(cb_state));
+        VkCommandBuffer cbuf = submit_info.pCommandBufferInfos[i].commandBuffer;
+        if (auto cb_state = sync_state_->Get<syncval_state::CommandBuffer>(cbuf)) {
+            command_buffers.emplace_back(i, std::move(cb_state));
         }
     }
-    return tag_count;
+    return command_buffers;
 }
 
 // Look up the usage informaiton from the local or global logger
@@ -547,13 +545,19 @@ bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, const QueueBa
     SetupAccessContext(last_batch, submit, signaled_semaphores_update);
     current_label_stack_ = current_label_stack;
 
-    const uint32_t tag_count = SetupCommandBufferInfo(submit);
+    const std::vector<CommandBufferInfo> command_buffers = GetCommandBuffers(submit);
+
+    uint32_t tag_count = 0;
+    for (const auto& cb : command_buffers) {
+        tag_count += static_cast<uint32_t>(cb.cb_state->access_context.GetTagLimit());
+    }
     if (tag_count) {
         SetupBatchTags(tag_count);
     }
-    for (const auto& cb : command_buffers_) {
+
+    for (const auto& cb : command_buffers) {
         // Validate and resolve command buffers that has tagged commands
-        const CommandBufferAccessContext& access_context = cb.cb->access_context;
+        const CommandBufferAccessContext& access_context = cb.cb_state->access_context;
         if (access_context.GetTagLimit() > 0) {
             skip |= ReplayState(*this, access_context, error_obj, cb.index).ValidateFirstUse();
             // The barriers have already been applied in ValidatFirstUse
@@ -561,7 +565,7 @@ bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, const QueueBa
             ResolveSubmittedCommandBuffer(*access_context.GetCurrentAccessContext(), tag_range.begin);
         }
         // Apply debug label commands
-        vvl::CommandBuffer::ReplayLabelCommands(cb.cb->GetLabelCommands(), *current_label_stack_);
+        vvl::CommandBuffer::ReplayLabelCommands(cb.cb_state->GetLabelCommands(), *current_label_stack_);
         batch_.cb_index++;
     }
     for (const auto& semaphore_info : vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount)) {
