@@ -19,7 +19,7 @@
 
 #include "shader_utils.h"
 
-#include "generated/state_tracker_helper.h"
+#include "generated/device_features.h"
 #include "utils/hash_util.h"
 
 #include "generated/spirv_tools_commit_id.h"

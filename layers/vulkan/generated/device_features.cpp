@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See state_tracker_helper_generator.py for modifications
+// See device_features_generator.py for modifications
 
 /***************************************************************************
  *

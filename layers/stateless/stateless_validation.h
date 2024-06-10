@@ -22,7 +22,7 @@
 #include "sync/sync_utils.h"
 #include "utils/vk_layer_utils.h"
 #include "generated/chassis.h"
-#include "generated/state_tracker_helper.h"
+#include "generated/device_features.h"
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
