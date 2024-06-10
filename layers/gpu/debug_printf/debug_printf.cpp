@@ -24,8 +24,14 @@
 
 namespace debug_printf {
 
+void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                          const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
+    BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
+}
+
 // Perform initializations that can be done at Create Device time.
-void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     if (enabled[gpu_validation]) {
         InternalError(device, loc, "Debug Printf cannot be enabled when gpu assisted validation is enabled.");
         return;
@@ -49,19 +55,20 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
                                             nullptr};
     instrumentation_bindings_.push_back(binding);
 
-    BaseClass::CreateDevice(pCreateInfo, loc);  // will set up bindings
+    BaseClass::PostCreateDevice(pCreateInfo, loc);  // will set up bindings
 
     if (api_version < VK_API_VERSION_1_1) {
         InternalError(device, loc, "Debug Printf requires Vulkan 1.1 or later.");
         return;
     }
 
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features_);
-    if (!supported_features_.fragmentStoresAndAtomics) {
+    VkPhysicalDeviceFeatures supported_features{};
+    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
+    if (!supported_features.fragmentStoresAndAtomics) {
         InternalError(device, loc, "Debug Printf requires fragmentStoresAndAtomics.");
         return;
     }
-    if (!supported_features_.vertexPipelineStoresAndAtomics) {
+    if (!supported_features.vertexPipelineStoresAndAtomics) {
         InternalError(device, loc, "Debug Printf requires vertexPipelineStoresAndAtomics.");
         return;
     }

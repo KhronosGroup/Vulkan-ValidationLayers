@@ -178,71 +178,36 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
     }
 }
 
-void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+                                                               const VkQueueFamilyProperties &queueFamilyProperties) {
+    return std::static_pointer_cast<vvl::Queue>(
+        std::make_shared<gpu_tracker::Queue>(*this, q, index, flags, queueFamilyProperties));
+}
+
+// These are the common things required for anything that deals with shader instrumentation
+void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                       const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                                       const RecordObject &record_obj,
                                                       vku::safe_VkDeviceCreateInfo *modified_create_info) {
-    BaseClass::PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
-    VkPhysicalDeviceFeatures *features = nullptr;
-    // Use a local variable to query features since this method runs in the instance validation object.
-    // To avoid confusion and race conditions about which physical device's features are stored in the
-    // 'supported_devices' member variable, it will only be set in the device validation objects.
-    // See CreateDevice() below.
-    VkPhysicalDeviceFeatures gpu_supported_features;
-    DispatchGetPhysicalDeviceFeatures(gpu, &gpu_supported_features);
+    // Force enable required features
+    // If the features are not supported, can't internal error until post device creation
+    VkPhysicalDeviceFeatures supported_features{};
+    DispatchGetPhysicalDeviceFeatures(physicalDevice, &supported_features);
 
-    // See CreateDevice() in chassis.cpp. modified_create_info is a pointer to a safe struct stored on the stack.
-    // This code follows the safe struct memory memory management scheme. That is, we must delete any memory
-    // remove from the safe struct, and any additions must be allocated in a way that is compatible with
-    // the safe struct destructor.
-    if (modified_create_info->pEnabledFeatures) {
-        // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
-        features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
-    } else {
-        auto *features2 = const_cast<VkPhysicalDeviceFeatures2 *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
-        if (features2) features = &features2->features;
-    }
-    VkPhysicalDeviceFeatures new_features = {};
-    VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features_);
-    VkBool32 *feature_ptr;
-    if (features) {
-        feature_ptr = reinterpret_cast<VkBool32 *>(features);
-    } else {
-        feature_ptr = reinterpret_cast<VkBool32 *>(&new_features);
-    }
-    VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features_);
-    for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures); i += (sizeof(VkBool32))) {
-        if (*supported && *desired) {
-            *feature_ptr = true;
+    if (auto enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures)) {
+        if (supported_features.fragmentStoresAndAtomics) {
+            enabled_features->fragmentStoresAndAtomics = VK_TRUE;
         }
-        supported++;
-        desired++;
-        feature_ptr++;
-    }
-    if (!features) {
-        delete modified_create_info->pEnabledFeatures;
-        modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
-    }
-
-    auto add_missing_features = [this, modified_create_info]() {
-        if (force_buffer_device_address_) {
-            // Add buffer device address feature
-            auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
-            if (bda_features) {
-                bda_features->bufferDeviceAddress = VK_TRUE;
-            } else {
-                VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
-                new_bda_features.bufferDeviceAddress = VK_TRUE;
-                vku::AddToPnext(*modified_create_info, new_bda_features);
-            }
+        if (supported_features.vertexPipelineStoresAndAtomics) {
+            enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
         }
+    }
 
-        // Add timeline semaphore feature
-        auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info));
-        if (ts_features) {
+    auto add_missing_features = [modified_create_info]() {
+        // Add timeline semaphore feature - This is required as we use it to manage when command buffers are submitted at queue
+        // submit time
+        if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
             ts_features->timelineSemaphore = VK_TRUE;
         } else {
             VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
@@ -251,59 +216,25 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice gpu, cons
         }
     };
 
-    // TODO How to handle multi-device
     if (api_version > VK_API_VERSION_1_1) {
-        auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext));
-        if (features12) {
+        if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
             features12->timelineSemaphore = VK_TRUE;
-            if (force_buffer_device_address_) {
-                features12->bufferDeviceAddress = VK_TRUE;
-            }
         } else {
             add_missing_features();
         }
     } else if (api_version == VK_API_VERSION_1_1) {
-        const std::string_view bda_ext{"VK_KHR_buffer_device_address"};
-        bool found_bda = false;
-        for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
-            if (bda_ext == modified_create_info->ppEnabledExtensionNames[i]) {
-                found_bda = true;
-                break;
-            }
-        }
+        // Add our new extensions (will only add if found)
         const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
-        bool found_ts = false;
-        for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
-            if (ts_ext == modified_create_info->ppEnabledExtensionNames[i]) {
-                found_ts = true;
-                break;
-            }
-        }
-
-        // Add our new extensions
-        if (!found_bda) {
-            vku::AddExtension(*modified_create_info, bda_ext.data());
-        }
-        if (!found_ts) {
-            vku::AddExtension(*modified_create_info, ts_ext.data());
-        }
+        vku::AddExtension(*modified_create_info, ts_ext.data());
 
         add_missing_features();
-    } else {
-        force_buffer_device_address_ = false;
     }
 }
 
-std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-                                                               const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::static_pointer_cast<vvl::Queue>(
-        std::make_shared<gpu_tracker::Queue>(*this, q, index, flags, queueFamilyProperties));
-}
-
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
-void GpuShaderInstrumentor::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    BaseClass::CreateDevice(pCreateInfo, loc);
+void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+    BaseClass::PostCreateDevice(pCreateInfo, loc);
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
     auto chain_info = GetChainInfo(pCreateInfo, VK_LOADER_DATA_CALLBACK);
     assert(chain_info->u.pfnSetDeviceLoaderData);

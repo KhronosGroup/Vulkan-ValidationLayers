@@ -34,6 +34,7 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "containers/custom_containers.h"
 #include "gpu_shaders/gpu_error_header.h"
+#include "generated/chassis.h"
 
 namespace gpuav {
 
@@ -74,8 +75,46 @@ std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue q, uint32_t index, Vk
     return std::static_pointer_cast<vvl::Queue>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
 }
 
+void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                          const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
+    BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
+
+    auto add_missing_features = [this, modified_create_info]() {
+        if (force_buffer_device_address_) {
+            // Add buffer device address feature
+            if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
+                bda_features->bufferDeviceAddress = VK_TRUE;
+            } else {
+                VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
+                new_bda_features.bufferDeviceAddress = VK_TRUE;
+                vku::AddToPnext(*modified_create_info, new_bda_features);
+            }
+        }
+    };
+
+    if (api_version > VK_API_VERSION_1_1) {
+        if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
+            if (force_buffer_device_address_) {
+                features12->bufferDeviceAddress = VK_TRUE;
+            }
+        } else {
+            add_missing_features();
+        }
+    } else if (api_version == VK_API_VERSION_1_1) {
+        // Add our new extensions (will only add if found)
+        const std::string_view bda_ext{"VK_KHR_buffer_device_address"};
+        vku::AddExtension(*modified_create_info, bda_ext.data());
+        add_missing_features();
+    } else {
+        force_buffer_device_address_ = false;
+    }
+}
+
 // Perform initializations that can be done at Create Device time.
-void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
     // would be messier without.
     // TODO: Find a good way to do this hooklessly.
@@ -104,28 +143,31 @@ void Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locati
 
     // TODO: Such a call is expected to be the first thing happening in this function,
     // but moving it at the top breaks GPU-AV. Try to fix it
-    BaseClass::CreateDevice(pCreateInfo, loc);
+    BaseClass::PostCreateDevice(pCreateInfo, loc);
 
     if (api_version < VK_API_VERSION_1_1) {
         InternalError(device, loc, "GPU-Assisted validation requires Vulkan 1.1 or later. Aborting GPU-AV.");
         return;
     }
 
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features_);
-    if (!supported_features_.fragmentStoresAndAtomics || !supported_features_.vertexPipelineStoresAndAtomics) {
-        InternalError(
-            device, loc,
-            "GPU-Assisted validation requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics. Aborting GPU-AV.");
+    VkPhysicalDeviceFeatures supported_features{};
+    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
+
+    if (!supported_features.fragmentStoresAndAtomics) {
+        InternalError(device, loc, "GPU-Assisted validation requires fragmentStoresAndAtomics. Aborting GPU-AV.");
+        return;
+    }
+    if (!supported_features.vertexPipelineStoresAndAtomics) {
+        InternalError(device, loc, "GPU-Assisted validation requires vertexPipelineStoresAndAtomics. Aborting GPU-AV.");
         return;
     }
 
-    const VkBool32 shaderInt64 = supported_features_.shaderInt64;
     bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
                                 IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                               shaderInt64 && enabled_features.bufferDeviceAddress);
+                               supported_features.shaderInt64 && enabled_features.bufferDeviceAddress);
     if (!bda_validation_possible) {
         if (gpuav_settings.validate_bda) {
-            if (!shaderInt64) {
+            if (!supported_features.shaderInt64) {
                 LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                            "Buffer device address validation option was enabled, but required features shaderInt64 is not enabled. "
                            "Disabling option.");

@@ -437,9 +437,9 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
     return skip;
 }
 
-void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void CoreChecks::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // The state tracker sets up the device state (also if extension and/or features are enabled)
-    StateTracker::CreateDevice(pCreateInfo, loc);
+    StateTracker::PostCreateDevice(pCreateInfo, loc);
 
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
     // would be messier without.

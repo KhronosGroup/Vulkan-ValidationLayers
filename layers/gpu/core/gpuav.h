@@ -60,9 +60,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
   public:
     Validator() {
         container_type = LayerObjectTypeGpuAssisted;
-        desired_features_.vertexPipelineStoresAndAtomics = true;
-        desired_features_.fragmentStoresAndAtomics = true;
-        desired_features_.shaderInt64 = true;
         force_buffer_device_address_ = true;
     }
 
@@ -110,7 +107,10 @@ class Validator : public gpu::GpuShaderInstrumentor {
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties& queueFamilyProperties) final;
 
-    void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
+    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
+                                   vku::safe_VkDeviceCreateInfo* modified_create_info) final;
+    void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
     // gpuav_record.cpp
     // --------------
