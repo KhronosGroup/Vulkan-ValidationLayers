@@ -82,65 +82,65 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
 
-        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        assert(number_of_sets <= glsl::kDebugInputBindlessMaxDescSets);
-        buffer_info.size = sizeof(glsl::BindlessStateBuffer);
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        VmaAllocationCreateInfo alloc_info = {};
-        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        alloc_info.pool = VK_NULL_HANDLE;
-        DescBindingInfo di_buffers = {};
+    VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+    assert(number_of_sets <= glsl::kDebugInputBindlessMaxDescSets);
+    buffer_info.size = sizeof(glsl::BindlessStateBuffer);
+    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VmaAllocationCreateInfo alloc_info = {};
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    alloc_info.pool = VK_NULL_HANDLE;
+    DescBindingInfo di_buffers = {};
 
-        // Allocate buffer for device addresses of the input buffer for each descriptor set.  This is the buffer written to each
-        // draw's descriptor set.
-        VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &di_buffers.bindless_state_buffer,
-                                          &di_buffers.bindless_state_buffer_allocation, nullptr);
-        if (result != VK_SUCCESS) {
-            gpuav.InternalError(cb_state->Handle(), loc, "Unable to allocate device memory. Device could become unstable.", true);
-            return;
-        }
-        glsl::BindlessStateBuffer *bindless_state{nullptr};
-        result = vmaMapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation,
-                              reinterpret_cast<void **>(&bindless_state));
-        if (result != VK_SUCCESS) {
-            gpuav.InternalError(cb_state->Handle(), loc, "Unable to map device memory. Device could become unstable.", true);
-            return;
-        }
-        memset(bindless_state, 0, static_cast<size_t>(buffer_info.size));
-        cb_state->current_bindless_buffer = di_buffers.bindless_state_buffer;
+    // Allocate buffer for device addresses of the input buffer for each descriptor set.  This is the buffer written to each
+    // draw's descriptor set.
+    VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &di_buffers.bindless_state_buffer,
+                                      &di_buffers.bindless_state_buffer_allocation, nullptr);
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(cb_state->Handle(), loc, "Unable to allocate device memory. Device could become unstable.", true);
+        return;
+    }
+    glsl::BindlessStateBuffer *bindless_state{nullptr};
+    result =
+        vmaMapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(cb_state->Handle(), loc, "Unable to map device memory. Device could become unstable.", true);
+        return;
+    }
+    memset(bindless_state, 0, static_cast<size_t>(buffer_info.size));
+    cb_state->current_bindless_buffer = di_buffers.bindless_state_buffer;
 
-        bindless_state->global_state = gpuav.desc_heap_->GetDeviceAddress();
-        for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
-            const auto &s = last_bound.per_set[i];
-            auto set = s.bound_descriptor_set;
-            if (!set) {
-                continue;
-            }
-            if (gpuav.gpuav_settings.validate_descriptors) {
-                DescSetState desc_set_state;
-                desc_set_state.num = i;
-                desc_set_state.state = std::static_pointer_cast<DescriptorSet>(set);
-                bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutState();
-                // The pipeline might not have been bound yet, so will need to update binding_req later
-                if (last_bound.pipeline_state) {
-                    auto slot = last_bound.pipeline_state->active_slots.find(i);
-                    if (slot != last_bound.pipeline_state->active_slots.end()) {
-                        desc_set_state.binding_req = slot->second;
-                    }
-                }
-                if (!desc_set_state.state->IsUpdateAfterBind()) {
-                    desc_set_state.gpu_state = desc_set_state.state->GetCurrentState();
-                    bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->device_addr;
-                    desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav);
-                    if (!desc_set_state.output_state) {
-                        goto exit;
-                    }
-                    bindless_state->desc_sets[i].out_data = desc_set_state.output_state->device_addr;
-                }
-                di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
-            }
+    bindless_state->global_state = gpuav.desc_heap_->GetDeviceAddress();
+    for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
+        const auto &s = last_bound.per_set[i];
+        auto set = s.bound_descriptor_set;
+        if (!set) {
+            continue;
         }
-        cb_state->di_input_buffer_list.emplace_back(di_buffers);
+        if (gpuav.gpuav_settings.validate_descriptors) {
+            DescSetState desc_set_state;
+            desc_set_state.num = i;
+            desc_set_state.state = std::static_pointer_cast<DescriptorSet>(set);
+            bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutState();
+            // The pipeline might not have been bound yet, so will need to update binding_req later
+            if (last_bound.pipeline_state) {
+                auto slot = last_bound.pipeline_state->active_slots.find(i);
+                if (slot != last_bound.pipeline_state->active_slots.end()) {
+                    desc_set_state.binding_req = slot->second;
+                }
+            }
+            if (!desc_set_state.state->IsUpdateAfterBind()) {
+                desc_set_state.gpu_state = desc_set_state.state->GetCurrentState();
+                bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->device_addr;
+                desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav);
+                if (!desc_set_state.output_state) {
+                    goto exit;
+                }
+                bindless_state->desc_sets[i].out_data = desc_set_state.output_state->device_addr;
+            }
+            di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
+        }
+    }
+    cb_state->di_input_buffer_list.emplace_back(di_buffers);
 exit:
     vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation);
 }
@@ -178,16 +178,16 @@ exit:
     return true;
 }
 
-void CommandBuffer::ValidateBindlessDescriptorSets() {
+[[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets() {
     // For each vkCmdBindDescriptorSets()...
     // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
     // checking them multiple times.
     vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
-    for (auto &di_info : di_input_buffer_list) {
+    for (auto [di_info_i, di_info] : vvl::enumerate(di_input_buffer_list)) {
         Location draw_loc(vvl::Func::vkCmdDraw);
         // For each descriptor set ...
-        for (uint32_t i = 0; i < di_info.descriptor_set_buffers.size(); i++) {
-            auto &set = di_info.descriptor_set_buffers[i];
+        for (uint32_t i = 0; i < di_info->descriptor_set_buffers.size(); i++) {
+            auto &set = di_info->descriptor_set_buffers[i];
             if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
@@ -195,6 +195,14 @@ void CommandBuffer::ValidateBindlessDescriptorSets() {
             }
             validated_desc_sets.emplace(set.state->VkHandle());
             assert(set.output_state);
+            if (!set.output_state) {
+                std::stringstream error;
+                error << "In CommandBuffer::ValidateBindlessDescriptorSets, di_info[" << di_info_i << "].descriptor_set_buffers["
+                      << i << "].output_state was null. This should not happen. GPU-AV is in a bad state, aborting.";
+                auto gpuav = static_cast<Validator *>(&dev_data);
+                gpuav->InternalError(gpuav->device, Location(vvl::Func::vkQueueSubmit), error.str().c_str());
+                return false;
+            }
 
             vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
             const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
@@ -212,5 +220,7 @@ void CommandBuffer::ValidateBindlessDescriptorSets() {
             }
         }
     }
+
+    return true;
 }
 }  // namespace gpuav

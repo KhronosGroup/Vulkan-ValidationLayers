@@ -495,11 +495,14 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
     // If instrumentation found an error, skip post processing. Errors detected by instrumentation are usually
     // very serious, such as a prematurely destroyed resource and the state needed below is likely invalid.
+    bool gpuav_success = false;
     if (!skip) {
-        ValidateBindlessDescriptorSets();
+        gpuav_success = ValidateBindlessDescriptorSets();
     }
 
-    UpdateCmdBufImageLayouts(state_, *this);
+    if (gpuav_success) {
+        UpdateCmdBufImageLayouts(state_, *this);
+    }
 }
 
 Queue::Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp)
