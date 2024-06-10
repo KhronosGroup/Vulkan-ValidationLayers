@@ -348,15 +348,14 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             }
 
             skip |= ValidateStructTypeArray(
-                create_info_loc.dot(Field::stageCount), create_info_loc.dot(Field::pStages),
-                "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", create_info.stageCount, create_info.pStages,
-                VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true, "VUID-VkPipelineShaderStageCreateInfo-sType-sType",
-                "VUID-VkGraphicsPipelineCreateInfo-pStages-06600", "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
+                create_info_loc.dot(Field::stageCount), create_info_loc.dot(Field::pStages), create_info.stageCount,
+                create_info.pStages, VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true,
+                "VUID-VkPipelineShaderStageCreateInfo-sType-sType", "VUID-VkGraphicsPipelineCreateInfo-pStages-06600",
+                "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
             // Can be null with enough dynamic states
-            skip |= ValidateStructType(create_info_loc.dot(Field::pRasterizationState),
-                                       "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
-                                       create_info.pRasterizationState, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-                                       false, "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-09040",
+            skip |= ValidateStructType(create_info_loc.dot(Field::pRasterizationState), create_info.pRasterizationState,
+                                       VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, false,
+                                       "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-09040",
                                        "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
         }
 

@@ -154,15 +154,14 @@ class StatelessValidation : public ValidationObject {
      * VkStructureType value.
      *
      * @param loc Name of API call being validated.
-     * @param sTypeName Name of expected VkStructureType value.
      * @param value Pointer to the struct to validate.
      * @param sType VkStructureType for structure validation.
      * @param required The parameter may not be NULL when true.
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructType(const Location &loc, const char *sTypeName, const T *value, VkStructureType sType, bool required,
-                            const char *struct_vuid, const char *stype_vuid) const {
+    bool ValidateStructType(const Location &loc, const T *value, VkStructureType sType, bool required, const char *struct_vuid,
+                            const char *stype_vuid) const {
         bool skip = false;
 
         if (value == nullptr) {
@@ -170,7 +169,7 @@ class StatelessValidation : public ValidationObject {
                 skip |= LogError(struct_vuid, device, loc, "is NULL.");
             }
         } else if (value->sType != sType) {
-            skip |= LogError(stype_vuid, device, loc.dot(Field::sType), "must be %s.", sTypeName);
+            skip |= LogError(stype_vuid, device, loc.dot(Field::sType), "must be %s.", string_VkStructureType(sType));
         }
 
         return skip;
@@ -185,7 +184,6 @@ class StatelessValidation : public ValidationObject {
      *
      * @param count_loc Name of count parameter.
      * @param array_loc Name of array parameter.
-     * @param sTypeName Name of expected VkStructureType value.
      * @param count Number of elements in the array.
      * @param array Array to validate.
      * @param sType VkStructureType for structure validation.
@@ -194,9 +192,9 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructTypeArray(const Location &count_loc, const Location &array_loc, const char *sTypeName, uint32_t count,
-                                 const T *array, VkStructureType sType, bool countRequired, bool arrayRequired,
-                                 const char *stype_vuid, const char *param_vuid, const char *count_required_vuid) const {
+    bool ValidateStructTypeArray(const Location &count_loc, const Location &array_loc, uint32_t count, const T *array,
+                                 VkStructureType sType, bool countRequired, bool arrayRequired, const char *stype_vuid,
+                                 const char *param_vuid, const char *count_required_vuid) const {
         bool skip = false;
 
         if ((array == nullptr) || (count == 0)) {
@@ -206,7 +204,8 @@ class StatelessValidation : public ValidationObject {
             // Verify that all structs in the array have the correct type
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i].sType != sType) {
-                    skip |= LogError(stype_vuid, device, array_loc.dot(i).dot(Field::sType), "must be %s", sTypeName);
+                    skip |= LogError(stype_vuid, device, array_loc.dot(i).dot(Field::sType), "must be %s",
+                                     string_VkStructureType(sType));
                 }
             }
         }
@@ -223,7 +222,6 @@ class StatelessValidation : public ValidationObject {
      *
      * @param count_loc Name of count parameter.
      * @param array_loc Name of array parameter.
-     * @param sTypeName Name of expected VkStructureType value.
      * @param count Number of elements in the array.
      * @param array Array to validate.
      * @param sType VkStructureType for structure validation.
@@ -232,9 +230,9 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructPointerTypeArray(const Location &count_loc, const Location &array_loc, const char *sTypeName, uint32_t count,
-                                        const T *array, VkStructureType sType, bool countRequired, bool arrayRequired,
-                                        const char *stype_vuid, const char *param_vuid, const char *count_required_vuid) const {
+    bool ValidateStructPointerTypeArray(const Location &count_loc, const Location &array_loc, uint32_t count, const T *array,
+                                        VkStructureType sType, bool countRequired, bool arrayRequired, const char *stype_vuid,
+                                        const char *param_vuid, const char *count_required_vuid) const {
         bool skip = false;
 
         if ((array == nullptr) || (count == 0)) {
@@ -244,7 +242,8 @@ class StatelessValidation : public ValidationObject {
             // Verify that all structs in the array have the correct type
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i]->sType != sType) {
-                    skip |= LogError(stype_vuid, device, array_loc.dot(i).dot(Field::sType), "must be %s", sTypeName);
+                    skip |= LogError(stype_vuid, device, array_loc.dot(i).dot(Field::sType), "must be %s",
+                                     string_VkStructureType(sType));
                 }
             }
         }
@@ -262,7 +261,6 @@ class StatelessValidation : public ValidationObject {
      *
      * @param count_loc Name of count parameter.
      * @param array_loc Name of array parameter.
-     * @param sTypeName Name of expected VkStructureType value.
      * @param count Pointer to the number of elements in the array.
      * @param array Array to validate.
      * @param sType VkStructureType for structure validation.
@@ -272,10 +270,10 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructTypeArray(const Location &count_loc, const Location &array_loc, const char *sTypeName, uint32_t *count,
-                                 const T *array, VkStructureType sType, bool countPtrRequired, bool countValueRequired,
-                                 bool arrayRequired, const char *stype_vuid, const char *param_vuid,
-                                 const char *count_ptr_required_vuid, const char *count_required_vuid) const {
+    bool ValidateStructTypeArray(const Location &count_loc, const Location &array_loc, uint32_t *count, const T *array,
+                                 VkStructureType sType, bool countPtrRequired, bool countValueRequired, bool arrayRequired,
+                                 const char *stype_vuid, const char *param_vuid, const char *count_ptr_required_vuid,
+                                 const char *count_required_vuid) const {
         bool skip = false;
 
         if (count == nullptr) {
@@ -283,9 +281,8 @@ class StatelessValidation : public ValidationObject {
                 skip |= LogError(count_ptr_required_vuid, device, count_loc, "is NULL.");
             }
         } else {
-            skip |= ValidateStructTypeArray(count_loc, array_loc, sTypeName, (*count), array, sType,
-                                            countValueRequired && (array != nullptr), arrayRequired, stype_vuid, param_vuid,
-                                            count_required_vuid);
+            skip |= ValidateStructTypeArray(count_loc, array_loc, (*count), array, sType, countValueRequired && (array != nullptr),
+                                            arrayRequired, stype_vuid, param_vuid, count_required_vuid);
         }
 
         return skip;

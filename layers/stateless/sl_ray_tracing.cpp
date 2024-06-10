@@ -980,22 +980,18 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
         if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
             constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT};
 
-            skip |=
-                ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::triangles),
-                                   "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
-                                   &(geom.geometry.triangles), VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
-                                   false, kVUIDUndefined, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
+            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::triangles), &(geom.geometry.triangles),
+                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, false, kVUIDUndefined,
+                                       "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
             skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::triangles), geom.geometry.triangles.pNext,
                                         allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
                                         "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", kVUIDUndefined);
             skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::vertexFormat),
                                        vvl::Enum::VkFormat, geom.geometry.triangles.vertexFormat,
                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter");
-            skip |=
-                ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::triangles),
-                                   "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR", &geom.geometry.triangles,
-                                   VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
-                                   "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
+            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::triangles), &geom.geometry.triangles,
+                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
+                                       "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
             skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::indexType),
                                        vvl::Enum::VkIndexType, geom.geometry.triangles.indexType,
                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter");
@@ -1014,16 +1010,12 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
             }
         }
         if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
-            skip |=
-                ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::instances),
-                                   "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR", &geom.geometry.instances,
-                                   VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, true,
-                                   "VUID-VkAccelerationStructureGeometryKHR-instances-parameter", kVUIDUndefined);
-            skip |=
-                ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::instances),
-                                   "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR",
-                                   &(geom.geometry.instances), VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR,
-                                   false, kVUIDUndefined, "VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType");
+            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::instances), &geom.geometry.instances,
+                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, true,
+                                       "VUID-VkAccelerationStructureGeometryKHR-instances-parameter", kVUIDUndefined);
+            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::instances), &(geom.geometry.instances),
+                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, false, kVUIDUndefined,
+                                       "VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType");
             skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::instances), geom.geometry.instances.pNext, 0,
                                         nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkAccelerationStructureGeometryInstancesDataKHR-pNext-pNext", kVUIDUndefined);
@@ -1032,12 +1024,10 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
                                    geom.geometry.instances.arrayOfPointers);
         }
         if (geom.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
-            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::aabbs),
-                                       "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR", &geom.geometry.aabbs,
+            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::aabbs), &geom.geometry.aabbs,
                                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, true,
                                        "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter", kVUIDUndefined);
-            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::aabbs),
-                                       "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR", &(geom.geometry.aabbs),
+            skip |= ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::aabbs), &(geom.geometry.aabbs),
                                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, false, kVUIDUndefined,
                                        "VUID-VkAccelerationStructureGeometryAabbsDataKHR-sType-sType");
             skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::aabbs), geom.geometry.aabbs.pNext, 0, nullptr,

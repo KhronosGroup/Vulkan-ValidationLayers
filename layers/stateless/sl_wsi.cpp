@@ -343,10 +343,9 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                          error_obj.location.dot(Field::pModes), "is NULL.");
     }
 
-    skip |= ValidateStructType(error_obj.location.dot(Field::pSurfaceInfo), "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR",
-                               pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
-                               "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter",
-                               "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
+    skip |= ValidateStructType(
+        error_obj.location.dot(Field::pSurfaceInfo), pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
+        "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
     if (pSurfaceInfo != NULL) {
         constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT,
                                                 VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT};

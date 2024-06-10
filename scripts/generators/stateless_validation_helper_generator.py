@@ -815,18 +815,18 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                             # This is an array of struct pointers
                             if member.cDeclaration.count('*') == 2:
-                                usedLines.append(f'skip |= ValidateStructPointerTypeArray({errorLoc}.dot(Field::{lengthMember.name}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{lengthMember.name}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
+                                usedLines.append(f'skip |= ValidateStructPointerTypeArray({errorLoc}.dot(Field::{lengthMember.name}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{lengthMember.name}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
                             # This is an array with a pointer to a count value
                             elif lengthMember.pointer:
                                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
                                 count_ptr_required_vuid = self.GetVuid(callerName, f"{member.length}-parameter")
-                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenPtrRequired}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_ptr_required_vuid}, {count_required_vuid});\n')
+                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenPtrRequired}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_ptr_required_vuid}, {count_required_vuid});\n')
                             # This is an array with an integer count value
                             else:
-                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
+                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
                         # This is an individual struct
                         else:
-                            usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.name}, {struct.sType}, {valueRequired}, {paramVUID}, {stypeVUID});\n')
+                            usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {struct.sType}, {valueRequired}, {paramVUID}, {stypeVUID});\n')
                     # If this is an input handle array that is not allowed to contain NULL handles, verify that none of the handles are VK_NULL_HANDLE
                     elif member.type in self.vk.handles and member.const and not self.isHandleOptional(member, lengthMember):
                         if not lengthMember:
@@ -923,11 +923,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         vuid = self.GetVuid(member.type, "sType-sType")
                         sType = self.vk.structs[member.type].sType
-                        usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), "{sType}", &({valuePrefix}{member.name}), {sType}, false, kVUIDUndefined, {vuid});\n')
+                        usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), &({valuePrefix}{member.name}), {sType}, false, kVUIDUndefined, {vuid});\n')
                     elif member.name == 'sType' and structTypeName in self.generateStructHelper:
                         # special case when dealing with isolated struct helper functions
                         vuid = self.GetVuid(struct.name, "sType-sType")
-                        usedLines.append(f'skip |= ValidateStructType(loc, "{struct.sType}", &info, {struct.sType}, false, kVUIDUndefined, {vuid});\n')
+                        usedLines.append(f'skip |= ValidateStructType(loc, &info, {struct.sType}, false, kVUIDUndefined, {vuid});\n')
                     elif member.type in self.vk.handles:
                         if not member.optional:
                             usedLines.append(f'skip |= ValidateRequiredHandle({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
