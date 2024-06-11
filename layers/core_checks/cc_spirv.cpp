@@ -1794,11 +1794,18 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_st
 
         if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
             skip |= ValidateShaderInputAttachment(module_state, pipeline, variable, loc);
-        } else if (!enabled_features.dynamicRenderingLocalRead && variable.info.image_dim == spv::DimSubpassData) {
-            skip |= LogError("VUID-RuntimeSpirv-None-09558", module_state.handle(), loc,
-                             "dynamicRenderingLocalRead was not enabled, but the OpTypeImage with Dim::SubpassData is missing the "
-                             "InputAttachmentIndex decoration.\n%s\n",
-                             variable.base_type.Describe().c_str());
+        } else if (variable.info.image_dim == spv::DimSubpassData) {
+            if (variable.array_length != 0) {
+                skip |= LogError("VUID-RuntimeSpirv-OpTypeImage-09644", module_state.handle(), loc,
+                                 "the variable is an array of OpTypeImage with Dim::SubpassData, but it is missing the "
+                                 "InputAttachmentIndex decoration.\n%s\n",
+                                 variable.base_type.Describe().c_str());
+            } else if (!enabled_features.dynamicRenderingLocalRead) {
+                skip |= LogError("VUID-RuntimeSpirv-None-09558", module_state.handle(), loc,
+                                 "the variable is a OpTypeImage with Dim::SubpassData, but it is missing the "
+                                 "InputAttachmentIndex decoration (dynamicRenderingLocalRead was not enabled).\n%s\n",
+                                 variable.base_type.Describe().c_str());
+            }
         }
     }
     return skip;
