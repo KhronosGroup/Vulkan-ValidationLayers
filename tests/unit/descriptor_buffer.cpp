@@ -473,8 +473,6 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
 
         m_commandBuffer->begin();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-None-08047");
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052");
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
         vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
         m_errorMonitor->VerifyFound();
 

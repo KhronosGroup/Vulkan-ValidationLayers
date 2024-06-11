@@ -383,18 +383,6 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
     const bool is_2 = loc.function == Func::vkCmdBindIndexBuffer2KHR;
     const char *vuid;
 
-    if (buffer == VK_NULL_HANDLE) {
-        if (!enabled_features.maintenance6) {
-            vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-None-09493" : "VUID-vkCmdBindIndexBuffer-None-09493";
-            skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::buffer), "is VK_NULL_HANDLE.");
-        } else if (offset != 0) {
-            vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-09494" : "VUID-vkCmdBindIndexBuffer-buffer-09494";
-            skip |=
-                LogError(vuid, cb_state.Handle(), loc.dot(Field::buffer), "is VK_NULL_HANDLE but offset is (%" PRIu64 ").", offset);
-        }
-        return skip;  // no buffer state to validate
-    }
-
     auto buffer_state = Get<vvl::Buffer>(buffer);
     if (!buffer_state) return skip;  // if using nullDescriptors
     const LogObjectList objlist(cb_state.Handle(), buffer);
@@ -1418,10 +1406,6 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                                                                    const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    if (!enabled_features.transformFeedback) {
-        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-transformFeedback-02355", commandBuffer, error_obj.location,
-                         "transformFeedback feature was not enabled.");
-    }
 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (cb_state->transform_feedback_active) {
@@ -1481,11 +1465,6 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
-
-    if (!enabled_features.transformFeedback) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-transformFeedback-02366", commandBuffer, error_obj.location,
-                         "transformFeedback feature was not enabled.");
-    }
 
     const auto *pipe = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
     if (!pipe && !enabled_features.shaderObject) {
@@ -1570,27 +1549,13 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                                            const VkDeviceSize *pCounterBufferOffsets,
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
-    if (!enabled_features.transformFeedback) {
-        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-transformFeedback-02374", commandBuffer, error_obj.location,
-                         "transformFeedback feature was not enabled.");
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    if (!cb_state->transform_feedback_active) {
+        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-None-02375", commandBuffer, error_obj.location,
+                         "transform feedback is not active.");
     }
 
-    {
-        auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-        if (!cb_state->transform_feedback_active) {
-            skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-None-02375", commandBuffer, error_obj.location,
-                             "transform feedback is not active.");
-        }
-    }
-
-    // pCounterBuffers and pCounterBufferOffsets are optional and may be nullptr. Additionaly, pCounterBufferOffsets must be nullptr
-    // if pCounterBuffers is nullptr.
-    if (pCounterBuffers == nullptr) {
-        if (pCounterBufferOffsets != nullptr) {
-            skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffer-02379", commandBuffer, error_obj.location,
-                             "pCounterBuffers is NULL and pCounterBufferOffsets is not NULL.");
-        }
-    } else {
+    if (pCounterBuffers) {
         for (uint32_t i = 0; i < counterBufferCount; ++i) {
             if (pCounterBuffers[i] == VK_NULL_HANDLE) {
                 continue;

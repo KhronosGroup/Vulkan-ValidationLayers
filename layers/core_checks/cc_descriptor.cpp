@@ -433,11 +433,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
                                           pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets,
                                           error_obj.location.dot(Field::pBindDescriptorSetsInfo));
 
-    if (!enabled_features.dynamicPipelineLayout && pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-None-09495", commandBuffer,
-                         error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout), "is not valid.");
-    }
-
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     }
@@ -446,13 +441,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
-    }
-
-    if (pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorSetsInfo->pNext)) {
-        skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-layout-09496", commandBuffer,
-                         error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout),
-                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
     }
 
     return skip;
@@ -2304,11 +2292,6 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
         pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
         pSetDescriptorBufferOffsetsInfo->pOffsets, error_obj.location);
 
-    if (!enabled_features.dynamicPipelineLayout && pSetDescriptorBufferOffsetsInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkSetDescriptorBufferOffsetsInfoEXT-None-09495", commandBuffer,
-                         error_obj.location.dot(Field::pSetDescriptorBufferOffsetsInfo).dot(Field::layout), "is not valid.");
-    }
-
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     }
@@ -2317,13 +2300,6 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     }
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
-    }
-
-    if (pSetDescriptorBufferOffsetsInfo->layout == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pSetDescriptorBufferOffsetsInfo->pNext)) {
-        skip |= LogError("VUID-VkSetDescriptorBufferOffsetsInfoEXT-layout-09496", commandBuffer,
-                         error_obj.location.dot(Field::pSetDescriptorBufferOffsetsInfo).dot(Field::layout),
-                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
     }
 
     return skip;
@@ -2385,11 +2361,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
 
     skip |= ValidateCmdBindDescriptorBufferEmbeddedSamplers(*cb_state, pBindDescriptorBufferEmbeddedSamplersInfo->layout,
                                                             pBindDescriptorBufferEmbeddedSamplersInfo->set, error_obj.location);
-    if (!enabled_features.dynamicPipelineLayout && pBindDescriptorBufferEmbeddedSamplersInfo->layout == VK_NULL_HANDLE) {
-        skip |=
-            LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-None-09495", commandBuffer,
-                     error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo).dot(Field::layout), "is not valid.");
-    }
 
     if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
@@ -2401,13 +2372,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
     }
 
-    if (pBindDescriptorBufferEmbeddedSamplersInfo->layout == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorBufferEmbeddedSamplersInfo->pNext)) {
-        skip |= LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-layout-09496", commandBuffer,
-                         error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo).dot(Field::layout),
-                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
-    }
-
     return skip;
 }
 
@@ -2417,11 +2381,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     bool skip = false;
-
-    if (!enabled_features.descriptorBuffer) {
-        skip |= LogError("VUID-vkCmdBindDescriptorBuffersEXT-None-08047", commandBuffer, error_obj.location,
-                         "descriptorBuffer feature was not enabled.");
-    }
 
     uint32_t num_sampler_buffers = 0;
     uint32_t num_resource_buffers = 0;
@@ -2995,23 +2954,12 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                                                  void *pDescriptor, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!enabled_features.descriptorBuffer) {
-        skip |=
-            LogError("VUID-vkGetDescriptorEXT-None-08015", device, error_obj.location, "descriptorBuffer feature was not enabled.");
-    }
-
     // update on first pass of switch case
     const VkDescriptorAddressInfoEXT *address_info = nullptr;
     Field data_field = Field::Empty;
 
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
     switch (pDescriptorInfo->type) {
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-            skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08018", device, descriptor_info_loc.dot(Field::type), "is %s.",
-                             string_VkDescriptorType(pDescriptorInfo->type));
-            break;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
             data_field = Field::pCombinedImageSampler;
             if (Get<vvl::Sampler>(pDescriptorInfo->data.pCombinedImageSampler->sampler).get() == nullptr) {
@@ -3524,10 +3472,6 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer command
     skip |= ValidateCmdPushDescriptorSet(*cb_state, pPushDescriptorSetInfo->layout, pPushDescriptorSetInfo->set,
                                          pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites,
                                          error_obj.location);
-    if (!enabled_features.dynamicPipelineLayout && pPushDescriptorSetInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-None-09495", commandBuffer,
-                         error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout), "is not valid.");
-    }
 
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
@@ -3747,17 +3691,6 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
     skip |= ValidateCmdPushDescriptorSetWithTemplate(
         commandBuffer, pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate, pPushDescriptorSetWithTemplateInfo->layout,
         pPushDescriptorSetWithTemplateInfo->set, pPushDescriptorSetWithTemplateInfo->pData, error_obj.location);
-    if (!enabled_features.dynamicPipelineLayout && pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-None-09495", commandBuffer,
-                         error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout), "is not valid.");
-    }
-
-    if (pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetWithTemplateInfo->pNext)) {
-        skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-09496", commandBuffer,
-                         error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout),
-                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
-    }
     return skip;
 }
 
@@ -4495,10 +4428,6 @@ bool CoreChecks::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuff
                                      pPushConstantsInfo->offset, pPushConstantsInfo->size,
                                      error_obj.location.dot(Field::pPushConstantsInfo));
 
-    if (!enabled_features.dynamicPipelineLayout && pPushConstantsInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkPushConstantsInfoKHR-None-09495", commandBuffer,
-                         error_obj.location.dot(Field::pPushConstantsInfo).dot(Field::layout), "is not valid.");
-    }
     return skip;
 }
 
