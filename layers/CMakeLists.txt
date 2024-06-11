@@ -256,9 +256,9 @@ target_sources(vvl PRIVATE
     gpu/resources/gpuav_subclasses.h
     gpu/resources/gpu_resources.h
     gpu/resources/gpu_resources.cpp
-    gpu_shaders/gpu_error_codes.h
-    gpu_shaders/gpu_error_header.h
-    gpu_shaders/gpu_shaders_constants.h
+    gpu/shaders/gpu_error_codes.h
+    gpu/shaders/gpu_error_header.h
+    gpu/shaders/gpu_shaders_constants.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/buffer_state.cpp

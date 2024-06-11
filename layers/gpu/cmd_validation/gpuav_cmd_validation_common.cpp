@@ -20,7 +20,7 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/core/gpuav_constants.h"
 #include "gpu/resources/gpu_resources.h"
-#include "gpu_shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpu_shaders_constants.h"
 
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"

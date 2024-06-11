@@ -19,7 +19,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
-#include "../../layers/gpu_shaders/gpu_shaders_constants.h"
+#include "../../layers/gpu/shaders/gpu_shaders_constants.h"
 
 static const std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                                           VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};

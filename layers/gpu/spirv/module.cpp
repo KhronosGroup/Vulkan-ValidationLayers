@@ -15,7 +15,7 @@
 
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
-#include "gpu_shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpu_shaders_constants.h"
 
 #include "buffer_device_address_pass.h"
 #include "bindless_descriptor_pass.h"

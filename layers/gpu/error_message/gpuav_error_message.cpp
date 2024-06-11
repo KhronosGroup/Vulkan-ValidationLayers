@@ -21,7 +21,7 @@
 #include "gpu/resources/gpuav_subclasses.h"
 #include "spirv-tools/instrument.hpp"
 #include "state_tracker/shader_instruction.h"
-#include "gpu_shaders/gpu_error_header.h"
+#include "gpu/shaders/gpu_error_header.h"
 
 #include <algorithm>
 #include <regex>

@@ -18,12 +18,12 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "gpu_shaders/gpu_error_header.h"
+#include "gpu/shaders/gpu_error_header.h"
 #include "generated/cmd_validation_dispatch_comp.h"
 
 namespace gpuav {
 
-// See gpu_shaders/cmd_validation/dispatch.comp
+// See gpu/shaders/cmd_validation/dispatch.comp
 constexpr uint32_t kPushConstantDWords = 4u;
 
 struct SharedDispatchValidationResources final {

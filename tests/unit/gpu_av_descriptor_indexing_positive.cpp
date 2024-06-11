@@ -19,7 +19,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
-#include "../../layers/gpu_shaders/gpu_shaders_constants.h"
+#include "../../layers/gpu/shaders/gpu_shaders_constants.h"
 
 void GpuAVDescriptorIndexingTest::InitGpuVUDescriptorIndexing() {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);

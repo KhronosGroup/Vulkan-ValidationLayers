@@ -248,7 +248,7 @@ def write_inst_hash(shaders_to_compile, outdir=None):
         outfile.write("".join(out))
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate spirv code for this repository, see layers/gpu_shaders/README.md for more deatils')
+    parser = argparse.ArgumentParser(description='Generate spirv code for this repository, see layers/gpu/shaders/README.md for more deatils')
     parser.add_argument('--api',
                         default='vulkan',
                         choices=['vulkan'],
@@ -261,15 +261,15 @@ def main():
     args = parser.parse_args()
 
     shaders_to_compile = []
-    # Get all shaders in gpu_shaders folder
+    # Get all shaders in gpu/shaders folder
     shader_type = ['vert', 'tesc', 'tese', 'geom', 'frag', 'comp', 'mesh', 'task', 'rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
-    gpu_shaders_dir = common_ci.RepoRelative('layers/gpu_shaders')
-    diagnostic_shaders = common_ci.RepoRelative('layers/gpu_shaders/cmd_validation')
+    gpu_shaders_dir = common_ci.RepoRelative('layers/gpu/shaders')
+    diagnostic_shaders = common_ci.RepoRelative('layers/gpu/shaders/cmd_validation')
     for filename in os.listdir(diagnostic_shaders):
         if (filename.split(".")[-1] in shader_type):
             shaders_to_compile.append(os.path.join(diagnostic_shaders, filename))
     
-    instrumentation_shaders = common_ci.RepoRelative('layers/gpu_shaders/instrumentation')
+    instrumentation_shaders = common_ci.RepoRelative('layers/gpu/shaders/instrumentation')
     for filename in os.listdir(instrumentation_shaders):
         if (filename.split(".")[-1] in shader_type):
             shaders_to_compile.append(os.path.join(instrumentation_shaders, filename))

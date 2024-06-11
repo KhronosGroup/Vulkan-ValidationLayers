@@ -12,7 +12,7 @@ python3 ./scripts/generate_spirv.py
 python3 ./scripts/generate_spirv.py --glslang path/to/glslangValidator
 
 # generate a single shader
-python3 ./scripts/generate_spirv.py --shader layers/gpu_shaders/gpu_pre_draw.vert
+python3 ./scripts/generate_spirv.py --shader layers/gpu/shaders/gpu_pre_draw.vert
 ```
 
 ## Adding a new shader
