@@ -267,35 +267,8 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     switch (pCreateInfo->queryType) {
-        case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
-            if (!enabled_features.pipelineStatisticsQuery) {
-                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00791", device, create_info_loc.dot(Field::queryType),
-                                 "is VK_QUERY_TYPE_PIPELINE_STATISTICS but pipelineStatisticsQuery feature was not enabled.");
-            } else if ((pCreateInfo->pipelineStatistics & (VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT |
-                                                           VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT)) &&
-                       !enabled_features.meshShaderQueries) {
-                skip |= LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069", device,
-                                 create_info_loc.dot(Field::pipelineStatistics),
-                                 "(%s) contains mesh/task shader bit, but "
-                                 "meshShaderQueries feature was not enabled.",
-                                 string_VkQueryPipelineStatisticFlags(pCreateInfo->pipelineStatistics).c_str());
-            }
-            break;
-        }
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR: {
-            if (!enabled_features.performanceCounterQueryPools) {
-                skip |=
-                    LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-performanceCounterQueryPools-03237", device,
-                             create_info_loc.dot(Field::queryType),
-                             "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but performanceCounterQueryPools feature was not enabled.");
-            }
-
-            auto perf_ci = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
-            if (!perf_ci) {
-                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-03222", device, create_info_loc.dot(Field::queryType),
-                                 "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR, but the pNext does not contain in instance of "
-                                 "VkQueryPoolPerformanceCreateInfoKHR.");
-            } else {
+            if (auto perf_ci = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext)) {
                 const auto &perf_counter_iter = physical_device_state->perf_counters.find(perf_ci->queueFamilyIndex);
                 if (perf_counter_iter == physical_device_state->perf_counters.end()) {
                     skip |= LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236", device,
@@ -316,8 +289,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
             break;
         }
         case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR: {
-            auto video_profile = vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext);
-            if (video_profile) {
+            if (auto video_profile = vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext)) {
                 skip |= ValidateVideoProfileInfo(video_profile, device, create_info_loc.pNext(Struct::VkVideoProfileInfoKHR));
             }
             break;
@@ -369,14 +341,6 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                                      string_VkVideoEncodeFeedbackFlagsKHR(supported_flags).c_str());
                     }
                 }
-            }
-            break;
-        }
-        case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT: {
-            if (!enabled_features.meshShaderQueries) {
-                skip |=
-                    LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07068", device, create_info_loc.dot(Field::queryType),
-                             "is VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT but meshShaderQueries feature was not enabled.");
             }
             break;
         }

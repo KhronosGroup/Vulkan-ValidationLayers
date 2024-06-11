@@ -20712,6 +20712,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuff
                                     pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, true,
                                     true, "VUID-VkBindDescriptorSetsInfoKHR-descriptorSetCount-arraylength");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo, error_obj);
     return skip;
 }
 
@@ -20838,6 +20839,9 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
                                         pPushDescriptorSetWithTemplateInfo->pData,
                                         "VUID-VkPushDescriptorSetWithTemplateInfoKHR-pData-parameter");
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo,
+                                                                           error_obj);
     return skip;
 }
 
@@ -20879,6 +20883,8 @@ bool StatelessValidation::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
                               "VUID-VkSetDescriptorBufferOffsetsInfoEXT-setCount-arraylength",
                               "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-parameter");
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdSetDescriptorBufferOffsets2EXT(commandBuffer, pSetDescriptorBufferOffsetsInfo, error_obj);
     return skip;
 }
 
@@ -20912,6 +20918,9 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers
                               "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-stageFlags-parameter",
                               "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-stageFlags-requiredbitmask");
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+            commandBuffer, pBindDescriptorBufferEmbeddedSamplersInfo, error_obj);
     return skip;
 }
 

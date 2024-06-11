@@ -392,7 +392,7 @@ TEST_F(NegativeCommand, PushConstant2PipelineLayoutCreateInfo) {
     pc_info.layout = VK_NULL_HANDLE;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredError("VUID-VkPushConstantsInfoKHR-layout-09496");
+    m_errorMonitor->SetDesiredError("VUID-VkPushConstantsInfoKHR-None-09495");
     vk::CmdPushConstants2KHR(m_commandBuffer->handle(), &pc_info);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();

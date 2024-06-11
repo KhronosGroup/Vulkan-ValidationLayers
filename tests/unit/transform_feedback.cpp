@@ -85,8 +85,6 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
     }
 
     {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630");
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-transformFeedback-02366");
         vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
         m_errorMonitor->VerifyFound();

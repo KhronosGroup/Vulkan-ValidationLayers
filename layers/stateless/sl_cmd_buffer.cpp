@@ -22,41 +22,46 @@
 ReadLockGuard StatelessValidation::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
 WriteLockGuard StatelessValidation::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                   VkDeviceSize offset, VkIndexType indexType,
-                                                                   const ErrorObject &error_obj) const {
+bool StatelessValidation::ValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                     VkIndexType indexType, const Location &loc) const {
     bool skip = false;
+    const bool is_2 = loc.function != Func::vkCmdBindIndexBuffer;
+    const char *vuid;
 
-    if (indexType == VK_INDEX_TYPE_NONE_KHR) {
-        skip |= LogError("VUID-vkCmdBindIndexBuffer-indexType-08786", commandBuffer, error_obj.location.dot(Field::indexType),
-                         "is VK_INDEX_TYPE_NONE_KHR.");
+    if (buffer == VK_NULL_HANDLE) {
+        if (!enabled_features.maintenance6) {
+            vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-None-09493" : "VUID-vkCmdBindIndexBuffer-None-09493";
+            skip |= LogError(vuid, commandBuffer, loc.dot(Field::buffer), "is VK_NULL_HANDLE.");
+        } else if (offset != 0) {
+            vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-09494" : "VUID-vkCmdBindIndexBuffer-buffer-09494";
+            skip |= LogError(vuid, commandBuffer, loc.dot(Field::buffer), "is VK_NULL_HANDLE but offset is (%" PRIu64 ").", offset);
+        }
     }
 
-    if (indexType == VK_INDEX_TYPE_UINT8_KHR && (!enabled_features.indexTypeUint8)) {
-        skip |= LogError("VUID-vkCmdBindIndexBuffer-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
+    if (indexType == VK_INDEX_TYPE_NONE_KHR) {
+        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-indexType-08786" : "VUID-vkCmdBindIndexBuffer-indexType-08786";
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::indexType), "is VK_INDEX_TYPE_NONE_KHR.");
+    }
+
+    if (indexType == VK_INDEX_TYPE_UINT8_KHR && !enabled_features.indexTypeUint8) {
+        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-indexType-08787" : "VUID-vkCmdBindIndexBuffer-indexType-08787";
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::indexType),
                          "is VK_INDEX_TYPE_UINT8_KHR but indexTypeUint8 feature was not enabled.");
     }
 
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                   VkDeviceSize offset, VkIndexType indexType,
+                                                                   const ErrorObject &error_obj) const {
+    return ValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, error_obj.location);
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                        VkDeviceSize offset, VkDeviceSize size,
                                                                        VkIndexType indexType, const ErrorObject &error_obj) const {
-    bool skip = false;
-
-    if (indexType == VK_INDEX_TYPE_NONE_KHR) {
-        skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08786", commandBuffer, error_obj.location.dot(Field::indexType),
-                         "is VK_INDEX_TYPE_NONE_KHR.");
-    } else if (indexType == VK_INDEX_TYPE_UINT8_KHR) {
-        if (!enabled_features.indexTypeUint8) {
-            skip |=
-                LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
-                         "is VK_INDEX_TYPE_UINT8_KHR but indexTypeUint8 feature was not enabled.");
-        }
-    }
-
-    return skip;
+    return ValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, error_obj.location);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
@@ -103,6 +108,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
     const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes, const ErrorObject &error_obj) const {
     bool skip = false;
 
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-transformFeedback-02355", commandBuffer, error_obj.location,
+                         "transformFeedback feature was not enabled.");
+    }
+
     for (uint32_t i = 0; i < bindingCount; ++i) {
         if (pOffsets[i] & 3) {
             skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02359", commandBuffer,
@@ -147,6 +157,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(
     VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer, uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
     const VkDeviceSize *pCounterBufferOffsets, const ErrorObject &error_obj) const {
     bool skip = false;
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-transformFeedback-02366", commandBuffer, error_obj.location,
+                         "transformFeedback feature was not enabled.");
+    }
 
     if (firstCounterBuffer >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
         skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02368", commandBuffer, error_obj.location,
@@ -173,6 +187,17 @@ bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCom
                                                                            const VkDeviceSize *pCounterBufferOffsets,
                                                                            const ErrorObject &error_obj) const {
     bool skip = false;
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-transformFeedback-02374", commandBuffer, error_obj.location,
+                         "transformFeedback feature was not enabled.");
+    }
+
+    // pCounterBuffers and pCounterBufferOffsets are optional and may be nullptr.
+    //  Additionaly, pCounterBufferOffsets must be nullptr if pCounterBuffers is nullptr.
+    if (pCounterBuffers == nullptr && pCounterBufferOffsets != nullptr) {
+        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffer-02379", commandBuffer, error_obj.location,
+                         "pCounterBuffers is NULL and pCounterBufferOffsets is not NULL.");
+    }
 
     if (firstCounterBuffer >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
         skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02376", commandBuffer, error_obj.location,
@@ -311,11 +336,15 @@ bool StatelessValidation::manual_PreCallValidateCmdPushConstants2KHR(VkCommandBu
     bool skip = false;
     skip |= ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->offset, pPushConstantsInfo->size,
                                      error_obj.location.dot(Field::pPushConstantsInfo));
-    if (pPushConstantsInfo->layout == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushConstantsInfo->pNext)) {
-        skip |= LogError("VUID-VkPushConstantsInfoKHR-layout-09496", commandBuffer,
-                         error_obj.location.dot(Field::pPushConstantsInfo).dot(Field::layout),
-                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+    if (pPushConstantsInfo->layout == VK_NULL_HANDLE) {
+        if (!enabled_features.dynamicPipelineLayout) {
+            skip |= LogError("VUID-VkPushConstantsInfoKHR-None-09495", commandBuffer,
+                             error_obj.location.dot(Field::pPushConstantsInfo).dot(Field::layout), "is VK_NULL_HANDLE.");
+        } else if (!vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushConstantsInfo->pNext)) {
+            skip |= LogError("VUID-VkPushConstantsInfoKHR-layout-09496", commandBuffer,
+                             error_obj.location.dot(Field::pPushConstantsInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+        }
     }
     return skip;
 }
@@ -466,6 +495,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCo
                                                                             const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
+    if (!enabled_features.descriptorBuffer) {
+        skip |= LogError("VUID-vkCmdBindDescriptorBuffersEXT-None-08047", commandBuffer, error_obj.location,
+                         "descriptorBuffer feature was not enabled.");
+    }
 
     for (uint32_t i = 0; i < bufferCount; i++) {
         if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pBindingInfos[i].pNext)) {
@@ -506,11 +539,15 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet2KHR(VkComma
     bool skip = false;
     skip |= ValidateWriteDescriptorSet(error_obj.location, pPushDescriptorSetInfo->descriptorWriteCount,
                                        pPushDescriptorSetInfo->pDescriptorWrites);
-    if (pPushDescriptorSetInfo->layout == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetInfo->pNext)) {
-        skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-layout-09496", commandBuffer,
-                         error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout),
-                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+    if (pPushDescriptorSetInfo->layout == VK_NULL_HANDLE) {
+        if (!enabled_features.dynamicPipelineLayout) {
+            skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-None-09495", commandBuffer,
+                             error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout), "is VK_NULL_HANDLE.");
+        } else if (vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetInfo->pNext)) {
+            skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-layout-09496", commandBuffer,
+                             error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+        }
     }
     return skip;
 }

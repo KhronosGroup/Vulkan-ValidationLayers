@@ -956,17 +956,59 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    if (pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
-        if (pCreateInfo->pipelineStatistics == 0) {
-            skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-09534", device, create_info_loc.dot(Field::queryType),
-                             "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but pCreateInfo->pipelineStatistics is zero");
-        } else if ((pCreateInfo->pipelineStatistics & (~AllVkQueryPipelineStatisticFlagBits)) != 0) {
-            skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00792", device, create_info_loc.dot(Field::queryType),
-                             "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but "
-                             "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
-                             "values.");
+
+    switch (pCreateInfo->queryType) {
+        case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
+            if (!enabled_features.pipelineStatisticsQuery) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00791", device, create_info_loc.dot(Field::queryType),
+                                 "is VK_QUERY_TYPE_PIPELINE_STATISTICS but pipelineStatisticsQuery feature was not enabled.");
+            } else if ((pCreateInfo->pipelineStatistics & (VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT |
+                                                           VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT)) &&
+                       !enabled_features.meshShaderQueries) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069", device,
+                                 create_info_loc.dot(Field::pipelineStatistics),
+                                 "(%s) contains mesh/task shader bit, but "
+                                 "meshShaderQueries feature was not enabled.",
+                                 string_VkQueryPipelineStatisticFlags(pCreateInfo->pipelineStatistics).c_str());
+            }
+
+            if (pCreateInfo->pipelineStatistics == 0) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-09534", device, create_info_loc.dot(Field::queryType),
+                                 "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but pCreateInfo->pipelineStatistics is zero");
+            } else if ((pCreateInfo->pipelineStatistics & (~AllVkQueryPipelineStatisticFlagBits)) != 0) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00792", device, create_info_loc.dot(Field::queryType),
+                                 "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but "
+                                 "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
+                                 "values.");
+            }
+            break;
         }
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR: {
+            if (!enabled_features.performanceCounterQueryPools) {
+                skip |=
+                    LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-performanceCounterQueryPools-03237", device,
+                             create_info_loc.dot(Field::queryType),
+                             "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but performanceCounterQueryPools feature was not enabled.");
+            }
+            if (!vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext)) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-03222", device, create_info_loc.dot(Field::queryType),
+                                 "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR, but the pNext does not contain in instance of "
+                                 "VkQueryPoolPerformanceCreateInfoKHR.");
+            }
+            break;
+        }
+        case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT: {
+            if (!enabled_features.meshShaderQueries) {
+                skip |=
+                    LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07068", device, create_info_loc.dot(Field::queryType),
+                             "is VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT but meshShaderQueries feature was not enabled.");
+            }
+            break;
+        }
+        default:
+            break;
     }
+
     if (pCreateInfo->queryCount == 0) {
         skip |= LogError("VUID-VkQueryPoolCreateInfo-queryCount-02763", device, create_info_loc.dot(Field::queryCount), "is zero.");
     }
@@ -1096,12 +1138,22 @@ bool StatelessValidation::manual_PreCallValidateGetDescriptorEXT(VkDevice device
                                                                  size_t dataSize, void *pDescriptor,
                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
+    if (!enabled_features.descriptorBuffer) {
+        skip |=
+            LogError("VUID-vkGetDescriptorEXT-None-08015", device, error_obj.location, "descriptorBuffer feature was not enabled.");
+    }
 
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
     const Location data_loc = descriptor_info_loc.dot(Field::data);
     const VkDescriptorAddressInfoEXT *address_info = nullptr;
     Field data_field = Field::Empty;
     switch (pDescriptorInfo->type) {
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+            skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08018", device, descriptor_info_loc.dot(Field::type), "is %s.",
+                             string_VkDescriptorType(pDescriptorInfo->type));
+            break;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
             if (!pDescriptorInfo->data.pCombinedImageSampler) {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-pCombinedImageSampler-parameter", device,
@@ -1157,5 +1209,81 @@ bool StatelessValidation::manual_PreCallValidateGetDescriptorEXT(VkDevice device
             }
         }
     }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT *pSetDescriptorBufferOffsetsInfo,
+    const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    if (pSetDescriptorBufferOffsetsInfo->layout == VK_NULL_HANDLE) {
+        if (!enabled_features.dynamicPipelineLayout) {
+            skip |=
+                LogError("VUID-VkSetDescriptorBufferOffsetsInfoEXT-None-09495", commandBuffer,
+                         error_obj.location.dot(Field::pSetDescriptorBufferOffsetsInfo).dot(Field::layout), "is VK_NULL_HANDLE.");
+        } else if (!vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pSetDescriptorBufferOffsetsInfo->pNext)) {
+            skip |= LogError("VUID-VkSetDescriptorBufferOffsetsInfoEXT-layout-09496", commandBuffer,
+                             error_obj.location.dot(Field::pSetDescriptorBufferOffsetsInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
+    const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    if (pBindDescriptorBufferEmbeddedSamplersInfo->layout == VK_NULL_HANDLE) {
+        if (!enabled_features.dynamicPipelineLayout) {
+            skip |= LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-None-09495", commandBuffer,
+                             error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE.");
+        } else if (!vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorBufferEmbeddedSamplersInfo->pNext)) {
+            skip |= LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-layout-09496", commandBuffer,
+                             error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    if (pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE) {
+        if (!enabled_features.dynamicPipelineLayout) {
+            skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-None-09495", commandBuffer,
+                             error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE.");
+        } else if (!vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetWithTemplateInfo->pNext)) {
+            skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-09496", commandBuffer,
+                             error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorSets2KHR(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo, const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE) {
+        if (!enabled_features.dynamicPipelineLayout) {
+            skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-None-09495", commandBuffer,
+                             error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout), "is VK_NULL_HANDLE.");
+        } else if (!vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorSetsInfo->pNext)) {
+            skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-layout-09496", commandBuffer,
+                             error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout),
+                             "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+        }
+    }
+
     return skip;
 }
