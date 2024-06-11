@@ -822,7 +822,9 @@ void LastBound::Reset() {
 
 bool LastBound::IsDepthTestEnable() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
-        return cb_state.dynamic_state_value.depth_test_enable;
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
+            return cb_state.dynamic_state_value.depth_test_enable;
+        }
     } else {
         if (pipeline_state->DepthStencilState()) {
             return pipeline_state->DepthStencilState()->depthTestEnable;
@@ -833,7 +835,9 @@ bool LastBound::IsDepthTestEnable() const {
 
 bool LastBound::IsDepthBoundTestEnable() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
-        return cb_state.dynamic_state_value.depth_bounds_test_enable;
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+            return cb_state.dynamic_state_value.depth_bounds_test_enable;
+        }
     } else {
         if (pipeline_state->DepthStencilState()) {
             return pipeline_state->DepthStencilState()->depthBoundsTestEnable;
@@ -847,14 +851,36 @@ bool LastBound::IsDepthWriteEnable() const {
     if (!IsDepthTestEnable()) {
         return false;
     }
-    return (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE))
-               ? cb_state.dynamic_state_value.depth_write_enable
-               : pipeline_state->DepthStencilState()->depthWriteEnable;
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)) {
+            return cb_state.dynamic_state_value.depth_write_enable;
+        }
+    } else {
+        if (pipeline_state->DepthStencilState()) {
+            return pipeline_state->DepthStencilState()->depthWriteEnable;
+        }
+    }
+    return false;
+}
+
+bool LastBound::IsDepthBiasEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
+            return cb_state.dynamic_state_value.depth_bias_enable;
+        }
+    } else {
+        if (pipeline_state->RasterizationState()) {
+            return pipeline_state->RasterizationState()->depthBiasEnable;
+        }
+    }
+    return false;
 }
 
 bool LastBound::IsStencilTestEnable() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
-        return cb_state.dynamic_state_value.stencil_test_enable;
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
+            return cb_state.dynamic_state_value.stencil_test_enable;
+        }
     } else {
         if (pipeline_state->DepthStencilState()) {
             return pipeline_state->DepthStencilState()->stencilTestEnable;
@@ -864,11 +890,14 @@ bool LastBound::IsStencilTestEnable() const {
 }
 
 VkStencilOpState LastBound::GetStencilOpStateFront() const {
-    VkStencilOpState front = pipeline_state->DepthStencilState()->front;
-    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+    VkStencilOpState front = {};
+    if (pipeline_state) {
+        front = pipeline_state->DepthStencilState()->front;
+    }
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
         front.writeMask = cb_state.dynamic_state_value.write_mask_front;
     }
-    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
         front.failOp = cb_state.dynamic_state_value.fail_op_front;
         front.passOp = cb_state.dynamic_state_value.pass_op_front;
         front.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_front;
@@ -877,11 +906,14 @@ VkStencilOpState LastBound::GetStencilOpStateFront() const {
 }
 
 VkStencilOpState LastBound::GetStencilOpStateBack() const {
-    VkStencilOpState back = pipeline_state->DepthStencilState()->back;
-    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+    VkStencilOpState back = {};
+    if (pipeline_state) {
+        back = pipeline_state->DepthStencilState()->back;
+    }
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
         back.writeMask = cb_state.dynamic_state_value.write_mask_back;
     }
-    if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
         back.failOp = cb_state.dynamic_state_value.fail_op_back;
         back.passOp = cb_state.dynamic_state_value.pass_op_back;
         back.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_back;
@@ -904,9 +936,14 @@ VkSampleCountFlagBits LastBound::GetRasterizationSamples() const {
 }
 
 bool LastBound::IsRasterizationDisabled() const {
-    return (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE))
-               ? cb_state.dynamic_state_value.rasterizer_discard_enable
-               : pipeline_state->RasterizationDisabled();
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+            return cb_state.dynamic_state_value.rasterizer_discard_enable;
+        }
+    } else {
+        return (pipeline_state->RasterizationDisabled());
+    }
+    return false;
 }
 
 VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
@@ -924,7 +961,9 @@ VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
 
 bool LastBound::IsColorWriteEnabled(uint32_t i) const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
-        return cb_state.dynamic_state_value.color_write_enabled[i];
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.color_write_enabled[i];
+        }
     } else {
         if (pipeline_state->ColorBlendState()) {
             auto color_write =

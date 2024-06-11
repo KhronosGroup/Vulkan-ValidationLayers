@@ -3499,7 +3499,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyLineCmdSetLineWidthEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBiasEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08620");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07834");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3564,7 +3564,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetBlendConstantsEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBoundsEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08622");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07836");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3778,7 +3778,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthWriteEnableEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetDepthCompareOp) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthCompareOp.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08631");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07845");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();

@@ -3697,10 +3697,6 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthWriteEnable) {
     ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, "VUID-vkCmdDraw-None-07844");
 }
 
-TEST_F(NegativeDynamicState, DrawNotSetDepthCompareOp) {
-    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP, "VUID-vkCmdDraw-None-07845");
-}
-
 TEST_F(NegativeDynamicState, DrawNotSetDepthBoundsTestEnable) {
     ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, "VUID-vkCmdDraw-None-07846");
 }
@@ -5870,5 +5866,47 @@ TEST_F(NegativeDynamicState, RasterizationSamplesDynamicRendering) {
     vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetDepthCompareOp) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07845");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+
+    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+
+    vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07845");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }

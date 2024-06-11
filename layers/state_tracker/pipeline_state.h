@@ -671,6 +671,7 @@ struct LastBound {
     bool IsDepthTestEnable() const;
     bool IsDepthBoundTestEnable() const;
     bool IsDepthWriteEnable() const;
+    bool IsDepthBiasEnable() const;
     bool IsStencilTestEnable() const;
     VkStencilOpState GetStencilOpStateFront() const;
     VkStencilOpState GetStencilOpStateBack() const;

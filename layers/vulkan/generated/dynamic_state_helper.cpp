@@ -22,6 +22,7 @@
 // NOLINTBEGIN
 
 #include "core_checks/core_validation.h"
+#include "state_tracker/pipeline_state.h"
 
 VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
     switch (dynamic_state) {
@@ -588,6 +589,56 @@ std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
     // Currently only exception that has 2 commands that can set it
     if (dynamic_state == CB_DYNAMIC_STATE_DEPTH_BIAS) {
         ss << " or " << String(vvl::Func::vkCmdSetDepthBias2EXT);
+    }
+
+    return ss.str();
+}
+
+std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline) {
+    std::stringstream ss;
+    switch (dynamic_state) {
+        case CB_DYNAMIC_STATE_DEPTH_BIAS:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << "vkCmdSetRasterizerDiscardEnable last set rasterizerDiscardEnable to VK_FALSE.\n";
+            } else {
+                ss << "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable was VK_FALSE in the last bound graphics "
+                      "pipeline.\n";
+            }
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
+                ss << "vkCmdSetDepthBiasEnable last set depthTestEnable to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineRasterizationStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
+            }
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_BOUNDS:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << "vkCmdSetRasterizerDiscardEnable last set rasterizerDiscardEnable to VK_FALSE.\n";
+            } else {
+                ss << "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable was VK_FALSE in the last bound graphics "
+                      "pipeline.\n";
+            }
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+                ss << "vkCmdSetDepthBoundsTestEnable last set depthBoundsTestEnable to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineDepthStencilStateCreateInfo::depthBoundsTestEnable was VK_TRUE in the last bound graphics "
+                      "pipeline.\n";
+            }
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_COMPARE_OP:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << "vkCmdSetRasterizerDiscardEnable last set rasterizerDiscardEnable to VK_FALSE.\n";
+            } else {
+                ss << "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable was VK_FALSE in the last bound graphics "
+                      "pipeline.\n";
+            }
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
+                ss << "vkCmdSetDepthTestEnable last set depthTestEnable to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineDepthStencilStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
+            }
+            break;
+        default:
+            ss << "(Unknown Dynamic State)";
     }
 
     return ss.str();

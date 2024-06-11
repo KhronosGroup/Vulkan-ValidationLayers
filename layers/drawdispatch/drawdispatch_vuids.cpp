@@ -267,9 +267,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDraw-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDraw-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDraw-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDraw-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDraw-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDraw-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDraw-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDraw-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDraw-None-08625";
@@ -278,7 +276,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDraw-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDraw-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDraw-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDraw-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDraw-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDraw-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDraw-None-08634";
@@ -581,9 +578,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawMultiEXT-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawMultiEXT-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMultiEXT-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMultiEXT-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMultiEXT-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMultiEXT-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMultiEXT-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMultiEXT-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMultiEXT-None-08625";
@@ -592,7 +587,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMultiEXT-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMultiEXT-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMultiEXT-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMultiEXT-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMultiEXT-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMultiEXT-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMultiEXT-None-08634";
@@ -896,9 +890,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawIndexed-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawIndexed-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawIndexed-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawIndexed-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawIndexed-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawIndexed-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawIndexed-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawIndexed-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawIndexed-None-08625";
@@ -907,7 +899,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawIndexed-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawIndexed-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawIndexed-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawIndexed-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawIndexed-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawIndexed-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawIndexed-None-08634";
@@ -1211,9 +1202,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawMultiIndexedEXT-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMultiIndexedEXT-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMultiIndexedEXT-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMultiIndexedEXT-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMultiIndexedEXT-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMultiIndexedEXT-None-08625";
@@ -1222,7 +1211,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMultiIndexedEXT-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMultiIndexedEXT-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMultiIndexedEXT-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMultiIndexedEXT-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMultiIndexedEXT-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08634";
@@ -1526,9 +1514,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawIndirect-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawIndirect-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawIndirect-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawIndirect-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawIndirect-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawIndirect-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawIndirect-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawIndirect-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawIndirect-None-08625";
@@ -1537,7 +1523,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawIndirect-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawIndirect-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawIndirect-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawIndirect-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawIndirect-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawIndirect-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawIndirect-None-08634";
@@ -1840,9 +1825,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawIndexedIndirect-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawIndexedIndirect-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawIndexedIndirect-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawIndexedIndirect-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawIndexedIndirect-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawIndexedIndirect-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawIndexedIndirect-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawIndexedIndirect-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawIndexedIndirect-None-08625";
@@ -1851,7 +1834,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawIndexedIndirect-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawIndexedIndirect-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawIndexedIndirect-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawIndexedIndirect-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawIndexedIndirect-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawIndexedIndirect-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawIndexedIndirect-None-08634";
@@ -2253,9 +2235,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawIndirectCount-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawIndirectCount-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawIndirectCount-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawIndirectCount-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawIndirectCount-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawIndirectCount-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawIndirectCount-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawIndirectCount-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawIndirectCount-None-08625";
@@ -2264,7 +2244,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawIndirectCount-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawIndirectCount-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawIndirectCount-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawIndirectCount-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawIndirectCount-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawIndirectCount-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawIndirectCount-None-08634";
@@ -2570,9 +2549,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawIndexedIndirectCount-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawIndexedIndirectCount-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawIndexedIndirectCount-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawIndexedIndirectCount-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawIndexedIndirectCount-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawIndexedIndirectCount-None-08625";
@@ -2581,7 +2558,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawIndexedIndirectCount-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawIndexedIndirectCount-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawIndexedIndirectCount-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawIndexedIndirectCount-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawIndexedIndirectCount-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08634";
@@ -3065,9 +3041,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_attachment_feedback_loop_enable_08880 = "VUID-vkCmdDrawMeshTasksNV-None-08880";
         set_line_width_08617                     = "VUID-vkCmdDrawMeshTasksNV-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMeshTasksNV-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMeshTasksNV-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMeshTasksNV-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMeshTasksNV-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMeshTasksNV-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMeshTasksNV-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMeshTasksNV-None-08625";
@@ -3076,7 +3050,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMeshTasksNV-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMeshTasksNV-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMeshTasksNV-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMeshTasksNV-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMeshTasksNV-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMeshTasksNV-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMeshTasksNV-None-08634";
@@ -3365,9 +3338,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_attachment_feedback_loop_enable_08880 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08880";
         set_line_width_08617                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08625";
@@ -3376,7 +3347,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08634";
@@ -3668,9 +3638,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_attachment_feedback_loop_enable_08880 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08880";
         set_line_width_08617                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08625";
@@ -3679,7 +3647,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08634";
@@ -3965,9 +3932,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_attachment_feedback_loop_enable_08880 = "VUID-vkCmdDrawMeshTasksEXT-None-08880";
         set_line_width_08617                     = "VUID-vkCmdDrawMeshTasksEXT-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMeshTasksEXT-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMeshTasksEXT-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMeshTasksEXT-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMeshTasksEXT-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMeshTasksEXT-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMeshTasksEXT-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMeshTasksEXT-None-08625";
@@ -3976,7 +3941,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMeshTasksEXT-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMeshTasksEXT-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMeshTasksEXT-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMeshTasksEXT-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMeshTasksEXT-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMeshTasksEXT-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMeshTasksEXT-None-08634";
@@ -4265,9 +4229,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_attachment_feedback_loop_enable_08880 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08880";
         set_line_width_08617                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08625";
@@ -4276,7 +4238,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08634";
@@ -4568,9 +4529,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_attachment_feedback_loop_enable_08880 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08880";
         set_line_width_08617                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08625";
@@ -4579,7 +4538,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08634";
@@ -4879,9 +4837,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         draw_shaders_no_task_mesh_08885          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08885";
         set_line_width_08617                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08617";
         set_line_width_08618                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08618";
-        set_depth_bias_08620                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08620";
         set_blend_constants_08621                = "VUID-vkCmdDrawIndirectByteCountEXT-None-08621";
-        set_depth_bounds_08622                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-08622";
         set_stencil_compare_mask_08623           = "VUID-vkCmdDrawIndirectByteCountEXT-None-08623";
         set_stencil_write_mask_08624             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08624";
         set_stencil_reference_08625              = "VUID-vkCmdDrawIndirectByteCountEXT-None-08625";
@@ -4890,7 +4846,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_front_face_08628                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08628";
         set_depth_test_enable_08629              = "VUID-vkCmdDrawIndirectByteCountEXT-None-08629";
         set_depth_write_enable_08630             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08630";
-        set_depth_comapre_op_08631               = "VUID-vkCmdDrawIndirectByteCountEXT-None-08631";
         set_depth_bounds_test_enable_08632       = "VUID-vkCmdDrawIndirectByteCountEXT-None-08632";
         set_stencil_test_enable_08633            = "VUID-vkCmdDrawIndirectByteCountEXT-None-08633";
         set_stencil_op_08634                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08634";

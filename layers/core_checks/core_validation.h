@@ -95,7 +95,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDynamicStateIsSet(const CBDynamicFlags& state_status_cb, CBDynamicState dynamic_state,
                                    const vvl::CommandBuffer& cb_state, const LogObjectList& objlist, const Location& loc,
                                    const char* vuid) const;
+    bool ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
+                                   CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsDynamicStateValue(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsDynamicStateViewportScissor(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicState(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
