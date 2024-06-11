@@ -62,8 +62,6 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     features.pEnabledValidationFeatures = enabled;
     vert_create_info.pNext = &features;
 
-    // TODO - Once the spec is changed to allow this, the SetUnexpectedError call can be removed
-    m_errorMonitor->SetUnexpectedError("VUID-VkShaderCreateInfoEXT-pNext-pNext");
     const vkt::Shader vertShader(*m_device, vert_create_info);
     const vkt::Shader fragShader(*m_device, frag_create_info);
 
