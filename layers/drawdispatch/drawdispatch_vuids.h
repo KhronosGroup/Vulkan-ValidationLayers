@@ -286,9 +286,7 @@ struct DrawDispatchVuid {
     const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
     const char* set_line_width_08617 = kVUIDUndefined;
     const char* set_line_width_08618 = kVUIDUndefined;
-    const char* set_depth_bias_08620 = kVUIDUndefined;
     const char* set_blend_constants_08621 = kVUIDUndefined;
-    const char* set_depth_bounds_08622 = kVUIDUndefined;
     const char* set_stencil_compare_mask_08623 = kVUIDUndefined;
     const char* set_stencil_write_mask_08624 = kVUIDUndefined;
     const char* set_stencil_reference_08625 = kVUIDUndefined;
@@ -297,7 +295,6 @@ struct DrawDispatchVuid {
     const char* set_front_face_08628 = kVUIDUndefined;
     const char* set_depth_test_enable_08629 = kVUIDUndefined;
     const char* set_depth_write_enable_08630 = kVUIDUndefined;
-    const char* set_depth_comapre_op_08631 = kVUIDUndefined;
     const char* set_depth_bounds_test_enable_08632 = kVUIDUndefined;
     const char* set_stencil_test_enable_08633 = kVUIDUndefined;
     const char* set_stencil_op_08634 = kVUIDUndefined;

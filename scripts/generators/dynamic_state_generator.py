@@ -30,13 +30,15 @@ dynamic_state_map = {
         "command" : ["vkCmdSetLineWidth"]
     },
     "VK_DYNAMIC_STATE_DEPTH_BIAS" : {
-        "command" : ["vkCmdSetDepthBias", "vkCmdSetDepthBias2EXT"]
+        "command" : ["vkCmdSetDepthBias", "vkCmdSetDepthBias2EXT"],
+        "dependency" : ["rasterizerDiscardEnable", "depthBiasEnable"]
     },
     "VK_DYNAMIC_STATE_BLEND_CONSTANTS" : {
         "command" : ["vkCmdSetBlendConstants"]
     },
     "VK_DYNAMIC_STATE_DEPTH_BOUNDS" : {
-        "command" : ["vkCmdSetDepthBounds"]
+        "command" : ["vkCmdSetDepthBounds"],
+        "dependency" : ["rasterizerDiscardEnable", "depthBoundsTestEnable"]
     },
     "VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK" : {
         "command" : ["vkCmdSetStencilCompareMask"]
@@ -72,7 +74,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetDepthWriteEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_COMPARE_OP" : {
-        "command" : ["vkCmdSetDepthCompareOp"]
+        "command" : ["vkCmdSetDepthCompareOp"],
+        "dependency" : ["rasterizerDiscardEnable", "depthTestEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE" : {
         "command" : ["vkCmdSetDepthBoundsTestEnable"]
@@ -284,6 +287,11 @@ class DynamicStateOutputGenerator(BaseGenerator):
             #pragma once
             #include <bitset>
 
+            namespace vvl {
+                class Pipeline;
+            }  // namespace vvl
+
+
             // Reorders VkDynamicState so it can be a bitset
             typedef enum CBDynamicState {
             ''')
@@ -303,6 +311,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
             std::string DynamicStatesCommandsToString(CBDynamicFlags const &dynamic_states);
 
             std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state);
+            std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline);
             ''')
         self.write("".join(out))
 
@@ -310,6 +319,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
         out = []
         out.append('''
             #include "core_checks/core_validation.h"
+            #include "state_tracker/pipeline_state.h"
 
             VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
                 switch (dynamic_state) {
@@ -396,6 +406,57 @@ class DynamicStateOutputGenerator(BaseGenerator):
                 // Currently only exception that has 2 commands that can set it
                 if (dynamic_state == CB_DYNAMIC_STATE_DEPTH_BIAS) {
                     ss << " or " << String(vvl::Func::vkCmdSetDepthBias2EXT);
+                }
+
+                return ss.str();
+            }
+        ''')
+
+        out.append('''
+            std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline) {
+                std::stringstream ss;
+                switch (dynamic_state) {
+        ''')
+        for key, value in dynamic_state_map.items():
+            if 'dependency' not in value:
+                continue
+            out.append(f'case CB_{key[3:]}:')
+
+            dependency = value['dependency']
+            # TODO - Use XML to generate this
+            if 'rasterizerDiscardEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                    ss << "vkCmdSetRasterizerDiscardEnable last set rasterizerDiscardEnable to VK_FALSE.\\n";
+                } else {
+                    ss << "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable was VK_FALSE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'depthTestEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
+                    ss << "vkCmdSetDepthTestEnable last set depthTestEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineDepthStencilStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'depthBoundsTestEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+                    ss << "vkCmdSetDepthBoundsTestEnable last set depthBoundsTestEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineDepthStencilStateCreateInfo::depthBoundsTestEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'depthBiasEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
+                    ss << "vkCmdSetDepthBiasEnable last set depthTestEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineRasterizationStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+
+            out.append('    break;')
+        out.append('''
+                    default:
+                        ss << "(Unknown Dynamic State)";
                 }
 
                 return ss.str();

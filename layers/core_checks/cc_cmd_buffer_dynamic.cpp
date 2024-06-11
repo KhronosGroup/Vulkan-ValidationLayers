@@ -28,6 +28,67 @@
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_module.h"
 
+bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
+                                           CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid) const {
+    if (!state_status_cb[dynamic_state]) {
+        LogObjectList objlist(last_bound_state.cb_state.Handle());
+        const vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
+        if (pipeline) {
+            objlist.add(pipeline->Handle());
+        }
+
+        const char* vuid_str = kVUIDUndefined;
+        switch (dynamic_state) {
+            case CB_DYNAMIC_STATE_DEPTH_COMPARE_OP:
+                vuid_str = vuid.dynamic_depth_compare_op_07845;
+                break;
+            case CB_DYNAMIC_STATE_DEPTH_BIAS:
+                vuid_str = vuid.dynamic_depth_bias_07834;
+                break;
+            case CB_DYNAMIC_STATE_DEPTH_BOUNDS:
+                vuid_str = vuid.dynamic_depth_bounds_07836;
+                break;
+            default:
+                assert(false);
+                break;
+        }
+
+        return LogError(vuid_str, objlist, vuid.loc(), "%s state is dynamic, but the command buffer never called %s.\n%s",
+                        DynamicStateToString(dynamic_state), DescribeDynamicStateCommand(dynamic_state).c_str(),
+                        DescribeDynamicStateDependency(dynamic_state, pipeline).c_str());
+    }
+    return false;
+}
+
+// Goal to move all of ValidateGraphicsDynamicStatePipelineSetStatus() and ValidateDrawDynamicStateShaderObject() here and remove
+// them
+bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+
+    // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer,
+    // for Shader Object, everything is dynamic don't need a mask
+    const CBDynamicFlags state_status_cb =
+        last_bound_state.pipeline_state ? (~((cb_state.dynamic_state_status.cb ^ last_bound_state.pipeline_state->dynamic_state) &
+                                             last_bound_state.pipeline_state->dynamic_state))
+                                        : cb_state.dynamic_state_status.cb;
+
+    if (!last_bound_state.IsRasterizationDisabled()) {
+        if (last_bound_state.IsDepthTestEnable()) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_COMPARE_OP, vuid);
+        }
+        if (last_bound_state.IsDepthBiasEnable()) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_BIAS, vuid);
+        }
+        if (last_bound_state.IsDepthBoundTestEnable()) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS, vuid);
+        }
+    }
+    return skip;
+}
+
+// This is the old/original way to check. We are slowly moving to combine all the dynamic state VUs for Pipeline and Shader Object
+// and this should not be used, and hopefully one day just removed
 bool CoreChecks::ValidateDynamicStateIsSet(const CBDynamicFlags& state_status_cb, CBDynamicState dynamic_state,
                                            const vvl::CommandBuffer& cb_state, const LogObjectList& objlist, const Location& loc,
                                            const char* vuid) const {
@@ -40,7 +101,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const CBDynamicFlags& state_status_cb
 }
 
 // Makes sure the vkCmdSet* call was called correctly prior to a draw
-bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+// deprecated for ValidateGraphicsDynamicStateSetStatus()
+bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& last_bound_state,
+                                                               const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
@@ -73,8 +136,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                                           vuid.dynamic_depth_test_enable_07843);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, cb_state, objlist, loc,
                                           vuid.dynamic_depth_write_enable_07844);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_COMPARE_OP, cb_state, objlist, loc,
-                                          vuid.dynamic_depth_compare_op_07845);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, cb_state, objlist, loc,
                                           vuid.dynamic_depth_bound_test_enable_07846);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE, cb_state, objlist, loc,
@@ -203,11 +264,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     }
 
     if (const auto* raster_state = pipeline.RasterizationState()) {
-        if (raster_state->depthBiasEnable == VK_TRUE) {
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_BIAS, cb_state, objlist, loc,
-                                              vuid.dynamic_depth_bias_07834);
-        }
-
         // Any line topology
         const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
         if (IsValueIn(topology,
@@ -230,10 +286,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     }
 
     if (pipeline.DepthStencilState()) {
-        if (last_bound_state.IsDepthBoundTestEnable()) {
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS, cb_state, objlist, loc,
-                                              vuid.dynamic_depth_bounds_07836);
-        }
         if (last_bound_state.IsStencilTestEnable()) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK, cb_state, objlist, loc,
                                               vuid.dynamic_stencil_compare_mask_07837);
@@ -721,8 +773,12 @@ bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& la
 
 bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
-    const auto pipeline_state = last_bound_state.pipeline_state;
 
+    skip |= ValidateGraphicsDynamicStateSetStatus(last_bound_state, vuid);
+    // Dynamic state was not set, will produce garbage when trying to read to values
+    if (skip) return skip;
+
+    const auto pipeline_state = last_bound_state.pipeline_state;
     if (pipeline_state) {
         skip |= ValidateDrawDynamicStatePipeline(last_bound_state, vuid);
     } else {
@@ -946,7 +1002,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
 
 bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
-    skip |= ValidateGraphicsDynamicStateSetStatus(last_bound_state, vuid);
+    skip |= ValidateGraphicsDynamicStatePipelineSetStatus(last_bound_state, vuid);
     // Dynamic state was not set, will produce garbage when trying to read to values
     if (skip) return skip;
     // Once we know for sure state was set, check value is valid
@@ -1080,6 +1136,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     return skip;
 }
 
+// deprecated for ValidateGraphicsDynamicStateSetStatus()
 bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
@@ -1213,25 +1270,12 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                           loc, vuid.set_depth_test_enable_08629);
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, cb_state, objlist,
                                           loc, vuid.set_depth_write_enable_08630);
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE) && cb_state.dynamic_state_value.depth_test_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_COMPARE_OP, cb_state,
-                                              objlist, loc, vuid.set_depth_comapre_op_08631);
-        }
         if (enabled_features.depthBounds) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, cb_state,
                                               objlist, loc, vuid.set_depth_bounds_test_enable_08632);
         }
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE) &&
-            cb_state.dynamic_state_value.depth_bounds_test_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS, cb_state, objlist,
-                                              loc, vuid.set_depth_bounds_08622);
-        }
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, cb_state, objlist,
                                           loc, vuid.set_depth_bias_enable_08640);
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE) && cb_state.dynamic_state_value.depth_bias_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BIAS, cb_state, objlist, loc,
-                                              vuid.set_depth_bias_08620);
-        }
         if (enabled_features.depthClamp) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, cb_state,
                                               objlist, loc, vuid.set_depth_clamp_enable_08650);

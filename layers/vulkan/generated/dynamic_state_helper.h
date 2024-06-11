@@ -24,6 +24,10 @@
 #pragma once
 #include <bitset>
 
+namespace vvl {
+class Pipeline;
+}  // namespace vvl
+
 // Reorders VkDynamicState so it can be a bitset
 typedef enum CBDynamicState {
     CB_DYNAMIC_STATE_VIEWPORT = 1,
@@ -104,10 +108,11 @@ typedef enum CBDynamicState {
 using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATE_STATUS_NUM>;
 VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state);
 CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state);
-const char *DynamicStateToString(CBDynamicState dynamic_state);
-std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states);
-std::string DynamicStatesCommandsToString(CBDynamicFlags const &dynamic_states);
+const char* DynamicStateToString(CBDynamicState dynamic_state);
+std::string DynamicStatesToString(CBDynamicFlags const& dynamic_states);
+std::string DynamicStatesCommandsToString(CBDynamicFlags const& dynamic_states);
 
 std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state);
+std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline);
 
 // NOLINTEND
