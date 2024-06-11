@@ -466,11 +466,10 @@ TEST_F(NegativeSecondaryCommandBuffer, ClearColorAttachmentsRenderArea) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsWhenCallingCmdExecuteCommandsWithBeginRenderPass) {
+TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsFirstSubpass) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRenderPass that hasn't set "
         "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -495,7 +494,65 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsWhenCallingCmdExecuteCo
     m_commandBuffer->BeginRenderPass(m_renderPass, framebuffer(), 32, 32, m_renderPassClearValues.size(),
                                      m_renderPassClearValues.data());
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-contents-06018");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-contents-09680");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsNotFirstSubpass) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands inside a render pass begun with vkCmdNextSubpass that hasn't set "
+        "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    std::array subpasses = {vku::InitStruct<VkSubpassDescription2>(), vku::InitStruct<VkSubpassDescription2>()};
+
+    VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.subpassCount = subpasses.size();
+    render_pass_ci.pSubpasses = subpasses.data();
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    vkt::RenderPass rp(*m_device, render_pass_ci);
+
+    // A compatible framebuffer.
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view.handle());
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,  // pNext
+        rp.handle(),
+        1,  // subpass
+        fb.handle(),
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                            nullptr,  // pNext
+                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+    cmdbuff__bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary.begin(&cmdbuff__bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp.handle(), fb.handle(), 32, 32, m_renderPassClearValues.size(),
+                                     m_renderPassClearValues.data());
+    m_commandBuffer->NextSubpass();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-None-09681");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 
