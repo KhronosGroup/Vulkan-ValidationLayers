@@ -1820,6 +1820,70 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndex) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
+    // layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs;
+    // layout(location=0) out vec4 color;
+    // void main() {
+    //     color = subpassLoad(xs);
+    // }
+    //
+    // missing OpDecorate %xs InputAttachmentIndex 0
+    const char *fsSource = R"(
+               OpCapability Shader
+               OpCapability InputAttachment
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %color Location 0
+               OpDecorate %xs DescriptorSet 0
+               OpDecorate %xs Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+         %10 = OpTypeImage %float SubpassData 0 0 0 2 Unknown
+%_ptr_UniformConstant_10 = OpTypePointer UniformConstant %10
+         %xs = OpVariable %_ptr_UniformConstant_10 UniformConstant
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %v2int = OpTypeVector %int 2
+         %17 = OpConstantComposite %v2int %int_0 %int_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %10 %xs
+         %18 = OpImageRead %v4float %13 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.gp_ci_.renderPass = rp.Handle();
+    m_errorMonitor->SetDesiredWarning("VUID-RuntimeSpirv-None-09558");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderInterface, MissingInputAttachmentIndexArray) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
     // layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[1];
     // layout(location=0) out vec4 color;
     // void main() {
@@ -1868,7 +1932,7 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndex) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    m_errorMonitor->SetDesiredWarning("VUID-RuntimeSpirv-None-09558");
+    m_errorMonitor->SetDesiredWarning("VUID-RuntimeSpirv-OpTypeImage-09644");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
