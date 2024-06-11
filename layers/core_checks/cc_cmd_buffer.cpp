@@ -829,15 +829,27 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     }
 
     if (cb_state.activeRenderPass) {
-        if (!cb_state.activeRenderPass->UsesDynamicRendering() && cb_state.IsPrimary() &&
-            (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
-             cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT)) {
-            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
-            skip |= LogError("VUID-vkCmdExecuteCommands-contents-06018", objlist, error_obj.location,
-                             "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
-                             "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT "
-                             "when calling vkCmdExecuteCommands() within a render pass instance begun with "
-                             "vkCmdBeginRenderPass().");
+        if (!cb_state.activeRenderPass->UsesDynamicRendering() && cb_state.IsPrimary()) {
+            // check if first subpass
+            if (cb_state.GetActiveSubpass() == 0) {
+                if (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS) {
+                    const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+                    skip |= LogError("VUID-vkCmdExecuteCommands-contents-09680", objlist, error_obj.location,
+                                     "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS"
+                                     "when calling vkCmdExecuteCommands() within the first subpass.");
+                }
+            } else {
+                if (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
+                    cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT) {
+                    const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+                    skip |= LogError("VUID-vkCmdExecuteCommands-None-09681", objlist, error_obj.location,
+                                     "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
+                                     "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT"
+                                     "when calling vkCmdExecuteCommands() within a non-first subpass (currently subpass %" PRIu32
+                                     ").",
+                                     cb_state.GetActiveSubpass());
+                }
+            }
         }
 
         if (cb_state.hasRenderPassInstance && cb_state.activeRenderPass->UsesDynamicRendering() &&
