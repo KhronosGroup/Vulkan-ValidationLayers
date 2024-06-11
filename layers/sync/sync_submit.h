@@ -123,17 +123,11 @@ using PresentedImages = std::vector<PresentedImage>;
 class BatchAccessLog {
   public:
     struct BatchRecord {
-        BatchRecord() = default;
-        BatchRecord(const BatchRecord &other) = default;
-        BatchRecord(BatchRecord &&other) = default;
-        BatchRecord(const QueueSyncState &q, uint64_t submit, uint32_t batch)
-            : queue(&q), submit_index(submit), batch_index(batch), cb_index(0), bias(0) {}
-        BatchRecord &operator=(const BatchRecord &other) = default;
-        const QueueSyncState *queue;
-        uint64_t submit_index;
-        uint32_t batch_index;
-        uint32_t cb_index;
-        ResourceUsageTag bias;
+        const QueueSyncState *queue = nullptr;
+        uint64_t submit_index = 0;
+        uint32_t batch_index = 0;
+        uint32_t cb_index = 0;
+        ResourceUsageTag base_tag = 0;
     };
 
     struct AccessRecord {
@@ -178,8 +172,8 @@ class BatchAccessLog {
         std::vector<vvl::CommandBuffer::LabelCommand> label_commands_;
     };
 
-    ResourceUsageTag Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access,
-                            const std::vector<std::string> &initial_label_stack);
+    void Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access,
+                const std::vector<std::string> &initial_label_stack);
     void Import(const BatchAccessLog &other);
     void Insert(const BatchRecord &batch, const ResourceUsageRange &range,
                 std::shared_ptr<const CommandExecutionContext::AccessLog> log);
@@ -232,8 +226,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
             : index(index), cb_state(std::move(cb_state)) {}
     };
 
-    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state, uint64_t submit_index,
-                      uint32_t batch_index);
+    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state);
     QueueBatchContext(const SyncValidator &sync_state);
     QueueBatchContext() = delete;
     void Trim();
@@ -250,11 +243,10 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
 
     ResourceUsageTag SetupBatchTags(uint32_t tag_count);
     void ResetEventsContext() { events_context_.Clear(); }
-    ResourceUsageTag GetTagLimit() const override { return batch_.bias; }
-    void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
 
     // For Submit
-    bool ProcessSubmit(const VkSubmitInfo2 &submit, const QueueBatchContext::ConstPtr &last_batch, const ErrorObject &error_obj,
+    bool ProcessSubmit(const VkSubmitInfo2 &submit, uint64_t submit_index,
+                       uint32_t batch_index, const QueueBatchContext::ConstPtr &last_batch, const ErrorObject &error_obj,
                        std::vector<std::string> *current_label_stack, SignaledSemaphoresUpdate &signaled_semaphores_update);
     void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
                             SignaledSemaphoresUpdate &signaled_semaphores_update);
@@ -266,7 +258,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
                             const PresentedImages &presented_images, SignaledSemaphoresUpdate &signaled_semaphores_update);
     bool DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images);
     void DoPresentOperations(const PresentedImages &presented_images);
-    void LogPresentOperations(const PresentedImages &presented_images);
+    void LogPresentOperations(const PresentedImages &presented_images, uint64_t submit_index);
 
     // For Acquire
     void SetupAccessContext(const PresentedImage &presented);
@@ -305,7 +297,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     std::vector<ResourceUsageTag> queue_sync_tag_;
 
     // Clear these after validation and import, not valid after.
-    BatchAccessLog::BatchRecord batch_;  // Holds the cumulative tag bias, and command buffer counts for Import support.
     std::vector<ConstPtr> async_batches_;
     std::vector<std::string> *current_label_stack_ = nullptr;
 };

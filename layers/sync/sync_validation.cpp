@@ -2711,15 +2711,16 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         const auto *recorded_cb_context = &recorded_cb->access_context;
         assert(recorded_cb_context);
 
-        skip |= ReplayState(proxy_cb_context, *recorded_cb_context, error_obj, cb_index).ValidateFirstUse();
+        const ResourceUsageTag base_tag = proxy_cb_context.GetTagCount();
+        skip |= ReplayState(proxy_cb_context, *recorded_cb_context, error_obj, cb_index, base_tag).ValidateFirstUse();
 
-        // Update proxy label commands so they can be used by InsertRecordedAccessLogEntries
+        // Update proxy label commands so they can be used by ImportRecordedAccessLog
         const auto &recorded_label_commands = recorded_cb->GetLabelCommands();
         proxy_label_commands.insert(proxy_label_commands.end(), recorded_label_commands.begin(), recorded_label_commands.end());
 
         // The barriers have already been applied in ValidatFirstUse
-        ResourceUsageRange tag_range = proxy_cb_context.ImportRecordedAccessLog(*recorded_cb_context);
-        proxy_cb_context.ResolveExecutedCommandBuffer(*recorded_cb_context->GetCurrentAccessContext(), tag_range.begin);
+        proxy_cb_context.ImportRecordedAccessLog(*recorded_cb_context);
+        proxy_cb_context.ResolveExecutedCommandBuffer(*recorded_cb_context->GetCurrentAccessContext(), base_tag);
     }
     proxy_label_commands.clear();
 
@@ -2809,7 +2810,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
 
     QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
-    QueueBatchContext::Ptr batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, 0));
+    QueueBatchContext::Ptr batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue));
 
     uint32_t present_tag_count = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
     batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
@@ -2821,7 +2822,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 
     skip |= batch->DoQueuePresentValidate(error_obj.location, cmd_state->presented_images);
     batch->DoPresentOperations(cmd_state->presented_images);
-    batch->LogPresentOperations(cmd_state->presented_images);
+    batch->LogPresentOperations(cmd_state->presented_images, submit_id);
     batch->Cleanup();
 
     if (!skip) {
@@ -2961,8 +2962,9 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     QueueBatchContext::Ptr batch;
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
-        batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, batch_idx);
-        skip |= batch->ProcessSubmit(submit, last_batch, error_obj, &current_label_stack, cmd_state->signaled_semaphores_update);
+        batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue);
+        skip |= batch->ProcessSubmit(submit, submit_id, batch_idx, last_batch, error_obj, &current_label_stack,
+                                     cmd_state->signaled_semaphores_update);
 
         // Unless the previous batch was referenced by a signal it will self destruct
         // in the record phase when the last batch is updated.
