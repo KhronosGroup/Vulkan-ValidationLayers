@@ -154,15 +154,13 @@ class ApplyAcquireNextSemaphoreAction {
     ResourceUsageTag acq_tag_;
 };
 
-QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const QueueSyncState& queue_state, uint64_t submit_index,
-                                     uint32_t batch_index)
+QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const QueueSyncState& queue_state)
     : CommandExecutionContext(&sync_state),
       queue_state_(&queue_state),
       tag_range_(0, 0),
       current_access_context_(&access_context_),
       batch_log_(),
-      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)),
-      batch_(queue_state, submit_index, batch_index) {}
+      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {}
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
     : CommandExecutionContext(&sync_state),
@@ -170,8 +168,7 @@ QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
       tag_range_(0, 0),
       current_access_context_(&access_context_),
       batch_log_(),
-      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)),
-      batch_() {}
+      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {}
 
 void QueueBatchContext::Trim() {
     // Clean up unneeded access context contents and log information
@@ -241,7 +238,6 @@ void QueueBatchContext::EndRenderPassReplayCleanup(ReplayState& replay) {
 
 void QueueBatchContext::Cleanup() {
     // Clear these after validation and import, not valid after.
-    batch_ = BatchAccessLog::BatchRecord();
     async_batches_.clear();
     current_label_stack_ = nullptr;
 }
@@ -393,10 +389,13 @@ void QueueBatchContext::DoPresentOperations(const PresentedImages& presented_ima
     }
 }
 
-void QueueBatchContext::LogPresentOperations(const PresentedImages& presented_images) {
+void QueueBatchContext::LogPresentOperations(const PresentedImages& presented_images, uint64_t submit_index) {
     if (tag_range_.size()) {
         auto access_log = std::make_shared<AccessLog>();
-        batch_log_.Insert(batch_, tag_range_, access_log);
+        BatchAccessLog::BatchRecord batch{queue_state_};
+        batch.submit_index = submit_index;
+        batch.base_tag = tag_range_.begin;
+        batch_log_.Insert(batch, tag_range_, access_log);
         access_log->reserve(tag_range_.size());
         assert(tag_range_.size() == presented_images.size());
         for (const auto& presented : presented_images) {
@@ -412,7 +411,9 @@ void QueueBatchContext::DoAcquireOperation(const PresentedImage& presented) {
 
 void QueueBatchContext::LogAcquireOperation(const PresentedImage& presented, vvl::Func command) {
     auto access_log = std::make_shared<AccessLog>();
-    batch_log_.Insert(batch_, tag_range_, access_log);
+    BatchAccessLog::BatchRecord batch{queue_state_};
+    batch.base_tag = tag_range_.begin;
+    batch_log_.Insert(batch, tag_range_, access_log);
     access_log->emplace_back(AcquireResourceRecord(presented, tag_range_.begin, command));
 }
 
@@ -503,7 +504,7 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
             out << SyncNodeFormatter(*sync_state_, batch.queue->GetQueueState());
             out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
         }
-        out << ", batch_tag: " << batch.bias;
+        out << ", batch_tag: " << batch.base_tag;
 
         // Commandbuffer Usages Information
         out << ", " << record.Formatter(*sync_state_, nullptr, access.debug_name_provider);
@@ -519,27 +520,21 @@ QueueId QueueBatchContext::GetQueueId() const {
 }
 
 ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
-    const ResourceUsageRange global_range = sync_state_->ReserveGlobalTagRange(tag_count);
-    tag_range_ = global_range;
-    access_context_.SetStartTag(global_range.begin);
-    batch_.bias = global_range.begin;
+    tag_range_ = sync_state_->ReserveGlobalTagRange(tag_count);
+    access_context_.SetStartTag(tag_range_.begin);
 
     // Needed for ImportSyncTags to pick up the "from" own sync tag.
     const QueueId this_q = GetQueueId();
     if (this_q < queue_sync_tag_.size()) {
         // If this is a non-queued operation we'll get a "special" value like invalid
-        queue_sync_tag_[this_q] = global_range.end;
+        queue_sync_tag_[this_q] = tag_range_.end;
     }
-    return global_range.begin;
+    return tag_range_.begin;
 }
 
-void QueueBatchContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext& submitted_cb) {
-    const ResourceUsageTag end_tag = batch_log_.Import(batch_, submitted_cb, *current_label_stack_);
-    batch_.bias = end_tag;
-}
-
-bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, const QueueBatchContext::ConstPtr& last_batch,
-                                      const ErrorObject& error_obj, std::vector<std::string>* current_label_stack,
+bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, uint64_t submit_index, uint32_t batch_index,
+                                      const QueueBatchContext::ConstPtr& last_batch, const ErrorObject& error_obj,
+                                      std::vector<std::string>* current_label_stack,
                                       SignaledSemaphoresUpdate& signaled_semaphores_update) {
     bool skip = false;
     SetupAccessContext(last_batch, submit, signaled_semaphores_update);
@@ -547,26 +542,28 @@ bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, const QueueBa
 
     const std::vector<CommandBufferInfo> command_buffers = GetCommandBuffers(submit);
 
+    BatchAccessLog::BatchRecord batch{queue_state_, submit_index, batch_index};
     uint32_t tag_count = 0;
     for (const auto& cb : command_buffers) {
-        tag_count += static_cast<uint32_t>(cb.cb_state->access_context.GetTagLimit());
+        tag_count += static_cast<uint32_t>(cb.cb_state->access_context.GetTagCount());
     }
     if (tag_count) {
-        SetupBatchTags(tag_count);
+        batch.base_tag = SetupBatchTags(tag_count);
     }
 
     for (const auto& cb : command_buffers) {
         // Validate and resolve command buffers that has tagged commands
         const CommandBufferAccessContext& access_context = cb.cb_state->access_context;
-        if (access_context.GetTagLimit() > 0) {
-            skip |= ReplayState(*this, access_context, error_obj, cb.index).ValidateFirstUse();
+        if (access_context.GetTagCount() > 0) {
+            skip |= ReplayState(*this, access_context, error_obj, cb.index, batch.base_tag).ValidateFirstUse();
             // The barriers have already been applied in ValidatFirstUse
-            ResourceUsageRange tag_range = ImportRecordedAccessLog(access_context);
-            ResolveSubmittedCommandBuffer(*access_context.GetCurrentAccessContext(), tag_range.begin);
+            batch_log_.Import(batch, access_context, *current_label_stack_);
+            ResolveSubmittedCommandBuffer(*access_context.GetCurrentAccessContext(), batch.base_tag);
+            batch.base_tag += access_context.GetTagCount();
         }
         // Apply debug label commands
         vvl::CommandBuffer::ReplayLabelCommands(cb.cb_state->GetLabelCommands(), *current_label_stack_);
-        batch_.cb_index++;
+        batch.cb_index++;
     }
     for (const auto& semaphore_info : vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount)) {
         signaled_semaphores_update.OnSignal(shared_from_this(), semaphore_info);
@@ -705,13 +702,10 @@ SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo* inf
     }
 }
 
-ResourceUsageTag BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferAccessContext& cb_access,
-                                        const std::vector<std::string>& initial_label_stack) {
-    ResourceUsageTag bias = batch.bias;
-    ResourceUsageTag tag_limit = bias + cb_access.GetTagLimit();
-    ResourceUsageRange import_range = {bias, tag_limit};
+void BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferAccessContext& cb_access,
+                            const std::vector<std::string>& initial_label_stack) {
+    ResourceUsageRange import_range = {batch.base_tag, batch.base_tag + cb_access.GetTagCount()};
     log_map_.insert(std::make_pair(import_range, CBSubmitLog(batch, cb_access, initial_label_stack)));
-    return tag_limit;
 }
 
 void BatchAccessLog::Import(const BatchAccessLog& other) {
@@ -797,8 +791,8 @@ std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageR
 }
 
 BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsageTag tag) const {
-    assert(tag >= batch_.bias);
-    const size_t index = tag - batch_.bias;
+    assert(tag >= batch_.base_tag);
+    const size_t index = tag - batch_.base_tag;
     assert(log_);
     assert(index < log_->size());
     const ResourceUsageRecord* record = &(*log_)[index];

@@ -53,14 +53,6 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
     }
 }
 
-ResourceUsageRange CommandExecutionContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
-    // The execution references ensure lifespan for the referenced child CB's...
-    ResourceUsageRange tag_range(GetTagLimit(), 0);
-    InsertRecordedAccessLogEntries(recorded_context);
-    tag_range.end = GetTagLimit();
-    return tag_range;
-}
-
 bool CommandExecutionContext::ValidForSyncOps() const {
     const bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
     assert(valid);
@@ -826,16 +818,15 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
     assert(recorded_context);
 
     // Just run through the barriers ignoring the usage from the recorded context, as Resolve will overwrite outdated state
-    const ResourceUsageTag base_tag = GetTagLimit();
+    const ResourceUsageTag base_tag = GetTagCount();
     for (const auto &sync_op : recorded_cb_context.GetSyncOps()) {
         // we update the range to any include layout transition first use writes,
         // as they are stored along with the source scope (as effective barrier) when recorded
         sync_op.sync_op->ReplayRecord(*this, base_tag + sync_op.tag);
     }
 
-    ResourceUsageRange tag_range = ImportRecordedAccessLog(recorded_cb_context);
-    assert(base_tag == tag_range.begin);  // to ensure the to offset calculation agree
-    ResolveExecutedCommandBuffer(*recorded_context, tag_range.begin);
+    ImportRecordedAccessLog(recorded_cb_context);
+    ResolveExecutedCommandBuffer(*recorded_context, base_tag);
 }
 
 void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset) {
@@ -843,7 +834,7 @@ void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContex
     GetCurrentAccessContext()->ResolveFromContext(tag_offset, recorded_context);
 }
 
-void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext &recorded_context) {
+void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
     cbs_referenced_->emplace_back(recorded_context.GetCBStateShared());
     access_log_->insert(access_log_->end(), recorded_context.access_log_->cbegin(), recorded_context.access_log_->cend());
 

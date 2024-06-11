@@ -215,11 +215,7 @@ class CommandExecutionContext : public SyncValidationInfo {
     virtual const SyncEventsContext *GetCurrentEventsContext() const = 0;
     virtual QueueId GetQueueId() const = 0;
 
-    ResourceUsageRange ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context);
-
-    virtual ResourceUsageTag GetTagLimit() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
-    virtual void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) = 0;
 
     virtual void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) {
         // Must override if use by derived type is valid
@@ -328,7 +324,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     ResourceUsageTag NextSubcommandTag(vvl::Func command, NamedHandle &&handle, ResourceUsageRecord::SubcommandType subcommand);
 
     ExecutionType Type() const override { return kExecuted; }
-    ResourceUsageTag GetTagLimit() const override { return access_log_->size(); }
+    size_t GetTagCount() const { return access_log_->size(); }
     VulkanTypedHandle Handle() const override {
         if (cb_state_) {
             return cb_state_->Handle();
@@ -367,7 +363,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     }
     std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
-    void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
+    void ImportRecordedAccessLog(const CommandBufferAccessContext &cb_context);
     const std::vector<SyncOpEntry> &GetSyncOps() const { return sync_ops_; };
 
     // DebugNameProvider
