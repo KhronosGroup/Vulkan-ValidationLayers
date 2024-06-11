@@ -33,7 +33,7 @@
 #include "spirv-tools/linker.hpp"
 #include "generated/layer_chassis_dispatch.h"
 #include "containers/custom_containers.h"
-#include "gpu_shaders/gpu_error_header.h"
+#include "gpu/shaders/gpu_error_header.h"
 #include "generated/chassis.h"
 
 namespace gpuav {

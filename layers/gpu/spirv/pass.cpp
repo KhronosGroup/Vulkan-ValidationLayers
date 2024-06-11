@@ -16,7 +16,7 @@
 #include "pass.h"
 #include "module.h"
 #include "type_manager.h"
-#include "gpu_shaders/gpu_error_codes.h"
+#include "gpu/shaders/gpu_error_codes.h"
 #include <spirv/unified1/spirv.hpp>
 
 namespace gpuav {

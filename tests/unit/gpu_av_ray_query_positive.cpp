@@ -20,7 +20,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 #include "../framework/ray_tracing_objects.h"
-#include "../../layers/gpu_shaders/gpu_shaders_constants.h"
+#include "../../layers/gpu/shaders/gpu_shaders_constants.h"
 
 void GpuAVRayQueryTest::InitGpuAVRayQuery() {
     SetTargetApiVersion(VK_API_VERSION_1_2);

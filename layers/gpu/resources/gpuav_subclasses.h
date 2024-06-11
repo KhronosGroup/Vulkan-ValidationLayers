@@ -25,7 +25,7 @@
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpu/resources/gpu_resources.h"
 #include "generated/vk_object_types.h"
-#include "gpu_shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpu_shaders_constants.h"
 
 // We pull in most the core state tracking files
 // gpuav_subclasses.h should NOT be included by any other header file
