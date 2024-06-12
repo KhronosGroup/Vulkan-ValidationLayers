@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
 
@@ -28,7 +27,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     bool skip = false;
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->sharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-        skip |= LogWarning(kVUID_BestPractices_SharingModeExclusive, device,
+        skip |= LogWarning("BestPractices-vkCreateImage-sharing-mode-exclusive", device,
                            error_obj.location.dot(Field::pCreateInfo).dot(Field::sharingMode),
                            "is VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues "
                            "(queueFamilyIndexCount of %" PRIu32 ").",
@@ -36,17 +35,17 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     }
 
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) && !(pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-        skip |=
-            LogWarning(kVUID_BestPractices_ImageCreateFlags, device, error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
-                       "has VK_IMAGE_CREATE_EXTENDED_USAGE_BIT set, but not "
-                       "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, therefore image views created from this image will have to use the "
-                       "same format and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT will not have any effect.");
+        skip |= LogWarning("BestPractices-vkCreateImage-CreateFlags", device,
+                           error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
+                           "has VK_IMAGE_CREATE_EXTENDED_USAGE_BIT set, but not "
+                           "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, therefore image views created from this image will have to use the "
+                           "same format and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT will not have any effect.");
     }
 
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
         if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             skip |= LogPerformanceWarning(
-                kVUID_BestPractices_CreateImage_NonTransientMSImage, device, error_obj.location,
+                "BestPractices-Arm-vkCreateImage-non-transient-ms-image", device, error_obj.location,
                 "%s %s Trying to create a multisampled image, but pCreateInfo->usage did not have "
                 "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. Multisampled images may be resolved on-chip, "
                 "and do not need to be backed by physical storage. "
@@ -57,7 +56,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if (VendorCheckEnabled(kBPVendorArm) && pCreateInfo->samples > kMaxEfficientSamplesArm) {
         skip |= LogPerformanceWarning(
-            kVUID_BestPractices_CreateImage_TooLargeSampleCount, device, error_obj.location,
+            "BestPractices-Arm-vkCreateImage-too-large-sample-count", device, error_obj.location,
             "%s Trying to create an image with %u samples. "
             "The hardware revision may not have full throughput for framebuffers with more than %u samples.",
             VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
@@ -65,7 +64,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if (VendorCheckEnabled(kBPVendorIMG) && pCreateInfo->samples > kMaxEfficientSamplesImg) {
         skip |= LogPerformanceWarning(
-            kVUID_BestPractices_CreateImage_TooLargeSampleCount, device, error_obj.location,
+            "BestPractices-IMG-vkCreateImage-too-large-sample-count", device, error_obj.location,
             "%s Trying to create an image with %u samples. "
             "The device may not have full support for true multisampling for images with more than %u samples. "
             "XT devices support up to 8 samples, XE up to 4 samples.",
@@ -80,7 +79,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                                              pCreateInfo->format == VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG ||
                                              pCreateInfo->format == VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG ||
                                              pCreateInfo->format == VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG)) {
-        skip |= LogPerformanceWarning(kVUID_BestPractices_Texture_Format_PVRTC_Outdated, device, error_obj.location,
+        skip |= LogPerformanceWarning("BestPractices-IMG-Texture-Format-PVRTC-Outdated", device, error_obj.location,
                                       "%s Trying to create an image with a PVRTC format. Both PVRTC1 and PVRTC2 "
                                       "are slower than standard image formats on PowerVR GPUs, prefer ETC, BC, ASTC, etc.",
                                       VendorSpecificTag(kBPVendorIMG));
@@ -89,7 +88,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     if (VendorCheckEnabled(kBPVendorAMD)) {
         if ((pCreateInfo->usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
             (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT)) {
-            skip |= LogPerformanceWarning(kVUID_BestPractices_vkImage_AvoidConcurrentRenderTargets, device, error_obj.location,
+            skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-AvoidConcurrentRenderTargets", device, error_obj.location,
                                           "%s Trying to create an image as a render target with VK_SHARING_MODE_CONCURRENT. "
                                           "Using a SHARING_MODE_CONCURRENT "
                                           "is not recommended with color and depth targets",
@@ -100,7 +99,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
              (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
             (pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
             skip |=
-                LogPerformanceWarning(kVUID_BestPractices_vkImage_DontUseMutableRenderTargets, device, error_obj.location,
+                LogPerformanceWarning("BestPractices-AMD-vkImage-DontUseMutableRenderTargets", device, error_obj.location,
                                       "%s Trying to create an image as a render target with VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT. "
                                       "Using a MUTABLE_FORMAT is not recommended with color, depth, and storage targets",
                                       VendorSpecificTag(kBPVendorAMD));
@@ -109,7 +108,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
         if ((pCreateInfo->usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
             (pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
             skip |=
-                LogPerformanceWarning(kVUID_BestPractices_vkImage_DontUseStorageRenderTargets, device, error_obj.location,
+                LogPerformanceWarning("BestPractices-AMD-vkImage-DontUseStorageRenderTargets", device, error_obj.location,
                                       "%s Trying to create an image as a render target with VK_IMAGE_USAGE_STORAGE_BIT. Using a "
                                       "VK_IMAGE_USAGE_STORAGE_BIT is not recommended with color and depth targets",
                                       VendorSpecificTag(kBPVendorAMD));
@@ -118,7 +117,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {
-            skip |= LogPerformanceWarning(kVUID_BestPractices_CreateImage_TilingLinear, device, error_obj.location,
+            skip |= LogPerformanceWarning("BestPractices-NVIDIA-CreateImage-TilingLinear", device, error_obj.location,
                                           "%s Trying to create an image with tiling VK_IMAGE_TILING_LINEAR. "
                                           "Use VK_IMAGE_TILING_OPTIMAL instead.",
                                           VendorSpecificTag(kBPVendorNVIDIA));
@@ -126,7 +125,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
         if (pCreateInfo->format == VK_FORMAT_D32_SFLOAT || pCreateInfo->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
             skip |=
-                LogPerformanceWarning(kVUID_BestPractices_CreateImage_Depth32Format, device, error_obj.location,
+                LogPerformanceWarning("BestPractices-NVIDIA-CreateImage-Depth32Format", device, error_obj.location,
                                       "%s Trying to create an image with a 32-bit depth format. Use VK_FORMAT_D24_UNORM_S8_UINT or "
                                       "VK_FORMAT_D16_UNORM instead, unless the extra precision is needed.",
                                       VendorSpecificTag(kBPVendorNVIDIA));
@@ -188,7 +187,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
         !image.IsSwapchainImage()) {
         LogPerformanceWarning(
-            kVUID_BestPractices_RenderPass_RedundantStore, device, loc,
+            "BestPractices-RenderPass-redundant-store", device, loc,
             "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with STORE_OP_STORE. "
             "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
@@ -196,7 +195,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
             VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
-            kVUID_BestPractices_RenderPass_RedundantClear, device, loc,
+            "BestPractices-RenderPass-redundant-clear", device, loc,
             "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
@@ -211,7 +210,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
 
         switch (last_usage) {
             case IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE:
-                vuid = kVUID_BestPractices_RenderPass_BlitImage_LoadOpLoad;
+                vuid = "BestPractices-RenderPass-blitimage-loadopload";
                 last_cmd = "vkCmdBlitImage";
                 suggestion =
                     "The blit is probably redundant in this case, and wastes bandwidth on tile-based architectures. "
@@ -219,7 +218,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
                     "which avoids the memory roundtrip.";
                 break;
             case IMAGE_SUBRESOURCE_USAGE_BP::CLEARED:
-                vuid = kVUID_BestPractices_RenderPass_InefficientClear;
+                vuid = "BestPractices-RenderPass-inefficient-clear";
                 last_cmd = "vkCmdClear*Image";
                 suggestion =
                     "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
@@ -227,7 +226,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
                     "Use LOAD_OP_CLEAR instead to clear the image for free.";
                 break;
             case IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE:
-                vuid = kVUID_BestPractices_RenderPass_CopyImage_LoadOpLoad;
+                vuid = "BestPractices-RenderPass-copyimage-loadopload";
                 last_cmd = "vkCmdCopy*Image";
                 suggestion =
                     "The copy is probably redundant in this case, and wastes bandwidth on tile-based architectures. "
@@ -235,7 +234,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
                     "which avoids the memory roundtrip.";
                 break;
             case IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE:
-                vuid = kVUID_BestPractices_RenderPass_ResolveImage_LoadOpLoad;
+                vuid = "BestPractices-RenderPass-resolveimage-loadopload";
                 last_cmd = "vkCmdResolveImage";
                 suggestion =
                     "The resolve is probably redundant in this case, and wastes a lot of bandwidth on tile-based architectures. "
@@ -270,7 +269,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
                 Location loc(command);
                 LogWarning(
-                    kVUID_BestPractices_ConcurrentUsageOfExclusiveImage, state.Handle(), loc,
+                    "BestPractices-ConcurrentUsageOfExclusiveImage", state.Handle(), loc,
                     "Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32 ") of image is used on queue family index %" PRIu32
                     " after being used on "
                     "queue family index %" PRIu32
@@ -285,7 +284,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     if (last_usage.type == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
         usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE) {
         Location loc(command);
-        LogWarning(kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad, device, loc,
+        LogWarning("BestPractices-StoreOpDontCareThenLoadOpLoad", device, loc,
                    "Trying to load an attachment with LOAD_OP_LOAD that was previously stored with STORE_OP_DONT_CARE. This may "
                    "result in undefined behaviour.");
     }

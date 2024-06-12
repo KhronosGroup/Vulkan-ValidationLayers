@@ -95,7 +95,6 @@ config("vulkan_layer_config") {
 vvl_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
-  "layers/best_practices/best_practices_error_enums.h",
   "layers/best_practices/best_practices_utils.cpp",
   "layers/best_practices/best_practices_validation.h",
   "layers/best_practices/bp_buffer.cpp",

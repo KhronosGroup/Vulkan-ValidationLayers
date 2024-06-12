@@ -121,7 +121,6 @@ else()
 endif()
 
 target_sources(vvl PRIVATE
-    best_practices/best_practices_error_enums.h
     best_practices/best_practices_utils.cpp
     best_practices/bp_buffer.cpp
     best_practices/bp_cmd_buffer.cpp

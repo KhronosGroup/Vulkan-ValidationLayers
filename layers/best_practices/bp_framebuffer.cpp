@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
 
@@ -47,7 +46,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         // The check for an image that should not be transient applies to all GPUs
         if (!attachment_should_be_transient && image_is_transient) {
             skip |=
-                LogPerformanceWarning(kVUID_BestPractices_CreateFramebuffer_AttachmentShouldNotBeTransient, device, loc,
+                LogPerformanceWarning("BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient", device, loc,
                                       "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
                                       "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
                                       "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
@@ -65,7 +64,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         // lazily allocated memory
         if (supports_lazy && attachment_should_be_transient && !image_is_transient) {
             skip |= LogPerformanceWarning(
-                kVUID_BestPractices_CreateFramebuffer_AttachmentShouldBeTransient, device, loc,
+                "BestPractices-vkCreateFramebuffer-attachment-should-be-transient", device, loc,
                 "Attachment %u in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
                 "but the image backing the image view does not have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
                 "You can save physical memory by using transient attachment backed by lazily allocated memory here.",
