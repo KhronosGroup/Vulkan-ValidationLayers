@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
 
 struct VendorSpecificInfo {
@@ -100,7 +99,7 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
 void BestPractices::LogPositiveSuccessCode(const RecordObject& record_obj) const {
     assert(record_obj.result > VK_SUCCESS);
 
-    LogVerbose(kVUID_BestPractices_Verbose_Success_Logging, instance, record_obj.location, "Returned %s.",
+    LogVerbose("BestPractices-Verbose-Success-Logging", instance, record_obj.location, "Returned %s.",
                string_VkResult(record_obj.result));
 }
 
@@ -114,8 +113,8 @@ void BestPractices::LogErrorCode(const RecordObject& record_obj) const {
     const auto result_string = string_VkResult(record_obj.result);
 
     if (IsValueIn(record_obj.result, common_failure_codes)) {
-        LogInfo(kVUID_BestPractices_Failure_Result, instance, record_obj.location, "Returned error %s.", result_string);
+        LogInfo("BestPractices-Failure-Result", instance, record_obj.location, "Returned error %s.", result_string);
     } else {
-        LogWarning(kVUID_BestPractices_Error_Result, instance, record_obj.location, "Returned error %s.", result_string);
+        LogWarning("BestPractices-Error-Result", instance, record_obj.location, "Returned error %s.", result_string);
     }
 }

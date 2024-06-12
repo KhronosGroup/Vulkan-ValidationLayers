@@ -18,7 +18,6 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/thread_helper.h"
-#include "best_practices/best_practices_error_enums.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
     // Enable the vendor-specific checks spcified by vendor_checks_to_enable
@@ -258,8 +257,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
         // Call for full-sized FB Color attachment prior to issuing a Draw
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-ClearCmdBeforeDraw");
         // This test may also trigger other warnings
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-VkCommandBuffer-AvoidSecondaryCmdBuffers");
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-VkCommandBuffer-AvoidSmallSecondaryCmdBuffers");
+        m_errorMonitor->SetAllowedFailureMsg("BestPractices-AMD-VkCommandBuffer-AvoidSecondaryCmdBuffers");
 
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
         m_errorMonitor->VerifyFound();
@@ -280,9 +278,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
         // Call for full-sized FB Color attachment prior to issuing a Draw
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-ClearCmdBeforeDraw");
         // This test may also trigger other warnings
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-VkCommandBuffer-AvoidSecondaryCmdBuffers");
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-VkCommandBuffer-AvoidSmallSecondaryCmdBuffers");
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-CmdPool-DisparateSizedCmdBuffers");
+        m_errorMonitor->SetAllowedFailureMsg("BestPractices-AMD-VkCommandBuffer-AvoidSecondaryCmdBuffers");
 
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_full_clear.handle());
         m_errorMonitor->VerifyFound();
@@ -328,7 +324,7 @@ TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
     resolveRegion.dstOffset = {0, 0, 0};
     resolveRegion.extent = {1, 1, 1};
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-MismatchedImageType");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdResolveImage-MismatchedImageType");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -355,7 +351,8 @@ TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
     blit_region.dstOffsets[1] = {128, 128, 1};
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidExtents", 2);
+    m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidExtents-src");
+    m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidExtents-dst");
     vk::CmdBlitImage(m_commandBuffer->handle(), image_src.handle(), image_src.Layout(), image_dst.handle(), image_dst.Layout(), 1,
                      &blit_region, VK_FILTER_LINEAR);
     m_errorMonitor->VerifyFound();
@@ -369,7 +366,7 @@ TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    m_errorMonitor->SetDesiredWarning("BestPractices-vkCmdBeginRenderPass-zero-size-render-area");
+    m_errorMonitor->SetDesiredWarning("BestPractices-Arm-vkCmdBeginRenderPass-zero-size-render-area");
 
     m_commandBuffer->begin();
     m_renderPassBeginInfo.renderArea.extent.width = 0;
@@ -389,7 +386,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     // Don't care about actual data, just need to get to draw to flag error
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-VtxIndexOutOfBounds");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkEndCommandBuffer-VtxIndexOutOfBounds");
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -470,7 +467,7 @@ TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkBeginCommandBuffer-simultaneous-use");
 
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBeginCommandBuffer-one-time-submit");
+    m_errorMonitor->SetAllowedFailureMsg("vkBeginCommandBuffer-one-time-submit");
 
     VkCommandBufferBeginInfo cmd_begin_info{};
     cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -517,7 +514,7 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkBindMemory-small-dedicated-allocation");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkBindImageMemory-small-dedicated-allocation");
 
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
 
@@ -575,10 +572,9 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
                                          "BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
 
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindMemory-small-dedicated-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-non-lazy-transient-image");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkImage-AvoidGeneral");
+    m_errorMonitor->SetAllowedFailureMsg("BestPractices-AMD-vkImage-AvoidGeneral");
 
     VkAttachmentDescription attachment{};
     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -618,8 +614,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
 
     // This test may also trigger the small allocation warnings
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindMemory-small-dedicated-allocation");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
+    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
 
     // This test does not need for the shader to consume the vertex input
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-Shader-OutputNotConsumed");
@@ -677,7 +672,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load-color");
 
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
@@ -757,7 +752,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
 
     // Plain clear after load.
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load-color");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-ClearCmdBeforeDraw");
     {
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
@@ -767,7 +762,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
 
     // Test that a masked write is ignored before clear
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load-color");
     {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_masked.Handle());
         vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
@@ -815,7 +810,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
 
     // Plain clear after load.
     m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load-color");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-ClearCmdBeforeDraw");
     {
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear.handle());
@@ -825,7 +820,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
 
     // Test that a masked write is ignored before clear
     m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load-color");
     {
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_masked.handle());
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear.handle());
@@ -945,10 +940,10 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
 
     // GetPhysicalDeviceSurfacePresentModesKHR() not called before trying to create a swapchain
-    m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateSwapchainKHR-surface-not-retrieved");
+    m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateSwapchainKHR-present-mode-no-surface");
 
     // Warning is thrown any time the present mode is not VK_PRESENT_MODE_FIFO_KHR, but only with ARM BP
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
+    m_errorMonitor->SetAllowedFailureMsg("BestPractices-Arm-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
 
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
@@ -1006,12 +1001,12 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     uint32_t queue_count = static_cast<uint32_t>(queue_family_props.size());
 
     // might only be a queue_count of 1, so check and then do "real" test to make sure error is detected
-    m_errorMonitor->SetUnexpectedError("BestPractices-DevLimit-CountMismatch");
+    m_errorMonitor->SetUnexpectedError("BestPractices-GetPhysicalDeviceQueueFamilyProperties-CountMismatch");
     vk::GetPhysicalDeviceQueueFamilyProperties(phys_device_obj.handle(), &queue_count, queue_family_props.data());
     m_errorMonitor->VerifyFound();
 
     if (queue_count > 1) {
-        m_errorMonitor->SetDesiredWarning("BestPractices-DevLimit-CountMismatch");
+        m_errorMonitor->SetDesiredWarning("BestPractices-GetPhysicalDeviceQueueFamilyProperties-CountMismatch");
         vk::GetPhysicalDeviceQueueFamilyProperties(phys_device_obj.handle(), &queue_count, queue_family_props.data());
         m_errorMonitor->VerifyFound();
     }
@@ -1062,7 +1057,7 @@ TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_DepthBiasNoAttachment);
+    m_errorMonitor->SetDesiredWarning("BestPractices-vkCmdDraw-DepthBiasNoAttachment");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1173,7 +1168,7 @@ TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImage image;
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_ImageCreateFlags);
+    m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateImage-CreateFlags");
     vk::CreateImage(device(), &image_ci, nullptr, &image);
     m_errorMonitor->VerifyFound();
 }
@@ -1276,7 +1271,7 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
 
     vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
 
-    m_errorMonitor->SetDesiredWarning("BestPractices-TransitionUndefinedToReadOnly");
+    m_errorMonitor->SetDesiredWarning("BestPractices-ImageMemoryBarrier-TransitionUndefinedToReadOnly");
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_errorMonitor->VerifyFound();
@@ -1346,7 +1341,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     signal_submit_info.signalSemaphoreCount = 0;
     signal_submit_info.pSignalSemaphores = &semaphore_handle;
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "BestPractices-SemaphoreCount");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "BestPractices-SignalSemaphores-SemaphoreCount");
     vk::QueueSubmit(m_default_queue->handle(), 1, &signal_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
@@ -1357,7 +1352,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     wait_submit_info.waitSemaphoreCount = 0;
     wait_submit_info.pWaitSemaphores = &semaphore_handle;
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "BestPractices-SemaphoreCount");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "BestPractices-WaitSemaphores-SemaphoreCount");
     vk::QueueSubmit(m_default_queue->handle(), 1, &wait_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
@@ -1400,7 +1395,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = set_layouts;
-    m_errorMonitor->SetDesiredWarning("BestPractices-EmptyDescriptorPool");
+    m_errorMonitor->SetDesiredWarning("BestPractices-vkAllocateDescriptorSets-EmptyDescriptorPool");
     vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
     m_errorMonitor->VerifyFound();
 }
@@ -1463,15 +1458,8 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     begin_info.renderArea.extent.height = h;
     begin_info.framebuffer = fb.handle();
 
-    // Setup finished
-
-    // TEST :
-
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_ClearValueWithoutLoadOpClear);
-
-    // This should give a warning
+    m_errorMonitor->SetDesiredWarning("BestPractices-ClearValueWithoutLoadOpClear");
     m_commandBuffer->BeginRenderPass(begin_info);
-
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -1543,15 +1531,8 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     begin_info.renderArea.extent.height = h;
     begin_info.framebuffer = fb.handle();
 
-    // Setup finished
-
-    // TEST :
-
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount);
-
-    // This should give a warning
+    m_errorMonitor->SetDesiredWarning("BestPractices-ClearValueCountHigherThanAttachmentCount");
     m_commandBuffer->BeginRenderPass(begin_info);
-
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -1626,12 +1607,8 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
 
     m_commandBuffer->end();
 
-    // TEST :
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad);
-
-    // This should give a warning
+    m_errorMonitor->SetDesiredWarning("BestPractices-StoreOpDontCareThenLoadOpLoad");
     m_default_queue->Submit(*m_commandBuffer);
-
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -1996,7 +1973,7 @@ TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     };
 
     m_commandBuffer->begin(&cbbi);
-    m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidCommandBufferSimultaneousUse");
+    m_errorMonitor->SetDesiredWarning("BestPractices-vkCmdExecuteCommands-CommandBufferSimultaneousUse");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -2145,7 +2122,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
     vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t),
                          data);
 
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_PushConstants);
+    m_errorMonitor->SetDesiredWarning("BestPractices-PushConstants");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -2201,7 +2178,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 2, sizeof(uint8_t),
                          &data);
 
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_PushConstants);
+    m_errorMonitor->SetDesiredWarning("BestPractices-PushConstants");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -2302,7 +2279,7 @@ TEST_F(VkBestPracticesLayerTest, IgnoreResolveImageView) {
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_RenderingInfo_ResolveModeNone);
+    m_errorMonitor->SetDesiredWarning("BestPractices-VkRenderingInfo-ResolveModeNone");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -2317,7 +2294,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEvent) {
 
     m_command_buffer.begin();
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
     m_errorMonitor->VerifyFound();
     m_command_buffer.end();
@@ -2341,7 +2318,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEvent2) {
 
     m_command_buffer.begin();
     vk::CmdSetEvent2(m_command_buffer.handle(), event, &dep_info);
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     vk::CmdSetEvent2(m_command_buffer.handle(), event, &dep_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.end();
@@ -2358,7 +2335,7 @@ TEST_F(VkBestPracticesLayerTest, SetEventSignaledByHost) {
     m_command_buffer.begin();
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
     m_command_buffer.end();
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -2379,7 +2356,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits) {
     cb2.begin();
     cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
     cb2.end();
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     m_default_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
@@ -2402,7 +2379,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits2) {
     cb2.begin();
     cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
     cb2.end();
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     m_default_queue->Submit2(cb2);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
@@ -2422,7 +2399,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary) {
 
     m_command_buffer.begin();
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     m_command_buffer.ExecuteCommands(secondary_cb);
     m_errorMonitor->VerifyFound();
     m_command_buffer.end();
@@ -2442,7 +2419,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary2) {
     const VkCommandBuffer secondary_cbs[2] = {cb.handle(), cb.handle()};
 
     m_command_buffer.begin();
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     vk::CmdExecuteCommands(m_command_buffer.handle(), 2, secondary_cbs);
     m_errorMonitor->VerifyFound();
     m_command_buffer.end();
@@ -2469,7 +2446,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary3) {
     cb2.begin();
     cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
     cb2.end();
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Event_SignalSignaledEvent);
+    m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");
     m_default_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
     m_device->Wait();

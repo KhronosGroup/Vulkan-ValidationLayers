@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/best_practices_error_enums.h"
 #include "sync/sync_utils.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
@@ -27,9 +26,9 @@ bool BestPractices::CheckPipelineStageFlags(const LogObjectList& objlist, const 
     bool skip = false;
 
     if (flags & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) {
-        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, objlist, loc, "using VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT");
+        skip |= LogWarning("BestPractices-pipeline-stage-flags-graphics", objlist, loc, "using VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT");
     } else if (flags & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
-        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, objlist, loc, "using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT");
+        skip |= LogWarning("BestPractices-pipeline-stage-flags-compute", objlist, loc, "using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT");
     }
 
     return skip;
@@ -40,9 +39,11 @@ bool BestPractices::CheckPipelineStageFlags(const LogObjectList& objlist, const 
     bool skip = false;
 
     if (flags & VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR) {
-        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, objlist, loc, "using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR");
+        skip |= LogWarning("BestPractices-pipeline-stage-flags2-graphics", objlist, loc,
+                           "using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR");
     } else if (flags & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR) {
-        skip |= LogWarning(kVUID_BestPractices_PipelineStageFlags, objlist, loc, "using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR");
+        skip |= LogWarning("BestPractices-pipeline-stage-flags2-compute", objlist, loc,
+                           "using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR");
     }
 
     return skip;
@@ -71,7 +72,7 @@ bool BestPractices::CheckEventSignalingState(const bp_state::CommandBuffer& comm
     bool skip = false;
     if (auto* signaling_info = vvl::Find(command_buffer.event_signaling_state, event); signaling_info && signaling_info->signaled) {
         const LogObjectList objlist(command_buffer.VkHandle(), event);
-        skip |= LogWarning(kVUID_BestPractices_Event_SignalSignaledEvent, objlist, cb_loc,
+        skip |= LogWarning("BestPractices-Event-SignalSignaledEvent", objlist, cb_loc,
                            "%s sets event %s which was already set (in this command buffer or in the executed secondary command "
                            "buffers). If this is not the desired behavior, the event must be reset before it is set again.",
                            FormatHandle(command_buffer.VkHandle()).c_str(), FormatHandle(event).c_str());
@@ -304,7 +305,7 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
     }
 
     if ((allowed | access) != allowed) {
-        skip |= LogWarning(kVUID_BestPractices_ImageBarrierAccessLayout, image, loc,
+        skip |= LogWarning("BestPractices-ImageBarrierAccessLayout", image, loc,
                            "image is %s and accessMask is %s, but for layout %s expected accessMask are %s.",
                            FormatHandle(image).c_str(), string_VkAccessFlags2(access).c_str(), string_VkImageLayout(layout),
                            string_VkAccessFlags2(allowed).c_str());
@@ -319,7 +320,7 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkImage imag
     bool skip = false;
 
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && IsImageLayoutReadOnly(newLayout)) {
-        skip |= LogWarning(kVUID_BestPractices_TransitionUndefinedToReadOnly, image, loc,
+        skip |= LogWarning("BestPractices-ImageMemoryBarrier-TransitionUndefinedToReadOnly", image, loc,
                            "VkImageMemoryBarrier is being submitted with oldLayout VK_IMAGE_LAYOUT_UNDEFINED and the contents "
                            "may be discarded, but the newLayout is %s, which is read only.",
                            string_VkImageLayout(newLayout));
@@ -351,7 +352,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     if (VendorCheckEnabled(kBPVendorAMD)) {
         auto num = num_barriers_objects_.load();
         if (num + imageMemoryBarrierCount + bufferMemoryBarrierCount > kMaxRecommendedBarriersSizeAMD) {
-            skip |= LogPerformanceWarning(kVUID_BestPractices_CmdBuffer_highBarrierCount, commandBuffer, error_obj.location,
+            skip |= LogPerformanceWarning("BestPractices-AMD-CmdBuffer-highBarrierCount", commandBuffer, error_obj.location,
                                           "%s In this frame, %" PRIu32
                                           " barriers were already submitted. Barriers have a high cost and can "
                                           "stall the GPU. "
@@ -375,11 +376,10 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
                 std::find(read_layouts.begin(), read_layouts.end(), image_barrier.newLayout) != read_layouts.end();
 
             if (old_is_read_layout && new_is_read_layout) {
-                skip |=
-                    LogPerformanceWarning(kVUID_BestPractices_PipelineBarrier_readToReadBarrier, commandBuffer, error_obj.location,
-                                          "%s %s Don't issue read-to-read barriers. "
-                                          "Get the resource in the right state the first time you use it.",
-                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
+                skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-readToReadBarrier", commandBuffer, error_obj.location,
+                                              "%s %s Don't issue read-to-read barriers. "
+                                              "Get the resource in the right state the first time you use it.",
+                                              VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
             }
 
             // general with no storage
@@ -387,7 +387,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
                 auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
                 if (image_state && !(image_state->create_info.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     const LogObjectList objlist(commandBuffer, pImageMemoryBarriers[i].image);
-                    skip |= LogPerformanceWarning(kVUID_BestPractices_vkImage_AvoidGeneral, objlist, error_obj.location,
+                    skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-AvoidGeneral", objlist, error_obj.location,
                                                   "%s VK_IMAGE_LAYOUT_GENERAL should only be used with "
                                                   "VK_IMAGE_USAGE_STORAGE_BIT images.",
                                                   VendorSpecificTag(kBPVendorAMD));
@@ -518,7 +518,7 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (Count<vvl::Semaphore>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
-            skip |= LogPerformanceWarning(kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores, device, error_obj.location,
+            skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfSemaphores", device, error_obj.location,
                                           "%s %s High number of vkSemaphore objects created. "
                                           "Minimize the amount of queue synchronization that is used. "
                                           "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",
@@ -535,7 +535,7 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (Count<vvl::Fence>() > kMaxRecommendedFenceObjectsSizeAMD) {
-            skip |= LogPerformanceWarning(kVUID_BestPractices_SyncObjects_HighNumberOfFences, device, error_obj.location,
+            skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfFences", device, error_obj.location,
                                           "%s %s High number of VkFence objects created."
                                           "Minimize the amount of CPU-GPU synchronization that is used. "
                                           "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",

@@ -19,7 +19,6 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "generated/layer_chassis_dispatch.h"
-#include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
 
@@ -130,7 +129,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
-        LogInfo(kVUID_BestPractices_CreateDevice_API_Mismatch, device, error_obj.location,
+        LogInfo("BestPractices-vkCreateDevice-API-version-mismatch", device, error_obj.location,
                 "API Version of current instance, %s is higher than API Version on device, %s", inst_api_name.c_str(),
                 dev_api_name.c_str());
     }
@@ -168,14 +167,14 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state && (bp_pd_state->vkGetPhysicalDeviceFeaturesState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
-        skip |= LogWarning(kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled, instance, error_obj.location,
+        skip |= LogWarning("BestPractices-vkCreateDevice-physical-device-features-not-retrieved", instance, error_obj.location,
                            "called before getting physical device features from vkGetPhysicalDeviceFeatures().");
     }
 
     if ((VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorIMG)) &&
         (pCreateInfo->pEnabledFeatures != nullptr) && (pCreateInfo->pEnabledFeatures->robustBufferAccess == VK_TRUE)) {
         skip |= LogPerformanceWarning(
-            kVUID_BestPractices_CreateDevice_RobustBufferAccess, instance, error_obj.location,
+            "BestPractices-vkCreateDevice-RobustBufferAccess", instance, error_obj.location,
             "%s %s %s: called with enabled robustBufferAccess. Use robustBufferAccess as a debugging tool during "
             "development. Enabling it causes loss in performance for accesses to uniform buffers and shader storage "
             "buffers. Disable robustBufferAccess in release builds. Only leave it enabled if the application use-case "
@@ -187,7 +186,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     if (VendorCheckEnabled(kBPVendorNVIDIA) && !enabled_pageable_device_local_memory &&
         std::find(extensions.begin(), extensions.end(), VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME) != extensions.end()) {
         skip |=
-            LogPerformanceWarning(kVUID_BestPractices_CreateDevice_PageableDeviceLocalMemory, instance, error_obj.location,
+            LogPerformanceWarning("BestPractices-NVIDIA-CreateDevice-PageableDeviceLocalMemory", instance, error_obj.location,
                                   "%s called without pageable device local memory. "
                                   "Use pageableDeviceLocalMemory from VK_EXT_pageable_device_local_memory when it is available.",
                                   VendorSpecificTag(kBPVendorNVIDIA));
@@ -202,7 +201,7 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const v
                                                                          const CALL_STATE call_state, const Location& loc) const {
     bool skip = false;
     if (bp_pd_state.queue_family_known_count != requested_queue_family_property_count) {
-        skip |= LogWarning(kVUID_BestPractices_DevLimit_CountMismatch, bp_pd_state.Handle(), loc,
+        skip |= LogWarning("BestPractices-GetPhysicalDeviceQueueFamilyProperties-CountMismatch", bp_pd_state.Handle(), loc,
                            "is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
                            ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
                            ". It is recommended to instead receive all the properties by calling %s with "
@@ -352,7 +351,7 @@ struct EventValidator {
                 if (signaled) {
                     const LogObjectList objlist(cb.VkHandle(), event);
                     skip |= state_tracker.LogWarning(
-                        kVUID_BestPractices_Event_SignalSignaledEvent, objlist, cb_loc,
+                        "BestPractices-Event-SignalSignaledEvent", objlist, cb_loc,
                         "%s sets event %s which is already in the signaled state (set by previously submitted command buffers or "
                         "from the host). If this is not the desired behavior, the event must be reset before it is set again.",
                         state_tracker.FormatHandle(cb.VkHandle()).c_str(), state_tracker.FormatHandle(event).c_str());
@@ -377,14 +376,12 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
                                             pSubmits[submit].pWaitDstStageMask[semaphore]);
         }
         if (pSubmits[submit].signalSemaphoreCount == 0 && pSubmits[submit].pSignalSemaphores != nullptr) {
-            LogInfo(kVUID_BestPractices_SemaphoreCount, queue, error_obj.location,
-                    "pSubmits[%" PRIu32 "].pSignalSemaphores is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.", submit,
-                    submit);
+            LogInfo("BestPractices-SignalSemaphores-SemaphoreCount", queue, submit_loc.dot(Field::pSignalSemaphores),
+                    "is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.", submit);
         }
         if (pSubmits[submit].waitSemaphoreCount == 0 && pSubmits[submit].pWaitSemaphores != nullptr) {
-            LogInfo(kVUID_BestPractices_SemaphoreCount, queue, error_obj.location,
-                    "pSubmits[%" PRIu32 "].pWaitSemaphores is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit,
-                    submit);
+            LogInfo("BestPractices-WaitSemaphores-SemaphoreCount", queue, submit_loc.dot(Field::pWaitSemaphores),
+                    "is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit);
         }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferCount; cb_index++) {
             if (auto cb_state = GetRead<bp_state::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
@@ -448,15 +445,16 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (image_state->sparse_residency) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
-                                       "Binding sparse memory to %s without first calling "
-                                       "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
-                                       FormatHandle(image_state->Handle()).c_str());
+                    skip |=
+                        LogWarning("BestPractices-vkQueueBindSparse-image-requirements2", image_state->Handle(), error_obj.location,
+                                   "Binding sparse memory to %s without first calling "
+                                   "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                                   FormatHandle(image_state->Handle()).c_str());
                 }
             }
             if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
+                skip |= LogWarning("BestPractices-vkQueueBindSparse-image-requirements", image_state->Handle(), error_obj.location,
                                    "Binding sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
                                    FormatHandle(image_state->Handle()).c_str());
@@ -472,7 +470,8 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (image_state->sparse_residency) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
+                    skip |= LogWarning("BestPractices-vkQueueBindSparse-image-opaque-requirements2", image_state->Handle(),
+                                       error_obj.location,
                                        "Binding opaque sparse memory to %s without first calling "
                                        "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                        FormatHandle(image_state->Handle()).c_str());
@@ -480,7 +479,8 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             }
             if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
+                skip |= LogWarning("BestPractices-vkQueueBindSparse-image-opaque-requirements", image_state->Handle(),
+                                   error_obj.location,
                                    "Binding opaque sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
                                    FormatHandle(image_state->Handle()).c_str());
@@ -495,7 +495,8 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound &&
                 sparse_images_with_metadata.find(sparse_image_state) == sparse_images_with_metadata.end()) {
                 // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
-                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, sparse_image_state->Handle(), error_obj.location,
+                skip |= LogWarning("BestPractices-vkQueueBindSparse-image-metadata-requirements", sparse_image_state->Handle(),
+                                   error_obj.location,
                                    "Binding sparse memory to %s which requires a metadata aspect but no "
                                    "binding with VK_SPARSE_MEMORY_BIND_METADATA_BIT set was made.",
                                    FormatHandle(sparse_image_state->Handle()).c_str());
@@ -506,7 +507,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto queue_state = Get<vvl::Queue>(queue);
         if (queue_state && queue_state->queueFamilyProperties.queueFlags != (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT)) {
-            skip |= LogPerformanceWarning(kVUID_BestPractices_QueueBindSparse_NotAsync, queue, error_obj.location,
+            skip |= LogPerformanceWarning("BestPractices-NVIDIA-QueueBindSparse-NotAsync", queue, error_obj.location,
                                           "issued on queue %s. All binds should happen on an asynchronous copy "
                                           "queue to hide the OS scheduling and submit costs.",
                                           FormatHandle(queue).c_str());

@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
 
 static std::array<uint32_t, 4> GetRawClearColor(VkFormat format, const VkClearColorValue& clear_value) {
@@ -266,7 +265,7 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
 
     if (is_balanced) {
         skip |= LogPerformanceWarning(
-            kVUID_BestPractices_Zcull_LessGreaterRatio, cmd_state.Handle(), loc,
+            "BestPractices-NVIDIA-Zcull-LessGreaterRatio", cmd_state.Handle(), loc,
             "%s Depth attachment %s is primarily rendered with depth compare op %s, but some draws use %s. "
             "Z-cull is disabled for the least used direction, which harms depth testing performance. "
             "The Z-cull direction can be reset by clearing the depth attachment, transitioning from VK_IMAGE_LAYOUT_UNDEFINED, "
@@ -333,7 +332,7 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
             }
         }
 
-        skip |= LogPerformanceWarning(kVUID_BestPractices_ClearColor_NotCompressed, commandBuffer, loc,
+        skip |= LogPerformanceWarning("BestPractices-NVIDIA-ClearColor-NotCompressed", commandBuffer, loc,
                                       "%s Clearing image with format %s without a 1.0f or 0.0f clear color. "
                                       "The clear will not get compressed in the GPU, harming performance. "
                                       "This can be fixed using a clear color of VkClearColorValue{0.0f, 0.0f, 0.0f, 0.0f}, or "
@@ -366,7 +365,7 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
             }
 
             skip |= LogPerformanceWarning(
-                kVUID_BestPractices_ClearColor_NotCompressed, commandBuffer, loc,
+                "BestPractices-NVIDIA-ClearColor-NotCompressed", commandBuffer, loc,
                 "%s Clearing image with unregistered VkClearColorValue{%s}. "
                 "This clear will not get compressed in the GPU, harming performance. "
                 "The clear color is not registered because too many unique colors have been used. "

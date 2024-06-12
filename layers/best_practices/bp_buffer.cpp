@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/best_practices_error_enums.h"
 #include "state_tracker/image_state.h"
 
 bool BestPractices::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
@@ -27,7 +26,7 @@ bool BestPractices::PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
     bool skip = false;
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->sharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-        skip |= LogWarning(kVUID_BestPractices_SharingModeExclusive, device,
+        skip |= LogWarning("BestPractices-vkCreateBuffer-sharing-mode-exclusive", device,
                            error_obj.location.dot(Field::pCreateInfo).dot(Field::sharingMode),
                            "is VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
                            pCreateInfo->queueFamilyIndexCount);
