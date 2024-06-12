@@ -73,19 +73,11 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
     auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
     ASSERT_AND_RETURN_SKIP(swapchain_state);
 
-    // Compare the preliminary value of *pSwapchainImageCount with the value this time:
-    if (swapchain_state->vkGetSwapchainImagesKHRState == UNCALLED) {
-        skip |= LogWarning(kVUID_BestPractices_Swapchain_PriorCount, device, error_obj.location,
-                           "called with non-NULL pSwapchainImageCount; but no prior positive value has "
-                           "been seen for pSwapchainImages.");
-    }
-
-    if (*pSwapchainImageCount > swapchain_state->get_swapchain_image_count) {
-        skip |= LogWarning(kVUID_BestPractices_Swapchain_InvalidCount, device, error_obj.location,
-                           "called with non-NULL pSwapchainImages, and with pSwapchainImageCount set to a "
-                           "value (%" PRId32 ") that is greater than the value (%" PRId32
-                           ") that was returned when pSwapchainImages was NULL.",
-                           *pSwapchainImageCount, swapchain_state->get_swapchain_image_count);
+    if (pSwapchainImageCount && *pSwapchainImageCount > swapchain_state->get_swapchain_image_count) {
+        skip |=
+            LogWarning(kVUID_BestPractices_Swapchain_InvalidCount, device, error_obj.location.dot(Field::pSwapchainImageCount),
+                       "(%" PRIu32 ") is greater than the value that was returned when pSwapchainImages was NULL (%" PRIu32 ").",
+                       *pSwapchainImageCount, swapchain_state->get_swapchain_image_count);
     }
 
     return skip;
@@ -208,21 +200,12 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
     bool skip = false;
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (!bp_pd_state || !pSurfaceFormats) return skip;
-    const auto& call_state = bp_pd_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
-    if (call_state == UNCALLED) {
-        // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application didn't
-        // previously call this function with a NULL value of pSurfaceFormats:
-        skip |= LogWarning(kVUID_BestPractices_DevLimit_MustQueryCount, physicalDevice, error_obj.location,
-                           "called with non-NULL pSurfaceFormatCount; but no prior "
-                           "positive value has been seen for pSurfaceFormats.");
-    } else {
-        if (*pSurfaceFormatCount > bp_pd_state->surface_formats_count) {
-            skip |= LogWarning(kVUID_BestPractices_DevLimit_CountMismatch, physicalDevice, error_obj.location,
-                               "called with non-NULL pSurfaceFormatCount, and with "
-                               "pSurfaceFormats set to a value (%u) that is greater than the value (%u) that was returned "
-                               "when pSurfaceFormatCount was NULL.",
-                               *pSurfaceFormatCount, bp_pd_state->surface_formats_count);
-        }
+
+    if (pSurfaceFormatCount && *pSurfaceFormatCount > bp_pd_state->surface_formats_count) {
+        skip |= LogWarning(
+            kVUID_BestPractices_DevLimit_CountMismatch, physicalDevice, error_obj.location.dot(Field::pSurfaceFormatCount),
+            "(%" PRIu32 ") is greater than the value that was returned when pSurfaceFormatCount was NULL (%" PRIu32 ").",
+            *pSurfaceFormatCount, bp_pd_state->surface_formats_count);
     }
     return skip;
 }

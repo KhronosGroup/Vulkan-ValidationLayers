@@ -103,7 +103,7 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (IsDeviceExtension(extension)) {
-            skip |= LogWarning(kVUID_BestPractices_CreateInstance_ExtensionMismatch, instance, error_obj.location,
+            skip |= LogWarning("BestPractices-vkCreateInstance-extension-mismatch", instance, error_obj.location,
                                "Attempting to enable Device Extension %s at CreateInstance time.", String(extension));
         }
         uint32_t specified_version =
@@ -157,7 +157,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 
         vvl::Extension extension = GetExtension(extension_name);
         if (IsInstanceExtension(extension)) {
-            skip |= LogWarning(kVUID_BestPractices_CreateDevice_ExtensionMismatch, instance, error_obj.location,
+            skip |= LogWarning("BestPractices-vkCreateDevice-extension-mismatch", instance, error_obj.location,
                                "Attempting to enable Instance Extension %s at CreateDevice time.", String(extension));
             extension_api_version = api_version;
         }
@@ -201,16 +201,7 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const v
                                                                          uint32_t requested_queue_family_property_count,
                                                                          const CALL_STATE call_state, const Location& loc) const {
     bool skip = false;
-    // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
-    if (UNCALLED == call_state) {
-        skip |= LogWarning(
-            kVUID_BestPractices_DevLimit_MissingQueryCount, bp_pd_state.Handle(), loc,
-            "is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is "
-            "recommended "
-            "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
-            loc.StringFunc());
-        // Then verify that pCount that is passed in on second call matches what was returned
-    } else if (bp_pd_state.queue_family_known_count != requested_queue_family_property_count) {
+    if (bp_pd_state.queue_family_known_count != requested_queue_family_property_count) {
         skip |= LogWarning(kVUID_BestPractices_DevLimit_CountMismatch, bp_pd_state.Handle(), loc,
                            "is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
                            ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
@@ -220,7 +211,6 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const v
                            requested_queue_family_property_count, bp_pd_state.queue_family_known_count, loc.StringFunc(),
                            loc.StringFunc());
     }
-
     return skip;
 }
 
