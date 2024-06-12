@@ -28,9 +28,7 @@
     "BestPractices-vkCreateDevice-extension-mismatch";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_API_Mismatch =
     "BestPractices-vkCreateDevice-API-version-mismatch";
-[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_MustQueryCount = "BestPractices-DevLimit-MustQueryCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_CountMismatch = "BestPractices-DevLimit-CountMismatch";
-[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_MissingQueryCount = "BestPractices-DevLimit-MissingQueryCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_SharingModeExclusive =
     "BestPractices-vkCreateBuffer-sharing-mode-exclusive";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_Attatchment =
@@ -98,7 +96,6 @@
     "BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat";
 
 [[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_InvalidCount = "BestPractices-SwapchainInvalidCount";
-[[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_PriorCount = "BestPractices-SwapchainPriorCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_DepthBiasNoAttachment = "BestPractices-DepthBiasNoAttachment";
 [[maybe_unused]] static const char *kVUID_BestPractices_SpirvDeprecated_WorkgroupSize =
     "BestPractices-SpirvDeprecated_WorkgroupSize";
