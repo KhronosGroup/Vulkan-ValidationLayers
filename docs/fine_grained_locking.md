@@ -706,7 +706,6 @@ layers: Refactor and improve acceleration structure state tracking](https://gith
 
     std::vector<SWAPCHAIN_IMAGE> images;
     bool retired = false;
-    uint32_t get_swapchain_image_count = 0;
     uint64_t max_present_id = 0;
     uint32_t acquired_images = 0;
 ```

@@ -3657,7 +3657,6 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
             DispatchGetSwapchainImagesKHR(device, *pSwapchain, &swapchain_image_count, nullptr);
             std::vector<VkImage> swapchain_images(swapchain_image_count);
             DispatchGetSwapchainImagesKHR(device, *pSwapchain, &swapchain_image_count, swapchain_images.data());
-            swapchain->get_swapchain_image_count = swapchain_image_count;
             swapchain->images.resize(swapchain_image_count);
             const auto &image_ci = swapchain->image_create_info;
             for (uint32_t i = 0; i < swapchain_image_count; ++i) {

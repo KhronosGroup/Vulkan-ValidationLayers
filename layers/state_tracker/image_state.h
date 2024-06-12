@@ -330,7 +330,6 @@ class Swapchain : public StateObject {
     bool retired = false;
     bool exclusive_full_screen_access;
     const bool shared_presentable;
-    uint32_t get_swapchain_image_count = 0;
     uint64_t max_present_id = 0;
     const vku::safe_VkImageCreateInfo image_create_info;
 

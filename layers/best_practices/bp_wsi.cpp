@@ -66,23 +66,6 @@ bool BestPractices::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDev
     return skip;
 }
 
-bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
-                                                         VkImage* pSwapchainImages, const ErrorObject& error_obj) const {
-    bool skip = false;
-
-    auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
-    ASSERT_AND_RETURN_SKIP(swapchain_state);
-
-    if (pSwapchainImageCount && *pSwapchainImageCount > swapchain_state->get_swapchain_image_count) {
-        skip |=
-            LogWarning(kVUID_BestPractices_Swapchain_InvalidCount, device, error_obj.location.dot(Field::pSwapchainImageCount),
-                       "(%" PRIu32 ") is greater than the value that was returned when pSwapchainImages was NULL (%" PRIu32 ").",
-                       *pSwapchainImageCount, swapchain_state->get_swapchain_image_count);
-    }
-
-    return skip;
-}
-
 bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                                       const ErrorObject& error_obj) const {

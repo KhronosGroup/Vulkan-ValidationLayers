@@ -1046,25 +1046,6 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
-    TEST_DESCRIPTION("Pass an 'incorrect' count to the second GetSwapchainImagesKHR call");
-
-    AddSurfaceExtension();
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-    RETURN_IF_SKIP(InitSwapchain());
-
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-
-    m_errorMonitor->SetDesiredWarning(kVUID_BestPractices_Swapchain_InvalidCount);
-    ++swapchain_images_count;  // Set the image count to something greater (i.e., "invalid") than what was returned
-    std::vector<VkImage> swapchain_images(swapchain_images_count, VK_NULL_HANDLE);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
     TEST_DESCRIPTION("Enable depthBias without a depth attachment");
 
