@@ -426,6 +426,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     return skip;
 }
 
+// TODO: Record structure repeats Validate. Unify this code, it was the source of bugs few times already.
 void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                  const ResourceUsageTag tag) {
     const vvl::Pipeline *pipe = nullptr;
@@ -451,7 +452,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                 // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
                 continue;
             }
-            const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
+            const auto &per_set = (*per_sets)[variable.decorations.set];
+            const auto *descriptor_set = per_set.bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
@@ -507,9 +509,17 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (buffer_descriptor->Invalid()) {
                             continue;
                         }
+                        VkDeviceSize offset = buffer_descriptor->GetOffset();
+                        if (vvl::IsDynamicDescriptor(descriptor_type)) {
+                            const uint32_t dynamic_offset_index =
+                                descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
+                            if (dynamic_offset_index >= per_set.dynamicOffsets.size()) {
+                                continue;  // core validation error
+                            }
+                            offset += per_set.dynamicOffsets[dynamic_offset_index];
+                        }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
-                        const ResourceAccessRange range =
-                            MakeRange(*buf_state, buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
+                        const ResourceAccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
                         break;
                     }
