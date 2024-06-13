@@ -115,7 +115,8 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
         return skip;
     }
 
-    std::vector<VkPushConstantRange> const *push_constant_ranges = pipeline.PipelineLayoutState()->push_constant_ranges.get();
+    std::vector<VkPushConstantRange> const *push_constant_ranges =
+        pipeline.PipelineLayoutState()->push_constant_ranges_layout.get();
 
     std::string vuid;
     switch (pipeline.GetCreateInfoSType()) {

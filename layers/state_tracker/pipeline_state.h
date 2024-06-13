@@ -628,17 +628,17 @@ struct LastBound {
     LastBound(vvl::CommandBuffer &cb) : cb_state(cb) {}
 
     vvl::CommandBuffer &cb_state;
-    vvl::Pipeline *pipeline_state{nullptr};
+    vvl::Pipeline *pipeline_state = nullptr;
     // All shader stages for a used pipeline bind point must be bound to with a valid shader or VK_NULL_HANDLE
     // We have to track shader_object_bound, because shader_object_states will be nullptr when VK_NULL_HANDLE is used
     bool shader_object_bound[kShaderObjectStageCount]{false};
     vvl::ShaderObject *shader_object_states[kShaderObjectStageCount]{nullptr};
-    VkPipelineLayout pipeline_layout{VK_NULL_HANDLE};
+    VkPipelineLayout desc_set_pipeline_layout = VK_NULL_HANDLE;
     std::shared_ptr<vvl::DescriptorSet> push_descriptor_set;
 
     struct DescriptorBufferBinding {
-        uint32_t index{0};
-        VkDeviceSize offset{0};
+        uint32_t index = 0;
+        VkDeviceSize offset = 0;
     };
     // Ordered bound set tracking where index is set# that given set is bound to
     struct PER_SET {

@@ -867,7 +867,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
 
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
+    auto draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
         draw_ptr->instanceCount = 1;
@@ -893,7 +893,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+    auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
         indexed_draw_ptr->instanceCount = 1;
@@ -1261,3 +1261,408 @@ INSTANTIATE_TEST_SUITE_P(GpuAvBufferContentValidationSettings, PositiveGpuAVPara
                          [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
                              return GetGpuAvSettingsCombinationTestName(info);
                          });
+
+TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
+    TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    indirect_draw_parameters.vertexCount = 3;
+    indirect_draw_parameters.instanceCount = 1;
+    indirect_draw_parameters.firstVertex = 0;
+    indirect_draw_parameters.firstInstance = 0;
+
+    indirect_draw_parameters_buffer.memory().unmap();
+
+    constexpr int32_t int_count = 16;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t),
+                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+
+    // Use different push constant ranges for vertex and fragment shader.
+    // The underlying storage buffer is the same.
+    // Vertex shader will fill the first 8 integers, fragment shader the other 8
+    struct PushConstants {
+        // Vertex shader
+        VkDeviceAddress storage_buffer_ptr_1;
+        int32_t integers_1[int_count / 2];
+        // Fragment shader
+        VkDeviceAddress storage_buffer__ptr_2;
+        int32_t integers_2[int_count / 2];
+    } push_constants;
+
+    push_constants.storage_buffer_ptr_1 = storage_buffer.address();
+    push_constants.storage_buffer__ptr_2 = storage_buffer.address() + sizeof(int32_t) * (int_count / 2);
+    for (int32_t i = 0; i < int_count / 2; ++i) {
+        push_constants.integers_1[i] = i;
+        push_constants.integers_2[i] = (int_count / 2) + i;
+    }
+
+    constexpr uint32_t shader_pcr_byte_size = uint32_t(sizeof(VkDeviceAddress)) + uint32_t(sizeof(int32_t)) * (int_count / 2);
+    std::array<VkPushConstantRange, 2> push_constant_ranges = {{
+        {VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size},
+        {VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size, shader_pcr_byte_size},
+    }};
+    VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
+    plci.pushConstantRangeCount = size32(push_constant_ranges);
+    plci.pPushConstantRanges = push_constant_ranges.data();
+    vkt::PipelineLayout pipeline_layout(*m_device, plci);
+
+    char const *vs_source = R"glsl(
+            #version 450
+            #extension GL_EXT_buffer_reference : enable
+
+            layout(buffer_reference, std430, buffer_reference_align = 16) buffer MyPtrType {
+                int out_array[8];
+            };
+
+            layout(push_constant) uniform PushConstants {
+                MyPtrType ptr;
+                int in_array[8];
+            } pc;
+
+            vec2 vertices[3];
+            
+            void main() {
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+              gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+              
+              for (int i = 0; i < 8; ++i) {
+                  pc.ptr.out_array[i] = pc.in_array[i];
+              }
+            }
+        )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    char const *fs_source = R"glsl(
+            #version 450
+            #extension GL_EXT_buffer_reference : enable
+
+            layout(buffer_reference, std430, buffer_reference_align = 16) buffer MyPtrType {
+                int out_array[8];
+            };
+
+            layout(push_constant) uniform PushConstants {
+                layout(offset = 40) MyPtrType ptr;
+                int in_array[8];
+            } pc;
+
+            layout(location = 0) out vec4 uFragColor;
+
+            void main() {
+                for (int i = 0; i < 8; ++i) {
+                      pc.ptr.out_array[i] = pc.in_array[i];
+                }
+            }
+        )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+                         &push_constants);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
+                         shader_pcr_byte_size, &push_constants.storage_buffer__ptr_2);
+    // Make sure pushing the same push constants twice does not break internal management
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+                         &push_constants);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
+                         shader_pcr_byte_size, &push_constants.storage_buffer__ptr_2);
+    // Vertex shader will write 8 values to storage buffer, fragment shader another 8
+    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+
+    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.memory().map());
+    for (int32_t i = 0; i < int_count; ++i) {
+        ASSERT_EQ(storage_buffer_ptr[i], i);
+    }
+    storage_buffer.memory().unmap();
+}
+
+TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
+    TEST_DESCRIPTION(
+        "Test that user supplied push constants are correctly restored. One graphics pipeline, one compute pipeline, indirect draw "
+        "and dispatch.");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    constexpr int32_t int_count = 8;
+
+    struct PushConstants {
+        VkDeviceAddress storage_buffer;
+        int32_t integers[int_count];
+    };
+
+    // Graphics pipeline
+    // ---
+
+    char const *vs_source = R"glsl(
+            #version 450
+            #extension GL_EXT_buffer_reference : enable
+
+            layout(buffer_reference, std430, buffer_reference_align = 16) buffer MyPtrType {
+                int out_array[8];
+            };
+
+            layout(push_constant) uniform PushConstants {
+                MyPtrType ptr;
+                int in_array[8];
+            } pc;
+
+            vec2 vertices[3];
+            
+            void main() {
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+              gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+              
+              for (int i = 0; i < 4; ++i) {
+                  pc.ptr.out_array[i] = pc.in_array[i];
+              }
+            }
+        )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    char const *fs_source = R"glsl(
+            #version 450
+            #extension GL_EXT_buffer_reference : enable
+
+            layout(buffer_reference, std430, buffer_reference_align = 16) buffer MyPtrType {
+                int out_array[8];
+            };
+
+            layout(push_constant) uniform PushConstants {
+                MyPtrType ptr;
+                int in_array[8];
+            } pc;
+
+            layout(location = 0) out vec4 uFragColor;
+
+            void main() {
+                for (int i = 4; i < 8; ++i) {
+                      pc.ptr.out_array[i] = pc.in_array[i];
+                }
+            }
+        )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPushConstantRange graphics_push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                                         sizeof(PushConstants)};
+    VkPipelineLayoutCreateInfo graphics_plci = vku::InitStructHelper();
+    graphics_plci.pushConstantRangeCount = 1;
+    graphics_plci.pPushConstantRanges = &graphics_push_constant_ranges;
+    vkt::PipelineLayout graphics_pipeline_layout(*m_device, graphics_plci);
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer graphics_storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+
+    PushConstants graphics_push_constants;
+    graphics_push_constants.storage_buffer = graphics_storage_buffer.address();
+    for (int32_t i = 0; i < int_count; ++i) {
+        graphics_push_constants.integers[i] = i;
+    }
+
+    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    indirect_draw_parameters.vertexCount = 3;
+    indirect_draw_parameters.instanceCount = 1;
+    indirect_draw_parameters.firstVertex = 0;
+    indirect_draw_parameters.firstInstance = 0;
+    indirect_draw_parameters_buffer.memory().unmap();
+
+    CreatePipelineHelper graphics_pipe(*this);
+    graphics_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    graphics_pipe.gp_ci_.layout = graphics_pipeline_layout.handle();
+    graphics_pipe.CreateGraphicsPipeline();
+
+    // Compute pipeline
+    // ---
+
+    char const *compute_source = R"glsl(
+            #version 450
+            #extension GL_EXT_buffer_reference : enable
+
+            layout(buffer_reference, std430, buffer_reference_align = 16) buffer MyPtrType {
+                int out_array[8];
+            };
+
+            layout(push_constant) uniform PushConstants {
+                MyPtrType ptr;
+                int in_array[8];
+            } pc;
+
+            layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+            
+            void main() {
+              for (int i = 0; i < 8; ++i) {
+                  pc.ptr.out_array[i] = pc.in_array[i];
+              }
+            }
+        )glsl";
+    VkShaderObj compute(this, compute_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPushConstantRange compute_push_constant_ranges = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants)};
+    VkPipelineLayoutCreateInfo compute_plci = vku::InitStructHelper();
+    compute_plci.pushConstantRangeCount = 1;
+    compute_plci.pPushConstantRanges = &compute_push_constant_ranges;
+    vkt::PipelineLayout compute_pipeline_layout(*m_device, compute_plci);
+
+    vkt::Buffer compute_storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+
+    PushConstants compute_push_constants;
+    compute_push_constants.storage_buffer = compute_storage_buffer.address();
+    for (int32_t i = 0; i < int_count; ++i) {
+        compute_push_constants.integers[i] = int_count + i;
+    }
+
+    CreateComputePipelineHelper compute_pipe(*this);
+    compute_pipe.cs_ = std::make_unique<VkShaderObj>(this, compute_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    compute_pipe.cp_ci_.layout = compute_pipeline_layout.handle();
+    compute_pipe.CreateComputePipeline();
+
+    vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto &indirect_dispatch_parameters =
+        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.memory().map());
+    indirect_dispatch_parameters.x = 1;
+    indirect_dispatch_parameters.y = 1;
+    indirect_dispatch_parameters.z = 1;
+    indirect_dispatch_parameters_buffer.memory().unmap();
+
+    // Submit commands
+    // ---
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe.Handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.Handle());
+
+    vk::CmdPushConstants(m_commandBuffer->handle(), graphics_pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(graphics_push_constants),
+                         &graphics_push_constants);
+
+    // Vertex shader will write 4 values to graphics storage buffer, fragment shader another 4
+    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+
+    vk::CmdPushConstants(m_commandBuffer->handle(), compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                         sizeof(compute_push_constants), &compute_push_constants);
+    // Compute shaders will write 8 values to compute storage buffer
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_dispatch_parameters_buffer.handle(), 0);
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+
+    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.memory().map());
+    for (int32_t i = 0; i < int_count; ++i) {
+        ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
+    }
+    compute_storage_buffer.memory().unmap();
+
+    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.memory().map());
+    for (int32_t i = 0; i < int_count; ++i) {
+        ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
+    }
+    graphics_storage_buffer.memory().unmap();
+}
+
+TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    indirect_draw_parameters.vertexCount = 3;
+    indirect_draw_parameters.instanceCount = 1;
+    indirect_draw_parameters.firstVertex = 0;
+    indirect_draw_parameters.firstInstance = 0;
+
+    indirect_draw_parameters_buffer.memory().unmap();
+
+    VkPushConstantRange push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int)};
+    VkPipelineLayoutCreateInfo pipe_layout_ci_1 = vku::InitStructHelper();
+    pipe_layout_ci_1.pushConstantRangeCount = 1;
+    pipe_layout_ci_1.pPushConstantRanges = &push_constant_ranges;
+    vkt::PipelineLayout pipe_layout_1(*m_device, pipe_layout_ci_1);
+
+    CreatePipelineHelper pipe_1(*this);
+    pipe_1.gp_ci_.layout = pipe_layout_1.handle();
+    pipe_1.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_2(*this);
+    pipe_2.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+    pipe_2.CreateGraphicsPipeline();
+
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    pipe_2.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    pipe_2.descriptor_set_->UpdateDescriptorSets();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // CmdPushConstants with layout 1 (is associated to pipeline 1, only has a push constant range)
+    int dummy = 0;
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe_layout_1.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int), &dummy);
+    // CmdBindDescriptorSets with layout 2 (is associated to pipeline 2, only has a descriptor set, so is incompatible with layout
+    // 1)
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.pipeline_layout_.handle(), 0, 1,
+                              &pipe_2.descriptor_set_->set_, 0, nullptr);
+
+    // Bind pipeline 1, draw
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1.Handle());
+    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    // Bind pipeline 2, draw
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.Handle());
+    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}

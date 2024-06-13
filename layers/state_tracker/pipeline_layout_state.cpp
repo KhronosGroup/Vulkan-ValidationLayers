@@ -106,8 +106,8 @@ PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPus
 static PushConstantRangesId GetPushConstantRangesFromLayouts(const vvl::span<const vvl::PipelineLayout *const> &layouts) {
     PushConstantRangesId ret{};
     for (const auto *layout : layouts) {
-        if (layout && layout->push_constant_ranges) {
-            ret = layout->push_constant_ranges;
+        if (layout && layout->push_constant_ranges_layout) {
+            ret = layout->push_constant_ranges_layout;
 
             if (ret->size() > 0) {
                 return ret;
@@ -198,15 +198,15 @@ PipelineLayout::PipelineLayout(ValidationStateTracker &dev_data, VkPipelineLayou
                                const VkPipelineLayoutCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
-      push_constant_ranges(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)),
+      push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
+      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout)),
       create_flags(pCreateInfo->flags) {}
 
 PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts)
     : StateObject(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
-      push_constant_ranges(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)),
+      push_constant_ranges_layout(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
+      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout)),
       create_flags(GetCreateFlags(layouts)) {}
 
 }  // namespace vvl

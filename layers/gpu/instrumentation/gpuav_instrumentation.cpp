@@ -271,16 +271,16 @@ void SetupShaderInstrumentationResources(Validator &gpuav, LockedSharedPtr<Comma
         DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
 
-    const auto pipeline_layout =
-        pipeline_state ? pipeline_state->PipelineLayoutState() : gpuav.Get<vvl::PipelineLayout>(last_bound.pipeline_layout);
+    const auto pipeline_layout = pipeline_state ? pipeline_state->PipelineLayoutState()
+                                                : gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
     // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
     // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
     // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
     // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
     // null handle.
     VkPipelineLayout pipeline_layout_handle = VK_NULL_HANDLE;
-    if (last_bound.pipeline_layout) {
-        pipeline_layout_handle = last_bound.pipeline_layout;
+    if (last_bound.desc_set_pipeline_layout) {
+        pipeline_layout_handle = last_bound.desc_set_pipeline_layout;
     } else if (pipeline_state && !pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
         pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
     }

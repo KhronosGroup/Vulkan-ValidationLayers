@@ -691,15 +691,16 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, nullptr);
 
     const auto pipeline_layout =
-        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<vvl::PipelineLayout>(last_bound.pipeline_layout);
+        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
     if (pipeline_layout) {
         // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
         // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
         // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
         // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
         // null handle.
-        const auto pipeline_layout_handle =
-            (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
+        const auto pipeline_layout_handle = (last_bound.desc_set_pipeline_layout)
+                                                ? last_bound.desc_set_pipeline_layout
+                                                : pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
         if (pipeline_layout->set_layouts.size() <= desc_set_bind_index_) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index_, 1, desc_sets.data(),
                                           0, nullptr);

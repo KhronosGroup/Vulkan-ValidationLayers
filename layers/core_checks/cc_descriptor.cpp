@@ -4382,7 +4382,7 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
     if (!layout_state) return skip;  // dynamicPipelineLayout feature
 
     const bool is_2 = loc.function != Func::vkCmdPushConstants;
-    const auto &ranges = *layout_state->push_constant_ranges;
+    const auto &ranges = *layout_state->push_constant_ranges_layout;
     VkShaderStageFlags found_stages = 0;
     for (const auto &range : ranges) {
         if ((offset >= range.offset) && (offset + size <= range.offset + range.size)) {

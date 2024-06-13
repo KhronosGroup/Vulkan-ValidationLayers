@@ -777,9 +777,10 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
 
         // Push Constants must match regardless of VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT
-        if (!pre_raster_info.layout->push_constant_ranges->empty() && !frag_shader_info.layout->push_constant_ranges->empty()) {
-            const uint32_t pre_raster_count = static_cast<uint32_t>(pre_raster_info.layout->push_constant_ranges->size());
-            const uint32_t frag_shader_count = static_cast<uint32_t>(frag_shader_info.layout->push_constant_ranges->size());
+        if (!pre_raster_info.layout->push_constant_ranges_layout->empty() &&
+            !frag_shader_info.layout->push_constant_ranges_layout->empty()) {
+            const uint32_t pre_raster_count = static_cast<uint32_t>(pre_raster_info.layout->push_constant_ranges_layout->size());
+            const uint32_t frag_shader_count = static_cast<uint32_t>(frag_shader_info.layout->push_constant_ranges_layout->size());
 
             if (pre_raster_count != frag_shader_count) {
                 const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621"
@@ -792,8 +793,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                                  pre_raster_count, frag_shader_count);
             } else {
                 for (uint32_t i = 0; i < pre_raster_count; i++) {
-                    VkPushConstantRange pre_raster_range = pre_raster_info.layout->push_constant_ranges->at(i);
-                    VkPushConstantRange frag_shader_range = frag_shader_info.layout->push_constant_ranges->at(i);
+                    VkPushConstantRange pre_raster_range = pre_raster_info.layout->push_constant_ranges_layout->at(i);
+                    VkPushConstantRange frag_shader_range = frag_shader_info.layout->push_constant_ranges_layout->at(i);
                     if (pre_raster_range.stageFlags != frag_shader_range.stageFlags ||
                         pre_raster_range.offset != frag_shader_range.offset || pre_raster_range.size != frag_shader_range.size) {
                         const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621"
