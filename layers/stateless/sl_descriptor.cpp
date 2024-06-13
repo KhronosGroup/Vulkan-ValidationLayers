@@ -129,7 +129,6 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         return skip;
     }
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    const auto &features = physical_device_features;
     const auto &limits = device_limits;
 
     if (pCreateInfo->anisotropyEnable == VK_TRUE) {
@@ -140,7 +139,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         }
 
         // Anistropy cannot be enabled in sampler unless enabled as a feature
-        if (features.samplerAnisotropy == VK_FALSE) {
+        if (enabled_features.samplerAnisotropy == VK_FALSE) {
             skip |=
                 LogError("VUID-VkSamplerCreateInfo-anisotropyEnable-01070", device, create_info_loc.dot(Field::anisotropyEnable),
                          "is VK_TRUE but the samplerAnisotropy feature was not enabled.");
