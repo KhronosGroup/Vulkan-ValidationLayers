@@ -657,6 +657,9 @@ bool ObjectLifetimes::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSe
                                                             const Location &create_info_loc) const {
     bool skip = false;
     if (create_info.pBindings) {
+        const char *parent_vuid = create_info_loc.function == vvl::Func::vkCreateDescriptorSetLayout
+                                      ? "UNASSIGNED-vkCreateDescriptorSetLayout-pImmutableSamplers-device"
+                                      : "UNASSIGNED-vkGetDescriptorSetLayoutSupport-pImmutableSamplers-device";
         for (uint32_t binding_index = 0; binding_index < create_info.bindingCount; ++binding_index) {
             const Location binding_loc = create_info_loc.dot(Field::pBindings, binding_index);
             const VkDescriptorSetLayoutBinding &binding = create_info.pBindings[binding_index];
@@ -666,7 +669,7 @@ bool ObjectLifetimes::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSe
                 for (uint32_t index2 = 0; index2 < binding.descriptorCount; ++index2) {
                     const VkSampler sampler = binding.pImmutableSamplers[index2];
                     skip |= ValidateObject(sampler, kVulkanObjectTypeSampler, false,
-                                           "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282", kVUIDUndefined,
+                                           "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282", parent_vuid,
                                            binding_loc.dot(Field::pImmutableSamplers, index2));
                 }
             }
