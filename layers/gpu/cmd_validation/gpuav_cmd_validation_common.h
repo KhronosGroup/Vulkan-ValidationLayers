@@ -37,13 +37,12 @@ class RestorablePipelineState {
     VkCommandBuffer cmd_buffer_;
     VkPipelineBindPoint pipeline_bind_point_ = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    VkPipelineLayout desc_set_pipeline_layout_ = VK_NULL_HANDLE;
     std::vector<std::pair<VkDescriptorSet, uint32_t>> descriptor_sets_;
     std::vector<std::vector<uint32_t>> dynamic_offsets_;
     uint32_t push_descriptor_set_index_ = 0;
     std::vector<vku::safe_VkWriteDescriptorSet> push_descriptor_set_writes_;
-    std::vector<uint8_t> push_constants_data_;
-    PushConstantRangesId push_constants_ranges_;
+    std::vector<vvl::CommandBuffer::PushConstantData> push_constants_data_;
     std::vector<vvl::ShaderObject*> shader_objects_;
 };
 

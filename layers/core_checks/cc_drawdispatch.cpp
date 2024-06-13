@@ -1614,12 +1614,12 @@ bool CoreChecks::ValidateActionStateDescriptors(const LastBound &last_bound_stat
                 } else {
                     pipe_layouts_log << FormatHandle(*layouts.front());
                 }
-                objlist.add(last_bound_state.pipeline_layout);
+                objlist.add(last_bound_state.desc_set_pipeline_layout);
                 skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                  "The %s (created with %s) statically uses descriptor set (index #%" PRIu32
                                  ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
                                  FormatHandle(*pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline->max_active_slot,
-                                 FormatHandle(last_bound_state.pipeline_layout).c_str());
+                                 FormatHandle(last_bound_state.desc_set_pipeline_layout).c_str());
             } else {
                 // if the bound set is not compatible, the rest will just be extra redundant errors
                 for (const auto &set_binding_pair : pipeline->active_slots) {
@@ -1755,14 +1755,15 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
     //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
     if (pipeline) {
         auto const &pipeline_layout = pipeline->PipelineLayoutState();
-        if (!cb_state.push_constant_data_ranges || (pipeline_layout->push_constant_ranges == cb_state.push_constant_data_ranges)) {
+        if (!cb_state.push_constant_ranges_layout ||
+            (pipeline_layout->push_constant_ranges_layout == cb_state.push_constant_ranges_layout)) {
             for (const auto &stage : pipeline->stage_states) {
                 if (!stage.entrypoint || !stage.entrypoint->push_constant_variable) {
                     continue;  // no static push constant in shader
                 }
 
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-                if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
+                if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
                     skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
@@ -1773,13 +1774,13 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
             }
         }
     } else {
-        if (!cb_state.push_constant_data_ranges) {
+        if (!cb_state.push_constant_ranges_layout) {
             for (const auto &stage : last_bound_state.shader_object_states) {
                 if (!stage || !stage->entrypoint || !stage->entrypoint->push_constant_variable) {
                     continue;
                 }
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-                if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
+                if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                     const LogObjectList objlist(cb_state.Handle(), stage->Handle());
                     skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",

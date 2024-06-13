@@ -335,23 +335,14 @@ void CommandBuffer::IncrementResources() {
 //
 // vkCmdBindDescriptorSet has nothing to do with push constants and don't need to call this after neither
 //
-// Part of this assumes apps at draw/dispath/traceRays/etc time will have it properly compatabile or else other VU will be triggered
-void CommandBuffer::ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state) {
-    if (pipeline_layout_state == nullptr) {
-        return;
-    }
-    if (push_constant_data_ranges == pipeline_layout_state->push_constant_ranges) {
+// Part of this assumes apps at draw/dispatch/traceRays/etc time will have it properly compatible or else other VU will be triggered
+void CommandBuffer::ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state) {
+    if (push_constant_ranges_layout == pipeline_layout_state.push_constant_ranges_layout) {
         return;
     }
 
-    push_constant_data_ranges = pipeline_layout_state->push_constant_ranges;
-    push_constant_data.clear();
-    uint32_t size_needed = 0;
-    for (const auto &push_constant_range : *push_constant_data_ranges) {
-        auto size = push_constant_range.offset + push_constant_range.size;
-        size_needed = std::max(size_needed, size);
-    }
-    push_constant_data.resize(size_needed, 0);
+    push_constant_ranges_layout = pipeline_layout_state.push_constant_ranges_layout;
+    push_constant_data_chunks.clear();
 }
 
 void CommandBuffer::Destroy() {
@@ -1169,7 +1160,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
     }
 
     UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr);
-    last_bound.pipeline_layout = pipeline_layout.VkHandle();
+    last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
     push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
@@ -1216,7 +1207,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
         SetActiveSubpassRasterizationSampleCount(dynamic_state_value.rasterization_samples);
     }
 
-    if (last_bound.pipeline_layout != VK_NULL_HANDLE) {
+    if (last_bound.desc_set_pipeline_layout != VK_NULL_HANDLE) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
             if (set_index >= last_bound.per_set.size()) {
@@ -1285,7 +1276,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    last_bound.pipeline_layout = pipeline_layout.VkHandle();
+    last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
     auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.per_set.size()) {
@@ -1366,7 +1357,7 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    last_bound.pipeline_layout = pipeline_layout.VkHandle();
+    last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
     auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.per_set.size()) {
@@ -1729,8 +1720,8 @@ void CommandBuffer::UnbindResources() {
     current_vertex_buffer_binding_info.clear();
 
     // Push constants
-    push_constant_data.clear();
-    push_constant_data_ranges.reset();
+    push_constant_data_chunks.clear();
+    push_constant_ranges_layout.reset();
 
     // Reset status of cb to force rebinding of all resources
     // Index buffer included

@@ -669,10 +669,12 @@ void BestPractices::RecordCmdNextSubpass(VkCommandBuffer commandBuffer) {
 
 void BestPractices::RecordCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size) {
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    if (cb_state->push_constant_data_ranges && !cb_state->push_constant_data_ranges->empty()) {
+    if (cb_state->push_constant_ranges_layout && !cb_state->push_constant_ranges_layout->empty()) {
         // only reset if a found the push constant have been disturbed
-        if (cb_state->push_constant_data.size() != cb_state->push_constant_data_set.size()) {
-            cb_state->push_constant_data_set.resize(cb_state->push_constant_data.size(), 0);
+        if (cb_state->push_constant_data_chunks.size() != cb_state->push_constant_data_set.size()) {
+            cb_state->push_constant_data_set.resize(
+                cb_state->push_constant_data_chunks.size(),
+                0);  // #ARNO_TODO will probably need to modify bp::CommandBuffer::push_constant_data_set
         }
         std::fill(cb_state->push_constant_data_set.begin() + offset, cb_state->push_constant_data_set.begin() + offset + size,
                   uint8_t(1));

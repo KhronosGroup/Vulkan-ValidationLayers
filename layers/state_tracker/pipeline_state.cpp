@@ -811,7 +811,7 @@ void LastBound::UnbindAndResetPushDescriptorSet(std::shared_ptr<vvl::DescriptorS
 
 void LastBound::Reset() {
     pipeline_state = nullptr;
-    pipeline_layout = VK_NULL_HANDLE;
+    desc_set_pipeline_layout = VK_NULL_HANDLE;
     if (push_descriptor_set) {
         cb_state.RemoveChild(push_descriptor_set);
         push_descriptor_set->Destroy();

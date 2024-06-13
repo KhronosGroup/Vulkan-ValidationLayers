@@ -73,7 +73,7 @@ class PipelineLayout : public StateObject {
     using SetLayoutVector = std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>;
     const SetLayoutVector set_layouts;
     // canonical form IDs for the "compatible for set" contents
-    const PushConstantRangesId push_constant_ranges;
+    const PushConstantRangesId push_constant_ranges_layout;
     // table of "compatible for set N" cannonical forms for trivial accept validation
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
     VkPipelineLayoutCreateFlags create_flags;

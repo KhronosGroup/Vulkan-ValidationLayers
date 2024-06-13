@@ -506,8 +506,14 @@ class CommandBuffer : public RefcountedStateObject {
     // Cache of current insert label...
     LoggingLabel debug_label;
 
-    std::vector<uint8_t> push_constant_data;
-    PushConstantRangesId push_constant_data_ranges;
+    struct PushConstantData {
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+        VkShaderStageFlags stage_flags = 0;
+        uint32_t offset = 0;
+        std::vector<std::byte> values{};
+    };
+    std::vector<PushConstantData> push_constant_data_chunks;
+    PushConstantRangesId push_constant_ranges_layout;
 
     // Video coding related state tracking
     std::shared_ptr<vvl::VideoSession> bound_video_session;
@@ -562,7 +568,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     void IncrementResources();
 
-    void ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state);
+    void ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state);
 
     std::shared_ptr<const ImageSubresourceLayoutMap> GetImageSubresourceLayoutMap(VkImage image) const;
     std::shared_ptr<ImageSubresourceLayoutMap> GetImageSubresourceLayoutMap(const vvl::Image &image_state);

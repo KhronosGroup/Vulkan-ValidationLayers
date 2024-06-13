@@ -47,27 +47,7 @@ void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBin
     LastBound &last_bound = cb_state.lastBound[lv_bind_point];
     if (last_bound.pipeline_state) {
         pipeline_ = last_bound.pipeline_state->VkHandle();
-        pipeline_layout = last_bound.pipeline_layout;
-        descriptor_sets_.reserve(last_bound.per_set.size());
-        for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
-            const auto &bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
-            if (bound_descriptor_set) {
-                descriptor_sets_.push_back(std::make_pair(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(i)));
-                if (bound_descriptor_set->IsPushDescriptor()) {
-                    push_descriptor_set_index_ = static_cast<uint32_t>(i);
-                }
-                dynamic_offsets_.push_back(last_bound.per_set[i].dynamicOffsets);
-            }
-        }
 
-        if (last_bound.push_descriptor_set) {
-            push_descriptor_set_writes_ = last_bound.push_descriptor_set->GetWrites();
-        }
-        const auto &pipeline_layout = last_bound.pipeline_state->PipelineLayoutState();
-        if (pipeline_layout->push_constant_ranges == cb_state.push_constant_data_ranges) {
-            push_constants_data_ = cb_state.push_constant_data;
-            push_constants_ranges_ = pipeline_layout->push_constant_ranges;
-        }
     } else {
         assert(shader_objects_.empty());
         if (lv_bind_point == BindPoint_Graphics) {
@@ -79,33 +59,31 @@ void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBin
             }
         }
     }
+
+    desc_set_pipeline_layout_ = last_bound.desc_set_pipeline_layout;
+
+    push_constants_data_ = cb_state.push_constant_data_chunks;
+
+    descriptor_sets_.reserve(last_bound.per_set.size());
+    for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
+        const auto &bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
+        if (bound_descriptor_set) {
+            descriptor_sets_.push_back(std::make_pair(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(i)));
+            if (bound_descriptor_set->IsPushDescriptor()) {
+                push_descriptor_set_index_ = static_cast<uint32_t>(i);
+            }
+            dynamic_offsets_.push_back(last_bound.per_set[i].dynamicOffsets);
+        }
+    }
+
+    if (last_bound.push_descriptor_set) {
+        push_descriptor_set_writes_ = last_bound.push_descriptor_set->GetWrites();
+    }
 }
 
 void RestorablePipelineState::Restore() const {
     if (pipeline_ != VK_NULL_HANDLE) {
         DispatchCmdBindPipeline(cmd_buffer_, pipeline_bind_point_, pipeline_);
-        if (!descriptor_sets_.empty()) {
-            for (std::size_t i = 0; i < descriptor_sets_.size(); i++) {
-                VkDescriptorSet descriptor_set = descriptor_sets_[i].first;
-                if (descriptor_set != VK_NULL_HANDLE) {
-                    DispatchCmdBindDescriptorSets(cmd_buffer_, pipeline_bind_point_, pipeline_layout, descriptor_sets_[i].second, 1,
-                                                  &descriptor_set, static_cast<uint32_t>(dynamic_offsets_[i].size()),
-                                                  dynamic_offsets_[i].data());
-                }
-            }
-        }
-        if (!push_descriptor_set_writes_.empty()) {
-            DispatchCmdPushDescriptorSetKHR(cmd_buffer_, pipeline_bind_point_, pipeline_layout, push_descriptor_set_index_,
-                                            static_cast<uint32_t>(push_descriptor_set_writes_.size()),
-                                            reinterpret_cast<const VkWriteDescriptorSet *>(push_descriptor_set_writes_.data()));
-        }
-        if (!push_constants_data_.empty()) {
-            for (const auto &push_constant_range : *push_constants_ranges_) {
-                if (push_constant_range.size == 0) continue;
-                DispatchCmdPushConstants(cmd_buffer_, pipeline_layout, push_constant_range.stageFlags, push_constant_range.offset,
-                                         push_constant_range.size, push_constants_data_.data());
-            }
-        }
     }
     if (!shader_objects_.empty()) {
         std::vector<VkShaderStageFlagBits> stages;
@@ -115,6 +93,27 @@ void RestorablePipelineState::Restore() const {
             shaders.emplace_back(shader_obj->VkHandle());
         }
         DispatchCmdBindShadersEXT(cmd_buffer_, static_cast<uint32_t>(shader_objects_.size()), stages.data(), shaders.data());
+    }
+
+    for (std::size_t i = 0; i < descriptor_sets_.size(); i++) {
+        VkDescriptorSet descriptor_set = descriptor_sets_[i].first;
+        if (descriptor_set != VK_NULL_HANDLE) {
+            DispatchCmdBindDescriptorSets(cmd_buffer_, pipeline_bind_point_, desc_set_pipeline_layout_, descriptor_sets_[i].second,
+                                          1, &descriptor_set, static_cast<uint32_t>(dynamic_offsets_[i].size()),
+                                          dynamic_offsets_[i].data());
+        }
+    }
+
+    if (!push_descriptor_set_writes_.empty()) {
+        DispatchCmdPushDescriptorSetKHR(cmd_buffer_, pipeline_bind_point_, desc_set_pipeline_layout_, push_descriptor_set_index_,
+                                        static_cast<uint32_t>(push_descriptor_set_writes_.size()),
+                                        reinterpret_cast<const VkWriteDescriptorSet *>(push_descriptor_set_writes_.data()));
+    }
+
+    for (const auto &push_constant_range : push_constants_data_) {
+        DispatchCmdPushConstants(cmd_buffer_, push_constant_range.layout, push_constant_range.stage_flags,
+                                 push_constant_range.offset, static_cast<uint32_t>(push_constant_range.values.size()),
+                                 push_constant_range.values.data());
     }
 }
 

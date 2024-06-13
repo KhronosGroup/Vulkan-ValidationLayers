@@ -2842,27 +2842,29 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
 
     cb_state->RecordCmd(record_obj.location.function);
     auto layout_state = Get<vvl::PipelineLayout>(layout);
-    cb_state->ResetPushConstantDataIfIncompatible(layout_state.get());
+    cb_state->ResetPushConstantRangesLayoutIfIncompatible(*layout_state);
 
-    auto &push_constant_data = cb_state->push_constant_data;
-    assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
-    std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
+    vvl::CommandBuffer::PushConstantData push_constant_data;
+    push_constant_data.layout = layout;
+    push_constant_data.stage_flags = stageFlags;
+    push_constant_data.offset = offset;
+    push_constant_data.values.resize(size);
+    auto byte_values = static_cast<const std::byte *>(pValues);
+    std::copy(byte_values, byte_values + size, push_constant_data.values.data());
+    // Always add submitted push constant values, even if the same data is already stored.
+    // Storing duplicated data, or data submitted by one vkCmdPushConstants call
+    // and overridden by a subsequent one is not a problem.
+    // push_constant_data_chunks is intended to be parsed from 0 to N,
+    // thus going through the history in order, so even though it is
+    // possibly suboptimal push constant data is correct.
+    cb_state->push_constant_data_chunks.emplace_back(push_constant_data);
 }
 
 void ValidationStateTracker::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
                                                                 const VkPushConstantsInfoKHR *pPushConstantsInfo,
                                                                 const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
-
-    cb_state->RecordCmd(record_obj.location.function);
-    auto layout_state = Get<vvl::PipelineLayout>(pPushConstantsInfo->layout);
-    cb_state->ResetPushConstantDataIfIncompatible(layout_state.get());
-
-    auto &push_constant_data = cb_state->push_constant_data;
-    assert((pPushConstantsInfo->offset + pPushConstantsInfo->size) <= static_cast<uint32_t>(push_constant_data.size()));
-    std::memcpy(push_constant_data.data() + pPushConstantsInfo->offset, pPushConstantsInfo->pValues,
-                static_cast<std::size_t>(pPushConstantsInfo->size));
+    PostCallRecordCmdPushConstants(commandBuffer, pPushConstantsInfo->layout, pPushConstantsInfo->stageFlags,
+                                   pPushConstantsInfo->offset, pPushConstantsInfo->size, pPushConstantsInfo->pValues, record_obj);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
