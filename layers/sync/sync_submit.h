@@ -247,7 +247,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     // For Submit
     bool ProcessSubmit(const VkSubmitInfo2 &submit, uint64_t submit_index, uint32_t batch_index,
                        const QueueBatchContext::ConstPtr &last_batch, const ErrorObject &error_obj,
-                       std::vector<std::string> *current_label_stack, SignaledSemaphoresUpdate &signaled_semaphores_update);
+                       std::vector<std::string> &current_label_stack, SignaledSemaphoresUpdate &signaled_semaphores_update);
     [[nodiscard]] std::vector<ConstPtr> SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev,
                                                            const VkSubmitInfo2 &submit_info,
                                                            SignaledSemaphoresUpdate &signaled_semaphores_update);
@@ -279,8 +279,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void NextSubpassReplaySetup(ReplayState &replay) override;
     void EndRenderPassReplayCleanup(ReplayState &replay) override;
 
-    void Cleanup();
-
   private:
     std::vector<ConstPtr> CommonSetupAccessContext(const ConstPtr &prev, std::vector<ConstPtr> &batches_resolved);
     Ptr ResolveOneWaitSemaphore(VkSemaphore sem, const PresentedImages &presented_images,
@@ -297,9 +295,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     SyncEventsContext events_context_;
     BatchAccessLog batch_log_;
     std::vector<ResourceUsageTag> queue_sync_tag_;
-
-    // Clear these after validation and import, not valid after.
-    std::vector<std::string> *current_label_stack_ = nullptr;
 };
 
 class QueueSyncState {
