@@ -224,8 +224,6 @@ struct DrawDispatchVuid {
     const char* external_format_resolve_09370 = kVUIDUndefined;
     const char* external_format_resolve_09371 = kVUIDUndefined;
     const char* set_rasterizer_discard_enable_08639 = kVUIDUndefined;
-    const char* set_depth_bias_enable_08640 = kVUIDUndefined;
-    const char* set_logic_op_08641 = kVUIDUndefined;
     const char* set_color_blend_enable_08643 = kVUIDUndefined;
     const char* set_rasterization_samples_08644 = kVUIDUndefined;
     const char* set_color_write_enable_08646 = kVUIDUndefined;
@@ -233,11 +231,7 @@ struct DrawDispatchVuid {
     const char* set_discard_rectangles_enable_08648 = kVUIDUndefined;
     const char* set_discard_rectangles_mode_08649 = kVUIDUndefined;
     const char* set_depth_clamp_enable_08650 = kVUIDUndefined;
-    const char* set_polygon_mode_08651 = kVUIDUndefined;
-    const char* set_rasterization_samples_08652 = kVUIDUndefined;
-    const char* set_sample_mask_08653 = kVUIDUndefined;
     const char* set_alpha_to_coverage_enable_08654 = kVUIDUndefined;
-    const char* set_alpha_to_one_enable_08655 = kVUIDUndefined;
     const char* set_logic_op_enable_08656 = kVUIDUndefined;
     const char* set_color_blend_enable_08657 = kVUIDUndefined;
     const char* set_color_blend_equation_08658 = kVUIDUndefined;
@@ -291,12 +285,7 @@ struct DrawDispatchVuid {
     const char* set_stencil_write_mask_08624 = kVUIDUndefined;
     const char* set_stencil_reference_08625 = kVUIDUndefined;
     const char* set_sample_locations_08626 = kVUIDUndefined;
-    const char* set_cull_mode_08627 = kVUIDUndefined;
     const char* set_front_face_08628 = kVUIDUndefined;
-    const char* set_depth_test_enable_08629 = kVUIDUndefined;
-    const char* set_depth_write_enable_08630 = kVUIDUndefined;
-    const char* set_depth_bounds_test_enable_08632 = kVUIDUndefined;
-    const char* set_stencil_test_enable_08633 = kVUIDUndefined;
     const char* set_stencil_op_08634 = kVUIDUndefined;
     const char* set_line_width_08619 = kVUIDUndefined;
     const char* set_viewport_with_count_08642 = kVUIDUndefined;

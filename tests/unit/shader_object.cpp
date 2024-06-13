@@ -1403,7 +1403,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizerDiscardEnable) {
 TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEnable) {
     TEST_DESCRIPTION("Draw with shaders without setting vkCmdSetDepthBiasEnable.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08640");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04877");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1426,7 +1426,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEnable) {
 TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
     TEST_DESCRIPTION("Draw with shaders without setting vkCmdSetLogicOp.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08641");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-logicOp-04878");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -1722,7 +1722,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClampEnableEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetPolygonModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPolygonModeEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08651");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07621");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1745,7 +1745,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPolygonModeEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetRasterizationSamplesEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetRasterizationSamplesEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08652");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07622");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1768,7 +1768,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationSamplesEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetSampleMaskEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetSampleMaskEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08653");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07623");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1814,7 +1814,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAlphaToCoverageEnableEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetAlphaToOneEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetAlphaToOneEnableEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08655");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07625");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3410,6 +3410,31 @@ TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveRestartEnableEXT) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderObject, MissingCmdSetVertexInput) {
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04914");
+
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_VERTEX_INPUT_EXT});
+    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
     TEST_DESCRIPTION("Draw with graphics shader objects when a mesh shader is bound.");
 
@@ -3685,7 +3710,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetCullModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCullModeEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08627");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07840");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3732,7 +3757,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetFrontFaceEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetDepthTestEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthTestEnableEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08629");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07843");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3755,7 +3780,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthTestEnableEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetDepthWriteEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthWriteEnableEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08630");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07844");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3802,7 +3827,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthCompareOp) {
 TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBoundsTestEnable.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08632");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07846");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3830,7 +3855,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
 TEST_F(NegativeShaderObject, MissingCmdSetStencilTestEnable) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilTestEnable.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08633");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07847");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();

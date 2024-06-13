@@ -1164,6 +1164,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
     {
         CreatePipelineHelper pipe(*this);
         pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
+        pipe.cb_ci_.logicOpEnable = VK_TRUE;
         pipe.CreateGraphicsPipeline();
 
         vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
@@ -1706,15 +1707,9 @@ TEST_F(NegativeDynamicState, DrawNotSetPolygonMode) {
 TEST_F(NegativeDynamicState, DrawNotSetAlphaToOneEnable) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 dynamic state not set before drawing");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    if (!extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable) {
-        GTEST_SKIP() << "extendedDynamicState3AlphaToOneEnable not supported";
-    }
-    features2.features.alphaToOne = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::alphaToOne);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -1728,6 +1723,26 @@ TEST_F(NegativeDynamicState, DrawNotSetAlphaToOneEnable) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07625");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, AlphaToOneFeature) {
+    TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 dynamic state not set before drawing");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
+    AddDisabledFeature(vkt::Feature::alphaToOne);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    m_commandBuffer->begin();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607");
     vk::CmdSetAlphaToOneEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
@@ -3698,6 +3713,7 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthWriteEnable) {
 }
 
 TEST_F(NegativeDynamicState, DrawNotSetDepthBoundsTestEnable) {
+    AddRequiredFeature(vkt::Feature::depthBounds);
     ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, "VUID-vkCmdDraw-None-07846");
 }
 
