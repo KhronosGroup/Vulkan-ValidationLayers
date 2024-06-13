@@ -77,6 +77,7 @@ class Module {
     // Helpers
     bool HasCapability(spv::Capability capability);
     void AddCapability(spv::Capability capability);
+    void AddExtension(const char* extension);
 
   private:
     // provides a way to map back and know which original SPIR-V this was from
