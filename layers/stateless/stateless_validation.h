@@ -33,8 +33,6 @@ class StatelessValidation : public ValidationObject {
 
   public:
     VkPhysicalDeviceLimits device_limits = {};
-    vku::safe_VkPhysicalDeviceFeatures2 physical_device_features2;
-    const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
     vvl::unordered_map<VkPhysicalDevice, vvl::unordered_set<vvl::Extension>> device_extensions_enumerated{};
     // We have a copy of this in Stateless and ValidationStateTracker, could move the ValidationObject, but we don't have a way to

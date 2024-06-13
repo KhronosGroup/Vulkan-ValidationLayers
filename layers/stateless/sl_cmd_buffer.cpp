@@ -728,13 +728,13 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         skip |= ValidateBool32(inheritance_loc.dot(Field::occlusionQueryEnable), info->occlusionQueryEnable);
 
         // Explicit VUs
-        if (!physical_device_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
+        if (!enabled_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
             skip |= LogError(
                 "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056", commandBuffer, error_obj.location,
                 "Inherited queries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.");
         }
 
-        if (physical_device_features.inheritedQueries) {
+        if (enabled_features.inheritedQueries) {
             skip |= ValidateFlags(inheritance_loc.dot(Field::queryFlags), vvl::FlagBitmask::VkQueryControlFlagBits,
                                   AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
                                   "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
@@ -743,7 +743,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                                           "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
         }
 
-        if (physical_device_features.pipelineStatisticsQuery) {
+        if (enabled_features.pipelineStatisticsQuery) {
             skip |=
                 ValidateFlags(inheritance_loc.dot(Field::pipelineStatistics), vvl::FlagBitmask::VkQueryPipelineStatisticFlagBits,
                               AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
@@ -765,7 +765,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         }
 
         auto p_inherited_viewport_scissor_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
-        if (p_inherited_viewport_scissor_info != nullptr && !physical_device_features.multiViewport &&
+        if (p_inherited_viewport_scissor_info != nullptr && !enabled_features.multiViewport &&
             p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
             p_inherited_viewport_scissor_info->viewportDepthCount != 1) {
             skip |= LogError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783", commandBuffer,

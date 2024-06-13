@@ -155,13 +155,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          string_VkImageType(pCreateInfo->imageType));
     }
 
-    if ((image_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) && (!physical_device_features.sparseBinding)) {
+    if ((image_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) && (!enabled_features.sparseBinding)) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-00969", device, create_info_loc.dot(Field::flags),
                          "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT, but the "
                          "sparseBinding feature was not enabled.");
     }
 
-    if ((image_flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
+    if ((image_flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!enabled_features.sparseResidencyAliased)) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-01924", device, create_info_loc.dot(Field::flags),
                          "includes VK_IMAGE_CREATE_SPARSE_ALIASED_BIT but the sparseResidencyAliased feature was not enabled.");
     }
@@ -189,14 +189,14 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
 
         // Sparse 2D image when device doesn't support it
-        if ((!physical_device_features.sparseResidencyImage2D) && (VK_IMAGE_TYPE_2D == pCreateInfo->imageType)) {
+        if ((!enabled_features.sparseResidencyImage2D) && (VK_IMAGE_TYPE_2D == pCreateInfo->imageType)) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00971", device, create_info_loc.dot(Field::flags),
                              "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D, but "
                              "sparseResidencyImage2D feature was not enabled.");
         }
 
         // Sparse 3D image when device doesn't support it
-        if ((!physical_device_features.sparseResidencyImage3D) && (VK_IMAGE_TYPE_3D == pCreateInfo->imageType)) {
+        if ((!enabled_features.sparseResidencyImage3D) && (VK_IMAGE_TYPE_3D == pCreateInfo->imageType)) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00972", device, create_info_loc.dot(Field::flags),
                              "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_3D, but "
                              "sparseResidencyImage3D feature was not enabled.");
@@ -204,19 +204,19 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
         // Multi-sample 2D image when device doesn't support it
         if (VK_IMAGE_TYPE_2D == pCreateInfo->imageType) {
-            if ((!physical_device_features.sparseResidency2Samples) && (VK_SAMPLE_COUNT_2_BIT == pCreateInfo->samples)) {
+            if ((!enabled_features.sparseResidency2Samples) && (VK_SAMPLE_COUNT_2_BIT == pCreateInfo->samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00973", device, create_info_loc.dot(Field::flags),
                                  "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_2_BIT, but sparseResidency2Samples feature was not enabled.");
-            } else if ((!physical_device_features.sparseResidency4Samples) && (VK_SAMPLE_COUNT_4_BIT == pCreateInfo->samples)) {
+            } else if ((!enabled_features.sparseResidency4Samples) && (VK_SAMPLE_COUNT_4_BIT == pCreateInfo->samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00974", device, create_info_loc.dot(Field::flags),
                                  "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_4_BIT, but sparseResidency4Samples feature was not enabled.");
-            } else if ((!physical_device_features.sparseResidency8Samples) && (VK_SAMPLE_COUNT_8_BIT == pCreateInfo->samples)) {
+            } else if ((!enabled_features.sparseResidency8Samples) && (VK_SAMPLE_COUNT_8_BIT == pCreateInfo->samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00975", device, create_info_loc.dot(Field::flags),
                                  "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_8_BIT, but sparseResidency8Samples feature was not enabled.");
-            } else if ((!physical_device_features.sparseResidency16Samples) && (VK_SAMPLE_COUNT_16_BIT == pCreateInfo->samples)) {
+            } else if ((!enabled_features.sparseResidency16Samples) && (VK_SAMPLE_COUNT_16_BIT == pCreateInfo->samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00976", device, create_info_loc.dot(Field::flags),
                                  "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_16_BIT, but sparseResidency16Samples feature was not enabled.");
@@ -318,7 +318,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 }
             }
 
-            if (!physical_device_features.shaderStorageImageMultisample &&
+            if (!enabled_features.shaderStorageImageMultisample &&
                 ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
                 (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT)) {
                 skip |= LogError("VUID-VkImageCreateInfo-format-02538", device,
@@ -362,7 +362,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
     }
 
-    if ((!physical_device_features.shaderStorageImageMultisample) && ((pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
+    if ((!enabled_features.shaderStorageImageMultisample) && ((pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
         (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT)) {
         skip |= LogError("VUID-VkImageCreateInfo-usage-00968", device, create_info_loc.dot(Field::usage),
                          "includes VK_IMAGE_USAGE_STORAGE_BIT and imageType is %s, but shaderStorageImageMultisample feature "
@@ -687,7 +687,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
     }
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     // Validate feature set if using CUBE_ARRAY
-    if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (physical_device_features.imageCubeArray == false)) {
+    if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (!enabled_features.imageCubeArray)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-viewType-01004", pCreateInfo->image, create_info_loc.dot(Field::viewType),
                          "is VK_IMAGE_VIEW_TYPE_CUBE_ARRAY but the imageCubeArray feature is not enabled.");
     }

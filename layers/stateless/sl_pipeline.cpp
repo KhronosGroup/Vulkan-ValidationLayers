@@ -633,7 +633,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 const auto *depth_clip_control_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
 
-                if (!physical_device_features.multiViewport) {
+                if (!enabled_features.multiViewport) {
                     if (exclusive_scissor_struct && (exclusive_scissor_struct->exclusiveScissorCount != 0 &&
                                                      exclusive_scissor_struct->exclusiveScissorCount != 1)) {
                         skip |=
@@ -674,7 +674,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                          "can't be 0 unless VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT is used.");
                     }
 
-                    if (!physical_device_features.multiViewport && (viewport_state.viewportCount > 1)) {
+                    if (!enabled_features.multiViewport && (viewport_state.viewportCount > 1)) {
                         skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", device,
                                          viewport_loc.dot(Field::viewportCount),
                                          "is %" PRIu32 " but multiViewport feature is not enabled.", viewport_state.viewportCount);
@@ -702,7 +702,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                          "can't be 0 unless VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT is used.");
                     }
 
-                    if (!physical_device_features.multiViewport && (viewport_state.scissorCount > 1)) {
+                    if (!enabled_features.multiViewport && (viewport_state.scissorCount > 1)) {
                         skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217", device,
                                          viewport_loc.dot(Field::scissorCount),
                                          "is %" PRIu32 " but multiViewport feature is not enabled.", viewport_state.scissorCount);
@@ -897,7 +897,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 skip |= ValidatePipelineMultisampleStateCreateInfo(*create_info.pMultisampleState, ms_loc);
 
                 if (create_info.pMultisampleState->sampleShadingEnable == VK_TRUE) {
-                    if (!physical_device_features.sampleRateShading) {
+                    if (!enabled_features.sampleRateShading) {
                         skip |= LogError("VUID-VkPipelineMultisampleStateCreateInfo-sampleShadingEnable-00784", device,
                                          ms_loc.dot(Field::sampleShadingEnable),
                                          "is VK_TRUE but the sampleRateShading feature was not enabled.");
@@ -983,13 +983,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
             if ((create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
                 (create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL_RECTANGLE_NV) &&
-                (physical_device_features.fillModeNonSolid == false)) {
+                (!enabled_features.fillModeNonSolid)) {
                 skip |= LogError("VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507", device,
                                  rasterization_loc.dot(Field::polygonMode), "is %s, but fillModeNonSolid feature is note enabled.",
                                  string_VkPolygonMode(create_info.pRasterizationState->polygonMode));
             }
 
-            if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_WIDTH) && !physical_device_features.wideLines &&
+            if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_WIDTH) && !enabled_features.wideLines &&
                 (create_info.pRasterizationState->lineWidth != 1.0f)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749", device,
                                  rasterization_loc.dot(Field::lineWidth),

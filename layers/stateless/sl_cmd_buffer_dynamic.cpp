@@ -24,7 +24,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkComman
                                                                         const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!physical_device_features.multiViewport) {
+    if (!enabled_features.multiViewport) {
         if (viewportCount != 1) {
             skip |= LogError("VUID-vkCmdSetViewportWithCount-viewportCount-03395", commandBuffer,
                              error_obj.location.dot(Field::viewportCount),
@@ -55,7 +55,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommand
                                                                        const VkRect2D *pScissors,
                                                                        const ErrorObject &error_obj) const {
     bool skip = false;
-    if (!physical_device_features.multiViewport) {
+    if (!enabled_features.multiViewport) {
         if (scissorCount != 1) {
             skip |= LogError("VUID-vkCmdSetScissorWithCount-scissorCount-03398", commandBuffer,
                              error_obj.location.dot(Field::scissorCount),
@@ -341,7 +341,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
                                                                          const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!physical_device_features.multiViewport) {
+    if (!enabled_features.multiViewport) {
         if (firstExclusiveScissor != 0) {
             skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035", commandBuffer,
                              error_obj.location.dot(Field::firstExclusiveScissor),
@@ -417,7 +417,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePalette
     const VkShadingRatePaletteNV *pShadingRatePalettes, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!physical_device_features.multiViewport) {
+    if (!enabled_features.multiViewport) {
         if (firstViewport != 0) {
             skip |= LogError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068", commandBuffer,
                              error_obj.location.dot(Field::firstViewport),
@@ -467,7 +467,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer c
                                                                const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!physical_device_features.multiViewport) {
+    if (!enabled_features.multiViewport) {
         if (firstViewport != 0) {
             skip |=
                 LogError("VUID-vkCmdSetViewport-firstViewport-01224", commandBuffer, error_obj.location.dot(Field::firstViewport),
@@ -503,7 +503,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!physical_device_features.multiViewport) {
+    if (!enabled_features.multiViewport) {
         if (firstScissor != 0) {
             skip |= LogError("VUID-vkCmdSetScissor-firstScissor-00593", commandBuffer, error_obj.location.dot(Field::firstScissor),
                              "is %" PRIu32 " but the multiViewport feature was not enabled.", firstScissor);
@@ -560,7 +560,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer 
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!physical_device_features.wideLines && (lineWidth != 1.0f)) {
+    if (!enabled_features.wideLines && (lineWidth != 1.0f)) {
         skip |= LogError("VUID-vkCmdSetLineWidth-lineWidth-00788", commandBuffer, error_obj.location.dot(Field::lineWidth),
                          "is %f (not 1.0), but wideLines was not enabled.", lineWidth);
     }

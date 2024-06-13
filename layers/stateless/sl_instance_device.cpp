@@ -439,20 +439,6 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     GetEnabledDeviceFeatures(pCreateInfo, &stateless_validation->enabled_features, api_version);
-
-    // Save app-enabled features in this device's validation object
-    // The enabled features can come from either pEnabledFeatures, or from the pNext chain
-    const auto *features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
-    vku::safe_VkPhysicalDeviceFeatures2 tmp_features2_state;
-    tmp_features2_state.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    if (features2) {
-        tmp_features2_state.features = features2->features;
-    } else if (pCreateInfo->pEnabledFeatures) {
-        tmp_features2_state.features = *pCreateInfo->pEnabledFeatures;
-    } else {
-        tmp_features2_state.features = {};
-    }
-    stateless_validation->physical_device_features2 = tmp_features2_state;
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,

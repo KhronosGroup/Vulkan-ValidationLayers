@@ -47,17 +47,17 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
         }
     }
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!physical_device_features.sparseBinding)) {
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!enabled_features.sparseBinding)) {
         skip |= LogError("VUID-VkBufferCreateInfo-flags-00915", device, create_info_loc.dot(Field::flags),
                          "includes VK_BUFFER_CREATE_SPARSE_BINDING_BIT, but the sparseBinding feature is not enabled.");
     }
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) && (!physical_device_features.sparseResidencyBuffer)) {
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) && (!enabled_features.sparseResidencyBuffer)) {
         skip |= LogError("VUID-VkBufferCreateInfo-flags-00916", device, create_info_loc.dot(Field::flags),
                          "includes VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT, but the sparseResidencyBuffer feature is not enabled.");
     }
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!enabled_features.sparseResidencyAliased)) {
         skip |= LogError("VUID-VkBufferCreateInfo-flags-00917", device, create_info_loc.dot(Field::flags),
                          "includes VK_BUFFER_CREATE_SPARSE_ALIASED_BIT, but the sparseResidencyAliased feature is not enabled.");
     };
