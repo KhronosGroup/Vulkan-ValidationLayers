@@ -417,7 +417,6 @@ class BestPractices : public ValidationStateTracker {
                                        const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
     void RecordCmdNextSubpass(VkCommandBuffer commandBuffer);
 
-    void RecordCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size);
     void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                         uint32_t offset, uint32_t size, const void* pValues,
                                         const RecordObject& record_obj) override;

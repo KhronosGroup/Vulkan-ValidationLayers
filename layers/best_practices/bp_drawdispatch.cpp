@@ -48,15 +48,34 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
 }
 
 bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const Location& loc) const {
+    using Range = sparse_container::range<uint32_t>;
+
     bool skip = false;
 
     const auto cb_state = GetRead<bp_state::CommandBuffer>(cmd_buffer);
-    for (size_t i = 0; i < cb_state->push_constant_data_set.size(); ++i) {
-        if (!cb_state->push_constant_data_set[i]) {
+
+    if (!cb_state->push_constant_ranges_layout) {
+        return skip;
+    }
+
+    for (const VkPushConstantRange& push_constant_range : *cb_state->push_constant_ranges_layout) {
+        Range layout_range(push_constant_range.offset, push_constant_range.offset + push_constant_range.size);
+        uint32_t size_not_set = push_constant_range.size;
+        for (const vvl::CommandBuffer::PushConstantData& filled_pcr : cb_state->push_constant_data_chunks) {
+            Range filled_range(filled_pcr.offset, filled_pcr.offset + static_cast<uint32_t>(filled_pcr.values.size()));
+            Range intersection = layout_range & filled_range;
+            if (intersection.valid()) {
+                size_not_set -= std::min(intersection.distance(), size_not_set);
+            }
+            if (size_not_set == 0) {
+                break;
+            }
+        }
+        if (size_not_set > 0) {
             skip |= LogWarning("BestPractices-PushConstants", cmd_buffer, loc,
-                               "Pipeline uses push constants with %" PRIu32 " bytes, but byte %" PRIu32
-                               " was never set with vkCmdPushConstants.",
-                               static_cast<uint32_t>(cb_state->push_constant_data_set.size()), static_cast<uint32_t>(i));
+                               "Pipeline uses a push constant range with offset %" PRIu32 " and size %" PRIu32 ", but %" PRIu32
+                               " bytes were never set with vkCmdPushConstants.",
+                               push_constant_range.offset, push_constant_range.size, size_not_set);
             break;
         }
     }

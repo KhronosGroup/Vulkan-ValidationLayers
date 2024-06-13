@@ -198,8 +198,10 @@ class CommandBuffer : public vvl::CommandBuffer {
     bool uses_vertex_buffer = false;
     uint32_t small_indexed_draw_call_count = 0;
 
-    std::vector<uint8_t> push_constant_data_set;
-    void UnbindResources() { push_constant_data_set.clear(); }
+    // This function used to not be empty. It has been left empty because
+    // the logic to decide to call this function is not simple, so adding this
+    // function back could tedious.
+    void UnbindResources() {}
 
     struct SignalingInfo {
         // True, if the event's first state change within a command buffer is a signal (SetEvent)
