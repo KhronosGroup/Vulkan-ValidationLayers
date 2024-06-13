@@ -236,11 +236,6 @@ void QueueBatchContext::EndRenderPassReplayCleanup(ReplayState& replay) {
     current_access_context_ = &access_context_;
 }
 
-void QueueBatchContext::Cleanup() {
-    // Clear these after validation and import, not valid after.
-    current_label_stack_ = nullptr;
-}
-
 // Overload for QueuePresent semaphore waiting.  Not applicable to QueueSubmit semaphores
 QueueBatchContext::Ptr QueueBatchContext::ResolveOneWaitSemaphore(
     VkSemaphore sem, const PresentedImages& presented_images, SignaledSemaphoresUpdate& signaled_semaphores_update) {
@@ -535,16 +530,14 @@ ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
 
 bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, uint64_t submit_index, uint32_t batch_index,
                                       const QueueBatchContext::ConstPtr& last_batch, const ErrorObject& error_obj,
-                                      std::vector<std::string>* current_label_stack,
+                                      std::vector<std::string>& current_label_stack,
                                       SignaledSemaphoresUpdate& signaled_semaphores_update) {
     bool skip = false;
 
     // The purpose of keeping return value is to ensure async batches are alive during validation.
     // Validation accesses raw pointer to async contexts stored in AsyncReference.
     // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case.
-    auto async_batches = SetupAccessContext(last_batch, submit, signaled_semaphores_update);
-
-    current_label_stack_ = current_label_stack;
+    const auto async_batches = SetupAccessContext(last_batch, submit, signaled_semaphores_update);
 
     const std::vector<CommandBufferInfo> command_buffers = GetCommandBuffers(submit);
 
@@ -563,18 +556,17 @@ bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, uint64_t subm
         if (access_context.GetTagCount() > 0) {
             skip |= ReplayState(*this, access_context, error_obj, cb.index, batch.base_tag).ValidateFirstUse();
             // The barriers have already been applied in ValidatFirstUse
-            batch_log_.Import(batch, access_context, *current_label_stack_);
+            batch_log_.Import(batch, access_context, current_label_stack);
             ResolveSubmittedCommandBuffer(*access_context.GetCurrentAccessContext(), batch.base_tag);
             batch.base_tag += access_context.GetTagCount();
         }
         // Apply debug label commands
-        vvl::CommandBuffer::ReplayLabelCommands(cb.cb_state->GetLabelCommands(), *current_label_stack_);
+        vvl::CommandBuffer::ReplayLabelCommands(cb.cb_state->GetLabelCommands(), current_label_stack);
         batch.cb_index++;
     }
     for (const auto& semaphore_info : vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount)) {
         signaled_semaphores_update.OnSignal(shared_from_this(), semaphore_info);
     }
-    Cleanup();  // clear the temporaries
     return skip;
 }
 

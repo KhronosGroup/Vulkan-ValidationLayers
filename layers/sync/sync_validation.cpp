@@ -2816,7 +2816,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 
     // The purpose of keeping return value is to ensure async batches are alive during validation.
     // Validation accesses raw pointer to async contexts stored in AsyncReference.
-    auto async_batches =
+    const auto async_batches =
         batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
 
     const ResourceUsageTag global_range_start = batch->SetupBatchTags(present_tag_count);
@@ -2828,7 +2828,6 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     skip |= batch->DoQueuePresentValidate(error_obj.location, cmd_state->presented_images);
     batch->DoPresentOperations(cmd_state->presented_images);
     batch->LogPresentOperations(cmd_state->presented_images, submit_id);
-    batch->Cleanup();
 
     if (!skip) {
         cmd_state->queue->SetPendingLastBatch(std::move(batch));
@@ -2968,7 +2967,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue);
-        skip |= batch->ProcessSubmit(submit, submit_id, batch_idx, last_batch, error_obj, &current_label_stack,
+        skip |= batch->ProcessSubmit(submit, submit_id, batch_idx, last_batch, error_obj, current_label_stack,
                                      cmd_state->signaled_semaphores_update);
 
         // Unless the previous batch was referenced by a signal it will self destruct
