@@ -386,7 +386,8 @@ bool ObjectLifetimes::PreCallValidateFlushMappedMemoryRanges(VkDevice device, ui
         for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pMemoryRanges, index0);
             skip |= ValidateObject(pMemoryRanges[index0].memory, kVulkanObjectTypeDeviceMemory, false,
-                                   "VUID-VkMappedMemoryRange-memory-parameter", kVUIDUndefined, index0_loc.dot(Field::memory));
+                                   "VUID-VkMappedMemoryRange-memory-parameter",
+                                   "UNASSIGNED-vkFlushMappedMemoryRanges-memory-device", index0_loc.dot(Field::memory));
         }
     }
 
@@ -402,7 +403,8 @@ bool ObjectLifetimes::PreCallValidateInvalidateMappedMemoryRanges(VkDevice devic
         for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pMemoryRanges, index0);
             skip |= ValidateObject(pMemoryRanges[index0].memory, kVulkanObjectTypeDeviceMemory, false,
-                                   "VUID-VkMappedMemoryRange-memory-parameter", kVUIDUndefined, index0_loc.dot(Field::memory));
+                                   "VUID-VkMappedMemoryRange-memory-parameter",
+                                   "UNASSIGNED-vkInvalidateMappedMemoryRanges-memory-device", index0_loc.dot(Field::memory));
         }
     }
 
@@ -818,7 +820,7 @@ bool ObjectLifetimes::PreCallValidateCreateBufferView(VkDevice device, const VkB
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
         skip |= ValidateObject(pCreateInfo->buffer, kVulkanObjectTypeBuffer, false, "VUID-VkBufferViewCreateInfo-buffer-parameter",
-                               kVUIDUndefined, pCreateInfo_loc.dot(Field::buffer));
+                               "UNASSIGNED-VkBufferViewCreateInfo-buffer-parent", pCreateInfo_loc.dot(Field::buffer));
     }
 
     return skip;
@@ -1721,14 +1723,16 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents(
         for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBufferMemoryBarriers, index0);
             skip |= ValidateObject(pBufferMemoryBarriers[index0].buffer, kVulkanObjectTypeBuffer, false,
-                                   "VUID-VkBufferMemoryBarrier-buffer-parameter", kVUIDUndefined, index0_loc.dot(Field::buffer));
+                                   "VUID-VkBufferMemoryBarrier-buffer-parameter",
+                                   "UNASSIGNED-vkCmdWaitEvents-commandBuffer-commonparent", index0_loc.dot(Field::buffer));
         }
     }
     if (pImageMemoryBarriers) {
         for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pImageMemoryBarriers, index0);
             skip |= ValidateObject(pImageMemoryBarriers[index0].image, kVulkanObjectTypeImage, false,
-                                   "VUID-VkImageMemoryBarrier-image-parameter", kVUIDUndefined, index0_loc.dot(Field::image));
+                                   "VUID-VkImageMemoryBarrier-image-parameter",
+                                   "UNASSIGNED-vkCmdWaitEvents-commandBuffer-commonparent", index0_loc.dot(Field::image));
         }
     }
 
@@ -1746,14 +1750,16 @@ bool ObjectLifetimes::PreCallValidateCmdPipelineBarrier(
         for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBufferMemoryBarriers, index0);
             skip |= ValidateObject(pBufferMemoryBarriers[index0].buffer, kVulkanObjectTypeBuffer, false,
-                                   "VUID-VkBufferMemoryBarrier-buffer-parameter", kVUIDUndefined, index0_loc.dot(Field::buffer));
+                                   "VUID-VkBufferMemoryBarrier-buffer-parameter",
+                                   "UNASSIGNED-vkCmdPipelineBarrier-commandBuffer-commonparent", index0_loc.dot(Field::buffer));
         }
     }
     if (pImageMemoryBarriers) {
         for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pImageMemoryBarriers, index0);
             skip |= ValidateObject(pImageMemoryBarriers[index0].image, kVulkanObjectTypeImage, false,
-                                   "VUID-VkImageMemoryBarrier-image-parameter", kVUIDUndefined, index0_loc.dot(Field::image));
+                                   "VUID-VkImageMemoryBarrier-image-parameter",
+                                   "UNASSIGNED-vkCmdPipelineBarrier-commandBuffer-commonparent", index0_loc.dot(Field::image));
         }
     }
 
@@ -2330,16 +2336,17 @@ bool ObjectLifetimes::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer,
         if (pDependencyInfo->pBufferMemoryBarriers) {
             for (uint32_t index1 = 0; index1 < pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, index1);
-                skip |=
-                    ValidateObject(pDependencyInfo->pBufferMemoryBarriers[index1].buffer, kVulkanObjectTypeBuffer, false,
-                                   "VUID-VkBufferMemoryBarrier2-buffer-parameter", kVUIDUndefined, index1_loc.dot(Field::buffer));
+                skip |= ValidateObject(pDependencyInfo->pBufferMemoryBarriers[index1].buffer, kVulkanObjectTypeBuffer, false,
+                                       "VUID-VkBufferMemoryBarrier2-buffer-parameter",
+                                       "UNASSIGNED-vkCmdSetEvent2-commandBuffer-commonparent", index1_loc.dot(Field::buffer));
             }
         }
         if (pDependencyInfo->pImageMemoryBarriers) {
             for (uint32_t index1 = 0; index1 < pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, index1);
                 skip |= ValidateObject(pDependencyInfo->pImageMemoryBarriers[index1].image, kVulkanObjectTypeImage, false,
-                                       "VUID-VkImageMemoryBarrier2-image-parameter", kVUIDUndefined, index1_loc.dot(Field::image));
+                                       "VUID-VkImageMemoryBarrier2-image-parameter",
+                                       "UNASSIGNED-vkCmdSetEvent2-commandBuffer-commonparent", index1_loc.dot(Field::image));
             }
         }
     }
@@ -2377,16 +2384,16 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffe
                 for (uint32_t index1 = 0; index1 < pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pBufferMemoryBarriers, index1);
                     skip |= ValidateObject(pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer, kVulkanObjectTypeBuffer,
-                                           false, "VUID-VkBufferMemoryBarrier2-buffer-parameter", kVUIDUndefined,
-                                           index1_loc.dot(Field::buffer));
+                                           false, "VUID-VkBufferMemoryBarrier2-buffer-parameter",
+                                           "UNASSIGNED-vkCmdWaitEvents2-commandBuffer-commonparent", index1_loc.dot(Field::buffer));
                 }
             }
             if (pDependencyInfos[index0].pImageMemoryBarriers) {
                 for (uint32_t index1 = 0; index1 < pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pImageMemoryBarriers, index1);
-                    skip |=
-                        ValidateObject(pDependencyInfos[index0].pImageMemoryBarriers[index1].image, kVulkanObjectTypeImage, false,
-                                       "VUID-VkImageMemoryBarrier2-image-parameter", kVUIDUndefined, index1_loc.dot(Field::image));
+                    skip |= ValidateObject(pDependencyInfos[index0].pImageMemoryBarriers[index1].image, kVulkanObjectTypeImage,
+                                           false, "VUID-VkImageMemoryBarrier2-image-parameter",
+                                           "UNASSIGNED-vkCmdWaitEvents2-commandBuffer-commonparent", index1_loc.dot(Field::image));
                 }
             }
         }
@@ -2406,14 +2413,16 @@ bool ObjectLifetimes::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer command
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, index1);
                 skip |=
                     ValidateObject(pDependencyInfo->pBufferMemoryBarriers[index1].buffer, kVulkanObjectTypeBuffer, false,
-                                   "VUID-VkBufferMemoryBarrier2-buffer-parameter", kVUIDUndefined, index1_loc.dot(Field::buffer));
+                                   "VUID-VkBufferMemoryBarrier2-buffer-parameter",
+                                   "UNASSIGNED-vkCmdPipelineBarrier2-commandBuffer-commonparent", index1_loc.dot(Field::buffer));
             }
         }
         if (pDependencyInfo->pImageMemoryBarriers) {
             for (uint32_t index1 = 0; index1 < pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, index1);
                 skip |= ValidateObject(pDependencyInfo->pImageMemoryBarriers[index1].image, kVulkanObjectTypeImage, false,
-                                       "VUID-VkImageMemoryBarrier2-image-parameter", kVUIDUndefined, index1_loc.dot(Field::image));
+                                       "VUID-VkImageMemoryBarrier2-image-parameter",
+                                       "UNASSIGNED-vkCmdPipelineBarrier2-commandBuffer-commonparent", index1_loc.dot(Field::image));
             }
         }
     }

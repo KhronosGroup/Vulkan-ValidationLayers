@@ -693,3 +693,119 @@ TEST_F(NegativeParent, DescriptorSetLayout) {
     vk::CreatePipelineLayout(m_second_device->handle(), &pipeline_layout_ci, nullptr, &handle);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeParent, FlushInvalidateMemory) {
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+    alloc_info.allocationSize = 64;
+
+    bool pass = m_device->phy().set_memory_type(0xFFFFFFFF, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    if (!pass) {
+        GTEST_SKIP() << "Host Visible memory not found";
+    }
+
+    vkt::DeviceMemory device_memory(*m_device, alloc_info);
+
+    VkMappedMemoryRange memory_range = vku::InitStructHelper();
+    memory_range.memory = device_memory;
+    memory_range.offset = 0;
+    memory_range.size = VK_WHOLE_SIZE;
+
+    void *pData;
+    vk::MapMemory(device(), device_memory, 0, VK_WHOLE_SIZE, 0, &pData);
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkFlushMappedMemoryRanges-memory-device");
+    vk::FlushMappedMemoryRanges(m_second_device->handle(), 1, &memory_range);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkInvalidateMappedMemoryRanges-memory-device");
+    vk::InvalidateMappedMemoryRanges(m_second_device->handle(), 1, &memory_range);
+    m_errorMonitor->VerifyFound();
+
+    vk::UnmapMemory(device(), device_memory);
+}
+
+TEST_F(NegativeParent, GetDescriptorSetLayoutSupport) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()};
+    const VkDescriptorSetLayoutCreateFlags flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, 1, &binding);
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutSupport-pImmutableSamplers-device");
+    vk::GetDescriptorSetLayoutSupport(m_second_device->handle(), &dslci, &support);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, BufferView) {
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::Buffer buffer(*m_second_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
+    bvci.buffer = buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkBufferViewCreateInfo-buffer-parent");
+    vkt::BufferView buffer_view(*m_device, bvci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, CmdPipelineBarrier) {
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_second_device, image_ci, vkt::set_layout);
+
+    VkImageSubresource image_sub = vkt::Image::subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
+    VkImageSubresourceRange image_sub_range = vkt::Image::subresource_range(image_sub);
+    VkImageMemoryBarrier image_barriers[] = {image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image_sub_range)};
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPipelineBarrier-commandBuffer-commonparent");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, image_barriers);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, CmdPipelineBarrier2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::Buffer buffer(*m_second_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    buffer_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    buffer_barrier.srcQueueFamilyIndex = 0;
+    buffer_barrier.dstQueueFamilyIndex = 0;
+    buffer_barrier.buffer = buffer.handle();
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    VkDependencyInfo buffer_dependency = vku::InitStructHelper();
+    buffer_dependency.bufferMemoryBarrierCount = 1;
+    buffer_dependency.pBufferMemoryBarriers = &buffer_barrier;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPipelineBarrier2-commandBuffer-commonparent");
+    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &buffer_dependency);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}

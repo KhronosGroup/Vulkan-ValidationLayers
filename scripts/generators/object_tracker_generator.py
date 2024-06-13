@@ -209,20 +209,14 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
         # Structures that do not define parent/commonparent VUIDs for vulkan handles.
         # This overlaps with https://gitlab.khronos.org/vulkan/vulkan/-/issues/3553#note_424431
         self.structs_that_forgot_about_parent_vuids = [
-            'VkMappedMemoryRange',
             'VkSparseMemoryBind',
             'VkSparseImageMemoryBind',
-            'VkBufferViewCreateInfo',
             'VkPipelineShaderStageCreateInfo',
-            'VkBufferMemoryBarrier',
-            'VkImageMemoryBarrier',
             'VkImageMemoryRequirementsInfo2',
             'VkBufferMemoryRequirementsInfo2',
             'VkImageSparseMemoryRequirementsInfo2',
             'VkSemaphoreWaitInfo',
             'VkSemaphoreSignalInfo',
-            'VkBufferMemoryBarrier2',
-            'VkImageMemoryBarrier2',
             'VkSemaphoreSubmitInfo',
             'VkCommandBufferSubmitInfo',
             'VkBindVideoSessionMemoryInfoKHR',
@@ -295,6 +289,9 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'VkDeviceMemoryOpaqueCaptureAddressInfo',
             'VkPipelineIndirectDeviceAddressInfoNV',
             'VkAccelerationStructureDeviceAddressInfoKHR',
+
+            # Handled in manual check
+            'VkDescriptorSetLayoutBinding',
             ]
 
         # Commands that define parent requirements using "-parent" instead of "-commonparent" VUID
@@ -623,29 +620,75 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         # For other dispatchable handles it depends on the API function
         return commandName in self.dispatchable_has_parent_vuid_commands
 
+    # It is very complex for the spec handle walking through structs and finding Handles and generating implicit VUs,
+    # We instead just have to do it manually for now.
+    # (details at https://gitlab.khronos.org/vulkan/vulkan/-/issues/3553#note_424431)
+    def getManualParentVUID(self, memberName: str, structName: str, commandName: str):
+        # These are cases where there is only a single caller of the struct
+        # We check by command name incase a new command would use the struct
+        if commandName == 'vkCreateImageView' and memberName == 'image':
+            return '"VUID-vkCreateImageView-image-09179"'
+        if commandName =='vkGetPipelineExecutablePropertiesKHR' and memberName == 'pipeline':
+            return '"VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271"'
+        if commandName == 'vkCmdCudaLaunchKernelNV' and memberName == 'function':
+            return '"UNASSIGNED-VkCudaLaunchInfoNV-function-parent"'
+        if commandName == 'vkLatencySleepNV' and memberName == 'signalSemaphore':
+            return '"UNASSIGNED-VkLatencySleepInfoNV-signalSemaphore-parent"'
+        if commandName == 'vkCreateCudaFunctionNV' and memberName == 'module':
+            return '"UNASSIGNED-VkCudaFunctionCreateInfoNV-module-parent"'
+        if commandName == 'vkCmdPushConstants2KHR' and memberName == 'layout':
+            return '"UNASSIGNED-VkPushConstantsInfoKHR-layout-parent"'
+        if commandName == 'vkCmdSetDescriptorBufferOffsets2EXT' and memberName == 'layout':
+            return '"UNASSIGNED-VkSetDescriptorBufferOffsetsInfoEXT-layout-parent"'
+        if commandName == 'vkCmdBindDescriptorBufferEmbeddedSamplers2EXT' and memberName == 'layout':
+            return '"UNASSIGNED-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-layout-parent"'
+        if commandName == 'vkCreateBufferView' and memberName == 'buffer':
+            return '"UNASSIGNED-VkBufferViewCreateInfo-buffer-parent"'
+
+        # These are cases where multiple commands call the struct
+        if structName == 'VkPipelineExecutableInfoKHR' and memberName == 'pipeline':
+            if commandName == 'vkGetPipelineExecutableStatisticsKHR':
+                return '"VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273"'
+            elif commandName == 'vkGetPipelineExecutableInternalRepresentationsKHR':
+                return '"VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277"'
+        if structName == 'VkPipelineLayoutCreateInfo' and memberName == 'pSetLayouts':
+            return '"UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent"'
+        if structName == 'VkVideoInlineQueryInfoKHR' and memberName == 'queryPool':
+            return '"UNASSIGNED-VkVideoInlineQueryInfoKHR-queryPool-parent"'
+        if structName == 'VkMappedMemoryRange':
+            if commandName == 'vkInvalidateMappedMemoryRanges':
+                return '"UNASSIGNED-vkInvalidateMappedMemoryRanges-memory-device"'
+            elif commandName == 'vkFlushMappedMemoryRanges':
+                return '"UNASSIGNED-vkFlushMappedMemoryRanges-memory-device"'
+
+        # Common parents because the structs have more then one handle that needs to be check
+        if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
+            if commandName == 'vkCmdPipelineBarrier':
+                return '"UNASSIGNED-vkCmdPipelineBarrier-commandBuffer-commonparent"'
+            elif commandName == 'vkCmdWaitEvents':
+                return '"UNASSIGNED-vkCmdWaitEvents-commandBuffer-commonparent"'
+        if (structName == 'VkBufferMemoryBarrier2' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier2' and memberName == 'image'):
+            if commandName.startswith('vkCmdPipelineBarrier2'):
+                return '"UNASSIGNED-vkCmdPipelineBarrier2-commandBuffer-commonparent"'
+            elif commandName.startswith('vkCmdWaitEvents2'):
+                return '"UNASSIGNED-vkCmdWaitEvents2-commandBuffer-commonparent"'
+            elif commandName.startswith('vkCmdSetEvent2'):
+                return '"UNASSIGNED-vkCmdSetEvent2-commandBuffer-commonparent"'
+
+        # Common parents
+        if structName =='VkRenderPassAttachmentBeginInfo' and memberName == 'pAttachments':
+            return '"VUID-VkRenderPassBeginInfo-framebuffer-02780"'
+
+        return None
 
     def getFieldParentVUID(self, member: Member, structName: str, commandName: str, singleParentVuid: bool) -> str:
         if not self.hasFieldParentVUID(member, structName):
             return 'kVUIDUndefined'
 
-        # Special cases
-        # Make sure function is not in 'structs_that_forgot_about_parent_vuids'
-        if commandName == 'vkCreateImageView' and member.name == 'image':
-            return "\"VUID-vkCreateImageView-image-09179\""
-        if 'vkCmdBeginRenderPass' in commandName and member.name == 'pAttachments':
-            return "\"VUID-VkRenderPassBeginInfo-framebuffer-02780\""
-        if 'vkGetPipelineExecutablePropertiesKHR' in commandName and member.name == 'pipeline':
-                return "\"VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271\""
-        if 'VkPipelineExecutableInfoKHR' in structName and member.name == 'pipeline':
-            if commandName == 'vkGetPipelineExecutableStatisticsKHR':
-                return "\"VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273\""
-            elif commandName == 'vkGetPipelineExecutableInternalRepresentationsKHR':
-                return "\"VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277\""
-        # TODO - Need to get spec to generate these VUs
-        if structName == 'VkPipelineLayoutCreateInfo' and member.name == 'pSetLayouts':
-            return "\"UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent\""
-
-        if singleParentVuid:
+        manualVuid = self.getManualParentVUID(member.name, structName, commandName)
+        if  manualVuid is not None:
+            return manualVuid
+        elif singleParentVuid:
             return getVUID(self.valid_vuids, f'VUID-{structName}-{member.name}-parent')
         else:
             return getVUID(self.valid_vuids, f'VUID-{structName}-commonparent')
