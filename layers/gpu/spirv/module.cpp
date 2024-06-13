@@ -185,6 +185,24 @@ bool Module::HasCapability(spv::Capability capability) {
     return false;
 }
 
+static void StringToSpirv(const char* input, std::vector<uint32_t>& output) {
+    uint32_t i = 0;
+    while (*input != '\0') {
+        uint32_t new_word = 0;
+        for (i = 0; i < 4; i++) {
+            if (*input == '\0') break;
+            uint32_t value = static_cast<uint32_t>(*input);
+            new_word |= value << (8 * i);
+            input++;
+        }
+        output.push_back(new_word);
+    }
+    // add full null pad if word didn't end with null
+    if (i == 4) {
+        output.push_back(0);
+    }
+}
+
 // Will only add if not already added
 void Module::AddCapability(spv::Capability capability) {
     if (!HasCapability(capability)) {
@@ -192,6 +210,14 @@ void Module::AddCapability(spv::Capability capability) {
         new_inst->Fill({(uint32_t)capability});
         capabilities_.emplace_back(std::move(new_inst));
     }
+}
+
+void Module::AddExtension(const char* extension) {
+    std::vector<uint32_t> words;
+    StringToSpirv(extension, words);
+    auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), spv::OpExtension);
+    new_inst->Fill(words);
+    extensions_.push_back(std::move(new_inst));
 }
 
 void Module::RunPassBindlessDescriptor() {
@@ -262,24 +288,6 @@ void Module::ToBinary(std::vector<uint32_t>& out) {
     }
 }
 
-static void StringToSpirv(const char* input, std::vector<uint32_t>& output) {
-    uint32_t i = 0;
-    while (*input != '\0') {
-        uint32_t new_word = 0;
-        for (i = 0; i < 4; i++) {
-            if (*input == '\0') break;
-            uint32_t value = static_cast<uint32_t>(*input);
-            new_word |= value << (8 * i);
-            input++;
-        }
-        output.push_back(new_word);
-    }
-    // add full null pad if word didn't end with null
-    if (i == 4) {
-        output.push_back(0);
-    }
-}
-
 // Takes the current module and injects the function into it
 // This is done by first apply any new Types/Constants/Variables and then copying in the instructions of the Function
 void Module::LinkFunction(const LinkInfo& info) {
@@ -297,7 +305,10 @@ void Module::LinkFunction(const LinkInfo& info) {
     // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
     // A module can only have one OpMemoryModel
     memory_model_[0]->words_[1] = spv::AddressingModelPhysicalStorageBuffer64;
-    AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
+    if (!HasCapability(spv::CapabilityPhysicalStorageBufferAddresses)) {
+        AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
+        AddExtension("SPV_KHR_physical_storage_buffer");
+    }
 
     // find all constant and types, add any the module doesn't have
     uint32_t offset = 5;  // skip header
@@ -568,11 +579,7 @@ void Module::LinkFunction(const LinkInfo& info) {
     const uint32_t spirv_version_1_0 = 0x00010000;
     if (header_.version == spirv_version_1_0) {
         // SPV_KHR_storage_buffer_storage_class is needed, but glslang removes it from linking functions
-        std::vector<uint32_t> words;
-        StringToSpirv("SPV_KHR_storage_buffer_storage_class", words);
-        auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), spv::OpExtension);
-        new_inst->Fill(words);
-        extensions_.push_back(std::move(new_inst));
+        AddExtension("SPV_KHR_storage_buffer_storage_class");
     }
 }
 
