@@ -238,7 +238,6 @@ void QueueBatchContext::EndRenderPassReplayCleanup(ReplayState& replay) {
 
 void QueueBatchContext::Cleanup() {
     // Clear these after validation and import, not valid after.
-    async_batches_.clear();
     current_label_stack_ = nullptr;
 }
 
@@ -343,9 +342,9 @@ void QueueBatchContext::ImportSyncTags(const QueueBatchContext& from) {
     }
 }
 
-void QueueBatchContext::SetupAccessContext(const QueueBatchContext::ConstPtr& prev, const VkPresentInfoKHR& present_info,
-                                           const PresentedImages& presented_images,
-                                           SignaledSemaphoresUpdate& signaled_semaphores_update) {
+std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::SetupAccessContext(
+    const ConstPtr& prev, const VkPresentInfoKHR& present_info, const PresentedImages& presented_images,
+    SignaledSemaphoresUpdate& signaled_semaphores_update) {
     std::vector<ConstPtr> batches_resolved;
     for (VkSemaphore sem : vvl::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount)) {
         QueueBatchContext::Ptr resolved = ResolveOneWaitSemaphore(sem, presented_images, signaled_semaphores_update);
@@ -353,7 +352,7 @@ void QueueBatchContext::SetupAccessContext(const QueueBatchContext::ConstPtr& pr
             batches_resolved.emplace_back(std::move(resolved));
         }
     }
-    CommonSetupAccessContext(prev, batches_resolved);
+    return CommonSetupAccessContext(prev, batches_resolved);
 }
 
 bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const PresentedImages& presented_images) {
@@ -417,8 +416,9 @@ void QueueBatchContext::LogAcquireOperation(const PresentedImage& presented, vvl
     access_log->emplace_back(AcquireResourceRecord(presented, tag_range_.begin, command));
 }
 
-void QueueBatchContext::SetupAccessContext(const QueueBatchContext::ConstPtr& prev, const VkSubmitInfo2& submit_info,
-                                           SignaledSemaphoresUpdate& signaled_semaphores_update) {
+std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::SetupAccessContext(
+    const QueueBatchContext::ConstPtr& prev, const VkSubmitInfo2& submit_info,
+    SignaledSemaphoresUpdate& signaled_semaphores_update) {
     // Import (resolve) the batches that are waited on, with the semaphore's effective barriers applied
     std::vector<ConstPtr> batches_resolved;
     const uint32_t wait_count = submit_info.waitSemaphoreInfoCount;
@@ -430,7 +430,7 @@ void QueueBatchContext::SetupAccessContext(const QueueBatchContext::ConstPtr& pr
             batches_resolved.emplace_back(std::move(resolved));
         }
     }
-    CommonSetupAccessContext(prev, batches_resolved);
+    return CommonSetupAccessContext(prev, batches_resolved);
 }
 
 void QueueBatchContext::SetupAccessContext(const PresentedImage& presented) {
@@ -441,8 +441,8 @@ void QueueBatchContext::SetupAccessContext(const PresentedImage& presented) {
     }
 }
 
-void QueueBatchContext::CommonSetupAccessContext(const QueueBatchContext::ConstPtr& prev,
-                                                 std::vector<QueueBatchContext::ConstPtr>& batches_resolved) {
+std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::CommonSetupAccessContext(const ConstPtr& prev,
+                                                                                     std::vector<ConstPtr>& batches_resolved) {
     // Import the previous batch information
     if (prev) {
         // Copy in the event state from the previous batch (on this queue)
@@ -462,8 +462,8 @@ void QueueBatchContext::CommonSetupAccessContext(const QueueBatchContext::ConstP
 
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
     auto skip_resolved_filter = [&batches_resolved](auto& batch) { return !vvl::Contains(batches_resolved, batch); };
-    async_batches_ = sync_state_->GetLastBatches(skip_resolved_filter);
-    for (const auto& async_batch : async_batches_) {
+    std::vector<ConstPtr> async_batches = sync_state_->GetLastBatches(skip_resolved_filter);
+    for (const auto& async_batch : async_batches) {
         const QueueId async_queue = async_batch->GetQueueId();
         ResourceUsageTag sync_tag;
         if (async_queue < queue_sync_tag_.size()) {
@@ -478,6 +478,7 @@ void QueueBatchContext::CommonSetupAccessContext(const QueueBatchContext::ConstP
         // We need to snapshot the async log information for async hazard reporting
         batch_log_.Import(async_batch->batch_log_);
     }
+    return async_batches;
 }
 
 std::vector<QueueBatchContext::CommandBufferInfo> QueueBatchContext::GetCommandBuffers(const VkSubmitInfo2& submit_info) {
@@ -537,7 +538,12 @@ bool QueueBatchContext::ProcessSubmit(const VkSubmitInfo2& submit, uint64_t subm
                                       std::vector<std::string>* current_label_stack,
                                       SignaledSemaphoresUpdate& signaled_semaphores_update) {
     bool skip = false;
-    SetupAccessContext(last_batch, submit, signaled_semaphores_update);
+
+    // The purpose of keeping return value is to ensure async batches are alive during validation.
+    // Validation accesses raw pointer to async contexts stored in AsyncReference.
+    // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case.
+    auto async_batches = SetupAccessContext(last_batch, submit, signaled_semaphores_update);
+
     current_label_stack_ = current_label_stack;
 
     const std::vector<CommandBufferInfo> command_buffers = GetCommandBuffers(submit);

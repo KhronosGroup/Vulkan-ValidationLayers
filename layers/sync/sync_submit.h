@@ -245,17 +245,20 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ResetEventsContext() { events_context_.Clear(); }
 
     // For Submit
-    bool ProcessSubmit(const VkSubmitInfo2 &submit, uint64_t submit_index,
-                       uint32_t batch_index, const QueueBatchContext::ConstPtr &last_batch, const ErrorObject &error_obj,
+    bool ProcessSubmit(const VkSubmitInfo2 &submit, uint64_t submit_index, uint32_t batch_index,
+                       const QueueBatchContext::ConstPtr &last_batch, const ErrorObject &error_obj,
                        std::vector<std::string> *current_label_stack, SignaledSemaphoresUpdate &signaled_semaphores_update);
-    void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
-                            SignaledSemaphoresUpdate &signaled_semaphores_update);
+    [[nodiscard]] std::vector<ConstPtr> SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev,
+                                                           const VkSubmitInfo2 &submit_info,
+                                                           SignaledSemaphoresUpdate &signaled_semaphores_update);
     std::vector<CommandBufferInfo> GetCommandBuffers(const VkSubmitInfo2 &submit_info);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     // For Present
-    void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkPresentInfoKHR &present_info,
-                            const PresentedImages &presented_images, SignaledSemaphoresUpdate &signaled_semaphores_update);
+    [[nodiscard]] std::vector<ConstPtr> SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev,
+                                                           const VkPresentInfoKHR &present_info,
+                                                           const PresentedImages &presented_images,
+                                                           SignaledSemaphoresUpdate &signaled_semaphores_update);
     bool DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images);
     void DoPresentOperations(const PresentedImages &presented_images);
     void LogPresentOperations(const PresentedImages &presented_images, uint64_t submit_index);
@@ -279,12 +282,11 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void Cleanup();
 
   private:
-    void CommonSetupAccessContext(const QueueBatchContext::ConstPtr &prev,
-                                  std::vector<QueueBatchContext::ConstPtr> &batches_resolved);
-    QueueBatchContext::Ptr ResolveOneWaitSemaphore(VkSemaphore sem, const PresentedImages &presented_images,
-                                                   SignaledSemaphoresUpdate &signaled_semaphores_update);
-    QueueBatchContext::Ptr ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
-                                                   SignaledSemaphoresUpdate &signaled_semaphores_update);
+    std::vector<ConstPtr> CommonSetupAccessContext(const ConstPtr &prev, std::vector<ConstPtr> &batches_resolved);
+    Ptr ResolveOneWaitSemaphore(VkSemaphore sem, const PresentedImages &presented_images,
+                                SignaledSemaphoresUpdate &signaled_semaphores_update);
+    Ptr ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
+                                SignaledSemaphoresUpdate &signaled_semaphores_update);
 
     void ImportSyncTags(const QueueBatchContext &from);
     const QueueSyncState *queue_state_ = nullptr;
@@ -297,7 +299,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     std::vector<ResourceUsageTag> queue_sync_tag_;
 
     // Clear these after validation and import, not valid after.
-    std::vector<ConstPtr> async_batches_;
     std::vector<std::string> *current_label_stack_ = nullptr;
 };
 
