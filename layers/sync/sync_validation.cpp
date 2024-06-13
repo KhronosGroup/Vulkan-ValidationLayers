@@ -2813,7 +2813,12 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     QueueBatchContext::Ptr batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue));
 
     uint32_t present_tag_count = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
-    batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
+
+    // The purpose of keeping return value is to ensure async batches are alive during validation.
+    // Validation accesses raw pointer to async contexts stored in AsyncReference.
+    auto async_batches =
+        batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
+
     const ResourceUsageTag global_range_start = batch->SetupBatchTags(present_tag_count);
     // Update the present tags (convert to global range)
     for (auto &presented : cmd_state->presented_images) {
