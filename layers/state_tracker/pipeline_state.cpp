@@ -946,6 +946,17 @@ bool LastBound::IsRasterizationDisabled() const {
     return false;
 }
 
+bool LastBound::IsLogicOpEnabled() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.logic_op_enable;
+        }
+    } else {
+        return pipeline_state->ColorBlendState() && pipeline_state->ColorBlendState()->logicOpEnable;
+    }
+    return false;
+}
+
 VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         if (i < cb_state.dynamic_state_value.color_write_masks.size()) {

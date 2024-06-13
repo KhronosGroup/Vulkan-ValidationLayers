@@ -1527,6 +1527,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
 
     if (!pipeline) {
         skip |= ValidateShaderObjectBoundShader(last_bound_state, bind_point, vuid);
+        if (skip) return skip;  // if shaders are bound wrong, likely to give false positives after
     }
 
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {

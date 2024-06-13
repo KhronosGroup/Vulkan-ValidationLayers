@@ -50,7 +50,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetStencilReference"]
     },
     "VK_DYNAMIC_STATE_CULL_MODE" : {
-        "command" : ["vkCmdSetCullMode"]
+        "command" : ["vkCmdSetCullMode"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_FRONT_FACE" : {
         "command" : ["vkCmdSetFrontFace"]
@@ -68,20 +69,24 @@ dynamic_state_map = {
         "command" : ["vkCmdBindVertexBuffers2"]
     },
     "VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE" : {
-        "command" : ["vkCmdSetDepthTestEnable"]
+        "command" : ["vkCmdSetDepthTestEnable"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE" : {
-        "command" : ["vkCmdSetDepthWriteEnable"]
+        "command" : ["vkCmdSetDepthWriteEnable"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_COMPARE_OP" : {
         "command" : ["vkCmdSetDepthCompareOp"],
         "dependency" : ["rasterizerDiscardEnable", "depthTestEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE" : {
-        "command" : ["vkCmdSetDepthBoundsTestEnable"]
+        "command" : ["vkCmdSetDepthBoundsTestEnable"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE" : {
-        "command" : ["vkCmdSetStencilTestEnable"]
+        "command" : ["vkCmdSetStencilTestEnable"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_STENCIL_OP" : {
         "command" : ["vkCmdSetStencilOp"]
@@ -90,7 +95,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetRasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE" : {
-        "command" : ["vkCmdSetDepthBiasEnable"]
+        "command" : ["vkCmdSetDepthBiasEnable"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE" : {
         "command" : ["vkCmdSetPrimitiveRestartEnable"]
@@ -123,7 +129,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetExclusiveScissorNV"]
     },
     "VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR" : {
-        "command" : ["vkCmdSetFragmentShadingRateKHR"]
+        "command" : ["vkCmdSetFragmentShadingRateKHR"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_LINE_STIPPLE_KHR" : {
         "command" : ["vkCmdSetLineStippleKHR"]
@@ -135,7 +142,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetPatchControlPointsEXT"]
     },
     "VK_DYNAMIC_STATE_LOGIC_OP_EXT" : {
-        "command" : ["vkCmdSetLogicOpEXT"]
+        "command" : ["vkCmdSetLogicOpEXT"],
+        "dependency" : ["rasterizerDiscardEnable", "logicOpEnable"]
     },
     "VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT" : {
         "command" : ["vkCmdSetColorWriteEnableEXT"]
@@ -452,11 +460,18 @@ class DynamicStateOutputGenerator(BaseGenerator):
                 } else {
                     ss << "VkPipelineRasterizationStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\\n";
                 }''')
+            if 'logicOpEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
+                    ss << "vkCmdSetLogicOpEnableEXT last set logicOpEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineColorBlendStateCreateInfo::logicOpEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
 
             out.append('    break;')
         out.append('''
                     default:
-                        ss << "(Unknown Dynamic State)";
+                        break; // not all state will be dependent on other state
                 }
 
                 return ss.str();
