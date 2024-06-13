@@ -4445,24 +4445,9 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
     }
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    const auto sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
-    if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-        if ((api_version >= VK_API_VERSION_1_2) && !enabled_features.samplerFilterMinmax) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-pNext-06726", device,
-                             create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
-                             "is %s but samplerFilterMinmax feature was not enabled.",
-                             string_VkSamplerReductionMode(sampler_reduction->reductionMode));
-        } else if ((api_version < VK_API_VERSION_1_2) && !IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax)) {
-            // NOTE: technically this VUID is only if the corresponding _feature_ is not enabled, and only if on api_version
-            // >= 1.2, but there doesn't appear to be a similar VUID for when api_version < 1.2
-            skip |= LogError(
-                "VUID-VkSamplerCreateInfo-pNext-06726", device, error_obj.location, "is %s, but extension %s is not enabled.",
-                string_VkSamplerReductionMode(sampler_reduction->reductionMode), VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
-        }
-    }
+
     if (enabled_features.samplerYcbcrConversion == VK_TRUE) {
-        const auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
-        if (conversion_info) {
+        if (const auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext)) {
             const VkSamplerYcbcrConversion sampler_ycbcr_conversion = conversion_info->conversion;
             auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(sampler_ycbcr_conversion);
             if (ycbcr_state && (ycbcr_state->format_features &
@@ -4489,35 +4474,14 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                         string_VkFilter(pCreateInfo->magFilter), string_VkFilter(chroma_filter));
                 }
             }
-            // At this point there is a known sampler YCbCr conversion enabled
-            if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-None-01647", device,
-                                 create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
-                                 "is %s but a sampler YCbCr Conversion is being used creating this sampler.",
-                                 string_VkSamplerReductionMode(sampler_reduction->reductionMode));
-            }
         }
     }
 
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
         pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
-        if (!enabled_features.customBorderColors) {
-            skip |=
-                LogError("VUID-VkSamplerCreateInfo-customBorderColors-04085", device, error_obj.location,
-                         "is %s but customBorderColors feature was not enabled.", string_VkBorderColor(pCreateInfo->borderColor));
-        }
-        auto custom_create_info = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
-        if (custom_create_info) {
-            if (custom_create_info->format == VK_FORMAT_UNDEFINED && !enabled_features.customBorderColorWithoutFormat) {
-                skip |= LogError("VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014", device,
-                                 create_info_loc.pNext(Struct::VkSamplerCustomBorderColorCreateInfoEXT, Field::format),
-                                 "is VK_FORMAT_UNDEFINED but the "
-                                 "customBorderColorWithoutFormat feature was not enabled.");
-            }
-        }
         if (custom_border_color_sampler_count >= phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers) {
             skip |= LogError("VUID-VkSamplerCreateInfo-None-04012", device, error_obj.location,
-                             "vkCreateSampler(): Creating a sampler with a custom border color will exceed the "
+                             "Creating a sampler with a custom border color will exceed the "
                              "maxCustomBorderColorSamplers limit of %" PRIu32 ".",
                              phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers);
         }
@@ -4528,47 +4492,6 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
             skip |= LogError("VUID-VkSamplerCreateInfo-samplerMipLodBias-04467", device, error_obj.location,
                              "(portability error) mipLodBias is %f, but samplerMipLodBias not supported.", pCreateInfo->mipLodBias);
         }
-    }
-
-    // If any of addressModeU, addressModeV or addressModeW are VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE, the
-    // VK_KHR_sampler_mirror_clamp_to_edge extension or promoted feature must be enabled
-    if (enabled_features.samplerMirrorClampToEdge == VK_FALSE) {
-        // Use 'else' because getting 3 large error messages is redundant and assume developer, if set all 3, will notice and fix
-        // all at once
-        if (pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-addressModeU-01079", device, create_info_loc.dot(Field::addressModeU),
-                             "is VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE but the "
-                             "VK_KHR_sampler_mirror_clamp_to_edge extension or samplerMirrorClampToEdge feature was not enabled.");
-        } else if (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-addressModeU-01079", device, create_info_loc.dot(Field::addressModeV),
-                             "is VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE but the "
-                             "VK_KHR_sampler_mirror_clamp_to_edge extension or samplerMirrorClampToEdge feature was not enabled.");
-        } else if (pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-addressModeU-01079", device, create_info_loc.dot(Field::addressModeW),
-                             "is VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE but the "
-                             "VK_KHR_sampler_mirror_clamp_to_edge extension or samplerMirrorClampToEdge feature was not enabled.");
-        }
-    }
-
-    if ((pCreateInfo->flags & VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT) && (!enabled_features.nonSeamlessCubeMap)) {
-        skip |= LogError("VUID-VkSamplerCreateInfo-nonSeamlessCubeMap-06788", device, create_info_loc.dot(Field::flags),
-                         "includes VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT but the "
-                         "nonSeamlessCubeMap feature was not enabled.");
-    }
-
-    if ((pCreateInfo->flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
-        !enabled_features.descriptorBufferCaptureReplay) {
-        skip |= LogError("VUID-VkSamplerCreateInfo-flags-08110", device, create_info_loc.dot(Field::flags),
-                         "includes VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but descriptorBufferCaptureReplay "
-                         "feature was not enabled.");
-    }
-
-    auto opaque_capture_descriptor_buffer =
-        vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
-    if (opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-        skip |= LogError("VUID-VkSamplerCreateInfo-pNext-08111", device, create_info_loc.dot(Field::flags),
-                         "is %s but VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
-                         string_VkSamplerCreateFlags(pCreateInfo->flags).c_str());
     }
 
     return skip;
