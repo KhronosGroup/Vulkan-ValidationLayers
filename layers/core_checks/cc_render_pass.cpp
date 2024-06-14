@@ -3998,7 +3998,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, c
     }
     for (const auto &query : cb_state->renderPassQueries) {
         const LogObjectList objlist(commandBuffer, query.pool);
-        skip |= LogError(" VUID-vkCmdEndRendering-None-06999", objlist, error_obj.location,
+        skip |= LogError("VUID-vkCmdEndRendering-None-06999", objlist, error_obj.location,
                          "query %" PRIu32 " from %s was began in the render pass, but never ended.", query.slot,
                          FormatHandle(query.pool).c_str());
     }

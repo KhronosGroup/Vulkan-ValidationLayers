@@ -751,7 +751,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
     copy_info.dst = blas->handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCopyAccelerationStructureKHR-buffer-03727");
-    m_errorMonitor->SetDesiredError(" VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 
@@ -759,7 +759,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
     copy_info.dst = blas_no_host_mem->handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCopyAccelerationStructureKHR-buffer-03728");
-    m_errorMonitor->SetDesiredError(" VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 }
