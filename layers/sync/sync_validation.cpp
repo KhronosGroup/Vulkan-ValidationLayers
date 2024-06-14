@@ -2814,10 +2814,13 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 
     uint32_t present_tag_count = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
 
+    const auto wait_semaphores = vvl::make_span(pPresentInfo->pWaitSemaphores, pPresentInfo->waitSemaphoreCount);
+    const auto resolved_batches = batch->ResolvePresentDependencies(wait_semaphores, last_batch, cmd_state->presented_images,
+                                                                    cmd_state->signaled_semaphores_update);
+
     // The purpose of keeping return value is to ensure async batches are alive during validation.
     // Validation accesses raw pointer to async contexts stored in AsyncReference.
-    const auto async_batches =
-        batch->SetupAccessContext(last_batch, *pPresentInfo, cmd_state->presented_images, cmd_state->signaled_semaphores_update);
+    const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
 
     const ResourceUsageTag global_range_start = batch->SetupBatchTags(present_tag_count);
     // Update the present tags (convert to global range)
@@ -2956,6 +2959,8 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
+    SignaledSemaphoresUpdate &signals_update = cmd_state->signaled_semaphores_update;
+
     // The submit id is a mutable automic which is not recoverable on a skip == true condition
     uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
 
@@ -2967,8 +2972,21 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue);
-        skip |= batch->ProcessSubmit(submit, submit_id, batch_idx, last_batch, error_obj, current_label_stack,
-                                     cmd_state->signaled_semaphores_update);
+
+        const auto wait_semaphores = vvl::make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount);
+        const auto resolved_batches = batch->ResolveSubmitDependencies(wait_semaphores, last_batch, signals_update);
+
+        // The purpose of keeping return value is to ensure async batches are alive during validation.
+        // Validation accesses raw pointer to async contexts stored in AsyncReference.
+        // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case.
+        const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
+
+        skip |= batch->ValidateSubmit(submit, submit_id, batch_idx, current_label_stack, error_obj);
+
+        const auto signal_semaphores = vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount);
+        for (const auto &semaphore_info : signal_semaphores) {
+            signals_update.OnSignal(batch, semaphore_info);
+        }
 
         // Unless the previous batch was referenced by a signal it will self destruct
         // in the record phase when the last batch is updated.
