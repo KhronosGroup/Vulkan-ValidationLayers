@@ -377,6 +377,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_khr_shader_expect_assume{kNotEnabled};
     ExtEnabled vk_khr_maintenance6{kNotEnabled};
+    ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
     ExtEnabled vk_img_filter_cubic{kNotEnabled};
@@ -942,6 +943,8 @@ struct DeviceExtensions : public InstanceExtensions {
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_maintenance6,
              Info(&DeviceExtensions::vk_khr_maintenance6, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction,
+             Info(&DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, {})},
             {vvl::Extension::_VK_NV_glsl_shader, Info(&DeviceExtensions::vk_nv_glsl_shader, {})},
             {vvl::Extension::_VK_EXT_depth_range_unrestricted, Info(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
             {vvl::Extension::_VK_IMG_filter_cubic, Info(&DeviceExtensions::vk_img_filter_cubic, {})},
@@ -1838,6 +1841,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_calibrated_timestamps:
         case vvl::Extension::_VK_KHR_shader_expect_assume:
         case vvl::Extension::_VK_KHR_maintenance6:
+        case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_NV_glsl_shader:
         case vvl::Extension::_VK_EXT_depth_range_unrestricted:
         case vvl::Extension::_VK_IMG_filter_cubic:

@@ -779,6 +779,8 @@ struct DeviceFeatures {
     bool shaderObject;
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR
     bool shaderQuadControl;
+    // VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR
+    bool shaderRelaxedExtendedInstruction;
     // VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT
     bool shaderReplicatedComposites;
     // VkPhysicalDeviceShaderSMBuiltinsFeaturesNV

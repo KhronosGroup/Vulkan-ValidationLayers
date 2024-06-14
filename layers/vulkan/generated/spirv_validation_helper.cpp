@@ -357,6 +357,7 @@ static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvE
     {"SPV_KHR_quad_control", {0, nullptr, &DeviceExtensions::vk_khr_shader_quad_control, ""}},
     {"SPV_NV_raw_access_chains", {0, nullptr, &DeviceExtensions::vk_nv_raw_access_chains, ""}},
     {"SPV_EXT_replicated_composites", {0, nullptr, &DeviceExtensions::vk_ext_shader_replicated_composites, ""}},
+    {"SPV_KHR_relaxed_extended_instruction", {0, nullptr, &DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, ""}},
 };
 // clang-format on
 
@@ -1055,6 +1056,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
     {"SPV_KHR_quad_control", {{vvl::Extension::_VK_KHR_shader_quad_control}}},
     {"SPV_NV_raw_access_chains", {{vvl::Extension::_VK_NV_raw_access_chains}}},
     {"SPV_EXT_replicated_composites", {{vvl::Extension::_VK_EXT_shader_replicated_composites}}},
+    {"SPV_KHR_relaxed_extended_instruction", {{vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction}}},
     };
 
     // VUs before catch unknown extensions

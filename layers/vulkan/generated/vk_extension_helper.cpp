@@ -140,6 +140,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_KHR_calibrated_timestamps", vvl::Extension::_VK_KHR_calibrated_timestamps},
         {"VK_KHR_shader_expect_assume", vvl::Extension::_VK_KHR_shader_expect_assume},
         {"VK_KHR_maintenance6", vvl::Extension::_VK_KHR_maintenance6},
+        {"VK_KHR_shader_relaxed_extended_instruction", vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction},
         {"VK_EXT_debug_report", vvl::Extension::_VK_EXT_debug_report},
         {"VK_NV_glsl_shader", vvl::Extension::_VK_NV_glsl_shader},
         {"VK_EXT_depth_range_unrestricted", vvl::Extension::_VK_EXT_depth_range_unrestricted},
