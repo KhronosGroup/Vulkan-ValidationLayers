@@ -778,7 +778,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         else:
                             vuidName = self.GetVuid(callerName, f"{lengthMember.name}-arraylength")
                             # This VUID is considered special, as it is the only one whose names ends in "-arraylength" but has special conditions allowing bindingCount to be 0.
-                            arrayVuidExceptions = ["\"VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength\""]
+                            arrayVuidExceptions = ['"VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength"']
                             if vuidName in arrayVuidExceptions:
                                 continue
                             if lengthMember.optional:
