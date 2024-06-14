@@ -909,6 +909,19 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location &loc) const {
             vuid = "VUID-vkCreateShadersEXT-device-09669";
             flags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
             break;
+        case Func::vkCreateRenderPass:
+            vuid = "VUID-vkCreateRenderPass-device-10000";
+            flags = VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateRenderPass2:
+        case Func::vkCreateRenderPass2KHR:
+            vuid = "VUID-vkCreateRenderPass2-device-10001";
+            flags = VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkCreateFramebuffer:
+            vuid = "VUID-vkCreateFramebuffer-device-10002";
+            flags = VK_QUEUE_GRAPHICS_BIT;
+            break;
         default:
             assert(false);  // missing case
             return skip;
