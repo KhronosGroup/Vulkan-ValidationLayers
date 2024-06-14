@@ -9455,28 +9455,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pInstance), pInstance, "VUID-vkCreateInstance-pInstance-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance, error_obj);
@@ -9489,28 +9468,7 @@ bool StatelessValidation::PreCallValidateDestroyInstance(VkInstance instance, co
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -10045,28 +10003,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pDevice), pDevice, "VUID-vkCreateDevice-pDevice-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, error_obj);
@@ -10079,28 +10016,7 @@ bool StatelessValidation::PreCallValidateDestroyDevice(VkDevice device, const Vk
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -10209,28 +10125,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(VkDevice device, const V
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pMemory), pMemory, "VUID-vkAllocateMemory-pMemory-parameter");
     if (!skip) skip |= manual_PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, error_obj);
@@ -10243,28 +10138,7 @@ bool StatelessValidation::PreCallValidateFreeMemory(VkDevice device, VkDeviceMem
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -10597,28 +10471,7 @@ bool StatelessValidation::PreCallValidateCreateFence(VkDevice device, const VkFe
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pFence), pFence, "VUID-vkCreateFence-pFence-parameter");
     return skip;
@@ -10630,28 +10483,7 @@ bool StatelessValidation::PreCallValidateDestroyFence(VkDevice device, VkFence f
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -10706,28 +10538,7 @@ bool StatelessValidation::PreCallValidateCreateSemaphore(VkDevice device, const 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSemaphore), pSemaphore, "VUID-vkCreateSemaphore-pSemaphore-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, error_obj);
@@ -10741,28 +10552,7 @@ bool StatelessValidation::PreCallValidateDestroySemaphore(VkDevice device, VkSem
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -10789,28 +10579,7 @@ bool StatelessValidation::PreCallValidateCreateEvent(VkDevice device, const VkEv
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pEvent), pEvent, "VUID-vkCreateEvent-pEvent-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateEvent(device, pCreateInfo, pAllocator, pEvent, error_obj);
@@ -10823,28 +10592,7 @@ bool StatelessValidation::PreCallValidateDestroyEvent(VkDevice device, VkEvent e
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -10905,28 +10653,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(VkDevice device, const 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pQueryPool), pQueryPool, "VUID-vkCreateQueryPool-pQueryPool-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, error_obj);
@@ -10940,28 +10667,7 @@ bool StatelessValidation::PreCallValidateDestroyQueryPool(VkDevice device, VkQue
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11014,28 +10720,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(VkDevice device, const VkB
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pBuffer), pBuffer, "VUID-vkCreateBuffer-pBuffer-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, error_obj);
@@ -11048,28 +10733,7 @@ bool StatelessValidation::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11101,28 +10765,7 @@ bool StatelessValidation::PreCallValidateCreateBufferView(VkDevice device, const
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pView), pView, "VUID-vkCreateBufferView-pView-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateBufferView(device, pCreateInfo, pAllocator, pView, error_obj);
@@ -11136,28 +10779,7 @@ bool StatelessValidation::PreCallValidateDestroyBufferView(VkDevice device, VkBu
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11227,28 +10849,7 @@ bool StatelessValidation::PreCallValidateCreateImage(VkDevice device, const VkIm
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pImage), pImage, "VUID-vkCreateImage-pImage-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateImage(device, pCreateInfo, pAllocator, pImage, error_obj);
@@ -11261,28 +10862,7 @@ bool StatelessValidation::PreCallValidateDestroyImage(VkDevice device, VkImage i
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11361,28 +10941,7 @@ bool StatelessValidation::PreCallValidateCreateImageView(VkDevice device, const 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pView), pView, "VUID-vkCreateImageView-pView-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateImageView(device, pCreateInfo, pAllocator, pView, error_obj);
@@ -11396,28 +10955,7 @@ bool StatelessValidation::PreCallValidateDestroyImageView(VkDevice device, VkIma
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11440,28 +10978,7 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(VkDevice device, con
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pShaderModule), pShaderModule, "VUID-vkCreateShaderModule-pShaderModule-parameter");
@@ -11475,28 +10992,7 @@ bool StatelessValidation::PreCallValidateDestroyShaderModule(VkDevice device, Vk
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11523,28 +11019,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineCache(VkDevice device, co
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pPipelineCache), pPipelineCache,
                                     "VUID-vkCreatePipelineCache-pPipelineCache-parameter");
@@ -11558,28 +11033,7 @@ bool StatelessValidation::PreCallValidateDestroyPipelineCache(VkDevice device, V
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11671,28 +11125,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(VkDevice device
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true, true,
                           "VUID-vkCreateGraphicsPipelines-createInfoCount-arraylength",
@@ -11790,28 +11223,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(VkDevice device,
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true, true,
                           "VUID-vkCreateComputePipelines-createInfoCount-arraylength",
@@ -11829,28 +11241,7 @@ bool StatelessValidation::PreCallValidateDestroyPipeline(VkDevice device, VkPipe
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -11890,28 +11281,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(VkDevice device, c
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pPipelineLayout), pPipelineLayout,
                                     "VUID-vkCreatePipelineLayout-pPipelineLayout-parameter");
@@ -11926,28 +11296,7 @@ bool StatelessValidation::PreCallValidateDestroyPipelineLayout(VkDevice device, 
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -12005,28 +11354,7 @@ bool StatelessValidation::PreCallValidateCreateSampler(VkDevice device, const Vk
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSampler), pSampler, "VUID-vkCreateSampler-pSampler-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateSampler(device, pCreateInfo, pAllocator, pSampler, error_obj);
@@ -12039,28 +11367,7 @@ bool StatelessValidation::PreCallValidateDestroySampler(VkDevice device, VkSampl
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -12105,28 +11412,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorSetLayout(VkDevice devi
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pSetLayout), pSetLayout, "VUID-vkCreateDescriptorSetLayout-pSetLayout-parameter");
@@ -12141,28 +11427,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorSetLayout(VkDevice dev
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -12204,28 +11469,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorPool(VkDevice device, c
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pDescriptorPool), pDescriptorPool,
                                     "VUID-vkCreateDescriptorPool-pDescriptorPool-parameter");
@@ -12240,28 +11484,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorPool(VkDevice device, 
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -12401,28 +11624,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(VkDevice device, cons
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pFramebuffer), pFramebuffer, "VUID-vkCreateFramebuffer-pFramebuffer-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, error_obj);
@@ -12436,28 +11638,7 @@ bool StatelessValidation::PreCallValidateDestroyFramebuffer(VkDevice device, VkF
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -12642,28 +11823,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pRenderPass), pRenderPass, "VUID-vkCreateRenderPass-pRenderPass-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
@@ -12677,28 +11837,7 @@ bool StatelessValidation::PreCallValidateDestroyRenderPass(VkDevice device, VkRe
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -12731,28 +11870,7 @@ bool StatelessValidation::PreCallValidateCreateCommandPool(VkDevice device, cons
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pCommandPool), pCommandPool, "VUID-vkCreateCommandPool-pCommandPool-parameter");
     return skip;
@@ -12765,28 +11883,7 @@ bool StatelessValidation::PreCallValidateDestroyCommandPool(VkDevice device, VkC
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -14337,28 +13434,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(VkDevice d
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pYcbcrConversion), pYcbcrConversion,
                                     "VUID-vkCreateSamplerYcbcrConversion-pYcbcrConversion-parameter");
@@ -14374,28 +13450,7 @@ bool StatelessValidation::PreCallValidateDestroySamplerYcbcrConversion(VkDevice 
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -14440,28 +13495,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pDescriptorUpdateTemplate), pDescriptorUpdateTemplate,
                                     "VUID-vkCreateDescriptorUpdateTemplate-pDescriptorUpdateTemplate-parameter");
@@ -14476,28 +13510,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorUpdateTemplate(VkDevic
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -14990,28 +14003,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pRenderPass), pRenderPass, "VUID-vkCreateRenderPass2-pRenderPass-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
@@ -15266,28 +14258,7 @@ bool StatelessValidation::PreCallValidateCreatePrivateDataSlot(VkDevice device, 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pPrivateDataSlot), pPrivateDataSlot,
                                     "VUID-vkCreatePrivateDataSlot-pPrivateDataSlot-parameter");
@@ -15301,28 +14272,7 @@ bool StatelessValidation::PreCallValidateDestroyPrivateDataSlot(VkDevice device,
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -16832,28 +15782,7 @@ bool StatelessValidation::PreCallValidateDestroySurfaceKHR(VkInstance instance, 
     if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -16995,28 +15924,7 @@ bool StatelessValidation::PreCallValidateCreateSwapchainKHR(VkDevice device, con
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSwapchain), pSwapchain, "VUID-vkCreateSwapchainKHR-pSwapchain-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, error_obj);
@@ -17031,28 +15939,7 @@ bool StatelessValidation::PreCallValidateDestroySwapchainKHR(VkDevice device, Vk
     if (!IsExtEnabled(device_extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -17284,28 +16171,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice p
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pMode), pMode, "VUID-vkCreateDisplayModeKHR-pMode-parameter");
     if (!skip)
@@ -17364,28 +16230,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateDisplayPlaneSurfaceKHR-pSurface-parameter");
     return skip;
@@ -17469,28 +16314,7 @@ bool StatelessValidation::PreCallValidateCreateSharedSwapchainsKHR(VkDevice devi
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateArray(loc.dot(Field::swapchainCount), loc.dot(Field::pSwapchains), swapchainCount, &pSwapchains, true, true,
                           "VUID-vkCreateSharedSwapchainsKHR-swapchainCount-arraylength",
@@ -17521,28 +16345,7 @@ bool StatelessValidation::PreCallValidateCreateXlibSurfaceKHR(VkInstance instanc
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateXlibSurfaceKHR-pSurface-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
@@ -17582,28 +16385,7 @@ bool StatelessValidation::PreCallValidateCreateXcbSurfaceKHR(VkInstance instance
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateXcbSurfaceKHR-pSurface-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
@@ -17647,28 +16429,7 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(VkInstance inst
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateWaylandSurfaceKHR-pSurface-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
@@ -17711,28 +16472,7 @@ bool StatelessValidation::PreCallValidateCreateAndroidSurfaceKHR(VkInstance inst
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateAndroidSurfaceKHR-pSurface-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
@@ -17761,28 +16501,7 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(VkInstance instan
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateWin32SurfaceKHR-pSurface-parameter");
     if (!skip) skip |= manual_PreCallValidateCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
@@ -17988,28 +16707,7 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(VkDevice device, 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pVideoSession), pVideoSession,
                                     "VUID-vkCreateVideoSessionKHR-pVideoSession-parameter");
@@ -18025,28 +16723,7 @@ bool StatelessValidation::PreCallValidateDestroyVideoSessionKHR(VkDevice device,
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -18142,28 +16819,7 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionParametersKHR(VkDevic
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pVideoSessionParameters), pVideoSessionParameters,
                                     "VUID-vkCreateVideoSessionParametersKHR-pVideoSessionParameters-parameter");
@@ -18209,28 +16865,7 @@ bool StatelessValidation::PreCallValidateDestroyVideoSessionParametersKHR(VkDevi
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -19718,28 +18353,7 @@ bool StatelessValidation::PreCallValidateCreateDeferredOperationKHR(VkDevice dev
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pDeferredOperation), pDeferredOperation,
                                     "VUID-vkCreateDeferredOperationKHR-pDeferredOperation-parameter");
@@ -19755,28 +18369,7 @@ bool StatelessValidation::PreCallValidateDestroyDeferredOperationKHR(VkDevice de
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -20951,28 +19544,7 @@ bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(VkInstance
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pCallback), pCallback, "VUID-vkCreateDebugReportCallbackEXT-pCallback-parameter");
@@ -20988,28 +19560,7 @@ bool StatelessValidation::PreCallValidateDestroyDebugReportCallbackEXT(VkInstanc
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -21238,28 +19789,7 @@ bool StatelessValidation::PreCallValidateCreateCuModuleNVX(VkDevice device, cons
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pModule), pModule, "VUID-vkCreateCuModuleNVX-pModule-parameter");
     return skip;
@@ -21286,28 +19816,7 @@ bool StatelessValidation::PreCallValidateCreateCuFunctionNVX(VkDevice device, co
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pFunction), pFunction, "VUID-vkCreateCuFunctionNVX-pFunction-parameter");
     return skip;
@@ -21323,28 +19832,7 @@ bool StatelessValidation::PreCallValidateDestroyCuModuleNVX(VkDevice device, VkC
     skip |= ValidateRequiredHandle(loc.dot(Field::module), module);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -21359,28 +19847,7 @@ bool StatelessValidation::PreCallValidateDestroyCuFunctionNVX(VkDevice device, V
     skip |= ValidateRequiredHandle(loc.dot(Field::function), function);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -21518,28 +19985,7 @@ bool StatelessValidation::PreCallValidateCreateStreamDescriptorSurfaceGGP(VkInst
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateStreamDescriptorSurfaceGGP-pSurface-parameter");
@@ -21616,28 +20062,7 @@ bool StatelessValidation::PreCallValidateCreateViSurfaceNN(VkInstance instance, 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateViSurfaceNN-pSurface-parameter");
     return skip;
@@ -21800,28 +20225,7 @@ bool StatelessValidation::PreCallValidateRegisterDeviceEventEXT(VkDevice device,
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pFence), pFence, "VUID-vkRegisterDeviceEventEXT-pFence-parameter");
     return skip;
@@ -21849,28 +20253,7 @@ bool StatelessValidation::PreCallValidateRegisterDisplayEventEXT(VkDevice device
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pFence), pFence, "VUID-vkRegisterDisplayEventEXT-pFence-parameter");
     return skip;
@@ -22026,28 +20409,7 @@ bool StatelessValidation::PreCallValidateCreateIOSSurfaceMVK(VkInstance instance
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateIOSSurfaceMVK-pSurface-parameter");
     return skip;
@@ -22075,28 +20437,7 @@ bool StatelessValidation::PreCallValidateCreateMacOSSurfaceMVK(VkInstance instan
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateMacOSSurfaceMVK-pSurface-parameter");
     return skip;
@@ -22283,28 +20624,7 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(VkInstance
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pMessenger), pMessenger, "VUID-vkCreateDebugUtilsMessengerEXT-pMessenger-parameter");
@@ -22320,28 +20640,7 @@ bool StatelessValidation::PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstanc
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -22607,28 +20906,7 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true, true,
                           "VUID-vkCreateExecutionGraphPipelinesAMDX-createInfoCount-arraylength",
@@ -22825,28 +21103,7 @@ bool StatelessValidation::PreCallValidateCreateValidationCacheEXT(VkDevice devic
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pValidationCache), pValidationCache,
                                     "VUID-vkCreateValidationCacheEXT-pValidationCache-parameter");
@@ -22862,28 +21119,7 @@ bool StatelessValidation::PreCallValidateDestroyValidationCacheEXT(VkDevice devi
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_validation_cache});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -23075,28 +21311,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(VkDevice 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pAccelerationStructure), pAccelerationStructure,
                                     "VUID-vkCreateAccelerationStructureNV-pAccelerationStructure-parameter");
@@ -23115,28 +21330,7 @@ bool StatelessValidation::PreCallValidateDestroyAccelerationStructureNV(VkDevice
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -23414,28 +21608,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true, true,
                           "VUID-vkCreateRayTracingPipelinesNV-createInfoCount-arraylength",
@@ -23873,28 +22046,7 @@ bool StatelessValidation::PreCallValidateCreateImagePipeSurfaceFUCHSIA(VkInstanc
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateImagePipeSurfaceFUCHSIA-pSurface-parameter");
     return skip;
@@ -23922,28 +22074,7 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(VkInstance instan
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateMetalSurfaceEXT-pSurface-parameter");
     return skip;
@@ -24084,28 +22215,7 @@ bool StatelessValidation::PreCallValidateCreateHeadlessSurfaceEXT(VkInstance ins
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateHeadlessSurfaceEXT-pSurface-parameter");
     return skip;
@@ -24727,28 +22837,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pIndirectCommandsLayout), pIndirectCommandsLayout,
                                     "VUID-vkCreateIndirectCommandsLayoutNV-pIndirectCommandsLayout-parameter");
@@ -24765,28 +22854,7 @@ bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevic
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -24897,28 +22965,7 @@ bool StatelessValidation::PreCallValidateCreateCudaModuleNV(VkDevice device, con
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pModule), pModule, "VUID-vkCreateCudaModuleNV-pModule-parameter");
     return skip;
@@ -24958,28 +23005,7 @@ bool StatelessValidation::PreCallValidateCreateCudaFunctionNV(VkDevice device, c
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pFunction), pFunction, "VUID-vkCreateCudaFunctionNV-pFunction-parameter");
     return skip;
@@ -24995,28 +23021,7 @@ bool StatelessValidation::PreCallValidateDestroyCudaModuleNV(VkDevice device, Vk
     skip |= ValidateRequiredHandle(loc.dot(Field::module), module);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -25031,28 +23036,7 @@ bool StatelessValidation::PreCallValidateDestroyCudaFunctionNV(VkDevice device, 
     skip |= ValidateRequiredHandle(loc.dot(Field::function), function);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -25381,28 +23365,7 @@ bool StatelessValidation::PreCallValidateCreateDirectFBSurfaceEXT(VkInstance ins
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateDirectFBSurfaceEXT-pSurface-parameter");
     return skip;
@@ -25602,28 +23565,7 @@ bool StatelessValidation::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice 
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pCollection), pCollection,
                                     "VUID-vkCreateBufferCollectionFUCHSIA-pCollection-parameter");
@@ -25859,28 +23801,7 @@ bool StatelessValidation::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice
     skip |= ValidateRequiredHandle(loc.dot(Field::collection), collection);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -26055,28 +23976,7 @@ bool StatelessValidation::PreCallValidateCreateScreenSurfaceQNX(VkInstance insta
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateScreenSurfaceQNX-pSurface-parameter");
     return skip;
@@ -26156,28 +24056,7 @@ bool StatelessValidation::PreCallValidateCreateMicromapEXT(VkDevice device, cons
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pMicromap), pMicromap, "VUID-vkCreateMicromapEXT-pMicromap-parameter");
     return skip;
@@ -26192,28 +24071,7 @@ bool StatelessValidation::PreCallValidateDestroyMicromapEXT(VkDevice device, VkM
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -27379,28 +25237,7 @@ bool StatelessValidation::PreCallValidateCreateOpticalFlowSessionNV(VkDevice dev
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSession), pSession, "VUID-vkCreateOpticalFlowSessionNV-pSession-parameter");
     return skip;
@@ -27416,28 +25253,7 @@ bool StatelessValidation::PreCallValidateDestroyOpticalFlowSessionNV(VkDevice de
     skip |= ValidateRequiredHandle(loc.dot(Field::session), session);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -27576,28 +25392,7 @@ bool StatelessValidation::PreCallValidateCreateShadersEXT(VkDevice device, uint3
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pShaders), createInfoCount, &pShaders, true, true,
                           "VUID-vkCreateShadersEXT-createInfoCount-arraylength", "VUID-vkCreateShadersEXT-pShaders-parameter");
@@ -27615,28 +25410,7 @@ bool StatelessValidation::PreCallValidateDestroyShaderEXT(VkDevice device, VkSha
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     return skip;
 }
@@ -27989,28 +25763,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureKHR(VkDevice
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pAccelerationStructure), pAccelerationStructure,
                                     "VUID-vkCreateAccelerationStructureKHR-pAccelerationStructure-parameter");
@@ -28030,28 +25783,7 @@ bool StatelessValidation::PreCallValidateDestroyAccelerationStructureKHR(VkDevic
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     if (!skip) skip |= manual_PreCallValidateDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator, error_obj);
     return skip;
@@ -28855,28 +26587,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnAllocation),
-                                        "VUID-VkAllocationCallbacks-pfnAllocation-00632");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnReallocation),
-                                        reinterpret_cast<const void*>(pAllocator->pfnReallocation),
-                                        "VUID-VkAllocationCallbacks-pfnReallocation-00633");
-
-        skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnFree), reinterpret_cast<const void*>(pAllocator->pfnFree),
-                                        "VUID-VkAllocationCallbacks-pfnFree-00634");
-
-        if (pAllocator->pfnInternalAllocation != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalAllocation),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalFree),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
-
-        if (pAllocator->pfnInternalFree != nullptr) {
-            skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnInternalFree),
-                                            reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation),
-                                            "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
-        }
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true, true,
                           "VUID-vkCreateRayTracingPipelinesKHR-createInfoCount-arraylength",

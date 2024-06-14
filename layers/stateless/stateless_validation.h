@@ -86,6 +86,8 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidateRequiredPointer(const Location &loc, const void *value, const std::string &vuid) const;
 
+    bool ValidateAllocationCallbacks(const VkAllocationCallbacks &callback, const Location &loc) const;
+
     template <typename T1, typename T2>
     bool ValidateArray(const Location &count_loc, const Location &array_loc, T1 count, const T2 *array, bool countRequired,
                        bool arrayRequired, const char *count_required_vuid, const char *array_required_vuid) const {

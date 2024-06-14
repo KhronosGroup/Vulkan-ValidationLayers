@@ -638,33 +638,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             # Function pointers need a reinterpret_cast to void*
             ptr_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
             if member.type.startswith('PFN_'):
-                allocator_dict = {'pfnAllocation': '"VUID-VkAllocationCallbacks-pfnAllocation-00632"',
-                                  'pfnReallocation': '"VUID-VkAllocationCallbacks-pfnReallocation-00633"',
-                                  'pfnFree': '"VUID-VkAllocationCallbacks-pfnFree-00634"',
-                                 }
-                vuid = allocator_dict.get(member.name)
-                if vuid is not None:
-                    ptr_required_vuid = vuid
                 checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), reinterpret_cast<const void*>({valuePrefix}{member.name}), {ptr_required_vuid});\n')
             else:
                 checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {ptr_required_vuid});\n')
-        else:
-            # Special case for optional internal allocation function pointers.
-            if (member.type, member.name) == ('PFN_vkInternalAllocationNotification', 'pfnInternalAllocation'):
-                checkExpr.extend(self.internalAllocationCheck(valuePrefix, member.name, errorLoc, 'pfnInternalFree'))
-            elif (member.type, member.name) == ('PFN_vkInternalFreeNotification', 'pfnInternalFree'):
-                checkExpr.extend(self.internalAllocationCheck(valuePrefix, member.name, errorLoc, 'pfnInternalAllocation'))
-        return checkExpr
-
-    # Generate internal allocation function pointer check.
-    def internalAllocationCheck(self, valuePrefix, name, errorLoc, complementaryName):
-        checkExpr = []
-        vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
-        checkExpr.append(f'if ({valuePrefix}{name} != nullptr)')
-        checkExpr.append('{')
-        # Function pointers need a reinterpret_cast to void*
-        checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{name}), reinterpret_cast<const void*>({valuePrefix}{complementaryName}), {vuid});\n')
-        checkExpr.append('}\n')
         return checkExpr
 
     # Process struct member validation code, performing name substitution if required
@@ -728,6 +704,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" (such as "isPhysDevice")
         validate_pnext_rx = re.compile(r'(.*ValidateStructPnext\(.*)(\).*\n*)', re.M)
+
+        # Special struct since lots of functions have this, but it can be all combined to the same call (since it is always from the top level of a funciton)
+        if structTypeName == 'VkAllocationCallbacks' :
+            lines.append('skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);')
+            return lines
 
         # Returnedonly structs should have most of their members ignored -- on entry, we only care about validating the sType and
         # pNext members. Everything else will be overwritten by the callee.

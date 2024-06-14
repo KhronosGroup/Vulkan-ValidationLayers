@@ -159,6 +159,31 @@ bool StatelessValidation::ValidateRequiredPointer(const Location &loc, const voi
     return skip;
 }
 
+bool StatelessValidation::ValidateAllocationCallbacks(const VkAllocationCallbacks &callback, const Location &loc) const {
+    bool skip = false;
+    skip |= ValidateRequiredPointer(loc.dot(Field::pfnAllocation), reinterpret_cast<const void *>(callback.pfnAllocation),
+                                    "VUID-VkAllocationCallbacks-pfnAllocation-00632");
+
+    skip |= ValidateRequiredPointer(loc.dot(Field::pfnReallocation), reinterpret_cast<const void *>(callback.pfnReallocation),
+                                    "VUID-VkAllocationCallbacks-pfnReallocation-00633");
+
+    skip |= ValidateRequiredPointer(loc.dot(Field::pfnFree), reinterpret_cast<const void *>(callback.pfnFree),
+                                    "VUID-VkAllocationCallbacks-pfnFree-00634");
+
+    if (callback.pfnInternalAllocation) {
+        skip |=
+            ValidateRequiredPointer(loc.dot(Field::pfnInternalAllocation), reinterpret_cast<const void *>(callback.pfnInternalFree),
+                                    "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+    }
+
+    if (callback.pfnInternalFree) {
+        skip |=
+            ValidateRequiredPointer(loc.dot(Field::pfnInternalFree), reinterpret_cast<const void *>(callback.pfnInternalAllocation),
+                                    "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+    }
+    return skip;
+}
+
 /**
  * Validate string array count and content.
  *
