@@ -66,6 +66,18 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE:
                 vuid_str = vuid.dynamic_depth_bound_test_enable_07846;
                 break;
+            case CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK:
+                vuid_str = vuid.dynamic_stencil_compare_mask_07837;
+                break;
+            case CB_DYNAMIC_STATE_STENCIL_WRITE_MASK:
+                vuid_str = vuid.dynamic_stencil_write_mask_07838;
+                break;
+            case CB_DYNAMIC_STATE_STENCIL_REFERENCE:
+                vuid_str = vuid.dynamic_stencil_reference_07839;
+                break;
+            case CB_DYNAMIC_STATE_STENCIL_OP:
+                vuid_str = vuid.dynamic_stencil_op_07848;
+                break;
             case CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY:
                 vuid_str = vuid.dynamic_primitive_topology_07842;
                 break;
@@ -90,8 +102,83 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_SAMPLE_MASK_EXT:
                 vuid_str = vuid.dynamic_sample_mask_07623;
                 break;
+            case CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT:
+                vuid_str = vuid.dynamic_alpha_to_coverage_enable_07624;
+                break;
             case CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT:
                 vuid_str = vuid.dynamic_alpha_to_one_enable_07625;
+                break;
+            case CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT:
+                vuid_str = vuid.dynamic_logic_op_enable_07626;
+                break;
+            case CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE:
+                vuid_str = vuid.rasterizer_discard_enable_04876;
+                break;
+            case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
+                vuid_str = vuid.dynamic_sample_locations_06666;
+                break;
+            case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
+                vuid_str = vuid.dynamic_attachment_feedback_loop_08877;
+                break;
+            case CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT:
+                vuid_str = vuid.dynamic_depth_clip_negative_one_to_one_07639;
+                break;
+            case CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT:
+                vuid_str = vuid.dynamic_depth_clip_enable_07633;
+                break;
+            case CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
+                vuid_str = vuid.dynamic_depth_clamp_enable_07620;
+                break;
+            case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV:
+                vuid_str = vuid.dynamic_exclusive_scissor_enable_07878;
+                break;
+            case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
+                vuid_str = vuid.dynamic_exclusive_scissor_07879;
+                break;
+            case CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
+                vuid_str = vuid.dynamic_tessellation_domain_origin_07619;
+                break;
+            case CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
+                vuid_str = vuid.dynamic_rasterization_stream_07630;
+                break;
+            case CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT:
+                vuid_str = vuid.dynamic_conservative_rasterization_mode_07631;
+                break;
+            case CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT:
+                vuid_str = vuid.dynamic_extra_primitive_overestimation_size_07632;
+                break;
+            case CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT:
+                vuid_str = vuid.dynamic_provoking_vertex_mode_07636;
+                break;
+            case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV:
+                vuid_str = vuid.dynamic_viewport_w_scaling_enable_07640;
+                break;
+            case CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV:
+                vuid_str = vuid.dynamic_viewport_swizzle_07641;
+                break;
+            case CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV:
+                vuid_str = vuid.dynamic_coverage_to_color_enable_07642;
+                break;
+            case CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV:
+                vuid_str = vuid.dynamic_coverage_to_color_location_07643;
+                break;
+            case CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV:
+                vuid_str = vuid.dynamic_coverage_modulation_mode_07644;
+                break;
+            case CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV:
+                vuid_str = vuid.dynamic_coverage_modulation_table_enable_07645;
+                break;
+            case CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV:
+                vuid_str = vuid.dynamic_coverage_modulation_table_07646;
+                break;
+            case CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV:
+                vuid_str = vuid.dynamic_shading_rate_image_enable_07647;
+                break;
+            case CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV:
+                vuid_str = vuid.dynamic_representative_fragment_test_enable_07648;
+                break;
+            case CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV:
+                vuid_str = vuid.dynamic_coverage_reduction_mode_07649;
                 break;
             default:
                 assert(false);
@@ -111,8 +198,11 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
-    bool vertex_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
-    bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
+    const bool vertex_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
+    const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
+    const bool geom_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::GEOMETRY);
+    const bool tessev_shader_bound =
+        has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION);
 
     // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer,
     // for Shader Object, everything is dynamic don't need a mask
@@ -121,6 +211,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                           last_bound_state.pipeline_state->dynamic_state))
                      : cb_state.dynamic_state_status.cb;
 
+    skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, vuid);
     if (!last_bound_state.IsRasterizationDisabled()) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_CULL_MODE, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE, vuid);
@@ -143,17 +234,98 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         if (enabled_features.depthBounds) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, vuid);
         }
+
+        if (last_bound_state.IsStencilTestEnable()) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK, vuid);
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_WRITE_MASK, vuid);
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, vuid);
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_OP, vuid);
+        }
+
+        if (last_bound_state.IsSampleLocationsEnable()) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, vuid);
+        }
+
+        if (enabled_features.depthClipEnable) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT, vuid);
+        }
+        if (enabled_features.depthClipControl) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
+                                              CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT, vuid);
+        }
+        if (enabled_features.depthClamp) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, vuid);
+        }
+
         if (enabled_features.alphaToOne) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT, vuid);
         }
+        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, vuid);
+
+        if (IsExtEnabled(device_extensions.vk_ext_conservative_rasterization)) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
+                                              CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT, vuid);
+            if (last_bound_state.GetConservativeRasterizationMode() == VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
+                                                  CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT, vuid);
+            }
+        }
+
+        if (IsExtEnabled(device_extensions.vk_nv_fragment_coverage_to_color)) {
+            skip |=
+                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV, vuid);
+            if (last_bound_state.IsCoverageToColorEnabled()) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV,
+                                                  vuid);
+            }
+        }
+
+        if (enabled_features.shadingRateImage) {
+            skip |=
+                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, vuid);
+        }
+        if (enabled_features.representativeFragmentTest) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
+                                              CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV, vuid);
+        }
+        if (enabled_features.coverageReductionMode) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV, vuid);
+        }
+
+        if (IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
+            skip |=
+                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV, vuid);
+            if (last_bound_state.GetCoverageModulationMode() != VK_COVERAGE_MODULATION_MODE_NONE_NV) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
+                                                  CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV, vuid);
+            }
+            if (last_bound_state.IsCoverageModulationTableEnable()) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV,
+                                                  vuid);
+            }
+        }
+
+        if (vertex_shader_bound) {
+            if (IsExtEnabled(device_extensions.vk_ext_provoking_vertex)) {
+                skip |=
+                    ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT, vuid);
+            }
+        }
 
         if (fragment_shader_bound) {
+            if (enabled_features.logicOp) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT, vuid);
+            }
             if (enabled_features.pipelineFragmentShadingRate) {
                 skip |=
                     ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR, vuid);
             }
             if (last_bound_state.IsLogicOpEnabled()) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LOGIC_OP_EXT, vuid);
+            }
+            if (enabled_features.attachmentFeedbackLoopDynamicState) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
+                                                  CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, vuid);
             }
         }
     }
@@ -162,6 +334,30 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT, vuid);
+    }
+
+    if (tessev_shader_bound) {
+        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT, vuid);
+    }
+
+    if (geom_shader_bound) {
+        if (enabled_features.geometryStreams) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT, vuid);
+        }
+    }
+
+    if (enabled_features.exclusiveScissor) {
+        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV, vuid);
+        if (last_bound_state.IsExclusiveScissorEnabled()) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, vuid);
+        }
+    }
+
+    if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling)) {
+        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, vuid);
+    }
+    if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
+        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, vuid);
     }
 
     return skip;
@@ -208,80 +404,30 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
     {
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_FRONT_FACE, cb_state, objlist, loc,
                                           vuid.dynamic_front_face_07841);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_OP, cb_state, objlist, loc,
-                                          vuid.dynamic_stencil_op_07848);
     }
 
     // VK_EXT_extended_dynamic_state2
     {
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, cb_state, objlist, loc,
                                           vuid.patch_control_points_04875);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, cb_state, objlist, loc,
-                                          vuid.rasterizer_discard_enable_04876);
     }
 
     // VK_EXT_extended_dynamic_state3
     {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_depth_clamp_enable_07620);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_tessellation_domain_origin_07619);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_alpha_to_coverage_enable_07624);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_logic_op_enable_07626);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_equation_07628);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_enable_07627);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, cb_state, objlist, loc,
                                           vuid.color_write_mask_07629);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_rasterization_stream_07630);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT, cb_state, objlist,
-                                          loc, vuid.dynamic_conservative_rasterization_mode_07631);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT, cb_state,
-                                          objlist, loc, vuid.dynamic_extra_primitive_overestimation_size_07632);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_depth_clip_enable_07633);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT, cb_state, objlist, loc,
                                           vuid.dynamic_sample_locations_enable_07634);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_advanced_07635);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_provoking_vertex_mode_07636);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, cb_state, objlist, loc,
                                           vuid.dynamic_line_rasterization_mode_07637);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, cb_state, objlist, loc,
                                           vuid.dynamic_line_stipple_enable_07638);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT, cb_state, objlist,
-                                          loc, vuid.dynamic_depth_clip_negative_one_to_one_07639);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_viewport_w_scaling_enable_07640);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_viewport_swizzle_07641);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_coverage_to_color_enable_07642);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_coverage_to_color_location_07643);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_coverage_modulation_mode_07644);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV, cb_state, objlist,
-                                          loc, vuid.dynamic_coverage_modulation_table_enable_07645);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_coverage_modulation_table_07646);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_shading_rate_image_enable_07647);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV, cb_state,
-                                          objlist, loc, vuid.dynamic_representative_fragment_test_enable_07648);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_coverage_reduction_mode_07649);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_sample_locations_06666);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_exclusive_scissor_enable_07878);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, cb_state, objlist, loc,
-                                          vuid.dynamic_exclusive_scissor_07879);
     }
 
     // VK_EXT_discard_rectangles
@@ -309,12 +455,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                                           vuid.dynamic_color_write_enable_07749);
     }
 
-    // VK_EXT_attachment_feedback_loop_dynamic_state
-    {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, cb_state, objlist,
-                                          loc, vuid.dynamic_attachment_feedback_loop_08877);
-    }
-
     if (const auto* raster_state = pipeline.RasterizationState()) {
         // Any line topology
         const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
@@ -335,17 +475,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
     if (pipeline.BlendConstantsEnabled()) {
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_BLEND_CONSTANTS, cb_state, objlist, loc,
                                           vuid.dynamic_blend_constants_07835);
-    }
-
-    if (pipeline.DepthStencilState()) {
-        if (last_bound_state.IsStencilTestEnable()) {
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK, cb_state, objlist, loc,
-                                              vuid.dynamic_stencil_compare_mask_07837);
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_WRITE_MASK, cb_state, objlist, loc,
-                                              vuid.dynamic_stencil_write_mask_07838);
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, cb_state, objlist, loc,
-                                              vuid.dynamic_stencil_reference_07839);
-        }
     }
 
     return skip;
@@ -1245,30 +1374,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                          " and viewportCount set with vkCmdSetViewportWScalingNV() was %" PRIu32 ".",
                          cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
     }
-    if (enabled_features.exclusiveScissor) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV, cb_state,
-                                          objlist, loc, vuid.set_exclusive_scissor_enable_09235);
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV) &&
-            !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV)) {
-            bool exclusiveScissorEnabled = false;
-            for (uint32_t i = 0; i < cb_state.dynamic_state_value.exclusive_scissor_enable_count; ++i) {
-                if (cb_state.dynamic_state_value
-                        .exclusive_scissor_enables[cb_state.dynamic_state_value.exclusive_scissor_enable_first + i]) {
-                    exclusiveScissorEnabled = true;
-                    break;
-                }
-            }
-            if (exclusiveScissorEnabled) {
-                skip |=
-                    LogError(vuid.exclusive_scissor_08638, cb_state.Handle(), loc,
-                             "Graphics shader objects are bound, an element of pExclusiveScissorEnables set with "
-                             "vkCmdSetExclusiveScissorEnableNV() was VK_TRUE, but vkCmdSetExclusiveScissorNV() was not called.");
-            }
-        }
-    }
 
-    skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, cb_state,
-                                      objlist, loc, vuid.set_rasterizer_discard_enable_08639);
     if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
         for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
             const auto* attachment = cb_state.active_attachments[i].image_view;
@@ -1298,9 +1404,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
 
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, cb_state,
-                                          objlist, loc, vuid.set_alpha_to_coverage_enable_08654);
-
         if ((cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CULL_MODE) &&
              cb_state.dynamic_state_value.cull_mode != VK_CULL_MODE_NONE) ||
             cb_state.dynamic_state_value.stencil_test_enable == VK_TRUE) {
@@ -1308,70 +1411,14 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                               vuid.set_front_face_08628);
         }
 
-        if (enabled_features.depthClamp) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, cb_state,
-                                              objlist, loc, vuid.set_depth_clamp_enable_08650);
-        }
-
-        if (IsExtEnabled(device_extensions.vk_ext_conservative_rasterization)) {
-            skip |=
-                ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT,
-                                          cb_state, objlist, loc, vuid.set_conservative_rasterization_mode_08661);
-            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) &&
-                cb_state.dynamic_state_value.conservative_rasterization_mode ==
-                    VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb,
-                                                  CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT, cb_state, objlist, loc,
-                                                  vuid.set_extra_primitive_overestimation_size_08662);
-            }
-        }
         if (IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT,
                                               cb_state, objlist, loc, vuid.set_sample_locations_enable_08664);
-            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
-                cb_state.dynamic_state_value.sample_locations_enable) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, cb_state,
-                                                  objlist, loc, vuid.set_sample_locations_08626);
-            }
         }
 
-        if (cb_state.dynamic_state_value.stencil_test_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_OP, cb_state, objlist, loc,
-                                              vuid.set_stencil_op_08634);
-        }
-        if (IsExtEnabled(device_extensions.vk_ext_provoking_vertex) && vertex_shader_bound) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT,
-                                              cb_state, objlist, loc, vuid.set_provoking_vertex_mode_08665);
-        }
-        if (IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV,
-                                              cb_state, objlist, loc, vuid.set_coverage_modulation_mode_08678);
-            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV) &&
-                cb_state.dynamic_state_value.coverage_modulation_mode != VK_COVERAGE_MODULATION_MODE_NONE_NV) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb,
-                                                  CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV, cb_state, objlist, loc,
-                                                  vuid.set_coverage_modulation_table_enable_08679);
-            }
-            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV) &&
-                cb_state.dynamic_state_value.coverage_modulation_table_enable) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV,
-                                                  cb_state, objlist, loc, vuid.set_coverage_modulation_table_08680);
-            }
-        }
-        if (enabled_features.coverageReductionMode) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV,
-                                              cb_state, objlist, loc, vuid.set_coverage_reduction_mode_08683);
-        }
-        if (enabled_features.representativeFragmentTest) {
-            skip |=
-                ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV,
-                                          cb_state, objlist, loc, vuid.set_representative_fragment_test_enable_08682);
-        }
         if (enabled_features.shadingRateImage) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV,
                                               cb_state, objlist, loc, vuid.set_viewport_coarse_sample_order_09233);
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV,
-                                              cb_state, objlist, loc, vuid.set_shading_rate_image_enable_08681);
             if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV) &&
                 cb_state.dynamic_state_value.shading_rate_image_enable) {
                 skip |=
@@ -1387,14 +1434,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                 }
             }
         }
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE) && cb_state.dynamic_state_value.stencil_test_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK, cb_state,
-                                              objlist, loc, vuid.set_stencil_compare_mask_08623);
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_WRITE_MASK, cb_state,
-                                              objlist, loc, vuid.set_stencil_write_mask_08624);
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, cb_state,
-                                              objlist, loc, vuid.set_stencil_reference_08625);
-        }
+
         const bool line_rasterization_extension =
             IsExtEnabled(device_extensions.vk_ext_line_rasterization) || IsExtEnabled(device_extensions.vk_khr_line_rasterization);
         if (line_rasterization_extension && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
@@ -1433,17 +1473,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
     }
-    if (enabled_features.depthClipEnable) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT, cb_state,
-                                          objlist, loc, vuid.set_depth_clip_enable_08663);
-    }
-    if (enabled_features.depthClipControl) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT,
-                                          cb_state, objlist, loc, vuid.set_depth_clip_negative_one_to_one_08673);
-    }
     if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling)) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, cb_state,
-                                          objlist, loc, vuid.set_viewport_w_scaling_enable_08674);
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV) &&
             cb_state.dynamic_state_value.viewport_w_scaling_enable) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, cb_state,
@@ -1459,26 +1489,13 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     if (tessev_shader_bound) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, cb_state,
                                           objlist, loc, vuid.patch_control_points_04875);
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT,
-                                          cb_state, objlist, loc, vuid.set_tessellation_domain_origin_09237);
     }
     if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                           vuid.set_line_width_08619);
     }
-    if (geom_shader_bound) {
-        if (enabled_features.geometryStreams) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT, cb_state,
-                                              objlist, loc, vuid.set_rasterization_streams_08660);
-        }
-    }
     if (fragment_shader_bound) {
         if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            if (enabled_features.logicOp) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT, cb_state,
-                                                  objlist, loc, vuid.set_logic_op_enable_08656);
-            }
-
             const uint32_t attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
             if (attachment_count > 0) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
@@ -1531,19 +1548,9 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                      DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT));
                 }
             }
-            if (enabled_features.attachmentFeedbackLoopDynamicState) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb,
-                                                  CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, cb_state, objlist, loc,
-                                                  vuid.set_attachment_feedback_loop_enable_08880);
-            }
             if (IsExtEnabled(device_extensions.vk_nv_fragment_coverage_to_color)) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV,
-                                                  cb_state, objlist, loc, vuid.set_coverage_to_color_enable_08676);
                 if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV) &&
                     cb_state.dynamic_state_value.coverage_to_color_enable) {
-                    skip |=
-                        ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV,
-                                                  cb_state, objlist, loc, vuid.set_coverage_to_color_location_08677);
                     if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
                         VkFormat format = VK_FORMAT_UNDEFINED;
                         if (cb_state.dynamic_state_value.coverage_to_color_location < cb_state.active_attachments.size()) {
@@ -1580,8 +1587,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     }
 
     if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, cb_state, objlist,
-                                          loc, vuid.set_viewport_swizzle_08675);
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
             if (cb_state.dynamic_state_value.viewport_swizzle_count < cb_state.dynamic_state_value.viewport_count) {
                 skip |=

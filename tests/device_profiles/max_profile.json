@@ -2148,7 +2148,7 @@
                 "VK_NV_ray_tracing_motion_blur": 1,
                 "VK_NV_representative_fragment_test": 1,
                 "VK_NV_sample_mask_override_coverage": 1,
-                "VK_NV_scissor_exclusive": 1,
+                "VK_NV_scissor_exclusive": 2,
                 "VK_NV_shader_atomic_float16_vector": 1,
                 "VK_NV_shader_image_footprint": 1,
                 "VK_NV_shader_sm_builtins": 1,
