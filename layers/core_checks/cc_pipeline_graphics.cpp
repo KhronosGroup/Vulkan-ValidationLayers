@@ -52,7 +52,8 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
         // check the stateless validation in the pNext chain for the first pipeline. (The core issue is because we parse the SPIR-V
         // at state tracking time, and we state track pipelines first)
         if (i == 0) {
-            for (uint32_t stage = 0; stage < pCreateInfos[0].stageCount; stage++) {
+            uint32_t stage_count = std::min(pCreateInfos[0].stageCount, spirv::kCommonMaxGraphicsShaderStages);
+            for (uint32_t stage = 0; stage < stage_count; stage++) {
                 if (chassis_state.stateless_data[stage].pipeline_pnext_module) {
                     skip |= ValidateSpirvStateless(
                         *chassis_state.stateless_data[stage].pipeline_pnext_module, chassis_state.stateless_data[stage],

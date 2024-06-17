@@ -141,13 +141,14 @@ void UtilGenerateCommonMessage(const DebugReport *debug_report, const VkCommandB
         std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
         strm << std::hex << std::showbase << "Internal Error: Unable to locate information for shader used in command buffer "
              << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
-             << "). ";
+             << ")\n";
         assert(true);
     } else {
         std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
         strm << std::hex << std::showbase << "Command buffer "
              << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
-             << "). ";
+             << ")\n";
+
         if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             strm << "Draw ";
         } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
@@ -158,20 +159,24 @@ void UtilGenerateCommonMessage(const DebugReport *debug_report, const VkCommandB
             assert(false);
             strm << "Unknown Pipeline Operation ";
         }
-        if (shader_module_handle) {
-            strm << "Index " << operation_index << ". "
-                 << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(pipeline_handle)) << "("
-                 << HandleToUint64(pipeline_handle) << "). "
-                 << "Shader Module " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_module_handle)) << "("
-                 << HandleToUint64(shader_module_handle) << "). ";
+
+        strm << "Index " << operation_index << "\n";
+        if (shader_module_handle == VK_NULL_HANDLE) {
+            strm << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_object_handle)) << "("
+                 << HandleToUint64(shader_object_handle) << ")\n";
         } else {
-            strm << "Index " << operation_index << ". "
-                 << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_object_handle)) << "("
-                 << HandleToUint64(shader_object_handle) << "). ";
+            strm << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(pipeline_handle)) << "("
+                 << HandleToUint64(pipeline_handle) << ")\n";
+            if (shader_module_handle == gpu::kPipelineStageInfoHandle) {
+                strm << "Shader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
+            } else {
+                strm << "Shader Module " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_module_handle)) << "("
+                     << HandleToUint64(shader_module_handle) << ")\n";
+            }
         }
     }
     strm << std::dec << std::noshowbase;
-    strm << "Shader Instruction Index = " << debug_record[gpuav::glsl::kHeaderInstructionIdOffset] << ". ";
+    strm << "Shader Instruction Index = " << debug_record[gpuav::glsl::kHeaderInstructionIdOffset] << "\n";
     msg = strm.str();
 }
 
@@ -281,7 +286,7 @@ void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructi
     std::string reported_filename;
     if (reported_file_id == 0) {
         filename_stream
-            << "Unable to find SPIR-V OpLine for source information.  Build shader with debug info to get source information.";
+            << "Unable to find SPIR-V OpLine for source information.  Build shader with debug info to get source information.\n";
     } else {
         bool found_opstring = false;
         std::string prefix;
@@ -303,16 +308,15 @@ void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructi
                 if (reported_column_number > 0) {
                     filename_stream << ", column " << reported_column_number;
                 }
-                filename_stream << ".";
+                filename_stream << "\n";
                 break;
             }
         }
 
         if (!found_opstring) {
-            filename_stream << "Unable to find SPIR-V OpString for file id " << reported_file_id << " from OpLine instruction."
-                            << std::endl;
+            filename_stream << "Unable to find SPIR-V OpString for file id " << reported_file_id << " from OpLine instruction.\n";
             filename_stream << "File ID = " << reported_file_id << ", Line Number = " << reported_line_number
-                            << ", Column = " << reported_column_number << std::endl;
+                            << ", Column = " << reported_column_number << "\n";
         }
     }
     filename_msg = filename_stream.str();
@@ -355,16 +359,16 @@ void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructi
                 std::vector<std::string>::size_type opsource_index =
                     (reported_line_number - saved_line_number) + 1 + saved_opsource_offset;
                 if (opsource_index < opsource_lines.size()) {
-                    source_stream << "\n" << reported_line_number << ": " << opsource_lines[opsource_index].c_str();
+                    source_stream << "\n" << reported_line_number << ": " << opsource_lines[opsource_index].c_str() << "\n";
                 } else {
                     source_stream << "Internal error: calculated source line of " << opsource_index << " for source size of "
-                                  << opsource_lines.size() << " lines.";
+                                  << opsource_lines.size() << " lines\n";
                 }
             } else {
-                source_stream << "Unable to find suitable #line directive in SPIR-V OpSource.";
+                source_stream << "Unable to find suitable #line directive in SPIR-V OpSource\n";
             }
         } else {
-            source_stream << "Unable to find SPIR-V OpSource.";
+            source_stream << "Unable to find SPIR-V OpSource\n";
         }
     }
     source_msg = source_stream.str();
@@ -613,11 +617,11 @@ bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, const LogO
 
         if (uses_robustness && oob_access) {
             if (gpuav_settings.warn_on_robust_oob) {
-                LogWarning(vuid_msg.c_str(), objlist, loc, "%s %s %s %s%s", error_msg.c_str(), common_message.c_str(),
+                LogWarning(vuid_msg.c_str(), objlist, loc, "%s\n%s%s%s%s", error_msg.c_str(), common_message.c_str(),
                            stage_message.c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
-            LogError(vuid_msg.c_str(), objlist, loc, "%s %s %s %s%s", error_msg.c_str(), common_message.c_str(),
+            LogError(vuid_msg.c_str(), objlist, loc, "%s\n%s%s%s%s", error_msg.c_str(), common_message.c_str(),
                      stage_message.c_str(), filename_message.c_str(), source_message.c_str());
         }
     }

@@ -310,7 +310,7 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
             shader_object_handle = it->second.shader_object;
             instrumented_spirv = it->second.instrumented_spirv;
         }
-        assert(instrumented_spirv.size() != 0);
+        ASSERT_AND_RETURN(!instrumented_spirv.empty());
         std::vector<spirv::Instruction> instructions;
         spirv::GenerateInstructions(instrumented_spirv, instructions);
 
@@ -387,10 +387,10 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                                       common_message);
             UtilGenerateSourceMessages(instructions, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
-                std::cout << "WARNING-DEBUG-PRINTF " << common_message.c_str() << " " << shader_message.str().c_str() << " "
-                          << filename_message.c_str() << " " << source_message.c_str();
+                std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str().c_str() << "\n"
+                          << common_message.c_str() << " " << filename_message.c_str() << " " << source_message.c_str();
             } else {
-                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s %s %s%s", common_message.c_str(), shader_message.str().c_str(),
+                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s\n%s%s%s", shader_message.str().c_str(), common_message.c_str(),
                         filename_message.c_str(), source_message.c_str());
             }
         } else {

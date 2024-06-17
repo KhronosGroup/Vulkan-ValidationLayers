@@ -2875,6 +2875,8 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const spirv::Module &module_state, co
 bool CoreChecks::ValidateSpirvStateless(const spirv::Module &module_state, const spirv::StatelessData &stateless_data,
                                         const Location &loc) const {
     bool skip = false;
+    if (!module_state.valid_spirv) return skip;
+
     skip |= ValidateShaderClock(module_state, stateless_data, loc);
     skip |= ValidateAtomicsTypes(module_state, stateless_data, loc);
     skip |= ValidateVariables(module_state, loc);
