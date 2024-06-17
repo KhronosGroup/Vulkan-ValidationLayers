@@ -41,20 +41,24 @@ dynamic_state_map = {
         "dependency" : ["rasterizerDiscardEnable", "depthBoundsTestEnable"]
     },
     "VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK" : {
-        "command" : ["vkCmdSetStencilCompareMask"]
+        "command" : ["vkCmdSetStencilCompareMask"],
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
     },
     "VK_DYNAMIC_STATE_STENCIL_WRITE_MASK" : {
-        "command" : ["vkCmdSetStencilWriteMask"]
+        "command" : ["vkCmdSetStencilWriteMask"],
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
     },
     "VK_DYNAMIC_STATE_STENCIL_REFERENCE" : {
-        "command" : ["vkCmdSetStencilReference"]
+        "command" : ["vkCmdSetStencilReference"],
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
     },
     "VK_DYNAMIC_STATE_CULL_MODE" : {
         "command" : ["vkCmdSetCullMode"],
         "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_FRONT_FACE" : {
-        "command" : ["vkCmdSetFrontFace"]
+        "command" : ["vkCmdSetFrontFace"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY" : {
         "command" : ["vkCmdSetPrimitiveTopology"]
@@ -89,7 +93,8 @@ dynamic_state_map = {
         "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_STENCIL_OP" : {
-        "command" : ["vkCmdSetStencilOp"]
+        "command" : ["vkCmdSetStencilOp"],
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
     },
     "VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE" : {
         "command" : ["vkCmdSetRasterizerDiscardEnable"]
@@ -114,7 +119,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetDiscardRectangleModeEXT"]
     },
     "VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT" : {
-        "command" : ["vkCmdSetSampleLocationsEXT"]
+        "command" : ["vkCmdSetSampleLocationsEXT"],
+        "dependency" : ["rasterizerDiscardEnable", "sampleLocationsEnable"]
     },
     "VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV" : {
         "command" : ["vkCmdSetViewportShadingRatePaletteNV"]
@@ -126,14 +132,16 @@ dynamic_state_map = {
         "command" : ["vkCmdSetExclusiveScissorEnableNV"]
     },
     "VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV" : {
-        "command" : ["vkCmdSetExclusiveScissorNV"]
+        "command" : ["vkCmdSetExclusiveScissorNV"],
+        "dependency" : ["pExclusiveScissorEnables"]
     },
     "VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR" : {
         "command" : ["vkCmdSetFragmentShadingRateKHR"],
         "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_LINE_STIPPLE_KHR" : {
-        "command" : ["vkCmdSetLineStippleKHR"]
+        "command" : ["vkCmdSetLineStippleKHR"],
+        "dependency" : ["rasterizerDiscardEnable", "stippledLineEnable"]
     },
     "VK_DYNAMIC_STATE_VERTEX_INPUT_EXT" : {
         "command" : ["vkCmdSetVertexInputEXT"]
@@ -164,13 +172,16 @@ dynamic_state_map = {
         "command" : ["vkCmdSetSampleMaskEXT"]
     },
     "VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT" : {
-        "command" : ["vkCmdSetAlphaToCoverageEnableEXT"]
+        "command" : ["vkCmdSetAlphaToCoverageEnableEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT" : {
-        "command" : ["vkCmdSetAlphaToOneEnableEXT"]
+        "command" : ["vkCmdSetAlphaToOneEnableEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT" : {
-        "command" : ["vkCmdSetLogicOpEnableEXT"]
+        "command" : ["vkCmdSetLogicOpEnableEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT" : {
         "command" : ["vkCmdSetColorBlendEnableEXT"]
@@ -185,10 +196,12 @@ dynamic_state_map = {
         "command" : ["vkCmdSetRasterizationStreamEXT"]
     },
     "VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT" : {
-        "command" : ["vkCmdSetConservativeRasterizationModeEXT"]
+        "command" : ["vkCmdSetConservativeRasterizationModeEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT" : {
-        "command" : ["vkCmdSetExtraPrimitiveOverestimationSizeEXT"]
+        "command" : ["vkCmdSetExtraPrimitiveOverestimationSizeEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT" : {
         "command" : ["vkCmdSetDepthClipEnableEXT"]
@@ -219,18 +232,23 @@ dynamic_state_map = {
     },
     "VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV" : {
         "command" : ["vkCmdSetCoverageToColorEnableNV"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV" : {
         "command" : ["vkCmdSetCoverageToColorLocationNV"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV" : {
         "command" : ["vkCmdSetCoverageModulationModeNV"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV" : {
         "command" : ["vkCmdSetCoverageModulationTableEnableNV"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV" : {
         "command" : ["vkCmdSetCoverageModulationTableNV"],
+        "dependency" : ["rasterizerDiscardEnable", "coverageModulationTableEnable"]
     },
     "VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV" : {
         "command" : ["vkCmdSetShadingRateImageEnableNV"],
@@ -421,6 +439,12 @@ class DynamicStateOutputGenerator(BaseGenerator):
         ''')
 
         out.append('''
+            // For anything with multple uses
+            static std::string_view rasterizer_discard_enable_dynamic{"vkCmdSetRasterizerDiscardEnable last set rasterizerDiscardEnable to VK_FALSE.\\n"};
+            static std::string_view rasterizer_discard_enable_static{"VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable was VK_FALSE in the last bound graphics pipeline.\\n"};
+            static std::string_view stencil_test_enable_dynamic{"vkCmdSetStencilTestEnable last set stencilTestEnable to VK_TRUE.\\n"};
+            static std::string_view stencil_test_enable_static{"VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\\n"};
+
             std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline) {
                 std::stringstream ss;
                 switch (dynamic_state) {
@@ -435,9 +459,16 @@ class DynamicStateOutputGenerator(BaseGenerator):
             if 'rasterizerDiscardEnable' in dependency:
                 out.append('''
                 if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
-                    ss << "vkCmdSetRasterizerDiscardEnable last set rasterizerDiscardEnable to VK_FALSE.\\n";
+                    ss << rasterizer_discard_enable_dynamic;
                 } else {
-                    ss << "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable was VK_FALSE in the last bound graphics pipeline.\\n";
+                    ss << rasterizer_discard_enable_static;
+                }''')
+            if 'stencilTestEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
+                    ss << stencil_test_enable_dynamic;
+                } else {
+                    ss << stencil_test_enable_static;
                 }''')
             if 'depthTestEnable' in dependency:
                 out.append('''
@@ -466,6 +497,27 @@ class DynamicStateOutputGenerator(BaseGenerator):
                     ss << "vkCmdSetLogicOpEnableEXT last set logicOpEnable to VK_TRUE.\\n";
                 } else {
                     ss << "VkPipelineColorBlendStateCreateInfo::logicOpEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'stippledLineEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
+                    ss << "vkCmdSetLineStippleEnableEXT last set stippledLineEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineRasterizationLineStateCreateInfoEXT::stippledLineEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'sampleLocationsEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
+                    ss << "vkCmdSetSampleLocationsEnableEXT last set logicOpEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineMultisampleStateCreateInfo::pNext->VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'coverageModulationTableEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
+                    ss << "vkCmdSetCoverageModulationTableEnableNV last set coverageModulationTableEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineMultisampleStateCreateInfo::pNext->VkPipelineCoverageModulationStateCreateInfoNV::coverageModulationTableEnable was VK_TRUE in the last bound graphics pipeline.\\n";
                 }''')
 
             out.append('    break;')

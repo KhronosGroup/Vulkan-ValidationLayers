@@ -927,8 +927,7 @@ VkSampleCountFlagBits LastBound::GetRasterizationSamples() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         rasterization_samples = cb_state.dynamic_state_value.rasterization_samples;
     } else {
-        const auto ms_state = pipeline_state->MultisampleState();
-        if (ms_state) {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
             rasterization_samples = ms_state->rasterizationSamples;
         }
     }
@@ -995,6 +994,100 @@ VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
     } else {
         return pipeline_state->topology_at_rasterizer;
     }
+}
+
+VkConservativeRasterizationModeEXT LastBound::GetConservativeRasterizationMode() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
+            return cb_state.dynamic_state_value.conservative_rasterization_mode;
+        }
+    } else {
+        if (const auto rasterization_conservative_state_ci =
+                vku::FindStructInPNextChain<VkPipelineRasterizationConservativeStateCreateInfoEXT>(
+                    pipeline_state->RasterizationStatePNext())) {
+            return rasterization_conservative_state_ci->conservativeRasterizationMode;
+        }
+    }
+    return VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
+}
+
+bool LastBound::IsSampleLocationsEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.sample_locations_enable;
+        }
+    } else {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
+            if (const auto *sample_location_state = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(ms_state->pNext)) {
+                return sample_location_state->sampleLocationsEnable;
+            }
+        }
+    }
+    return false;
+}
+
+bool LastBound::IsExclusiveScissorEnabled() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV)) {
+            for (uint32_t i = 0; i < cb_state.dynamic_state_value.exclusive_scissor_enable_count; ++i) {
+                if (cb_state.dynamic_state_value
+                        .exclusive_scissor_enables[cb_state.dynamic_state_value.exclusive_scissor_enable_first + i]) {
+                    return true;
+                }
+            }
+        }
+    } else {
+        return true;  // no pipeline state, but if not dynamic, defaults to being enabled
+    }
+    return false;
+}
+
+bool LastBound::IsCoverageToColorEnabled() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
+            return cb_state.dynamic_state_value.coverage_to_color_enable;
+        }
+    } else {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
+            if (const auto *coverage_to_color_state =
+                    vku::FindStructInPNextChain<VkPipelineCoverageToColorStateCreateInfoNV>(ms_state->pNext)) {
+                return coverage_to_color_state->coverageToColorEnable;
+            }
+        }
+    }
+    return false;
+}
+
+bool LastBound::IsCoverageModulationTableEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
+            return cb_state.dynamic_state_value.coverage_modulation_table_enable;
+        }
+    } else {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
+            if (const auto *coverage_modulation_state =
+                    vku::FindStructInPNextChain<VkPipelineCoverageModulationStateCreateInfoNV>(ms_state->pNext)) {
+                return coverage_modulation_state->coverageModulationTableEnable;
+            }
+        }
+    }
+    return false;
+}
+
+VkCoverageModulationModeNV LastBound::GetCoverageModulationMode() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
+            return cb_state.dynamic_state_value.coverage_modulation_mode;
+        }
+    } else {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
+            if (const auto *coverage_modulation_state =
+                    vku::FindStructInPNextChain<VkPipelineCoverageModulationStateCreateInfoNV>(ms_state->pNext)) {
+                return coverage_modulation_state->coverageModulationMode;
+            }
+        }
+    }
+    return VK_COVERAGE_MODULATION_MODE_NONE_NV;
 }
 
 bool LastBound::ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const {
