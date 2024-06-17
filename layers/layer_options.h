@@ -45,10 +45,6 @@ enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
 };
 
-enum VkValidationFeatureEnable {
-    VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION,
-};
-
 // CHECK_DISABLED and CHECK_ENABLED vectors are containers for bools that can opt in or out of specific classes of validation
 // checks. Enum values can be specified via the vk_layer_settings.txt config file or at CreateInstance time via the
 // VK_EXT_validation_features extension that can selectively disable or enable checks.
@@ -124,10 +120,6 @@ static const vvl::unordered_map<std::string, VkValidationFeatureEnableEXT> VkVal
     {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT},
 };
 
-static const vvl::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
-    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION},
-};
-
 static const vvl::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
     {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
     {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
@@ -171,7 +163,7 @@ static const std::vector<std::string> EnableFlagNameHelper = {
     "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",                         // vendor_specific_img,
     "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
     "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
-    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION",             // sync_validation,
+    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",         // sync_validation,
 };
 
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);
