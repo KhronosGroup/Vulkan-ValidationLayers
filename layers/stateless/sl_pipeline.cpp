@@ -89,9 +89,10 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
         for (uint32_t j = i + 1; j < pCreateInfo->pushConstantRangeCount; ++j) {
             if (0 != (pCreateInfo->pPushConstantRanges[i].stageFlags & pCreateInfo->pPushConstantRanges[j].stageFlags)) {
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292", device, create_info_loc,
-                                 "pPushConstantRanges[%" PRIu32 "].stageFlags and pPushConstantRanges[%" PRIu32
-                                 "].stageFlags are both (%s).",
-                                 i, j, string_VkShaderStageFlags(pCreateInfo->pPushConstantRanges[i].stageFlags).c_str());
+                                 "pPushConstantRanges[%" PRIu32 "].stageFlags is %s and pPushConstantRanges[%" PRIu32
+                                 "].stageFlags is %s.",
+                                 i, string_VkShaderStageFlags(pCreateInfo->pPushConstantRanges[i].stageFlags).c_str(), j,
+                                 string_VkShaderStageFlags(pCreateInfo->pPushConstantRanges[j].stageFlags).c_str());
                 break;  // Only need to report the first range mismatch
             }
         }
