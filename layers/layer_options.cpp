@@ -403,7 +403,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_ENABLES)) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_ENABLES, enables);
     }
-    const std::string &string_enables = Merge(enables);
+    const std::string string_enables = Merge(enables);
     SetLocalEnableSetting(string_enables, ",", settings_data->enables);
 
     // Read legacy "disables" flags for backward compatibility
@@ -411,7 +411,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DISABLES)) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_DISABLES, disables);
     }
-    const std::string &string_disables = Merge(disables);
+    const std::string string_disables = Merge(disables);
     SetLocalDisableSetting(string_disables, ",", settings_data->disables);
 
     // Fine Grained Locking
@@ -425,7 +425,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER)) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER, message_id_filter);
     }
-    const std::string &string_message_id_filter = Merge(message_id_filter);
+    const std::string string_message_id_filter = Merge(message_id_filter);
     CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->message_filter_list);
 
     // Duplicate message limit
