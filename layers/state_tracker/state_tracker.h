@@ -75,6 +75,10 @@ namespace chassis {
 struct CreateShaderModule;
 }  // namespace chassis
 
+namespace spirv {
+struct StatelessData;
+}  // namespace spirv
+
 // This is duplicated here because Best Practice pipeline is a derivative of vvl::Pipeline and we have a virtual function that needs
 // to know this. Idealy this will probably never need to change often, so likely won't cause issues
 using ShaderModuleUniqueIds = std::unordered_map<VkShaderStageFlagBits, uint32_t>;
@@ -698,7 +702,8 @@ class ValidationStateTracker : public ValidationObject {
 
     virtual std::shared_ptr<vvl::Pipeline> CreateComputePipelineState(const VkComputePipelineCreateInfo* pCreateInfo,
                                                                       std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-                                                                      std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
+                                                                      std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                                      spirv::StatelessData* stateless_data) const;
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -754,6 +759,7 @@ class ValidationStateTracker : public ValidationObject {
                                                                        std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                        std::shared_ptr<const vvl::RenderPass>&& render_pass,
                                                                        std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                                       spirv::StatelessData* stateless_data,
                                                                        ShaderModuleUniqueIds* shader_unique_id_map) const;
 
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -813,7 +819,8 @@ class ValidationStateTracker : public ValidationObject {
 
     virtual std::shared_ptr<vvl::Pipeline> CreateRayTracingPipelineState(const VkRayTracingPipelineCreateInfoNV* pCreateInfo,
                                                                          std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-                                                                         std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
+                                                                         std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                                         spirv::StatelessData* stateless_data) const;
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -826,7 +833,8 @@ class ValidationStateTracker : public ValidationObject {
                                                    chassis::CreateRayTracingPipelinesNV& chassis_state) override;
     virtual std::shared_ptr<vvl::Pipeline> CreateRayTracingPipelineState(const VkRayTracingPipelineCreateInfoKHR* pCreateInfo,
                                                                          std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-                                                                         std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
+                                                                         std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                                         spirv::StatelessData* stateless_data) const;
     bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,

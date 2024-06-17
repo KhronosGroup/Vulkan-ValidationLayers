@@ -670,7 +670,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateTexelOffsetLimits(const spirv::Module& module_state, const spirv::Instruction& insn, const Location& loc) const;
 
     // Auto-generated helper functions
-    bool ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction& insn, const bool pipeline, const Location& loc) const;
+    bool ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction& insn, const Location& loc) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
     bool ValidateShaderStageInputOutputLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,

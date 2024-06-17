@@ -81,24 +81,36 @@ struct CreateGraphicsPipelines {
     std::vector<vku::safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;
     const VkGraphicsPipelineCreateInfo* pCreateInfos;
+    // Used to if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
+    spirv::StatelessData stateless_data[spirv::kCommonMaxShaderStages];
+
+    CreateGraphicsPipelines(const VkGraphicsPipelineCreateInfo* create_info) { pCreateInfos = create_info; }
 };
 
 struct CreateComputePipelines {
     std::vector<vku::safe_VkComputePipelineCreateInfo> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkComputePipelineCreateInfo* pCreateInfos;
+    // Used to if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
+    spirv::StatelessData stateless_data;
+
+    CreateComputePipelines(const VkComputePipelineCreateInfo* create_info) { pCreateInfos = create_info; }
 };
 
 struct CreateRayTracingPipelinesNV {
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
+
+    CreateRayTracingPipelinesNV(const VkRayTracingPipelineCreateInfoNV* create_info) { pCreateInfos = create_info; }
 };
 
 struct CreateRayTracingPipelinesKHR {
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
+
+    CreateRayTracingPipelinesKHR(const VkRayTracingPipelineCreateInfoKHR* create_info) { pCreateInfos = create_info; }
 };
 
 struct CreatePipelineLayout {

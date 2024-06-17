@@ -1396,8 +1396,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 ErrorObject error_obj(vvl::Func::vkCreateGraphicsPipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
                 PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
-                chassis::CreateGraphicsPipelines chassis_state{};
-                chassis_state.pCreateInfos = pCreateInfos;
+                chassis::CreateGraphicsPipelines chassis_state(pCreateInfos);
 
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->ReadLock();
@@ -1434,8 +1433,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 ErrorObject error_obj(vvl::Func::vkCreateComputePipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
                 PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
-                chassis::CreateComputePipelines chassis_state{};
-                chassis_state.pCreateInfos = pCreateInfos;
+                chassis::CreateComputePipelines chassis_state(pCreateInfos);
 
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->ReadLock();
@@ -1471,8 +1469,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
                 PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
-                chassis::CreateRayTracingPipelinesNV chassis_state{};
-                chassis_state.pCreateInfos = pCreateInfos;
+                chassis::CreateRayTracingPipelinesNV chassis_state(pCreateInfos);
 
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->ReadLock();
@@ -1510,8 +1507,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
                 PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
-                chassis::CreateRayTracingPipelinesKHR chassis_state{};
-                chassis_state.pCreateInfos = pCreateInfos;
+                chassis::CreateRayTracingPipelinesKHR chassis_state(pCreateInfos);
 
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
                     auto lock = intercept->ReadLock();

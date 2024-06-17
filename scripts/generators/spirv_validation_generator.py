@@ -302,8 +302,9 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
         #
         # The main function to validate all the extensions and capabilities
         out.append('''
-            bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction &insn, const bool pipeline, const Location& loc) const {
+            bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction &insn,  const Location& loc) const {
                 bool skip = false;
+                const bool pipeline = loc.function != vvl::Func::vkCreateShadersEXT;
 
                 if (insn.Opcode() == spv::OpCapability) {
                     // All capabilities are generated so if it is not in the list it is not supported by Vulkan

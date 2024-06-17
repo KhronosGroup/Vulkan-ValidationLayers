@@ -38,6 +38,9 @@ struct Module;
 
 static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
+// It is very rare to have more then 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
+static const uint32_t kCommonMaxShaderStages = 3;
+
 // This is the common info for both OpDecorate and OpMemberDecorate
 // Used to keep track of all decorations applied to any instruction
 struct DecorationBase {
@@ -536,6 +539,9 @@ struct EntryPoint {
 
 // Info to capture while parsing the SPIR-V, but will only be used by ValidateSpirvStateless and don't need to save after
 struct StatelessData {
+    // Used if the Shader Module is being passed in VkPipelineShaderStageCreateInfo
+    std::shared_ptr<spirv::Module> pipeline_pnext_module;
+
     // These instruction mapping were designed to quickly find the few instructions without having to loop the entire pass
     // In theory, these could be removed checked during the 2nd pass in ValidateSpirvStateless()
     // TODO - Get perf numbers if better to understand if these make sense here

@@ -610,8 +610,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
     }
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8103
-TEST_F(NegativeShaderSpirv, DISABLED_SpirvStatelessMaintenance5) {
+TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     TEST_DESCRIPTION("Test SPIRV is still checked if using new pNext in VkPipelineShaderStageCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
@@ -649,7 +648,7 @@ TEST_F(NegativeShaderSpirv, DISABLED_SpirvStatelessMaintenance5) {
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-storageBuffer8BitAccess-06328");  // feature
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329");  // feature
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740", 2);     // Int8
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

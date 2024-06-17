@@ -2884,11 +2884,10 @@ bool CoreChecks::ValidateSpirvStateless(const spirv::Module &module_state, const
         skip |= ValidateTransformFeedbackDecorations(module_state, loc);
     }
 
-    const bool has_pipeline = loc.function == Func::vkCreateShaderModule;
     // The following tries to limit the number of passes through the shader module.
     // It save a good amount of memory and complex state tracking to just check these in a 2nd pass
     for (const spirv::Instruction &insn : module_state.GetInstructions()) {
-        skip |= ValidateShaderCapabilitiesAndExtensions(insn, has_pipeline, loc);
+        skip |= ValidateShaderCapabilitiesAndExtensions(insn, loc);
         skip |= ValidateTexelOffsetLimits(module_state, insn, loc);
         skip |= ValidateMemoryScope(module_state, insn, loc);
         skip |= ValidateSubgroupRotateClustered(module_state, insn, loc);

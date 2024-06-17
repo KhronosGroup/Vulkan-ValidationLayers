@@ -32,6 +32,7 @@ struct ShaderModule;
 
 namespace spirv {
 struct EntryPoint;
+struct StatelessData;
 }  // namespace spirv
 
 template <typename CreateInfoType>
@@ -69,7 +70,8 @@ struct VertexInputState : public PipelineSubState {
 
 struct PreRasterState : public PipelineSubState {
     PreRasterState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data,
-                   const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp);
+                   const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp,
+                   spirv::StatelessData *stateless_data);
 
     static inline VkShaderStageFlags ValidShaderStages() {
         return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
@@ -116,7 +118,7 @@ struct FragmentShaderState : public PipelineSubState {
 
     template <typename CreateInfo>
     FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info,
-                        std::shared_ptr<const vvl::RenderPass> rp)
+                        std::shared_ptr<const vvl::RenderPass> rp, spirv::StatelessData *stateless_data)
         : FragmentShaderState(p, dev_data, rp, create_info.subpass, create_info.layout) {
         if (create_info.pMultisampleState) {
             ms_state = ToSafeMultisampleState(*create_info.pMultisampleState);
@@ -124,7 +126,7 @@ struct FragmentShaderState : public PipelineSubState {
         if (create_info.pDepthStencilState) {
             ds_state = ToSafeDepthStencilState(*create_info.pDepthStencilState);
         }
-        FragmentShaderState::SetFragmentShaderInfo(*this, dev_data, create_info);
+        FragmentShaderState::SetFragmentShaderInfo(*this, dev_data, create_info, stateless_data);
     }
 
     static inline VkShaderStageFlags ValidShaderStages() { return VK_SHADER_STAGE_FRAGMENT_BIT; }
@@ -143,9 +145,10 @@ struct FragmentShaderState : public PipelineSubState {
 
   private:
     static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
-                                      const VkGraphicsPipelineCreateInfo &create_info);
+                                      const VkGraphicsPipelineCreateInfo &create_info, spirv::StatelessData *stateless_data);
     static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
-                                      const vku::safe_VkGraphicsPipelineCreateInfo &create_info);
+                                      const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
+                                      spirv::StatelessData *stateless_data);
 };
 
 template <typename CreateInfo>

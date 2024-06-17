@@ -860,6 +860,7 @@ class BestPractices : public ValidationStateTracker {
                                                                std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                std::shared_ptr<const vvl::RenderPass>&& render_pass,
                                                                std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                               spirv::StatelessData* stateless_data,
                                                                ShaderModuleUniqueIds* shader_unique_id_map) const final;
 
   private:
