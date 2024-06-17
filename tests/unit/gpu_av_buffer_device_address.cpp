@@ -365,6 +365,100 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
+    TEST_DESCRIPTION("Test SPIRV is still checked if using new pNext in VkPipelineShaderStageCreateInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    char const *fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, std430) readonly buffer IndexBuffer {
+            vec4 indices[];
+        };
+
+        layout(set = 0, binding = 0) uniform foo {
+            IndexBuffer data;
+            int index;
+        } in_buffer;
+
+        layout(location = 0) out vec4 color;
+
+        void main() {
+            color = in_buffer.data.indices[in_buffer.index];
+        }
+    )glsl";
+
+    std::vector<uint32_t> vert_shader;
+    std::vector<uint32_t> frag_shader;
+    this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl, vert_shader);
+    this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, frag_shader);
+
+    VkShaderModuleCreateInfo module_create_info_vert = vku::InitStructHelper();
+    module_create_info_vert.pCode = vert_shader.data();
+    module_create_info_vert.codeSize = vert_shader.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci_vert = vku::InitStructHelper(&module_create_info_vert);
+    stage_ci_vert.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci_vert.module = VK_NULL_HANDLE;
+    stage_ci_vert.pName = "main";
+
+    VkShaderModuleCreateInfo module_create_info_frag = vku::InitStructHelper();
+    module_create_info_frag.pCode = frag_shader.data();
+    module_create_info_frag.codeSize = frag_shader.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci_frag = vku::InitStructHelper(&module_create_info_frag);
+    stage_ci_frag.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stage_ci_frag.module = VK_NULL_HANDLE;
+    stage_ci_frag.pName = "main";
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {stage_ci_vert, stage_ci_frag};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer block_buffer(*m_device, 16, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    VkDeviceAddress block_ptr = block_buffer.address();
+    const uint32_t n_reads = 64;  // way too large
+
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
+    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
+    in_buffer.memory().unmap();
+
+    descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 6);
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7462
 TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     SetTargetApiVersion(VK_API_VERSION_1_2);

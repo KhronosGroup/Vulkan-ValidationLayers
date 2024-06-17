@@ -1656,8 +1656,7 @@ TEST_F(NegativeDebugPrintf, LocalSizeId) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8103
-TEST_F(NegativeDebugPrintf, DISABLED_Maintenance5) {
+TEST_F(NegativeDebugPrintf, Maintenance5) {
     TEST_DESCRIPTION("Test SPIRV is still checked if using new pNext in VkPipelineShaderStageCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);

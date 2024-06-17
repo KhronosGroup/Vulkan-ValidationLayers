@@ -84,7 +84,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                 // don't need to worry about GroupDecoration in GPL
                 spirv::StatelessData *stateless_data_stage =
-                    (stateless_data && i < spirv::kCommonMaxShaderStages) ? &stateless_data[i] : nullptr;
+                    (stateless_data && i < spirv::kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
                 auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
                 module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
                 if (stateless_data_stage) {
@@ -198,7 +198,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                 if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext)) {
                     // don't need to worry about GroupDecoration in GPL
                     spirv::StatelessData *stateless_data_stage =
-                        (stateless_data && i < spirv::kCommonMaxShaderStages) ? &stateless_data[i] : nullptr;
+                        (stateless_data && i < spirv::kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
                     auto spirv_module =
                         std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
                     module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);

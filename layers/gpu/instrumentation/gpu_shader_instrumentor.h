@@ -29,6 +29,15 @@ class Validator;
 }
 
 namespace gpu {
+
+// There are 3 ways to have a null VkShaderModule
+// 1. Use GPL for something like Vertex Input which won't have a shader
+// 2. Use Shader Objects
+// 3. Use VK_KHR_maintenance5 and inline your VkShaderModuleCreateInfo via VkPipelineShaderStageCreateInfo::pNext
+//
+// The first is handled because you have to link it in the end, but we need a way to differentiate 2 and 3
+static const VkShaderModule kPipelineStageInfoHandle = CastFromUint64<VkShaderModule>(0xEEEEEEEEEEEEEEEE);
+
 class SpirvCache {
   public:
     void Add(uint32_t hash, std::vector<uint32_t> spirv);
@@ -151,7 +160,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     template <typename CreateInfo, typename SafeCreateInfo>
     void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                         const SafeCreateInfo &modified_create_infos);
+                                         const SafeCreateInfo &modified_create_infos, bool passed_in_shader_stage_ci);
 
     // GPU-AV and DebugPrint are going to have a different way to do the actual shader instrumentation logic
     virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, uint32_t unique_shader_id, const Location &loc,
