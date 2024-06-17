@@ -1879,9 +1879,9 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateGraphicsPipelineState(
     const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
     std::shared_ptr<const vvl::RenderPass> &&render_pass, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-    ShaderModuleUniqueIds *shader_unique_id_map) const {
+    spirv::StatelessData *stateless_data, ShaderModuleUniqueIds *shader_unique_id_map) const {
     return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(render_pass), std::move(layout),
-                                           shader_unique_id_map);
+                                           stateless_data, shader_unique_id_map);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1917,7 +1917,8 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
         auto shader_unique_id_map =
             (chassis_state.shader_unique_id_maps.size() > i) ? &chassis_state.shader_unique_id_maps[i] : nullptr;
         pipeline_states.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
-                                                              std::move(layout_state), shader_unique_id_map));
+                                                              std::move(layout_state), chassis_state.stateless_data,
+                                                              shader_unique_id_map));
     }
     return skip;
 }
@@ -1939,8 +1940,8 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateComputePipelineState(
     const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-    std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
+    std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
+    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1952,8 +1953,8 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        pipeline_states.push_back(
-            CreateComputePipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
+        pipeline_states.push_back(CreateComputePipelineState(
+            &pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout), &chassis_state.stateless_data));
     }
     return false;
 }
@@ -1973,10 +1974,11 @@ void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice devic
     pipeline_states.clear();
 }
 
+// TODO - Add tests and pass down StatelessData
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
     const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-    std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
+    std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
+    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
@@ -1987,8 +1989,8 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        pipeline_states.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
+        pipeline_states.push_back(CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache,
+                                                                Get<vvl::PipelineLayout>(pCreateInfos[i].layout), nullptr));
     }
     return false;
 }
@@ -2007,10 +2009,11 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
     pipeline_states.clear();
 }
 
+// TODO - Add tests and pass down StatelessData
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-    std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
+    std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
+    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
@@ -2021,8 +2024,8 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        pipeline_states.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
+        pipeline_states.push_back(CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache,
+                                                                Get<vvl::PipelineLayout>(pCreateInfos[i].layout), nullptr));
     }
     return false;
 }

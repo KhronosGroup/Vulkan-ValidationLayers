@@ -134,17 +134,21 @@ class Pipeline : public StateObject {
     // Executable or legacy pipeline
     Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
-             std::shared_ptr<const vvl::PipelineLayout> &&layout, ShaderModuleUniqueIds *shader_unique_id_map = nullptr);
+             std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data,
+             ShaderModuleUniqueIds *shader_unique_id_map = nullptr);
 
     // Compute pipeline
     Pipeline(const ValidationStateTracker &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             spirv::StatelessData *stateless_data);
 
     Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             spirv::StatelessData *stateless_data);
 
     Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             spirv::StatelessData *stateless_data);
 
     VkPipeline VkHandle() const { return handle_.Cast<VkPipeline>(); }
 
@@ -388,6 +392,7 @@ class Pipeline : public StateObject {
     const VkPipelineRenderingCreateInfo *GetPipelineRenderingCreateInfo() const { return rendering_create_info; }
 
     static std::vector<ShaderStageState> GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
+                                                        spirv::StatelessData *stateless_data,
                                                         ShaderModuleUniqueIds *shader_unique_id_map);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
@@ -530,10 +535,12 @@ class Pipeline : public StateObject {
                                                                     const vku::safe_VkGraphicsPipelineCreateInfo &create_info);
     static std::shared_ptr<PreRasterState> CreatePreRasterState(const Pipeline &p, const ValidationStateTracker &state,
                                                                 const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
-                                                                const std::shared_ptr<const vvl::RenderPass> &rp);
+                                                                const std::shared_ptr<const vvl::RenderPass> &rp,
+                                                                spirv::StatelessData *stateless_data);
     static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(
         const Pipeline &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-        const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp);
+        const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp,
+        spirv::StatelessData *stateless_data);
     static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(
         const Pipeline &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
         const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp);

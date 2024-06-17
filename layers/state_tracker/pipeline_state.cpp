@@ -57,6 +57,7 @@ static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGra
 
 // static
 std::vector<ShaderStageState> Pipeline::GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
+                                                       spirv::StatelessData *stateless_data,
                                                        ShaderModuleUniqueIds *shader_unique_id_map) {
     std::vector<ShaderStageState> stage_states;
 
@@ -91,8 +92,11 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const ValidationStateTrac
                     const uint32_t unique_shader_id = (shader_unique_id_map) ? (*shader_unique_id_map)[stage] : 0;
                     if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                         // don't need to worry about GroupDecoration in GPL
-                        auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
+                        auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data);
                         module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, unique_shader_id);
+                        if (stateless_data) {
+                            stateless_data->pipeline_pnext_module = spirv_module;
+                        }
                     } else {
                         // VK_EXT_shader_module_identifier could legally provide a null module handle
                         module_state = std::make_shared<vvl::ShaderModule>(unique_shader_id);
@@ -525,10 +529,11 @@ std::shared_ptr<VertexInputState> Pipeline::CreateVertexInputState(const Pipelin
 // static
 std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(const Pipeline &p, const ValidationStateTracker &state,
                                                                const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
-                                                               const std::shared_ptr<const vvl::RenderPass> &rp) {
+                                                               const std::shared_ptr<const vvl::RenderPass> &rp,
+                                                               spirv::StatelessData *stateless_data) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {  // Pre-raster graphics library
-        return std::make_shared<PreRasterState>(p, state, create_info, rp);
+        return std::make_shared<PreRasterState>(p, state, create_info, rp, stateless_data);
     }
 
     if (p.library_create_info) {
@@ -538,7 +543,7 @@ std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(const Pipeline &p
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            return std::make_shared<PreRasterState>(p, state, create_info, rp);
+            return std::make_shared<PreRasterState>(p, state, create_info, rp, stateless_data);
         }
     }
 
@@ -549,11 +554,12 @@ std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(const Pipeline &p
 // static
 std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
     const Pipeline &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
-    const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp) {
+    const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp,
+    spirv::StatelessData *stateless_data) {
     const auto lib_type = GetGraphicsLibType(create_info);
 
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
-        return std::make_shared<FragmentShaderState>(p, state, create_info, rp);
+        return std::make_shared<FragmentShaderState>(p, state, create_info, rp, stateless_data);
     }
 
     if (p.library_create_info) {
@@ -567,7 +573,7 @@ std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
             // No fragment shader _should_ imply no fragment shader state, however, for historical (GL) reasons, a pipeline _can_
             // be created with a VS but no FS and still have valid fragment shader state.
             // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/3178 for more details.
-            return std::make_shared<FragmentShaderState>(p, state, safe_create_info, rp);
+            return std::make_shared<FragmentShaderState>(p, state, safe_create_info, rp, stateless_data);
         }
     }
 
@@ -669,7 +675,8 @@ std::shared_ptr<const vvl::ShaderModule> Pipeline::GetSubStateShader(VkShaderSta
 
 Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, ShaderModuleUniqueIds *shader_unique_id_map)
+                   std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data,
+                   ShaderModuleUniqueIds *shader_unique_id_map)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(MakeGraphicsCreateInfo(*pCreateInfo, rpstate, state_data)),
@@ -682,10 +689,11 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPip
       shader_stages_ci(GraphicsCreateInfo().pStages, GraphicsCreateInfo().stageCount),
       uses_shader_module_id(UsesShaderModuleId(*this)),
       vertex_input_state(CreateVertexInputState(*this, state_data, GraphicsCreateInfo())),
-      pre_raster_state(CreatePreRasterState(*this, state_data, GraphicsCreateInfo(), rpstate)),
-      fragment_shader_state(CreateFragmentShaderState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate)),
+      pre_raster_state(CreatePreRasterState(*this, state_data, GraphicsCreateInfo(), rpstate, stateless_data)),
+      fragment_shader_state(
+          CreateFragmentShaderState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate, stateless_data)),
       fragment_output_state(CreateFragmentOutputState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate)),
-      stage_states(GetStageStates(state_data, *this, shader_unique_id_map)),
+      stage_states(GetStageStates(state_data, *this, stateless_data, shader_unique_id_map)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       linking_shaders(GetLinkingShaders(library_create_info, state_data)),
       active_shaders(create_info_shaders | linking_shaders),
@@ -724,7 +732,8 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPip
 }
 
 Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   spirv::StatelessData *stateless_data)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_cache(std::move(pipe_cache)),
@@ -732,7 +741,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkComputePipe
       create_flags(GetPipelineCreateFlags(ComputeCreateInfo().pNext, ComputeCreateInfo().flags)),
       shader_stages_ci(&ComputeCreateInfo().stage, 1),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, nullptr)),
+      stage_states(GetStageStates(state_data, *this, stateless_data, nullptr)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // compute has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -747,7 +756,8 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkComputePipe
 }
 
 Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   spirv::StatelessData *stateless_data)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_cache(std::move(pipe_cache)),
@@ -756,7 +766,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, nullptr)),
+      stage_states(GetStageStates(state_data, *this, stateless_data, nullptr)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -771,7 +781,8 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
 }
 
 Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   spirv::StatelessData *stateless_data)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_cache(std::move(pipe_cache)),
@@ -780,7 +791,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, nullptr)),
+      stage_states(GetStageStates(state_data, *this, stateless_data, nullptr)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),

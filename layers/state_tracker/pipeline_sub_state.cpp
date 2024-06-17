@@ -56,7 +56,8 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
 }
 
 PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTracker &state_data,
-                               const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp)
+                               const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp,
+                               spirv::StatelessData *stateless_data)
     : PipelineSubState(p),
       pipeline_layout(state_data.Get<vvl::PipelineLayout>(create_info.layout)),
       viewport_state(create_info.pViewportState),
@@ -82,8 +83,13 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
             // This support was also added in VK_KHR_maintenance5
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                 // don't need to worry about GroupDecoration in GPL
-                auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
+                spirv::StatelessData *stateless_data_stage =
+                    (stateless_data && i < spirv::kCommonMaxShaderStages) ? &stateless_data[i] : nullptr;
+                auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
                 module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
+                if (stateless_data_stage) {
+                    stateless_data_stage->pipeline_pnext_module = spirv_module;
+                }
             }
         }
 
@@ -181,7 +187,7 @@ std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI
 
 template <typename CreateInfo>
 void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
-                                  const CreateInfo &create_info) {
+                                  const CreateInfo &create_info, spirv::StatelessData *stateless_data) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
             auto module_state = state_data.Get<vvl::ShaderModule>(create_info.pStages[i].module);
@@ -191,8 +197,14 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                 // This support was also added in VK_KHR_maintenance5
                 if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext)) {
                     // don't need to worry about GroupDecoration in GPL
-                    auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode);
+                    spirv::StatelessData *stateless_data_stage =
+                        (stateless_data && i < spirv::kCommonMaxShaderStages) ? &stateless_data[i] : nullptr;
+                    auto spirv_module =
+                        std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
                     module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
+                    if (stateless_data_stage) {
+                        stateless_data_stage->pipeline_pnext_module = spirv_module;
+                    }
                 }
             }
 
@@ -220,14 +232,16 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
 
 // static
 void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
-                                                const VkGraphicsPipelineCreateInfo &create_info) {
-    SetFragmentShaderInfoPrivate(fs_state, state_data, create_info);
+                                                const VkGraphicsPipelineCreateInfo &create_info,
+                                                spirv::StatelessData *stateless_data) {
+    SetFragmentShaderInfoPrivate(fs_state, state_data, create_info, stateless_data);
 }
 
 // static
 void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
-                                                const vku::safe_VkGraphicsPipelineCreateInfo &create_info) {
-    SetFragmentShaderInfoPrivate(fs_state, state_data, create_info);
+                                                const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
+                                                spirv::StatelessData *stateless_data) {
+    SetFragmentShaderInfoPrivate(fs_state, state_data, create_info, stateless_data);
 }
 
 FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data,
