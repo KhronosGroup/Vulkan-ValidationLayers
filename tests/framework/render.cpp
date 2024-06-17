@@ -153,34 +153,6 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
     return info;
 }
 
-void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
-    auto validation = GetEnvironment("VK_LAYER_TESTS_VALIDATION_FEATURES");
-    vvl::ToLower(validation);
-    VkValidationFeaturesEXT *features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(first_pnext);
-    if (validation == "all" || validation == "core" || validation == "none") {
-        if (!features) {
-            features = &m_validation_features;
-            features->sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-            features->pNext = first_pnext;
-            first_pnext = features;
-        }
-
-        if (validation == "all") {
-            features->enabledValidationFeatureCount = 4;
-            features->pEnabledValidationFeatures = validation_enable_all;
-            features->disabledValidationFeatureCount = 0;
-        } else if (validation == "core") {
-            features->disabledValidationFeatureCount = 0;
-        } else if (validation == "none") {
-            features->disabledValidationFeatureCount = 1;
-            features->pDisabledValidationFeatures = &validation_disable_all;
-            features->enabledValidationFeatureCount = 0;
-        }
-    }
-
-    return first_pnext;
-}
-
 void VkRenderFramework::InitFramework(void *instance_pnext) {
     ASSERT_EQ((VkInstance)0, instance_);
 
@@ -241,10 +213,6 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     RemoveIf(m_instance_extension_names, ExtensionNotSupportedWithReporting);
 
     auto ici = GetInstanceCreateInfo();
-
-    // If is validation features then check for disabled validation
-
-    instance_pnext = SetupValidationSettings(instance_pnext);
 
     // concatenate pNexts
     void *last_pnext = nullptr;
