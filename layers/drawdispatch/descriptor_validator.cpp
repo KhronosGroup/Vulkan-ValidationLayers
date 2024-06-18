@@ -343,7 +343,10 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                       string_SpvDim(dim), is_image_array);
         }
 
-        if ((variable->info.image_format_type & image_view_state->descriptor_format_bits) == 0) {
+        // Because you can have a runtime array with different types in it, without extensive GPU-AV tracking, we have no way to
+        // detect if the types match up in a given index
+        if (variable->array_length != spirv::kRuntimeArray &&
+            ((variable->info.image_format_type & image_view_state->descriptor_format_bits) == 0)) {
             const bool signed_override =
                 ((variable->info.image_format_type & spirv::NumericTypeUint) && variable->info.is_sign_extended);
             const bool unsigned_override =

@@ -1856,6 +1856,8 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
             // currently just tracks 1D arrays
             if (type->Opcode() == spv::OpTypeArray && variable.array_length == 0) {
                 variable.array_length = module_state.GetConstantValueById(type->Word(3));
+            } else if (type->Opcode() == spv::OpTypeRuntimeArray) {
+                variable.array_length = spirv::kRuntimeArray;
             }
 
             if (type->Opcode() == spv::OpTypeSampledImage) {
@@ -1964,7 +1966,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         if (is_sampled_without_sampler) {
             if (info.image_dim == spv::DimSubpassData) {
                 is_input_attachment = true;
-                input_attachment_index_read.resize(array_length);  // is zero if runtime array
+                if (array_length != spirv::kRuntimeArray) {
+                    input_attachment_index_read.resize(array_length);
+                }
             } else if (info.image_dim == spv::DimBuffer) {
                 is_storage_texel_buffer = true;
             } else {
@@ -1987,7 +1991,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 info.is_zero_extended |= image_access.is_zero_extended;
                 access_mask |= image_access.access_mask;
 
-                if (array_length > 1) {
+                if (array_length > 1 && array_length != spirv::kRuntimeArray) {
                     image_access_chain_indexes.insert(image_access.image_access_chain_index);
                 }
 

@@ -38,6 +38,9 @@ struct Module;
 
 static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
+// Need to find a way to know if actually array lenght of zero, or a runtime array.
+static constexpr uint32_t kRuntimeArray = std::numeric_limits<uint32_t>::max();
+
 // This is the common info for both OpDecorate and OpMemberDecorate
 // Used to keep track of all decorations applied to any instruction
 struct DecorationBase {
@@ -371,6 +374,7 @@ struct StageInterfaceVariable : public VariableBase {
 // at draw/submit time we can cross reference with the last bound descriptor.
 struct ResourceInterfaceVariable : public VariableBase {
     // If the type is a OpTypeArray save the length
+    // Will be kRuntimeArray (non-zero) for runtime arrays
     uint32_t array_length;
 
     bool is_sampled_image;  // OpTypeSampledImage

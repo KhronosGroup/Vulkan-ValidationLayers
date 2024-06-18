@@ -1109,6 +1109,72 @@ TEST_F(PositiveGpuAV, AliasImageBinding) {
     vk::DeviceWaitIdle(*m_device);
 }
 
+TEST_F(PositiveGpuAV, AliasImageBindingNonFixed) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7677");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *csSource = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : enable
+        #extension GL_EXT_samplerless_texture_functions : require
+
+        layout(set = 0, binding = 0) uniform texture2D float_textures[];
+        layout(set = 0, binding = 0) uniform utexture2D uint_textures[];
+        layout(set = 0, binding = 1) buffer output_buffer {
+            uint index;
+            vec4 data;
+        };
+
+        void main() {
+            const vec4 value = texelFetch(float_textures[nonuniformEXT(index)], ivec2(0), 0);
+            const uint mask = texelFetch(uint_textures[nonuniformEXT(index + 1)], ivec2(0), 0).x;
+            data = mask > 0 ? value : vec4(0.0);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image float_image(*m_device, image_ci);
+    float_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView float_image_view = float_image.CreateView();
+
+    image_ci.format = VK_FORMAT_R8G8B8A8_UINT;
+    vkt::Image uint_image(*m_device, image_ci);
+    uint_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView uint_image_view = uint_image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint32_t *data = (uint32_t *)buffer.memory().map();
+    *data = 0;
+    buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, float_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL, 0);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, uint_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL, 1);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    vk::DeviceWaitIdle(*m_device);
+}
+
 TEST_F(PositiveGpuAV, SwapchainImage) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8091");
     AddSurfaceExtension();
@@ -1331,13 +1397,13 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
             } pc;
 
             vec2 vertices[3];
-            
+
             void main() {
               vertices[0] = vec2(-1.0, -1.0);
               vertices[1] = vec2( 1.0, -1.0);
               vertices[2] = vec2( 0.0,  1.0);
               gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-              
+
               for (int i = 0; i < 8; ++i) {
                   pc.ptr.out_array[i] = pc.in_array[i];
               }
@@ -1436,13 +1502,13 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
             } pc;
 
             vec2 vertices[3];
-            
+
             void main() {
               vertices[0] = vec2(-1.0, -1.0);
               vertices[1] = vec2( 1.0, -1.0);
               vertices[2] = vec2( 0.0,  1.0);
               gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-              
+
               for (int i = 0; i < 4; ++i) {
                   pc.ptr.out_array[i] = pc.in_array[i];
               }
@@ -1523,7 +1589,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
             } pc;
 
             layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
-            
+
             void main() {
               for (int i = 0; i < 8; ++i) {
                   pc.ptr.out_array[i] = pc.in_array[i];
