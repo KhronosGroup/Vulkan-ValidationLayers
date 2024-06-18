@@ -537,12 +537,9 @@ TEST_F(PositiveShaderInterface, InputAttachmentMissingNotRead) {
 
 TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     TEST_DESCRIPTION("Input Attachment array where need to follow the index into the array");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(m_render_target_fmt);
@@ -600,30 +597,6 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
-    // use OpTypeRuntimeArray and index into it
-    // This is something that is needed to be validated at draw time, so should not be an error
-    if (features12.runtimeDescriptorArray && features12.shaderInputAttachmentArrayNonUniformIndexing) {
-        const char *fs_source = R"glsl(
-            #version 460
-            #extension GL_EXT_nonuniform_qualifier : require
-            layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[];
-            layout(set = 0, binding = 3) buffer ssbo { int rIndex; };
-            layout(location=0) out vec4 color;
-            void main() {
-                color = subpassLoad(xs[nonuniformEXT(rIndex)]);
-            }
-        )glsl";
-        VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
-
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                    {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-            helper.gp_ci_.renderPass = rp.Handle();
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-    }
-
     // Array of size 1
     // loads from index 0, but not the invalid index 0 since has offest of 3
     {
@@ -666,6 +639,53 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     }
 }
 
+TEST_F(PositiveShaderInterface, InputAttachmentRuntimeArray) {
+    TEST_DESCRIPTION("Input Attachment array where need to follow the index into the array");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::shaderInputAttachmentArrayNonUniformIndexing);
+    RETURN_IF_SKIP(Init());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(m_render_target_fmt);
+    // index 0 is unused
+    rp.AddAttachmentReference({VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL});
+    // index 1 is is valid (for both color and input)
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    // index 2 and 3 point to same image as index 1
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(1);
+    rp.AddInputAttachment(2);
+    rp.AddInputAttachment(3);
+    rp.AddColorAttachment(1);
+    rp.CreateRenderPass();
+
+    // use OpTypeRuntimeArray and index into it
+    // This is something that is needed to be validated at draw time, so should not be an error
+    const char *fs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[];
+        layout(set = 0, binding = 3) buffer ssbo { int rIndex; };
+        layout(location=0) out vec4 color;
+        void main() {
+            color = subpassLoad(xs[nonuniformEXT(rIndex)]);
+        }
+    )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        helper.gp_ci_.renderPass = rp.Handle();
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+
+}
 TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     TEST_DESCRIPTION("Input Attachment sharing same variable, but different aspect");
 

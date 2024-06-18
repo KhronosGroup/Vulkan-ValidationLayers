@@ -3580,6 +3580,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
 TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
     AddRequiredFeature(vkt::Feature::shaderStorageImageWriteWithoutFormat);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

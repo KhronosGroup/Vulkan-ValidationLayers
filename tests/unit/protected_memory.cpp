@@ -670,21 +670,12 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
-
-    if (protected_memory_features.protectedMemory == VK_FALSE) {
-        GTEST_SKIP() << "protectedMemory feature not supported";
-    };
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(protected_memory_properties);
-
-    // Turns m_commandBuffer into a unprotected command buffer without passing in a VkCommandPoolCreateFlags
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
     vkt::CommandBuffer protectedCommandBuffer(*m_device, protectedCommandPool);
@@ -1192,6 +1183,7 @@ TEST_F(NegativeProtectedMemory, WriteToProtectedStorageBuffer) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
     InitRenderTarget();

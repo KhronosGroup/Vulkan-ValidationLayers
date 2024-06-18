@@ -122,6 +122,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -235,6 +236,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
