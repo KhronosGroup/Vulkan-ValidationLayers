@@ -1934,8 +1934,11 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     const bool physical_storage_buffer = variable.storage_class == spv::StorageClassPhysicalStorageBuffer;
     const bool storage_buffer = variable.storage_class == spv::StorageClassStorageBuffer;
     const bool uniform = variable.storage_class == spv::StorageClassUniform;
-    const bool buffer_block = variable.decorations.Has(DecorationSet::buffer_block_bit);
-    const bool block = variable.decorations.Has(DecorationSet::block_bit);
+    const bool buffer_block =
+        (variable.decorations.Has(DecorationSet::buffer_block_bit) ||
+         (variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::buffer_block_bit)));
+    const bool block = (variable.decorations.Has(DecorationSet::block_bit) ||
+                        (variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::block_bit)));
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }
 

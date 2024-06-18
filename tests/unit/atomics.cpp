@@ -118,6 +118,31 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
     }
 }
 
+TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer ssbo { int y; };
+        void main() {
+                atomicMin(y, 1);
+        }
+    )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    auto info_override = [&](CreatePipelineHelper &info) {
+        info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    };
+
+    CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, "VUID-RuntimeSpirv-NonWritable-06340");
+}
+
 TEST_F(NegativeAtomic, Int64) {
     TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
