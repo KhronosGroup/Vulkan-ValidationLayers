@@ -714,8 +714,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
                     // Skip if we are in selective mode
                     if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(sm_ci->pNext)) continue;
                 } else {
-                    // If missing VkShaderModuleCreateInfo, for sure in GPL and not only want to check if there would be a shader
-                    // anyway
+                    // We only get here if using GPL, but if here with a linking pipeline, everything is already handled
                     if (pipe->HasFullState() || (!pipe->pre_raster_state && !pipe->fragment_shader_state)) break;
                 }
 

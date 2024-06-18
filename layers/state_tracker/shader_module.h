@@ -38,9 +38,6 @@ struct Module;
 
 static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
-// It is very rare to have more then 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
-static const uint32_t kCommonMaxGraphicsShaderStages = 3;
-
 // This is the common info for both OpDecorate and OpMemberDecorate
 // Used to keep track of all decorations applied to any instruction
 struct DecorationBase {

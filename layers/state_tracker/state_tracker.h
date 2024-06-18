@@ -755,12 +755,10 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator,
                                            const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
-                                                                       std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-                                                                       std::shared_ptr<const vvl::RenderPass>&& render_pass,
-                                                                       std::shared_ptr<const vvl::PipelineLayout>&& layout,
-                                                                       spirv::StatelessData* stateless_data,
-                                                                       ShaderModuleUniqueIds* shader_unique_id_map) const;
+    virtual std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(
+        const VkGraphicsPipelineCreateInfo* pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+        std::shared_ptr<const vvl::RenderPass>&& render_pass, std::shared_ptr<const vvl::PipelineLayout>&& layout,
+        spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages], ShaderModuleUniqueIds* shader_unique_id_map) const;
 
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
