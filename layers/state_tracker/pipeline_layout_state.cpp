@@ -63,6 +63,24 @@ bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) c
     return true;
 }
 
+std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutCompatDef &other) const {
+    std::ostringstream ss;
+    if (set != other.set) {
+        ss << "The set " << set << " is different from the non-compatible pipeline layout (" << other.set << ")\n";
+    } else if (push_constant_ranges != other.push_constant_ranges) {
+        ss << "The set push constant ranges is different from the non-compatible pipeline layout push constant ranges\n";
+    } else {
+        const auto &descriptor_set_layouts = *set_layouts_id.get();
+        const auto &other_ds_layouts = *other.set_layouts_id.get();
+        for (uint32_t i = 0; i <= set; i++) {
+            if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
+                return descriptor_set_layouts[i]->DescribeDifference(i, *other_ds_layouts[i]);
+            }
+        }
+    }
+    return ss.str();
+}
+
 static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const PushConstantRangesId &pcr_id,
                                              const PipelineLayoutSetLayoutsId &set_layouts_id) {
     return pipeline_layout_compat_dict.LookUp(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));

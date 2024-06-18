@@ -1658,6 +1658,57 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeDescriptors, DescriptorSetCompatibilityCompute) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set_storage(m_device,
+                                               {
+                                                   {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                               });
+    OneOffDescriptorSet descriptor_set_uniform(m_device,
+                                               {
+                                                   {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                               });
+    descriptor_set_storage.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE,
+                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set_storage.UpdateDescriptorSets();
+    descriptor_set_uniform.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE,
+                                                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set_uniform.UpdateDescriptorSets();
+
+    const vkt::PipelineLayout pipeline_layout_a(*m_device, {&descriptor_set_storage.layout_, &descriptor_set_storage.layout_});
+    const vkt::PipelineLayout pipeline_layout_b(*m_device, {&descriptor_set_storage.layout_, &descriptor_set_uniform.layout_});
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 1, binding = 0) buffer StorageBuffer_1 {
+            uint a;
+            uint b;
+        };
+        void main() {
+            a = b;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipeline.cp_ci_.layout = pipeline_layout_a.handle();
+    pipeline.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_a.handle(), 0, 1,
+                              &descriptor_set_storage.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_b.handle(), 1, 1,
+                              &descriptor_set_uniform.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeDescriptors, DSUsageBits) {
     TEST_DESCRIPTION("Attempt to update descriptor sets for images and buffers that do not have correct usage bits sets.");
 
