@@ -56,7 +56,9 @@ struct PipelineLayoutCompatDef {
     PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id)
         : set(set_index), push_constant_ranges(pcr_id), set_layouts_id(sl_id) {}
     size_t hash() const;
+
     bool operator==(const PipelineLayoutCompatDef &other) const;
+    std::string DescribeDifference(const PipelineLayoutCompatDef &other) const;
 };
 
 // Canonical dictionary for PipelineLayoutCompat records

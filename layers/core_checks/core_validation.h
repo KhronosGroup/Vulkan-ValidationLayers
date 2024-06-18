@@ -528,8 +528,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawShaderObjectMesh(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionState(const vvl::CommandBuffer& cb_state, const VkPipelineBindPoint bind_point, const Location& loc) const;
-    bool ValidateActionStateDescriptors(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
-                                        const vvl::Pipeline* pipeline, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionStateDescriptorsPipeline(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
+                                                const vvl::Pipeline& pipeline, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionStateDescriptorsShaderObject(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
+                                                    const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
                                          const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStateProtectedMemory(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,

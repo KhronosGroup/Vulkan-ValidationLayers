@@ -210,6 +210,8 @@ class DescriptorSetLayoutDef {
     };
     const BindingTypeStats &GetBindingTypeStats() const { return binding_type_stats_; }
 
+    std::string DescribeDifference(uint32_t index, const DescriptorSetLayoutDef &other) const;
+
   private:
     // Only the first three data members are used for hash and equality checks, the other members are derived from them, and are
     // used to speed up the various lookups/queries/validations

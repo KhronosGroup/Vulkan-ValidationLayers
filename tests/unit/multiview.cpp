@@ -371,23 +371,10 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     // Descriptor sets
     {
+        vkt::Buffer buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         OneOffDescriptorSet descriptor_set{m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}}};
-
-        VkBufferCreateInfo bci = vku::InitStructHelper();
-        bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        bci.size = 8;
-        vkt::Buffer buffer(*m_device, bci);
-        VkDescriptorBufferInfo buffer_info;
-        buffer_info.buffer = buffer.handle();
-        buffer_info.offset = 0;
-        buffer_info.range = VK_WHOLE_SIZE;
-        VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-        descriptor_write.dstSet = descriptor_set.set_;
-        descriptor_write.dstBinding = 0;
-        descriptor_write.descriptorCount = 1;
-        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_write.pBufferInfo = &buffer_info;
-        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+        descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE);
+        descriptor_set.UpdateDescriptorSets();
 
         VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
         pipeline_layout_info.setLayoutCount = 1;

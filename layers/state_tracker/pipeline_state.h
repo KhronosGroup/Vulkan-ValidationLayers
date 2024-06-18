@@ -703,14 +703,12 @@ struct LastBound {
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
     std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaders();
     bool IsAnyGraphicsShaderBound() const;
-};
 
-static inline bool IsBoundSetCompatible(uint32_t set, const LastBound &last_bound, const vvl::PipelineLayout &pipeline_layout) {
-    if ((set >= last_bound.per_set.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
-        return false;
-    }
-    return (*(last_bound.per_set[set].compat_id_for_set) == *(pipeline_layout.set_compat_ids[set]));
-}
+    bool IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
+    bool IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
+    std::string DescribeNonCompatibleSet(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
+    std::string DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
+};
 
 static inline bool IsPipelineLayoutSetCompat(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
     if (!a || !b) {

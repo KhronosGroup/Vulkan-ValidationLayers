@@ -214,6 +214,69 @@ bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef 
     return true;
 }
 
+std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const DescriptorSetLayoutDef &other) const {
+    std::ostringstream ss;
+    ss << "Set " << index << " ";
+    auto lhs_binding_flags = GetBindingFlags();
+    auto rhs_binding_flags = other.GetBindingFlags();
+    const auto &lhs_bindings = GetBindings();
+    const auto &rhs_bindings = other.GetBindings();
+
+    if (GetCreateFlags() != other.GetCreateFlags()) {
+        ss << "VkDescriptorSetLayoutCreateFlags " << string_VkDescriptorSetLayoutCreateFlags(GetCreateFlags()) << " doesn't match "
+           << string_VkDescriptorSetLayoutCreateFlags(other.GetCreateFlags());
+    } else if (lhs_binding_flags.size() != rhs_binding_flags.size()) {
+        ss << "VkDescriptorSetLayoutBindingFlagsCreateInfo::bindingCount " << lhs_binding_flags.size() << " doesn't match "
+           << rhs_binding_flags.size();
+    } else if (lhs_binding_flags != rhs_binding_flags) {
+        ss << "VkDescriptorSetLayoutBindingFlagsCreateInfo::pBindingFlags (";
+        for (auto flag : lhs_binding_flags) {
+            ss << string_VkDescriptorBindingFlags(flag) << " ";
+        }
+        ss << ") doesn't match (";
+        for (auto flag : rhs_binding_flags) {
+            ss << string_VkDescriptorBindingFlags(flag) << " ";
+        }
+        ss << ")";
+    } else if (GetMutableTypes() != other.GetMutableTypes()) {
+        // TODO - this is a 2d array, need a smarter way to print out details
+        ss << "Mutable types doesn't match";
+    } else if (lhs_bindings.size() != rhs_bindings.size()) {
+        ss << "binding count " << lhs_bindings.size() << " doesn't match " << rhs_bindings.size();
+    } else {
+        for (size_t i = 0; i < lhs_bindings.size(); i++) {
+            const auto &l = lhs_bindings[i];
+            const auto &r = rhs_bindings[i];
+            if (l.descriptorType != r.descriptorType) {
+                ss << "binding " << i << " descriptorType " << string_VkDescriptorType(l.descriptorType) << " doesn't match "
+                   << string_VkDescriptorType(r.descriptorType);
+                break;
+            } else if (l.descriptorCount != r.descriptorCount) {
+                ss << "binding " << i << " descriptorCount " << l.descriptorCount << " doesn't match " << r.descriptorCount;
+                break;
+            } else if (l.stageFlags != r.stageFlags) {
+                ss << "binding " << i << " stageFlags " << string_VkShaderStageFlags(l.stageFlags) << " doesn't match "
+                   << string_VkShaderStageFlags(r.stageFlags);
+                break;
+            } else if (l.pImmutableSamplers != r.pImmutableSamplers) {
+                ss << "binding " << i << " pImmutableSamplers " << l.pImmutableSamplers << " doesn't match "
+                   << r.pImmutableSamplers;
+                break;
+            } else if (l.pImmutableSamplers) {
+                for (uint32_t s = 0; s < l.descriptorCount; s++) {
+                    if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
+                        ss << "binding " << i << " pImmutableSamplers[" << s << "] " << l.pImmutableSamplers[s] << " doesn't match "
+                           << r.pImmutableSamplers[s];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    ss << "\n";
+    return ss.str();
+}
+
 // Construct DescriptorSetLayout instance from given create info
 // Proactively reserve and resize as possible, as the reallocation was visible in profiling
 vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info)

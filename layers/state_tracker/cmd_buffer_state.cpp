@@ -1155,7 +1155,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
     auto &last_bound = lastBound[lv_bind_point];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
-    if (!push_descriptor_set || !IsBoundSetCompatible(set, last_bound, pipeline_layout)) {
+    if (!push_descriptor_set || !last_bound.IsBoundSetCompatible(set, pipeline_layout)) {
         last_bound.UnbindAndResetPushDescriptorSet(dev_data.CreateDescriptorSet(VK_NULL_HANDLE, nullptr, dsl, 0));
     }
 
