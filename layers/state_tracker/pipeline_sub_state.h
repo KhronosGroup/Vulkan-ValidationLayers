@@ -145,10 +145,11 @@ struct FragmentShaderState : public PipelineSubState {
 
   private:
     static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
-                                      const VkGraphicsPipelineCreateInfo &create_info, spirv::StatelessData *stateless_data);
+                                      const VkGraphicsPipelineCreateInfo &create_info,
+                                      spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
     static void SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
                                       const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
-                                      spirv::StatelessData *stateless_data);
+                                      spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
 };
 
 template <typename CreateInfo>

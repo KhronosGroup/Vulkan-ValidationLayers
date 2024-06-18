@@ -92,6 +92,9 @@ static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
     return d3;
 }
 
+// It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
+static const uint32_t kCommonMaxGraphicsShaderStages = 3;
+
 typedef void *dispatch_key;
 static inline dispatch_key GetDispatchKey(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
 

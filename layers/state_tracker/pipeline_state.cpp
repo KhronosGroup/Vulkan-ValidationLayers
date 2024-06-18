@@ -527,10 +527,9 @@ std::shared_ptr<VertexInputState> Pipeline::CreateVertexInputState(const Pipelin
 }
 
 // static
-std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(const Pipeline &p, const ValidationStateTracker &state,
-                                                               const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
-                                                               const std::shared_ptr<const vvl::RenderPass> &rp,
-                                                               spirv::StatelessData *stateless_data) {
+std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(
+    const Pipeline &p, const ValidationStateTracker &state, const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
+    const std::shared_ptr<const vvl::RenderPass> &rp, spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {  // Pre-raster graphics library
         return std::make_shared<PreRasterState>(p, state, create_info, rp, stateless_data);
@@ -555,7 +554,7 @@ std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(const Pipeline &p
 std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
     const Pipeline &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
     const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp,
-    spirv::StatelessData *stateless_data) {
+    spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     const auto lib_type = GetGraphicsLibType(create_info);
 
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
@@ -675,8 +674,8 @@ std::shared_ptr<const vvl::ShaderModule> Pipeline::GetSubStateShader(VkShaderSta
 
 Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data,
-                   ShaderModuleUniqueIds *shader_unique_id_map)
+                   std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages], ShaderModuleUniqueIds *shader_unique_id_map)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(MakeGraphicsCreateInfo(*pCreateInfo, rpstate, state_data)),
