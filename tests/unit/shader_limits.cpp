@@ -440,3 +440,42 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
+    RETURN_IF_SKIP(InitFramework());
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxFragmentCombinedOutputResources = 4;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    RETURN_IF_SKIP(InitState());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set = 0, binding=0) buffer SSBO_0 {
+            uint a;
+        };
+        layout(set = 0, binding=3) buffer SSBO_1 {
+            uint b;
+        };
+        layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;
+
+        layout(location=1) out vec4 color_0;
+        layout(location=3) out vec4 color_1;
+
+        void main(){
+           color_0 = vec4(1.0);
+           color_1 = vec4(1.0);
+           a = b;
+           imageStore(s_buffer, 0, vec4(1.0));
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06428");
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->VerifyFound();
+}

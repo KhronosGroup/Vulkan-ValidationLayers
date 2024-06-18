@@ -444,6 +444,43 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &modul
         default:
             assert(false);  // This should never happen
     }
+
+    // maxFragmentCombinedOutputResources
+    //
+    // This limit was created from Vulkan 1.0, with the move to bindless, this limit has slowly become less relevant, if using
+    // descriptor indexing, the limit should basically be UINT32_MAX
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
+        // Variables can be aliased, so use Location to mark things as unique
+        vvl::unordered_set<uint32_t> color_attachments;
+        for (const auto *variable : entrypoint.user_defined_interface_variables) {
+            if (variable->storage_class == spv::StorageClassOutput && variable->decorations.location != spirv::kInvalidValue) {
+                // even if using an array of attachments in the shader, each used variable of the array is represented by a single
+                // variable
+                color_attachments.insert(variable->decorations.location);
+            }
+        }
+
+        // unordered_set requires to define hashing, and these should be very small and cheap as is
+        std::set<std::pair<uint32_t, uint32_t>> storage_buffers;
+        std::set<std::pair<uint32_t, uint32_t>> storage_images;
+        for (const auto &variable : entrypoint.resource_interface_variables) {
+            if (!variable.IsAccessed()) continue;
+            if (variable.is_storage_buffer) {
+                storage_buffers.insert(std::make_pair(variable.decorations.set, variable.decorations.binding));
+            } else if (variable.is_storage_image || variable.is_storage_texel_buffer) {
+                storage_images.insert(std::make_pair(variable.decorations.set, variable.decorations.binding));
+            }
+        }
+        const uint32_t total_output = (uint32_t)(color_attachments.size() + storage_buffers.size() + storage_images.size());
+        if (total_output > limits.maxFragmentCombinedOutputResources) {
+            skip |= LogError("VUID-RuntimeSpirv-Location-06428", module_state.handle(), loc,
+                             "SPIR-V (Fragment stage) output contains %zu storage buffer bindings, %zu storage image bindings, and "
+                             "%zu color attachments which together is %" PRIu32
+                             " which exceeds the limit maxFragmentCombinedOutputResources (%" PRIu32 ").",
+                             storage_buffers.size(), storage_images.size(), color_attachments.size(), total_output,
+                             limits.maxFragmentCombinedOutputResources);
+        }
+    }
     return skip;
 }
 
