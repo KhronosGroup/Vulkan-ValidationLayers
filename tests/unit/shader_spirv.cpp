@@ -616,6 +616,7 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::maintenance5);
     AddDisabledFeature(vkt::Feature::shaderInt16);
     RETURN_IF_SKIP(Init());

@@ -492,13 +492,10 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
 TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     TEST_DESCRIPTION("Access different elements of the image array using dynamic indexing. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    if (features12.runtimeDescriptorArray != VK_TRUE) {
-        GTEST_SKIP() << "runtimeDescriptorArray not supported and is required";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     constexpr VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
