@@ -2201,3 +2201,15 @@ TEST_F(VkLayerTest, DISABLED_DisplayApplicationName) {
     }
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance2, nullptr));
 }
+
+TEST_F(VkLayerTest, GetDeviceFaultInfoEXT) {
+    TEST_DESCRIPTION("Call vkGetDeviceFaultInfoEXT when no device is lost");
+    AddRequiredExtensions(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceFault);
+    RETURN_IF_SKIP(Init());
+    VkDeviceFaultCountsEXT fault_count = vku::InitStructHelper();
+    VkDeviceFaultInfoEXT fault_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-vkGetDeviceFaultInfoEXT-device-07336");
+    vk::GetDeviceFaultInfoEXT(device(), &fault_count, &fault_info);
+    m_errorMonitor->VerifyFound();
+}
