@@ -582,16 +582,17 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                 }
             }
         }
-        if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
-            if (dev_state.ValidateProtectedImage(cb_state, *image_view_state->image_state, loc,
-                                                 vuids.unprotected_command_buffer_02707, " (Image is in a descriptorSet)")) {
-                return true;
-            }
-            if (variable->IsWrittenTo() &&
-                dev_state.ValidateUnprotectedImage(cb_state, *image_view_state->image_state, loc,
-                                                   vuids.protected_command_buffer_02712, " (Image is in a descriptorSet)")) {
-                return true;
-            }
+    }
+
+    if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
+        if (dev_state.ValidateProtectedImage(cb_state, *image_view_state->image_state, loc, vuids.unprotected_command_buffer_02707,
+                                             " (Image is in a descriptorSet)")) {
+            return true;
+        }
+        if (variable->IsWrittenTo() &&
+            dev_state.ValidateUnprotectedImage(cb_state, *image_view_state->image_state, loc, vuids.protected_command_buffer_02712,
+                                               " (Image is in a descriptorSet)")) {
+            return true;
         }
     }
 
