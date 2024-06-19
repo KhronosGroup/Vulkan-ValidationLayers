@@ -900,3 +900,89 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Stress) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorIndexing, MixingProtectedResources) {
+    TEST_DESCRIPTION("Have protected resources, but don't actually access it so no VU is triggered");
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(protected_memory_properties);
+    if (protected_memory_properties.protectedNoFault) {
+        GTEST_SKIP() << "protectedNoFault is supported";
+    }
+
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    vkt::Image image_protected(*m_device, image_create_info, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs_image_protected;
+    vk::GetImageMemoryRequirements(device(), image_protected.handle(), &mem_reqs_image_protected);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = mem_reqs_image_protected.size;
+    if (!m_device->phy().set_memory_type(mem_reqs_image_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT)) {
+        GTEST_SKIP() << "Memory type not found";
+    }
+    vkt::DeviceMemory memory_image_protected(*m_device, alloc_info);
+    vk::BindImageMemory(device(), image_protected.handle(), memory_image_protected.handle(), 0);
+    image_protected.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view_protected = image_protected.CreateView();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    uint32_t *data = (uint32_t *)buffer.memory().map();
+    data[0] = 0;
+    buffer.memory().unmap();
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view_protected, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 0) uniform Input {
+            uint index;
+        } in_buffer;
+
+        // [0] non-protected
+        // [1] protected
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+
+        void main() {
+           vec4 result = texture(tex[in_buffer.index], vec2(0, 0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}
