@@ -934,3 +934,13 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location &loc) const {
 
     return skip;
 }
+
+bool CoreChecks::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT *pFaultCounts,
+                                                      VkDeviceFaultInfoEXT *pFaultInfo, const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!is_device_lost) {
+        skip |= LogError("VUID-vkGetDeviceFaultInfoEXT-device-07336", device, error_obj.location,
+                         "device has not been found to be in a lost state.");
+    }
+    return skip;
+}
