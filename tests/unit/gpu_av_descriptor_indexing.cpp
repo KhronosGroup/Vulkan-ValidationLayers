@@ -2367,7 +2367,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
 }
 
 TEST_F(NegativeGpuAVDescriptorIndexing, MixingProtectedResources) {
-    TEST_DESCRIPTION("Have protected resources, but don't actually access it so no VU is triggered");
+    TEST_DESCRIPTION("Have protected resources that is found in the GPU-AV post processing");
     AddRequiredFeature(vkt::Feature::protectedMemory);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties = vku::InitStructHelper();
