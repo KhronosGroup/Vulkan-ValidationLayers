@@ -2463,6 +2463,8 @@ class CoreChecks : public ValidationStateTracker {
                                                                  const ErrorObject& error_obj) const override;
 
     bool PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
+                                              VkDeviceFaultInfoEXT* pFaultInfo, const ErrorObject& error_obj) const override;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
