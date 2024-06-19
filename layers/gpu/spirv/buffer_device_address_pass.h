@@ -30,42 +30,18 @@ struct BasicBlock;
 // invalid, a record is written to the debug output buffer (if space allows)
 // and a null value is returned.
 //
-// For OpStore we will just ignore the store if it is invalid, example:
-// Before:
-//     bda.data[index] = value;
-// After:
-//    if (isValid(bda.data, index)) {
-//         bda.data[index] = value;
-//    }
-//
-// For OpLoad we replace the value with Zero (via Phi node) if it is invalid, example
-// Before:
-//     int X = bda.data[index];
-//     int Y = bda.data[X];
-// After:
-//    if (isValid(bda.data, index)) {
-//         int X = bda.data[index];
-//    } else {
-//         int X = 0;
-//    }
-//    if (isValid(bda.data, X)) {
-//         int Y = bda.data[X];
-//    } else {
-//         int Y = 0;
-//    }
 class BufferDeviceAddressPass : public Pass {
   public:
-    BufferDeviceAddressPass(Module& module) : Pass(module) {}
+    BufferDeviceAddressPass(Module& module) : Pass(module, true) {}
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block) final;
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 
-    const Instruction* target_instruction_ = nullptr;
     uint32_t type_length_ = 0;
     uint32_t access_opcode_ = 0;
 };

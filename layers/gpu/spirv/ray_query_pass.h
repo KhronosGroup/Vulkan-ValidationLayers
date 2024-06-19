@@ -27,17 +27,15 @@ struct BasicBlock;
 // Create a pass to instrument SPV_KHR_ray_query instructions
 class RayQueryPass : public Pass {
   public:
-    RayQueryPass(Module& module) : Pass(module) {}
+    RayQueryPass(Module& module) : Pass(module, true) {}
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block) final;
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
-
-    const Instruction* target_instruction_ = nullptr;
 };
 
 }  // namespace spirv

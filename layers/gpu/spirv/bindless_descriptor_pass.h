@@ -28,15 +28,14 @@ struct BasicBlock;
 // This pass instruments all bindless references to check that descriptor
 // array indices are inbounds, and if the descriptor indexing extension is
 // enabled, that the descriptor has been initialized. If the reference is
-// invalid, a record is written to the debug output buffer (if space allows)
-// and a null value is returned.
+// invalid, a record is written to the debug output buffer (if space allows).
 class BindlessDescriptorPass : public Pass {
   public:
-    BindlessDescriptorPass(Module& module) : Pass(module) {}
+    BindlessDescriptorPass(Module& module) : Pass(module, true) {}
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block) final;
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
     uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false);
@@ -49,7 +48,6 @@ class BindlessDescriptorPass : public Pass {
     const Instruction* var_inst_ = nullptr;
     const Instruction* image_inst_ = nullptr;
 
-    const Instruction* target_instruction_ = nullptr;
     uint32_t descriptor_set_ = 0;
     uint32_t descriptor_binding_ = 0;
     uint32_t descriptor_index_id_ = 0;

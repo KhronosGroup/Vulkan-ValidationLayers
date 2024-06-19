@@ -8,7 +8,7 @@ Each pass does logic needed to know if the current instruction needs have check 
 
 ## Step 2 - Inject a function call
 
-The logic to add a `if-else` control flow logic in SPIR-V is handled by the `Pass::InjectFunctionCheck` function. This will create the various blocks and resolve any ID updates
+The logic to add a `if-else` control flow logic in SPIR-V is handled by the `Pass::InjectConditionalFunctionCheck` function. This will create the various blocks and resolve any ID updates
 
 ## Step 3 - Create the OpFunctionCall
 
