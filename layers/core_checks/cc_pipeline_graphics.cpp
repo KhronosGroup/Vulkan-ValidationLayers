@@ -3192,13 +3192,12 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
 
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
         cb_state.dynamic_state_value.alpha_to_coverage_enable) {
-        if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point) {
-            if (!pipeline.fragment_shader_state->fragment_entry_point->has_alpha_to_coverage_variable) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                skip |= LogError(vuid.dynamic_alpha_to_coverage_component_08919, objlist, vuid.loc(),
-                                 "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound pipeline "
-                                 "fragment shader doesn't declare a variable that covers Location 0, Component 3 (alpha channel).");
-            }
+        auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
+        if (fragment_entry_point && !fragment_entry_point->has_alpha_to_coverage_variable) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+            skip |= LogError(vuid.dynamic_alpha_to_coverage_component_08919, objlist, vuid.loc(),
+                             "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound pipeline "
+                             "fragment shader doesn't declare a variable that covers Location 0, Component 3 (alpha channel).");
         }
     }
 
@@ -3695,13 +3694,12 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassExternalFormatResolve(cons
         }
     }
 
-    if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point) {
-        auto entrypoint = pipeline.fragment_shader_state->fragment_entry_point;
-        if (entrypoint->execution_mode.Has(spirv::ExecutionModeSet::depth_replacing_bit)) {
+    if (auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint()) {
+        if (fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::depth_replacing_bit)) {
             skip |= LogError(vuid.external_format_resolve_09372, objlist, vuid.loc(),
                              "pipeline externalFormat is %" PRIu64 " but the fragment shader declares DepthReplacing.",
                              pipeline_external_format);
-        } else if (entrypoint->execution_mode.Has(spirv::ExecutionModeSet::stencil_ref_replacing_bit)) {
+        } else if (fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::stencil_ref_replacing_bit)) {
             skip |= LogError(vuid.external_format_resolve_09372, objlist, vuid.loc(),
                              "pipeline externalFormat is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.",
                              pipeline_external_format);
