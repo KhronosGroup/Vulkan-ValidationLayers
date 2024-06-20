@@ -17,9 +17,6 @@
 
 #include <cmath>
 #include <fstream>
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-#include <unistd.h>
-#endif
 #include "utils/cast_utils.h"
 #include "state_tracker/shader_stage_state.h"
 #include "utils/hash_util.h"
