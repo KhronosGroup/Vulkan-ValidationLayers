@@ -169,7 +169,10 @@ class DescriptorSetLayoutDef {
     uint32_t GetIndexFromBinding(uint32_t binding) const;
     // Various Get functions that can either be passed a binding#, which will
     //  be automatically translated into the appropriate index, or the index# can be passed in directly
-    uint32_t GetMaxBinding() const { return bindings_[bindings_.size() - 1].binding; }
+    uint32_t GetMaxBinding() const {
+        assert(!bindings_.empty());
+        return bindings_.empty() ? 0 : bindings_[bindings_.size() - 1].binding;
+    }
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromIndex(const uint32_t) const;
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
         return GetDescriptorSetLayoutBindingPtrFromIndex(GetIndexFromBinding(binding));
