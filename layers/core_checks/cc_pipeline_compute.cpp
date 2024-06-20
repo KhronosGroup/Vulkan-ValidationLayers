@@ -34,9 +34,8 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
-        if (!pipeline) {
-            continue;
-        }
+        ASSERT_AND_CONTINUE(pipeline);
+
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const Location stage_info = create_info_loc.dot(Field::stage);
         const auto &stage_state = pipeline->stage_states[0];

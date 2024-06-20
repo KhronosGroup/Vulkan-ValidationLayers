@@ -177,9 +177,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
-        if (!pipeline) {
-            continue;
-        }
+        ASSERT_AND_CONTINUE(pipeline);
+
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const auto &create_info = pipeline->RayTracingCreateInfo();
         if (pipeline->create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
@@ -226,9 +225,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
 
     for (uint32_t i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
-        if (!pipeline) {
-            continue;
-        }
+        ASSERT_AND_CONTINUE(pipeline);
+
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const auto &create_info = pipeline->RayTracingCreateInfo();
         if (pipeline->create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {

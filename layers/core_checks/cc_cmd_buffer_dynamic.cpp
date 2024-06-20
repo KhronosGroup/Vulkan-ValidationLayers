@@ -378,11 +378,10 @@ bool CoreChecks::ValidateDynamicStateIsSet(const CBDynamicFlags& state_status_cb
 
 // Makes sure the vkCmdSet* call was called correctly prior to a draw
 // deprecated for ValidateGraphicsDynamicStateSetStatus()
-bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& last_bound_state,
+bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                                const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     const Location loc = vuid.loc();  // because we need to pass it around a lot
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
@@ -480,10 +479,10 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                   const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
     // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
@@ -616,14 +615,10 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     }
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
-        pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && pipeline.MultisampleState()) {
-        const auto sample_locations =
-            vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pipeline.MultisampleState()->pNext);
-        if (sample_locations &&
-            ((!pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) && sample_locations->sampleLocationsEnable) ||
-             (pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
-              cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
-              cb_state.dynamic_state_value.sample_locations_enable))) {
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && pipeline.MultisampleState() &&
+        last_bound_state.IsSampleLocationsEnable()) {
+        if (const auto sample_locations =
+                vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pipeline.MultisampleState()->pNext)) {
             VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
             DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, cb_state.dynamic_state_value.rasterization_samples,
                                                               &multisample_prop);
@@ -860,11 +855,10 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& last_bound_state,
+bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                              const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
@@ -961,7 +955,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
 
     const auto pipeline_state = last_bound_state.pipeline_state;
     if (pipeline_state) {
-        skip |= ValidateDrawDynamicStatePipeline(last_bound_state, vuid);
+        skip |= ValidateDrawDynamicStatePipeline(last_bound_state, *pipeline_state, vuid);
     } else {
         skip |= ValidateDrawDynamicStateShaderObject(last_bound_state, vuid);
     }
@@ -1181,14 +1175,15 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                  const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
-    skip |= ValidateGraphicsDynamicStatePipelineSetStatus(last_bound_state, vuid);
+    skip |= ValidateGraphicsDynamicStatePipelineSetStatus(last_bound_state, pipeline, vuid);
     // Dynamic state was not set, will produce garbage when trying to read to values
     if (skip) return skip;
     // Once we know for sure state was set, check value is valid
-    skip |= ValidateGraphicsDynamicStateValue(last_bound_state, vuid);
-    skip |= ValidateGraphicsDynamicStateViewportScissor(last_bound_state, vuid);
+    skip |= ValidateGraphicsDynamicStateValue(last_bound_state, pipeline, vuid);
+    skip |= ValidateGraphicsDynamicStateViewportScissor(last_bound_state, pipeline, vuid);
     return skip;
 }
 
@@ -1671,11 +1666,10 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     return skip;
 }
 
-bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state,
+bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                         const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
 
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
         if (!cb_state.dynamic_state_status.rtx_stack_size_cb) {
