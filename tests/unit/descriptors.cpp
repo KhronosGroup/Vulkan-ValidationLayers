@@ -1447,6 +1447,52 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeDescriptors, BindInvalidPipelineLayout) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6621");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    // Create PSO to be used for draw-time errors below
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=1) uniform foo1 { vec4 y; };
+        void main(){
+           x = y;
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    // consume VU so we create a pipeline handle
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-layout-07988");
+    pipe.CreateGraphicsPipeline();
+    if (pipe.Handle() == VK_NULL_HANDLE) {
+        GTEST_SKIP() << "Driver failed to create a invalid pipeline handle";
+    }
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
     RETURN_IF_SKIP(Init());
 
