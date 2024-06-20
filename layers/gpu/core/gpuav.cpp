@@ -22,9 +22,6 @@
 
 #include <cmath>
 #include <fstream>
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-#include <unistd.h>
-#endif
 
 namespace gpuav {
 
