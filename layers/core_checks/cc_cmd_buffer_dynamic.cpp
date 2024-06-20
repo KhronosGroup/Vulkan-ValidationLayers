@@ -760,10 +760,10 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     {
         const bool dyn_depth_write_enable = pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
         const bool dyn_stencil_write_mask = pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK);
-        if ((dyn_depth_write_enable || dyn_stencil_write_mask) &&
-            (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_entry_point)) {
-            auto entrypoint = pipeline.fragment_shader_state->fragment_entry_point;
-            const bool mode_early_fragment_test = entrypoint->execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit);
+        auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
+        if ((dyn_depth_write_enable || dyn_stencil_write_mask) && fragment_entry_point) {
+            const bool mode_early_fragment_test =
+                fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit);
             const bool depth_read =
                 pipeline.fragment_shader_state->fragment_shader->spirv->static_data_.has_shader_tile_image_depth_read;
             const bool stencil_read =

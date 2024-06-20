@@ -1227,3 +1227,12 @@ std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderO
     }
     return ss.str();
 }
+
+const spirv::EntryPoint *LastBound::GetFragmentEntryPoint() const {
+    if (pipeline_state && pipeline_state->fragment_shader_state) {
+        return pipeline_state->fragment_shader_state->fragment_entry_point.get();
+    } else if (const auto *shader_object = GetShaderState(ShaderObjectStage::FRAGMENT)) {
+        return shader_object->entrypoint.get();
+    }
+    return nullptr;
+}

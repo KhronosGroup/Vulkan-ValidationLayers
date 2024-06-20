@@ -708,6 +708,8 @@ struct LastBound {
     bool IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
     std::string DescribeNonCompatibleSet(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
     std::string DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
+
+    const spirv::EntryPoint *GetFragmentEntryPoint() const;
 };
 
 static inline bool IsPipelineLayoutSetCompat(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {

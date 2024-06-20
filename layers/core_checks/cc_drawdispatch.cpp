@@ -1941,14 +1941,7 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
     const auto *pipeline = last_bound_state.pipeline_state;
     if (pipeline && !pipeline->ColorBlendState()) return skip;
 
-    const spirv::EntryPoint *fragment_entry_point = nullptr;
-    if (pipeline && pipeline->fragment_shader_state) {
-        fragment_entry_point = pipeline->fragment_shader_state->fragment_entry_point.get();
-    } else {
-        if (const auto *shader_object = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT)) {
-            fragment_entry_point = shader_object->entrypoint.get();
-        }
-    }
+    const spirv::EntryPoint *fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
     if (!fragment_entry_point) return skip;
 
     uint32_t max_fragment_location = 0;
