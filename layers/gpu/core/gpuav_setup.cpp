@@ -17,7 +17,7 @@
 
 #include <cmath>
 #include <fstream>
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
 #endif
 #include "utils/cast_utils.h"
@@ -261,7 +261,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     if (gpuav_settings.cache_instrumented_shaders) {
         auto tmp_path = GetTempFilePath();
         instrumented_shader_cache_path_ = tmp_path + "/instrumented_shader_cache";
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
         instrumented_shader_cache_path_ += "-" + std::to_string(getuid());
 #endif
         instrumented_shader_cache_path_ += ".bin";
