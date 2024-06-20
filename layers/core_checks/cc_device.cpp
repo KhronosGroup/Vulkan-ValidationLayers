@@ -22,7 +22,7 @@
 #include <fstream>
 #include <vector>
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
 #endif
 
@@ -455,7 +455,7 @@ void CoreChecks::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const L
     if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_validation_cache) {
         auto tmp_path = GetTempFilePath();
         validation_cache_path = tmp_path + "/shader_validation_cache";
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
         validation_cache_path += "-" + std::to_string(getuid());
 #endif
         validation_cache_path += ".bin";
