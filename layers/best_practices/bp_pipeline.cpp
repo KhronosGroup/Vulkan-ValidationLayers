@@ -114,9 +114,10 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const auto& create_info = pCreateInfos[i];
-        const auto& pipeline = *pipeline_states[i].get();
+        const auto pipeline = pipeline_states[i].get();
+        ASSERT_AND_CONTINUE(pipeline);
 
-        if (!(pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
+        if (!(pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
             const auto& vertex_input = *create_info.pVertexInputState;
             uint32_t count = 0;
             for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
@@ -172,21 +173,21 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
         }
 
-        for (const auto& stage : pipeline.stage_states) {
+        for (const auto& stage : pipeline->stage_states) {
             if (stage.GetStage() != VK_SHADER_STAGE_FRAGMENT_BIT) {
                 continue;
             }
-            const auto& rp_state = pipeline.RenderPassState();
+            const auto& rp_state = pipeline->RenderPassState();
             if (rp_state && !rp_state->UsesDynamicRendering() && stage.entrypoint) {
                 auto rpci = rp_state->create_info.ptr();
-                auto subpass = pipeline.Subpass();
+                auto subpass = pipeline->Subpass();
                 for (const auto& variable : stage.entrypoint->resource_interface_variables) {
                     if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
                         continue;
                     }
                     auto slot = variable.decorations.input_attachment_index_start;
                     if (!rpci->pSubpasses[subpass].pInputAttachments || slot >= rpci->pSubpasses[subpass].inputAttachmentCount) {
-                        const LogObjectList objlist(stage.module_state->Handle(), pipeline.PipelineLayoutState()->Handle());
+                        const LogObjectList objlist(stage.module_state->Handle(), pipeline->PipelineLayoutState()->Handle());
                         skip |= LogWarning("BestPractices-Shader-MissingInputAttachment", device, create_info_loc,
                                            "Shader consumes input attachment index %" PRIu32 " but not provided in subpass", slot);
                     }

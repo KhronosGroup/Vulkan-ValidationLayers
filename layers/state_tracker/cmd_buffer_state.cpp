@@ -993,6 +993,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
     // Set updated state here in case implicit reset occurs above
     state = CbState::Recording;
+    ASSERT_AND_RETURN(pBeginInfo);
     beginInfo = *pBeginInfo;
     if (beginInfo.pInheritanceInfo && IsSeconary()) {
         inheritanceInfo = *(beginInfo.pInheritanceInfo);

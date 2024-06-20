@@ -102,8 +102,10 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
 
 bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info, const std::vector<uint32_t> &indices) {
     using DescriptorClass = vvl::DescriptorClass;
-    auto &binding = *descriptor_set.GetBinding(binding_info.first);
     bool skip = false;
+    auto binding_ptr = descriptor_set.GetBinding(binding_info.first);
+    ASSERT_AND_RETURN_SKIP(binding_ptr);
+    auto &binding = *binding_ptr;
     switch (binding.descriptor_class) {
         case DescriptorClass::InlineUniform:
             // Can't validate the descriptor because it may not have been updated.
