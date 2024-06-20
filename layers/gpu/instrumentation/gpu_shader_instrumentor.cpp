@@ -195,21 +195,28 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
     DispatchGetPhysicalDeviceFeatures(physicalDevice, &supported_features);
 
     if (auto enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures)) {
-        if (supported_features.fragmentStoresAndAtomics) {
+        if (supported_features.fragmentStoresAndAtomics && !enabled_features->fragmentStoresAndAtomics) {
+            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::fragmentStoresAndAtomics to VK_TRUE");
             enabled_features->fragmentStoresAndAtomics = VK_TRUE;
         }
-        if (supported_features.vertexPipelineStoresAndAtomics) {
+        if (supported_features.vertexPipelineStoresAndAtomics && !enabled_features->vertexPipelineStoresAndAtomics) {
+            InternalWarning(device, record_obj.location,
+                            "Forcing VkPhysicalDeviceFeatures::vertexPipelineStoresAndAtomics to VK_TRUE");
             enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
         }
     }
 
-    auto add_missing_features = [modified_create_info]() {
+    auto add_missing_features = [this, &record_obj, modified_create_info]() {
         // Add timeline semaphore feature - This is required as we use it to manage when command buffers are submitted at queue
         // submit time
         if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
+            InternalWarning(device, record_obj.location,
+                            "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
             ts_features->timelineSemaphore = VK_TRUE;
         } else {
+            InternalWarning(device, record_obj.location,
+                            "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
             VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
             new_ts_features.timelineSemaphore = VK_TRUE;
             vku::AddToPnext(*modified_create_info, new_ts_features);
@@ -219,6 +226,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
     if (api_version > VK_API_VERSION_1_1) {
         if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
+            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
             features12->timelineSemaphore = VK_TRUE;
         } else {
             add_missing_features();
@@ -227,7 +235,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
         // Add our new extensions (will only add if found)
         const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
         vku::AddExtension(*modified_create_info, ts_ext.data());
-
         add_missing_features();
     }
 }
@@ -829,6 +836,11 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
     ReleaseDeviceDispatchObject(this->container_type);
+}
+
+void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
+    char const *vuid = container_type == LayerObjectTypeDebugPrintf ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
+    LogWarning(vuid, objlist, loc, "Internal Warning: %s", specific_message);
 }
 
 }  // namespace gpu

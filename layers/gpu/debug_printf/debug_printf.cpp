@@ -44,8 +44,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     // This option was published when Debug PrintF came out, leave to not break people's flow
     // Deprecated right after the 1.3.280 SDK release
     if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
-        LogWarning("WARNING-DEBUG-PRINTF", device, loc,
-                   "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
+        InternalWarning(device, loc, "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
         use_stdout = true;
     }
 
@@ -404,8 +403,8 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         index += debug_record->size;
     }
     if ((index - spvtools::kDebugOutputDataOffset) != expect) {
-        LogWarning("WARNING-DEBUG-PRINTF", queue, loc,
-                   "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
+        InternalWarning(queue, loc,
+                        "Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[spvtools::kDebugOutputSizeOffset] + spvtools::kDebugOutputDataOffset));
 }
