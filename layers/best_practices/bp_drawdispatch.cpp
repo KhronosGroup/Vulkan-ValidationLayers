@@ -100,8 +100,7 @@ void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_
         cb_state->render_pass_state.drawTouchAttachments = false;
     }
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto* pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
+    const auto* pipeline_state = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline_state && pipeline_state->vertex_input_state && !pipeline_state->vertex_input_state->binding_descriptions.empty()) {
         cb_state->uses_vertex_buffer = true;
     }
@@ -224,9 +223,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     const void* ib_mem = ib_mem_state->p_driver_data;
     bool primitive_restart_enable = false;
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto& last_bound = cmd_state.lastBound[lv_bind_point];
-    const auto* pipeline_state = last_bound.pipeline_state;
+    const auto* pipeline_state = cmd_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     ASSERT_AND_RETURN_SKIP(pipeline_state);
 
     const auto* ia_state = pipeline_state->InputAssemblyState();

@@ -98,17 +98,22 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
                                    CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsDynamicStateValue(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsDynamicStateViewportScissor(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                       const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsDynamicStateValue(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                           const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsDynamicStateViewportScissor(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                     const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicState(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                          const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                  const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                    const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPrimitivesGeneratedQuery(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawProtectedMemory(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDualSourceBlend(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;

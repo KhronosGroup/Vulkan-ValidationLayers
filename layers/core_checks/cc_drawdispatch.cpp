@@ -45,7 +45,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                                          const Location &loc) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const auto *pipeline_state = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+    const auto *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     // Verify maxMultiviewInstanceIndex
     if (cb_state.activeRenderPass && enabled_features.multiview &&
@@ -105,7 +105,7 @@ bool CoreChecks::ValidateVTGShaderStages(const vvl::CommandBuffer &cb_state, con
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
 
-    const auto *pipeline_state = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+    const auto *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline_state && pipeline_state->active_shaders & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
         skip |= LogError(
             vuid.invalid_mesh_shader_stages_06481, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
@@ -120,7 +120,7 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
 
-    const auto *pipeline_state = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+    const auto *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline_state && !(pipeline_state->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
         skip |= LogError(vuid.missing_mesh_shader_stages_07080, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "The current pipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS must contain a shader stage using the "
@@ -846,13 +846,10 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                                          const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                          const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable) const {
     bool skip = false;
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    const vvl::Pipeline *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
+    const vvl::Pipeline *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    if (!pipeline_state) return skip;  // possible wasn't bound correctly, check caught elsewhere
     const bool is_indirect = loc.function == Func::vkCmdTraceRaysIndirectKHR;
 
-    if (!pipeline_state || (pipeline_state && !pipeline_state->VkHandle())) {
-        return skip;
-    }
     if (pHitShaderBindingTable) {
         const Location table_loc = loc.dot(Field::pHitShaderBindingTable);
         if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
@@ -919,14 +916,13 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
         skip |= ValidateRaytracingShaderBindingTable(cb_state.VkHandle(), table_loc, vuid_single_device_memory,
                                                      vuid_binding_table_flag, *pMissShaderBindingTable);
         if (pMissShaderBindingTable->deviceAddress == 0) {
-            if (const auto *pipe = cb_state.lastBound[lv_bind_point].pipeline_state;
-                pipe && pipe->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR) {
+            if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR) {
                 const char *vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03511" : "VUID-vkCmdTraceRaysKHR-flags-03511";
-                skip |=
-                    LogError(vuid, cb_state.Handle(), loc.dot(Field::pMissShaderBindingTable),
-                             "is 0 but last bound ray tracing pipeline (%s) was created with flags (%s).",
-                             FormatHandle(pipe->Handle()).c_str(), string_VkPipelineCreateFlags2KHR(pipe->create_flags).c_str());
+                skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pMissShaderBindingTable),
+                                 "is 0 but last bound ray tracing pipeline (%s) was created with flags (%s).",
+                                 FormatHandle(pipeline_state->Handle()).c_str(),
+                                 string_VkPipelineCreateFlags2KHR(pipeline_state->create_flags).c_str());
             }
         }
     }
@@ -1276,7 +1272,9 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
 
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-        skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, vuid);
+        if (pipeline) {
+            skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, *pipeline, vuid);
+        }
         if (!cb_state.unprotected) {
             skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.GetObjectList(bind_point), loc,
                              "called in a protected command buffer.");
