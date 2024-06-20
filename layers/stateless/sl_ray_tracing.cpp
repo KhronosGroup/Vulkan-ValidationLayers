@@ -1607,3 +1607,253 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
 
     return skip;
 }
+
+bool StatelessValidation::ValidateTraceRaysRaygenShaderBindingTable(
+    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR &raygen_shader_binding_table,
+    const Location &table_loc) const {
+    bool skip = false;
+    const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
+
+    if (raygen_shader_binding_table.size != raygen_shader_binding_table.stride) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-size-04023" : "VUID-vkCmdTraceRaysKHR-size-04023";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::size), "(%" PRIu64 ") is not equal to stride (%" PRIu64 ").",
+                         raygen_shader_binding_table.size, raygen_shader_binding_table.stride);
+    }
+
+    if (SafeModulo(raygen_shader_binding_table.deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) !=
+        0) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03682"
+                                    : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03682";
+        skip |=
+            LogError(vuid, commandBuffer, table_loc.dot(Field::deviceAddress),
+                     "(%" PRIu64
+                     ") must be a multiple of "
+                     "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                     raygen_shader_binding_table.deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateTraceRaysMissShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                                  const VkStridedDeviceAddressRegionKHR &miss_shader_binding_table,
+                                                                  const Location &table_loc) const {
+    bool skip = false;
+    const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
+    auto &props = phys_dev_ext_props.ray_tracing_props_khr;
+
+    if (SafeModulo(miss_shader_binding_table.stride, props.shaderGroupHandleAlignment) != 0) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-stride-03686" : "VUID-vkCmdTraceRaysKHR-stride-03686";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         miss_shader_binding_table.stride, props.shaderGroupHandleAlignment);
+    }
+    if (miss_shader_binding_table.stride > props.maxShaderGroupStride) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-stride-04029" : "VUID-vkCmdTraceRaysKHR-stride-04029";
+        skip |=
+            LogError(vuid, commandBuffer, table_loc.dot(Field::stride),
+                     "(%" PRIu64
+                     ") must be "
+                     "less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+                     miss_shader_binding_table.stride, props.maxShaderGroupStride);
+    }
+    if (SafeModulo(miss_shader_binding_table.deviceAddress, props.shaderGroupBaseAlignment) != 0) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03685"
+                                    : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03685";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::deviceAddress),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         miss_shader_binding_table.deviceAddress, props.shaderGroupBaseAlignment);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateTraceRaysHitShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                                 const VkStridedDeviceAddressRegionKHR &hit_shader_binding_table,
+                                                                 const Location &table_loc) const {
+    bool skip = false;
+    const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
+    auto &props = phys_dev_ext_props.ray_tracing_props_khr;
+
+    if (SafeModulo(hit_shader_binding_table.stride, props.shaderGroupHandleAlignment) != 0) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-stride-03690" : "VUID-vkCmdTraceRaysKHR-stride-03690";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         hit_shader_binding_table.stride, props.shaderGroupHandleAlignment);
+    }
+    if (hit_shader_binding_table.stride > props.maxShaderGroupStride) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-stride-04035" : "VUID-vkCmdTraceRaysKHR-stride-04035";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+                         hit_shader_binding_table.stride, props.maxShaderGroupStride);
+    }
+    if (SafeModulo(hit_shader_binding_table.deviceAddress, props.shaderGroupBaseAlignment) != 0) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03689"
+                                    : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03689";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::deviceAddress),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         hit_shader_binding_table.deviceAddress, props.shaderGroupBaseAlignment);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateTraceRaysCallableShaderBindingTable(
+    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR &callable_shader_binding_table,
+    const Location &table_loc) const {
+    bool skip = false;
+    const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
+    auto &props = phys_dev_ext_props.ray_tracing_props_khr;
+
+    if (SafeModulo(callable_shader_binding_table.stride, props.shaderGroupHandleAlignment) != 0) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-stride-03694" : "VUID-vkCmdTraceRaysKHR-stride-03694";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         callable_shader_binding_table.stride, props.shaderGroupHandleAlignment);
+    }
+
+    if (callable_shader_binding_table.stride > props.maxShaderGroupStride) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-stride-04041" : "VUID-vkCmdTraceRaysKHR-stride-04041";
+        skip |= LogError(
+            vuid, commandBuffer, table_loc.dot(Field::stride),
+            "(%" PRIu64
+            ") must be less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+            callable_shader_binding_table.stride, props.maxShaderGroupStride);
+    }
+
+    if (SafeModulo(callable_shader_binding_table.deviceAddress, props.shaderGroupBaseAlignment) != 0) {
+        const char *vuid = indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03693"
+                                    : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03693";
+        skip |= LogError(vuid, commandBuffer, table_loc.dot(Field::deviceAddress),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         callable_shader_binding_table.deviceAddress, props.shaderGroupBaseAlignment);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                                const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                                uint32_t width, uint32_t height, uint32_t depth,
+                                                                const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (pRaygenShaderBindingTable) {
+        skip |= ValidateTraceRaysRaygenShaderBindingTable(commandBuffer, *pRaygenShaderBindingTable,
+                                                          error_obj.location.dot(Field::pRaygenShaderBindingTable));
+    }
+    if (pMissShaderBindingTable) {
+        skip |= ValidateTraceRaysMissShaderBindingTable(commandBuffer, *pMissShaderBindingTable,
+                                                        error_obj.location.dot(Field::pMissShaderBindingTable));
+    }
+    if (pHitShaderBindingTable) {
+        skip |= ValidateTraceRaysHitShaderBindingTable(commandBuffer, *pHitShaderBindingTable,
+                                                       error_obj.location.dot(Field::pHitShaderBindingTable));
+    }
+    if (pCallableShaderBindingTable) {
+        skip |= ValidateTraceRaysCallableShaderBindingTable(commandBuffer, *pCallableShaderBindingTable,
+                                                            error_obj.location.dot(Field::pCallableShaderBindingTable));
+    }
+
+    if (width * depth * height > phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount) {
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03641", commandBuffer, error_obj.location,
+                         "width x height x depth (%" PRIu32 " x %" PRIu32 " x %" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount (%" PRIu32 ").",
+                         width, depth, height, phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
+    }
+    if (width > device_limits.maxComputeWorkGroupCount[0] * device_limits.maxComputeWorkGroupSize[0]) {
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03638", commandBuffer, error_obj.location.dot(Field::width),
+                         "(%" PRIu32
+                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] "
+                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0] (%" PRIu32 " x %" PRIu32 ").",
+                         width, device_limits.maxComputeWorkGroupCount[0], device_limits.maxComputeWorkGroupSize[0]);
+    }
+
+    if (height > device_limits.maxComputeWorkGroupCount[1] * device_limits.maxComputeWorkGroupSize[1]) {
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-height-03639", commandBuffer, error_obj.location.dot(Field::height),
+                         "(%" PRIu32
+                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] "
+                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1] (%" PRIu32 " x %" PRIu32 ").",
+                         height, device_limits.maxComputeWorkGroupCount[1], device_limits.maxComputeWorkGroupSize[1]);
+    }
+
+    if (depth > device_limits.maxComputeWorkGroupCount[2] * device_limits.maxComputeWorkGroupSize[2]) {
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-depth-03640", commandBuffer, error_obj.location.dot(Field::depth),
+                         "(%" PRIu32
+                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] "
+                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] (%" PRIu32 " x %" PRIu32 ").",
+                         depth, device_limits.maxComputeWorkGroupCount[2], device_limits.maxComputeWorkGroupSize[2]);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress,
+    const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!enabled_features.rayTracingPipelineTraceRaysIndirect) {
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-rayTracingPipelineTraceRaysIndirect-03637", commandBuffer,
+                         error_obj.location, "rayTracingPipelineTraceRaysIndirect feature must be enabled.");
+    }
+
+    if (pRaygenShaderBindingTable) {
+        skip |= ValidateTraceRaysRaygenShaderBindingTable(commandBuffer, *pRaygenShaderBindingTable,
+                                                          error_obj.location.dot(Field::pRaygenShaderBindingTable));
+    }
+    if (pMissShaderBindingTable) {
+        skip |= ValidateTraceRaysMissShaderBindingTable(commandBuffer, *pMissShaderBindingTable,
+                                                        error_obj.location.dot(Field::pMissShaderBindingTable));
+    }
+    if (pHitShaderBindingTable) {
+        skip |= ValidateTraceRaysHitShaderBindingTable(commandBuffer, *pHitShaderBindingTable,
+                                                       error_obj.location.dot(Field::pHitShaderBindingTable));
+    }
+    if (pCallableShaderBindingTable) {
+        skip |= ValidateTraceRaysCallableShaderBindingTable(commandBuffer, *pCallableShaderBindingTable,
+                                                            error_obj.location.dot(Field::pCallableShaderBindingTable));
+    }
+
+    if (SafeModulo(indirectDeviceAddress, 4) != 0) {
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03634", commandBuffer,
+                         error_obj.location.dot(Field::indirectDeviceAddress), "(%" PRIu64 ") must be a multiple of 4.",
+                         indirectDeviceAddress);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
+                                                                         VkDeviceAddress indirectDeviceAddress,
+                                                                         const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!enabled_features.rayTracingPipelineTraceRaysIndirect2) {
+        skip |= LogError("VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637", commandBuffer,
+                         error_obj.location, "rayTracingPipelineTraceRaysIndirect2 feature was not enabled.");
+    }
+
+    if (SafeModulo(indirectDeviceAddress, 4) != 0) {
+        skip |= LogError("VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03634", commandBuffer,
+                         error_obj.location.dot(Field::indirectDeviceAddress), "(%" PRIu64 ") must be a multiple of 4.",
+                         indirectDeviceAddress);
+    }
+    return skip;
+}
