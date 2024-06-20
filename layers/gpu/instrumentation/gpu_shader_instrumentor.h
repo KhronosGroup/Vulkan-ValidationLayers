@@ -146,6 +146,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                       const RecordObject &record_obj) override;
 
     void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message, bool vma_fail = false) const;
+    void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     bool CheckForGpuAvEnabled(const void *pNext);
 
   protected:

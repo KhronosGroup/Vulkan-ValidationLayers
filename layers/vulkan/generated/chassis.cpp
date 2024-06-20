@@ -621,7 +621,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // Save local info in device object
     device_interceptor->api_version = device_interceptor->device_extensions.InitFromDeviceCreateInfo(
-        &instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
+        &instance_interceptor->instance_extensions, effective_api_version,
+        reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
     device_interceptor->device_extensions = device_extensions;
 
     layer_init_device_dispatch_table(*pDevice, &device_interceptor->device_dispatch_table, fpGetDeviceProcAddr);
@@ -655,7 +656,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     for (ValidationObject* intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj);
+        // Send down modified create info as we want to mark enabled features that we sent down on behalf of the app
+        intercept->PostCallRecordCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator,
+                                              pDevice, record_obj);
     }
 
     device_interceptor->InitObjectDispatchVectors();

@@ -65,8 +65,8 @@ void Validator::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physi
         if (device_props->limits.maxBoundDescriptorSets > 1) {
             device_props->limits.maxBoundDescriptorSets -= 1;
         } else {
-            LogWarning("WARNING-GPU-Assisted-Validation-Setup", physicalDevice, record_obj.location,
-                       "Unable to reserve descriptor binding slot on a device with only one slot.");
+            InternalWarning(physicalDevice, record_obj.location,
+                            "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
 
@@ -81,8 +81,8 @@ void Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice phys
         if (device_props2->properties.limits.maxBoundDescriptorSets > 1) {
             device_props2->properties.limits.maxBoundDescriptorSets -= 1;
         } else {
-            LogWarning("WARNING-GPU-Assisted-Validation-Setup", physicalDevice, record_obj.location,
-                       "Unable to reserve descriptor binding slot on a device with only one slot.");
+            InternalWarning(physicalDevice, record_obj.location,
+                            "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
     // override all possible places maxUpdateAfterBindDescriptorsInAllPools can be set
