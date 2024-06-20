@@ -622,7 +622,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
         if (sample_locations &&
             ((!pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) && sample_locations->sampleLocationsEnable) ||
              (pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
-              cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT] &&
+              cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
               cb_state.dynamic_state_value.sample_locations_enable))) {
             VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
             DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, cb_state.dynamic_state_value.rasterization_samples,
@@ -906,7 +906,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& la
         if (dyn_viewport_count && !dyn_scissor_count) {
             const auto required_viewport_mask = (1 << viewport_state->scissorCount) - 1;
             const auto missing_viewport_mask = ~cb_state.viewportWithCountMask & required_viewport_mask;
-            if (missing_viewport_mask || !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT]) {
+            if (missing_viewport_mask || !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) {
                 skip |= LogError(vuid.viewport_count_03417, objlist, vuid.loc(),
                                  "Dynamic viewport with count 0x%x are used by pipeline state object, but were not provided "
                                  "via calls to vkCmdSetViewportWithCountEXT().",
@@ -917,7 +917,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& la
         if (dyn_scissor_count && !dyn_viewport_count) {
             const auto required_scissor_mask = (1 << viewport_state->viewportCount) - 1;
             const auto missing_scissor_mask = ~cb_state.scissorWithCountMask & required_scissor_mask;
-            if (missing_scissor_mask || !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
+            if (missing_scissor_mask || !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
                 skip |= LogError(vuid.scissor_count_03418, objlist, vuid.loc(),
                                  "Dynamic scissor with count 0x%x are used by pipeline state object, but were not provided via "
                                  "calls to vkCmdSetScissorWithCountEXT().",
@@ -927,8 +927,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& la
 
         if (dyn_scissor_count && dyn_viewport_count) {
             if (cb_state.viewportWithCountMask != cb_state.scissorWithCountMask ||
-                !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT] ||
-                !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
+                !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ||
+                !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
                 skip |= LogError(vuid.viewport_scissor_count_03419, objlist, vuid.loc(),
                                  "Dynamic viewport and scissor with count 0x%x are used by pipeline state object, but were not "
                                  "provided via matching calls to "
@@ -1096,7 +1096,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     }
 
     if ((pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) || fragment_shader_bound) {
-        if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT] &&
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
             cb_state.dynamic_state_value.sample_locations_enable) {
             if (cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
                 for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
@@ -1117,7 +1117,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
                 }
             }
             if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) &&
-                cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT]) {
+                cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
                 VkSampleCountFlagBits rasterizationSamples =
                     (pipeline_state && !pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT))
                         ? pipeline_state->MultisampleState()->rasterizationSamples
@@ -1156,7 +1156,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     }
 
     if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) &&
-        cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
+        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info =
             cb_state.activeRenderPass->GetMSRTSSInfo(cb_state.GetActiveSubpass());
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
