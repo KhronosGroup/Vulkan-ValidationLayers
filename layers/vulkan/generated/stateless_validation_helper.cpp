@@ -18997,6 +18997,7 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffe
     if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_maintenance1))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_maintenance1});
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, error_obj);
     return skip;
 }
 
@@ -26434,6 +26435,10 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer command
         [[maybe_unused]] const Location pCallableShaderBindingTable_loc = loc.dot(Field::pCallableShaderBindingTable);
         // No xml-driven validation
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
+                                                      pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth,
+                                                      error_obj);
     return skip;
 }
 
@@ -26671,6 +26676,10 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer
         [[maybe_unused]] const Location pCallableShaderBindingTable_loc = loc.dot(Field::pCallableShaderBindingTable);
         // No xml-driven validation
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
+                                                              pHitShaderBindingTable, pCallableShaderBindingTable,
+                                                              indirectDeviceAddress, error_obj);
     return skip;
 }
 

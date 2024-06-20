@@ -1019,6 +1019,35 @@ class StatelessValidation : public ValidationObject {
                                                                      VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo,
                                                                      const ErrorObject &error_obj) const;
 
+    bool ValidateTraceRaysRaygenShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                   const VkStridedDeviceAddressRegionKHR &raygen_shader_binding_table,
+                                                   const Location &table_loc) const;
+    bool ValidateTraceRaysMissShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                 const VkStridedDeviceAddressRegionKHR &miss_shader_binding_table,
+                                                 const Location &table_loc) const;
+    bool ValidateTraceRaysHitShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                const VkStridedDeviceAddressRegionKHR &hit_shader_binding_table,
+                                                const Location &table_loc) const;
+    bool ValidateTraceRaysCallableShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                     const VkStridedDeviceAddressRegionKHR &callable_shader_binding_table,
+                                                     const Location &table_loc) const;
+
+    bool manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                               const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                               uint32_t height, uint32_t depth, const ErrorObject &error_obj) const;
+
+    bool manual_PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                       const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                       VkDeviceAddress indirectDeviceAddress, const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
+                                                        const ErrorObject &error_obj) const;
+
     bool manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
                                                     const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions,
                                                     uint32_t vertexAttributeDescriptionCount,

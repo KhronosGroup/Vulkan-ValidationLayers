@@ -1224,19 +1224,16 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.stride = (stridebufregion.size + 1) % stridebufregion.size;
         if (invalid_stride.stride > 0) {
-            m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-stride-03694");
             vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride,
                                 100, 100, 1);
             m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-stride-03690");
             vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion,
                                 100, 100, 1);
             m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-stride-03686");
             vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion,
                                 100, 100, 1);
@@ -1249,19 +1246,16 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
         uint32_t align = ray_tracing_properties.shaderGroupHandleSize;
         invalid_stride.stride = static_cast<VkDeviceSize>(ray_tracing_properties.maxShaderGroupStride) +
                                 (align - (ray_tracing_properties.maxShaderGroupStride % align));
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysKHR-None-08606");
         m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-stride-04041");
         vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
                             100, 1);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysKHR-None-08606");
         m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-stride-04035");
         vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
                             100, 1);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysKHR-None-08606");
         m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-stride-04029");
         vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
                             100, 1);
@@ -1360,21 +1354,18 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.stride = (stridebufregion.size + 1) % stridebufregion.size;
+        invalid_stride.size = invalid_stride.stride;
         if (invalid_stride.stride > 0) {
-            // TODO - Create minimal ray tracing pipeline helper - remove all extra `08606`
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
             vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion,
                                         &invalid_stride, device_address);
             m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
             vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride,
                                         &stridebufregion, device_address);
             m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
             vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion,
                                         &stridebufregion, device_address);
@@ -1391,21 +1382,18 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
         } else {
             invalid_stride.stride = ray_tracing_properties.maxShaderGroupStride + 1;
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04041");
             m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
             vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion,
                                         &invalid_stride, device_address);
             m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04035");
             m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
             vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride,
                                         &stridebufregion, device_address);
             m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-None-08606");
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04029");
             m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
             vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion,
@@ -1440,7 +1428,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
     m_commandBuffer->begin();
     // No VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR was in the device create info pNext chain
     {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirect2KHR-None-08606");
         m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637");
         vk::CmdTraceRaysIndirect2KHR(m_commandBuffer->handle(), device_address);
         m_errorMonitor->VerifyFound();
@@ -1472,7 +1459,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     m_commandBuffer->begin();
     // indirectDeviceAddress is not a multiple of 4
     {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirect2KHR-None-08606");
         m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03634");
         vk::CmdTraceRaysIndirect2KHR(m_commandBuffer->handle(), device_address + 1);
         m_errorMonitor->VerifyFound();
