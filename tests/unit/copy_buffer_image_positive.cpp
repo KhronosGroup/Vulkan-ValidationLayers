@@ -31,10 +31,6 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     ci.arrayLayers = 8;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Copy from a to b
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -81,10 +77,6 @@ TEST_F(PositiveCopyBufferImage, ImageTypeExtentMismatchMaintenance5) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Create 1D image
     vkt::Image image_1D(*m_device, ci, vkt::set_layout);

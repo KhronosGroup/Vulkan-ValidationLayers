@@ -41,7 +41,6 @@ TEST_F(NegativeImageDrm, Basic) {
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_mod_info = vku::InitStructHelper();
     drm_format_mod_info.drmFormatModifier = mods[0];
     drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    drm_format_mod_info.queueFamilyIndexCount = 0;
     image_format_info.pNext = (void *)&drm_format_mod_info;
     vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &image_format_info, &image_format_prop);
 
@@ -350,7 +349,6 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfo) {
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
-    drm_format_modifier.queueFamilyIndexCount = 0;
 
     VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper(&drm_format_modifier);
     external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;

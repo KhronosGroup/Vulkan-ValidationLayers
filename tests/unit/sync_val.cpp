@@ -3143,10 +3143,6 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     src_img_info.samples = VK_SAMPLE_COUNT_1_BIT;
     src_img_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     src_img_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-    src_img_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    src_img_info.queueFamilyIndexCount = 0;
-    src_img_info.pQueueFamilyIndices = nullptr;
-    src_img_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageCreateInfo dst_img_info = vku::InitStructHelper();
     dst_img_info.flags = 0;
@@ -3158,10 +3154,6 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     dst_img_info.samples = VK_SAMPLE_COUNT_1_BIT;
     dst_img_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     dst_img_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    dst_img_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    dst_img_info.queueFamilyIndexCount = 0;
-    dst_img_info.pQueueFamilyIndices = nullptr;
-    dst_img_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     std::vector<std::unique_ptr<vkt::Image>> images;
     images.emplace_back(new vkt::Image(*m_device, src_img_info));
@@ -3919,12 +3911,9 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
                                        },
                                        0, &layout_createinfo_binding_flags, 0);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    uint32_t qfi = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &qfi;
 
     vkt::Buffer doit_buffer(*m_device, buffer_create_info);
 
@@ -3951,10 +3940,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     auto texel_bufferview = std::make_unique<vkt::BufferView>();
     texel_bufferview->init(*m_device, bvci);
 
-    VkBufferCreateInfo index_buffer_create_info = vku::InitStructHelper();
-    index_buffer_create_info.size = sizeof(uint32_t);
-    index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    vkt::Buffer index_buffer(*m_device, index_buffer_create_info);
+    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);

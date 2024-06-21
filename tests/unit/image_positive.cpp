@@ -541,10 +541,6 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage =
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_ci.queueFamilyIndexCount = 0;
-    image_ci.pQueueFamilyIndices = nullptr;
 
     VkImageFormatProperties image_properties;
     VkResult err = vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
@@ -796,8 +792,6 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        });
-    VkDescriptorSet descriptorSet = descriptor_set.set_;
-
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     // Create image, view, and sampler
@@ -818,16 +812,8 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     vkt::ImageView view(*m_device, image_view_create_info);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    // Setup structure for descriptor update with sampler, for update in do_test below
-    VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler.handle();
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptorSet;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_write.pImageInfo = &img_info;
+    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
+    descriptor_set.UpdateDescriptorSets();
 
     // Create PSO to be used for draw-time errors below
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -843,11 +829,6 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
         kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
     };
     std::array<TestType, 2> test_list = {{kInternal, kExternal}};
-
-    // Set up the descriptor
-    img_info.imageView = view.handle();
-    img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     for (TestType test_type : test_list) {
         auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -886,8 +867,8 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &descriptorSet,
-                                  0, NULL);
+        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptor_set.set_, 0, NULL);
 
         vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
@@ -910,8 +891,6 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        });
-    VkDescriptorSet descriptorSet = descriptor_set.set_;
-
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     // Create image, view, and sampler
@@ -1003,16 +982,8 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    // Setup structure for descriptor update with sampler, for update in do_test below
-    VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler.handle();
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptorSet;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_write.pImageInfo = &img_info;
+    descriptor_set.WriteDescriptorImageInfo(0, other_view, sampler);
+    descriptor_set.UpdateDescriptorSets();
 
     vkt::RenderPass rp(*m_device, rpci);
 
@@ -1031,11 +1002,6 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
         kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
     };
     std::array<TestType, 2> test_list = {{kInternal, kExternal}};
-
-    // Set up the descriptor
-    img_info.imageView = other_view.handle();
-    img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     for (TestType test_type : test_list) {
         VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
@@ -1070,9 +1036,8 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &descriptorSet,
-                                  0, NULL);
-
+        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptor_set.set_, 0, nullptr);
         vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
         cmd_buf.EndRenderPass();
@@ -1240,11 +1205,7 @@ TEST_F(NegativeImage, RemainingMipLevelsBlockTexelView) {
     image_create_info.arrayLayers = 2;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkFormatProperties image_fmt;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &image_fmt);

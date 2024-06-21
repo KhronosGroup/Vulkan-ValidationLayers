@@ -93,9 +93,6 @@ TEST_F(NegativePortabilitySubset, Image) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = nullptr;
     ci.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-imageView2DOn3DImage-04459");
 
@@ -129,9 +126,6 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageCI.queueFamilyIndexCount = 0;
-    imageCI.pQueueFamilyIndices = nullptr;
     imageCI.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     vkt::Image image(*m_device, imageCI, vkt::set_layout);
 

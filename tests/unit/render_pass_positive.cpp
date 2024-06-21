@@ -504,21 +504,9 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
     OneOffDescriptorSet descriptor_set(m_device, binding_defs);
 
-    VkDescriptorImageInfo image_info = {
-        sampler.handle(),
-        fullViews[1],
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-    };
-
-    VkWriteDescriptorSet descriptor_writes[1] = {};
-    descriptor_writes[0] = vku::InitStructHelper();
-    descriptor_writes[0].dstSet = descriptor_set.set_;
-    descriptor_writes[0].dstBinding = 2;
-    descriptor_writes[0].descriptorCount = 1;
-    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_writes[0].pImageInfo = &image_info;
-
-    // Create Pipeline.
+    descriptor_set.WriteDescriptorImageInfo(2, fullViews[1], sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+    descriptor_set.UpdateDescriptorSets();
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = {};
     ds_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -536,15 +524,10 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
-
-    vk::UpdateDescriptorSets(device(), 1, descriptor_writes, 0, nullptr);
-
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, NULL);
-
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-
     m_commandBuffer->EndRenderPass();
 
     // At this point the first miplevel should be in GENERAL due to the "finalLayout" in the render pass.

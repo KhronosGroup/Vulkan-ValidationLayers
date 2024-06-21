@@ -667,9 +667,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    VkBuffer buffer;
-    VkResult result = vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
-    ASSERT_EQ(VK_SUCCESS, result);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -684,8 +682,6 @@ TEST_F(NegativeMesh, BasicUsageNV) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    vk::DestroyBuffer(device(), buffer, 0);
 }
 
 TEST_F(NegativeMesh, ExtensionDisabledNV) {
@@ -913,13 +909,8 @@ TEST_F(NegativeMesh, DrawCmds) {
 
     VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    vkt::Buffer buffer(*m_device, buffer_create_info);
-
-    buffer_create_info.size = 64;
-    vkt::Buffer count_buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer count_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
@@ -1161,13 +1152,8 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
 
     VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_NV);
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandNV);
-    vkt::Buffer buffer(*m_device, buffer_create_info);
-
-    buffer_create_info.size = 64;
-    vkt::Buffer count_buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, 2 * sizeof(VkDrawMeshTasksIndirectCommandNV), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer count_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();

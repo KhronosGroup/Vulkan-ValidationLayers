@@ -93,7 +93,6 @@ TEST_F(NegativeProtectedMemory, Submit) {
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-01887");
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -158,7 +157,6 @@ TEST_F(NegativeProtectedMemory, Memory) {
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.size = 1 << 20;  // 1 MB
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (sparse_support == true) {
         CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-None-01888");
@@ -686,7 +684,6 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
                                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     vkt::Buffer buffer_protected(*m_device, buffer_create_info, vkt::no_mem);

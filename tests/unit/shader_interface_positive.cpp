@@ -897,17 +897,11 @@ TEST_F(PositiveShaderInterface, InputOutputMatch) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     pipe.CreateGraphicsPipeline();
 
-    VkBufferCreateInfo ub_ci = vku::InitStructHelper();
-    ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    ub_ci.size = 1024;
-    vkt::Buffer uniform_buffer(*m_device, ub_ci);
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds.UpdateDescriptorSets();
 
-    VkBufferCreateInfo vb_ci = vku::InitStructHelper();
-    vb_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    vb_ci.size = 1024;
-    vkt::Buffer buffer(*m_device, vb_ci);
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkBuffer buffer_handle = buffer.handle();
     VkDeviceSize offset = 0;
 

@@ -179,19 +179,8 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
                        (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
                                                                               : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    VkDescriptorBufferInfo buffer_info;
-    buffer_info.buffer = buffer.handle();
-    buffer_info.offset = binding_offset;
-    buffer_info.range = binding_range;
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = ds.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = descriptor_type;
-    descriptor_write.pBufferInfo = &buffer_info;
-
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    ds.WriteDescriptorBufferInfo(0, buffer, binding_offset, binding_range, descriptor_type);
+    ds.UpdateDescriptorSets();
 
     vkt::Shader *vso = nullptr;
     vkt::Shader *fso = nullptr;

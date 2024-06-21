@@ -46,8 +46,6 @@ TEST_F(PositiveYcbcr, PlaneAspectNone) {
     image_createinfo.samples = VK_SAMPLE_COUNT_1_BIT;
     image_createinfo.tiling = VK_IMAGE_TILING_LINEAR;
     image_createinfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_createinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_createinfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkDeviceImageMemoryRequirements image_mem_reqs = vku::InitStructHelper();
     image_mem_reqs.pCreateInfo = &image_createinfo;
     image_mem_reqs.planeAspect = VK_IMAGE_ASPECT_NONE;
@@ -69,9 +67,6 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_LINEAR;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
     // Verify format
     if (!ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         // Assume there's low ROI on searching for different mp formats
@@ -104,8 +99,6 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     if (!ImageFormatIsSupported(instance(), gpu(), ci, features)) {
@@ -160,8 +153,6 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Verify format
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
@@ -215,8 +206,6 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Verify format
     VkFormatFeatureFlags features =
@@ -304,8 +293,6 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Verify format
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
