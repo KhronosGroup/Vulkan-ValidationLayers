@@ -841,7 +841,7 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
     )glsl";
-    pipeline.SetRayGenShader(ray_gen);
+    pipeline.SetGlslRayGenShader(ray_gen);
 
     const char* miss = R"glsl(
         #version 460
@@ -853,7 +853,7 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
             hit = vec3(0.1, 0.2, 0.3);
         }
     )glsl";
-    pipeline.AddMissShader(miss);
+    pipeline.AddGlslMissShader(miss);
 
     const char* closest_hit = R"glsl(
         #version 460
@@ -867,12 +867,13 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
             hit = barycentricCoords;
         }
     )glsl";
-    pipeline.AddClosestHitShader(closest_hit);
+    pipeline.AddGlslClosestHitShader(closest_hit);
 
-    // Add TLAS binding
-    auto tlas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
-    pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     // Build pipeline
     pipeline.Build();
@@ -880,7 +881,7 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     // Bind descriptor set, pipeline, and trace rays
     m_commandBuffer->begin();
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet()->set_, 0, nullptr);
+                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
     vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
@@ -890,7 +891,7 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     m_device->Wait();
 }
 
-TEST_F(PositiveRayTracing, GetAccelerationStructureAddressBabBuffer) {
+TEST_F(PositiveRayTracing, GetAccelerationStructureAddressBadBuffer) {
     TEST_DESCRIPTION(
         "Call vkGetAccelerationStructureDeviceAddressKHR on an acceleration structure whose buffer is missing usage "
         "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, and whose memory has been destroyed");

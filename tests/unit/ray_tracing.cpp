@@ -3319,7 +3319,7 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
-    pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
     pipeline.AddDynamicState(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
     pipeline.Build();
 
@@ -3604,17 +3604,19 @@ TEST_F(NegativeRayTracing, PipelineNullMissShader) {
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
-    auto tlas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
-    pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     pipeline.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR);
 
-    pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
     pipeline.Build();
     m_commandBuffer->begin();
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet()->set_, 0, nullptr);
+                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
     vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-flags-03511");

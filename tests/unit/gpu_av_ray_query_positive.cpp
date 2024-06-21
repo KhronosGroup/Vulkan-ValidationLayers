@@ -312,12 +312,13 @@ TEST_F(PositiveGpuAVRayQuery, RayTracingBasic) {
       rayQueryProceedEXT(query);
     }
 )glsl";
-    pipeline.SetRayGenShader(ray_gen);
+    pipeline.SetGlslRayGenShader(ray_gen);
 
-    // Add TLAS binding
-    auto tlas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
-    pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     // Build pipeline
     pipeline.Build();
@@ -325,7 +326,7 @@ TEST_F(PositiveGpuAVRayQuery, RayTracingBasic) {
     // Bind descriptor set, pipeline, and trace rays
     m_commandBuffer->begin();
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet()->set_, 0, nullptr);
+                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
     vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
