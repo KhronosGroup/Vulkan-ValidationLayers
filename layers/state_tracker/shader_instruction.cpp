@@ -189,9 +189,9 @@ spv::StorageClass Instruction::StorageClass() const {
 // All post SPIR-V processing we do is just needing to inspect single instructions without knowledge of the rest of the module.
 // It is very wasteful (both time and memory) to create an entire spirv::Module object for this, so do the simple parsing here
 void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<spirv::Instruction>& instructions) {
-    if (spirv.empty()) {
-        return;  // We *should not* get here, but incase, rather not report the SPIR-V debug info than crash
-    }
+    // We *should not* get here, but incase, rather not report the SPIR-V debug info than crash
+    ASSERT_AND_RETURN(!spirv.empty());
+
     auto it = spirv.begin();
     it += 5;  // skip first 5 word of header
     while (it != spirv.end()) {

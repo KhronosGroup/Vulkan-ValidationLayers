@@ -142,12 +142,16 @@ The array of combined image samplers is `tex` and has 6 samplers in the array.
 The complete validation error message issued when `tex_ind` indexes past the array is:
 
 ```terminal
-ERROR : VALIDATION - Message Id Number: 0 | Message Id Name: UNASSIGNED-Image descriptor index out of bounds
-        Index of 6 used to index descriptor array of length 6.  Command buffer (CubeDrawCommandBuf)(0xbc24b0).
-        Pipeline (0x45). Shader Module (0x43). Shader Instruction Index = 108.  Stage = Fragment.
-        Fragment coord (x,y) = (419.5, 254.5). Shader validation error occurred in file:
-        /home/user/src/Vulkan-ValidationLayers/external/Vulkan-Tools/cube/cube.frag at line 45.
-45:    uFragColor = light * texture(tex[tex_ind], texcoord.xy);
+Validation Error: [ UNASSIGNED-Image descriptor index out of bounds ] | vkCmdDrawIndexed(): Index of 6 used to index descriptor array of length 6.
+Stage = Fragment. Fragment coord (x,y) = (419.5, 254.5)
+Command buffer (CubeDrawCommandBuf)(0xbc24b0)
+	Draw Index 2
+Pipeline (0x45)
+Shader Module (0x43)
+Shader Instruction Index = 108
+Shader validation error occurred in file Vulkan-Tools/cube/cube.frag at line 45
+
+    uFragColor = light * texture(tex[tex_ind], texcoord.xy);
 ```
 The VK_EXT_descriptor_indexing extension allows a shader to declare a descriptor array without specifying its size
 ```glsl

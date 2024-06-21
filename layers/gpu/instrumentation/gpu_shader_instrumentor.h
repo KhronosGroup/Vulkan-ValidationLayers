@@ -149,6 +149,10 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     bool CheckForGpuAvEnabled(const void *pNext);
 
+    std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
+                                         uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
+                                         VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const;
+
   protected:
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties &queueFamilyProperties) override;

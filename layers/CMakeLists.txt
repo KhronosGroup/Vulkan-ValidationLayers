@@ -244,7 +244,6 @@ target_sources(vvl PRIVATE
     gpu/debug_printf/debug_printf.cpp
     gpu/debug_printf/debug_printf.h
     gpu/error_message/gpuav_error_message.cpp
-    gpu/error_message/gpuav_error_message.h
     gpu/error_message/gpuav_vuids.cpp
     gpu/error_message/gpuav_vuids.h
     gpu/instrumentation/gpu_shader_instrumentor.cpp
