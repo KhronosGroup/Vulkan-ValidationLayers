@@ -300,13 +300,17 @@ class Pipeline {
     // --------------
     void AddCreateInfoFlags(VkPipelineCreateFlags flags);
     void InitLibraryInfo();
-    void AddTopLevelAccelStructBinding(std::shared_ptr<as::BuildGeometryInfoKHR> tlas, uint32_t bind_point);
-    void SetUniformBufferBinding(std::shared_ptr<vkt::Buffer> uniform_buffer, uint32_t bind_point);
-    void SetStorageBufferBinding(std::shared_ptr<vkt::Buffer> storage_buffer, uint32_t bind_point);
+
+    void AddBinding(VkDescriptorType descriptor_type, uint32_t binding, uint32_t descriptor_count = 1);
+    void CreateDescriptorSet();
+
     void SetPushConstantRangeSize(uint32_t byte_size);
-    void SetRayGenShader(const char* glsl);
-    void AddMissShader(const char* glsl);
-    void AddClosestHitShader(const char* glsl);
+    void SetGlslRayGenShader(const char* glsl);
+    void SetSpirvRayGenShader(const char* spirv, const char* entry_point);
+    void AddGlslMissShader(const char* glsl);
+    void AddSpirvMissShader(const char* spirv, const char* entry_point);
+    void AddGlslClosestHitShader(const char* glsl);
+    void AddSpirvClosestHitShader(const char* spirv, const char* entry_point);
     void AddLibrary(const Pipeline& library);
     void AddDynamicState(VkDynamicState dynamic_state);
 
@@ -320,7 +324,10 @@ class Pipeline {
     // ---
     const auto& Handle() { return rt_pipeline_; }
     const auto& GetPipelineLayout() { return pipeline_layout_; }
-    const auto& GetDescriptorSet() { return desc_set_; }
+    auto& GetDescriptorSet() {
+        assert(desc_set_);
+        return *desc_set_;
+    }
     TraceRaysSbt GetTraceRaysSbt();
     uint32_t GetShaderGroupsCount();
     std::vector<uint8_t> GetRayTracingShaderGroupHandles();
@@ -331,9 +338,6 @@ class Pipeline {
     vkt::Device* device_;
     VkRayTracingPipelineCreateInfoKHR vk_info_{};
     uint32_t push_constant_range_size_ = 0;
-    std::vector<std::shared_ptr<as::BuildGeometryInfoKHR>> tlas_vec_{};
-    std::shared_ptr<vkt::Buffer> uniform_buffer_{};
-    std::shared_ptr<vkt::Buffer> storage_buffer_{};
     std::vector<VkDescriptorSetLayoutBinding> bindings_{};
     std::unique_ptr<OneOffDescriptorSet> desc_set_{};
     vkt::PipelineLayout pipeline_layout_{};

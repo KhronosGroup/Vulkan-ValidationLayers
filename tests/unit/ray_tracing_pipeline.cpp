@@ -774,9 +774,9 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
 
     vkt::rt::Pipeline rt_pipe(*this, m_device);
     rt_pipe.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
-    rt_pipe.SetRayGenShader(kRayTracingMinimalGlsl);
-    rt_pipe.AddMissShader(kRayTracingMinimalGlsl);
-    rt_pipe.AddMissShader(kRayTracingMinimalGlsl);
+    rt_pipe.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddGlslMissShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddGlslMissShader(kRayTracingMinimalGlsl);
     rt_pipe.Build();
 
     uint32_t fake_buffer;
@@ -1061,10 +1061,12 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup)
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
-    auto tlas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
-    pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
-    pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
+    pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
     pipeline.Build();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608");
@@ -1126,7 +1128,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
     rt_pipe_lib.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
     rt_pipe_lib.InitLibraryInfo();
-    rt_pipe_lib.SetRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.SetGlslRayGenShader(kRayTracingMinimalGlsl);
     rt_pipe_lib.BuildPipeline();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828");

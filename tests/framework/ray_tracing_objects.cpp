@@ -1202,64 +1202,45 @@ void Pipeline::InitLibraryInfo() {
     vk_info_.pLibraryInterface = &rt_pipeline_interface_info_;
 }
 
-void Pipeline::AddTopLevelAccelStructBinding(std::shared_ptr<as::BuildGeometryInfoKHR> tlas, uint32_t bind_point) {
-    VkDescriptorSetLayoutBinding accel_struct_binding = {};
-    accel_struct_binding.binding = bind_point;
-    accel_struct_binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    accel_struct_binding.descriptorCount = 1;
-    accel_struct_binding.stageFlags =
-        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
-    bindings_.emplace_back(accel_struct_binding);
-
-    tlas_vec_.emplace_back(tlas);
+void Pipeline::AddBinding(VkDescriptorType descriptor_type, uint32_t binding, uint32_t descriptor_count /*= 1*/) {
+    VkDescriptorSetLayoutBinding binding_layout = {};
+    binding_layout.binding = binding;
+    binding_layout.descriptorType = descriptor_type;
+    binding_layout.descriptorCount = descriptor_count;
+    binding_layout.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+    bindings_.emplace_back(binding_layout);
 }
 
-void Pipeline::SetUniformBufferBinding(std::shared_ptr<vkt::Buffer> uniform_buffer, uint32_t bind_point) {
-    if (uniform_buffer_) {
-        // For now, no need to handle multiple calls to this function
-        assert(false);
-    }
-
-    uniform_buffer_ = uniform_buffer;
-
-    VkDescriptorSetLayoutBinding uniform_buffer_binding{};
-    uniform_buffer_binding.binding = bind_point;
-    uniform_buffer_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniform_buffer_binding.descriptorCount = 1;
-    uniform_buffer_binding.stageFlags =
-        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
-    bindings_.emplace_back(uniform_buffer_binding);
-}
-
-void Pipeline::SetStorageBufferBinding(std::shared_ptr<vkt::Buffer> storage_buffer, uint32_t bind_point) {
-    if (storage_buffer_) {
-        // For now, no need to handle multiple calls to this function
-        assert(false);
-    }
-
-    storage_buffer_ = storage_buffer;
-
-    VkDescriptorSetLayoutBinding binding{};
-    binding.binding = bind_point;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    binding.descriptorCount = 1;
-    binding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
-    bindings_.emplace_back(binding);
-}
+void Pipeline::CreateDescriptorSet() { desc_set_ = std::make_unique<OneOffDescriptorSet>(device_, bindings_); }
 
 void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) { push_constant_range_size_ = byte_size; }
 
-void Pipeline::SetRayGenShader(const char *glsl) {
+void Pipeline::SetGlslRayGenShader(const char *glsl) {
     ray_gen_ = std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
 }
 
-void Pipeline::AddMissShader(const char *glsl) {
+void Pipeline::SetSpirvRayGenShader(const char *spirv, const char *entry_point) {
+    ray_gen_ = std::make_unique<VkShaderObj>(&test_, spirv, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM,
+                                             nullptr, entry_point);
+}
+
+void Pipeline::AddGlslMissShader(const char *glsl) {
     miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2));
 }
 
-void Pipeline::AddClosestHitShader(const char *glsl) {
+void Pipeline::AddSpirvMissShader(const char *spirv, const char *entry_point) {
+    miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, spirv, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2,
+                                                             SPV_SOURCE_ASM, nullptr, entry_point));
+}
+
+void Pipeline::AddGlslClosestHitShader(const char *glsl) {
     closest_hit_shaders_.emplace_back(
         std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2));
+}
+
+void Pipeline::AddSpirvClosestHitShader(const char *spirv, const char *entry_point) {
+    closest_hit_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, spirv, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
+                                                                    SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, nullptr, entry_point));
 }
 
 void Pipeline::AddLibrary(const Pipeline &library) {
@@ -1278,25 +1259,6 @@ void Pipeline::Build() {
 }
 
 void Pipeline::BuildPipeline() {
-    // Create descriptor set
-    desc_set_ = std::make_unique<OneOffDescriptorSet>(device_, bindings_);
-
-    size_t top_level_accel_struct_i = 0;
-    for (const auto &binding : bindings_) {
-        if (binding.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-            desc_set_->WriteDescriptorAccelStruct(binding.binding, 1, &tlas_vec_[top_level_accel_struct_i++]->GetDstAS()->handle());
-        } else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-            desc_set_->WriteDescriptorBufferInfo(binding.binding, *uniform_buffer_, 0, uniform_buffer_->create_info().size);
-        } else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
-            desc_set_->WriteDescriptorBufferInfo(binding.binding, *storage_buffer_, 0, storage_buffer_->create_info().size,
-                                                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-        } else {
-            assert(false);
-        }
-    }
-
-    desc_set_->UpdateDescriptorSets();
-
     // Create push constant range
     VkPushConstantRange push_constant_range = {};
     push_constant_range.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
@@ -1309,8 +1271,10 @@ void Pipeline::BuildPipeline() {
         pipeline_layout_ci.pushConstantRangeCount = 1;
         pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
     }
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &desc_set_->layout_.handle();
+    if (desc_set_) {
+        pipeline_layout_ci.setLayoutCount = 1;
+        pipeline_layout_ci.pSetLayouts = &desc_set_->layout_.handle();
+    }
     pipeline_layout_.init(*device_, pipeline_layout_ci);
 
     // Assemble shaders information (stages and groups)
@@ -1320,7 +1284,7 @@ void Pipeline::BuildPipeline() {
         VkPipelineShaderStageCreateInfo raygen_stage_ci = vku::InitStructHelper();
         raygen_stage_ci.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         raygen_stage_ci.module = *ray_gen_;
-        raygen_stage_ci.pName = "main";
+        raygen_stage_ci.pName = ray_gen_->GetStageCreateInfo().pName;
         pipeline_stage_cis.emplace_back(raygen_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR raygen_group_ci = vku::InitStructHelper();
@@ -1335,7 +1299,7 @@ void Pipeline::BuildPipeline() {
         VkPipelineShaderStageCreateInfo miss_stage_ci = vku::InitStructHelper();
         miss_stage_ci.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
         miss_stage_ci.module = *miss_shader->get();
-        miss_stage_ci.pName = "main";
+        miss_stage_ci.pName = (*miss_shader)->GetStageCreateInfo().pName;
         pipeline_stage_cis.emplace_back(miss_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR miss_group_ci = vku::InitStructHelper();
@@ -1350,7 +1314,7 @@ void Pipeline::BuildPipeline() {
         VkPipelineShaderStageCreateInfo closest_hit_stage_ci = vku::InitStructHelper();
         closest_hit_stage_ci.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         closest_hit_stage_ci.module = *closest_hit->get();
-        closest_hit_stage_ci.pName = "main";
+        closest_hit_stage_ci.pName = (*closest_hit)->GetStageCreateInfo().pName;
         pipeline_stage_cis.emplace_back(closest_hit_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR closest_hit_group_ci = vku::InitStructHelper();
