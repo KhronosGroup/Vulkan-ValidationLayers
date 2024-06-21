@@ -64,10 +64,7 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 1024;
-    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    vkt::Buffer buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer.handle();
@@ -75,13 +72,8 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     buff_view_ci.range = VK_WHOLE_SIZE;
     vkt::BufferView buffer_view(*m_device, buff_view_ci);
 
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = ds.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    descriptor_write.pTexelBufferView = &buffer_view.handle();
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    ds.WriteDescriptorBufferView(0, buffer_view);
+    ds.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);

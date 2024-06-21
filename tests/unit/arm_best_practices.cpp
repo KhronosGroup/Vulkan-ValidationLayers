@@ -271,13 +271,9 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindBufferMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
-
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = sizeof(uint32_t) * 3;
-    buffer_ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    vkt::Buffer indexBuffer(*m_device, buffer_ci);
+    vkt::Buffer indexBuffer(*m_device, sizeof(uint32_t) * 3, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

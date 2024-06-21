@@ -34,10 +34,6 @@ TEST_F(NegativeMemory, MapMemory) {
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buf_info.size = 256;
-    buf_info.queueFamilyIndexCount = 0;
-    buf_info.pQueueFamilyIndices = NULL;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buf_info.flags = 0;
     ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(device(), &buf_info, NULL, &buffer));
 
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
@@ -886,10 +882,8 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
     // first test buffer
     {
         VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-        buffer_create_info.flags = 0;
         buffer_create_info.size = 1024;
         buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         // Create 2 buffers, one that is checked and one that isn't by GetBufferMemoryRequirements
         vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
@@ -1798,9 +1792,6 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_create_info.size = 2048;
-    buffer_create_info.queueFamilyIndexCount = 0;
-    buffer_create_info.pQueueFamilyIndices = NULL;
-    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageCreateInfo image_create_info =
         vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, normal_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);

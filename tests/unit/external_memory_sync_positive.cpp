@@ -339,9 +339,8 @@ TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
         VkExportMetalObjectCreateInfoEXT queue_info = vku::InitStructHelper();
         queue_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT;
 
-        VkExportMetalObjectCreateInfoEXT metal_info = vku::InitStructHelper();
+        VkExportMetalObjectCreateInfoEXT metal_info = vku::InitStructHelper(&queue_info);
         metal_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT;
-        metal_info.pNext = &queue_info;
 
         RETURN_IF_SKIP(InitFramework(&metal_info));
 
@@ -374,9 +373,8 @@ TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
         VkExportMetalObjectCreateInfoEXT metalBufferCreateInfo = vku::InitStructHelper();
         metalBufferCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT;
 
-        VkMemoryAllocateInfo mem_info = vku::InitStructHelper();
+        VkMemoryAllocateInfo mem_info = vku::InitStructHelper(&metalBufferCreateInfo);
         mem_info.allocationSize = 1024;
-        mem_info.pNext = &metalBufferCreateInfo;
 
         VkDeviceMemory memory;
         const VkResult err = vk::AllocateMemory(device, &mem_info, NULL, &memory);

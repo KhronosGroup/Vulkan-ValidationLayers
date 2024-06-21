@@ -20,15 +20,11 @@
 
 TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");
-
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buf_info.size = 2048;
-    buf_info.queueFamilyIndexCount = 0;
-    buf_info.pQueueFamilyIndices = NULL;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyBuffer) {
         buf_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
@@ -56,9 +52,6 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyImage2D) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
@@ -95,9 +88,6 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
     // 1D image w/ sparse residency is an error
@@ -135,9 +125,6 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
     // 2D image w/ sparse residency and linear tiling is an error
@@ -181,9 +168,6 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkSparseImageMemoryBind image_memory_bind = {};
@@ -223,15 +207,11 @@ TEST_F(NegativeSparseImage, ImageUsageBits) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-None-01925");
 }
 
 TEST_F(NegativeSparseImage, MemoryBindOffset) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBind with offset not less than memory size");
-
     RETURN_IF_SKIP(Init());
 
     if (m_device->QueuesWithSparseCapability().empty()) {
@@ -241,9 +221,6 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 1024;
-    buffer_create_info.queueFamilyIndexCount = 0;
-    buffer_create_info.pQueueFamilyIndices = NULL;
-    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyBuffer) {
         buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
@@ -264,9 +241,6 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (m_device->phy().features().sparseResidencyImage2D) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;

@@ -323,10 +323,7 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 32;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -423,10 +420,7 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 32;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},

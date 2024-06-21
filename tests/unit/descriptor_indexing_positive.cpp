@@ -46,7 +46,6 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     layout_createinfo_binding_flags.bindingCount = 2;
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
 
-    // Prepare descriptors
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -54,34 +53,11 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
                                        },
                                        0, &layout_createinfo_binding_flags, 0);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    uint32_t qfi = 0;
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 32;
-    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &qfi;
 
-    vkt::Buffer buffer(*m_device, buffer_create_info);
-
-    VkDescriptorBufferInfo buffer_info[2] = {};
-    buffer_info[0].buffer = buffer.handle();
-    buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
-
-    VkBufferCreateInfo index_buffer_create_info = vku::InitStructHelper();
-    index_buffer_create_info.size = sizeof(uint32_t);
-    index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    vkt::Buffer index_buffer(*m_device, index_buffer_create_info);
-
-    // Only update binding 0
-    VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0] = vku::InitStructHelper();
-    descriptor_writes[0].dstSet = descriptor_set.set_;
-    descriptor_writes[0].dstBinding = 0;
-    descriptor_writes[0].descriptorCount = 1;
-    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_writes[0].pBufferInfo = buffer_info;
-    vk::UpdateDescriptorSets(device(), 1, descriptor_writes, 0, NULL);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t));
+    descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(
         #version 450
@@ -127,29 +103,9 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    VkBuffer buffer1, buffer2, buffer3;
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer1);
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer2);
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer3);
-
-    VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = buffer_mem_reqs.size;
-
-    VkDeviceMemory memory1, memory2, memory3;
-    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory1);
-    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory2);
-    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory3);
-
-    vk::BindBufferMemory(device(), buffer1, memory1, 0);
-    vk::BindBufferMemory(device(), buffer2, memory2, 0);
-    vk::BindBufferMemory(device(), buffer3, memory3, 0);
+    vkt::Buffer buffer1(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer buffer2(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer buffer3(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     OneOffDescriptorSet::Bindings binding_defs = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -163,21 +119,10 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
                                        &flags_create_info, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    VkDescriptorBufferInfo buffer_info = {buffer1, 0, sizeof(uint32_t)};
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptor_set.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_write.pBufferInfo = &buffer_info;
-
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-
-    descriptor_write.dstBinding = 1;
-    buffer_info.buffer = buffer3;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-    descriptor_write.dstBinding = 0;
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer1, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer3, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+    descriptor_set.Clear();
 
     const char fsSource[] = R"glsl(
         #version 450
@@ -207,9 +152,9 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    vk::DestroyBuffer(device(), buffer1, nullptr);
-    buffer_info.buffer = buffer2;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    buffer1.destroy();
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer2, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
 
     VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = m_commandBuffer->handle();
@@ -220,13 +165,6 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
 
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_default_queue->Wait();
-
-    vk::DestroyBuffer(device(), buffer2, nullptr);
-    vk::DestroyBuffer(device(), buffer3, nullptr);
-
-    vk::FreeMemory(device(), memory1, nullptr);
-    vk::FreeMemory(device(), memory2, nullptr);
-    vk::FreeMemory(device(), memory3, nullptr);
 }
 
 TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
@@ -241,26 +179,8 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    VkBuffer buffer1, buffer3;
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer1);
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer3);
-
-    VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = buffer_mem_reqs.size;
-
-    VkDeviceMemory memory1, memory3;
-    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory1);
-    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory3);
-
-    vk::BindBufferMemory(device(), buffer1, memory1, 0);
-    vk::BindBufferMemory(device(), buffer3, memory3, 0);
+    vkt::Buffer buffer1(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer buffer3(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     OneOffDescriptorSet::Bindings binding_defs = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -274,21 +194,9 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
                                        &flags_create_info, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    VkDescriptorBufferInfo buffer_info = {buffer1, 0, sizeof(uint32_t)};
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptor_set.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_write.pBufferInfo = &buffer_info;
-
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-
-    descriptor_write.dstBinding = 1;
-    buffer_info.buffer = buffer3;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-    descriptor_write.dstBinding = 0;
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer1, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer3, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
 
     const char fsSource[] = R"glsl(
         #version 450
@@ -318,7 +226,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    vk::DestroyBuffer(device(), buffer1, nullptr);
+    buffer1.destroy();
 
     VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = m_commandBuffer->handle();
@@ -329,11 +237,6 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
 
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_default_queue->Wait();
-
-    vk::DestroyBuffer(device(), buffer3, nullptr);
-
-    vk::FreeMemory(device(), memory1, nullptr);
-    vk::FreeMemory(device(), memory3, nullptr);
 }
 
 TEST_F(PositiveDescriptorIndexing, PipelineShaderBasic) {

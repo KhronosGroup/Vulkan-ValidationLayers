@@ -177,7 +177,6 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     buffer_ci.usage =
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
     buffer_ci.size = 4096;
-    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
@@ -469,7 +468,6 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
     // The scratch buffer is used in multiple builds but bound at different offsets, so no validation error should be issued
     {
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
-        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -536,7 +534,6 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
 
         // Create scratch buffer
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
-        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -570,7 +567,6 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
 
         // Create scratch buffer
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
-        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -619,7 +615,6 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
 
         // Create scratch buffer
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
-        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -797,7 +792,6 @@ TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     VkBufferCreateInfo small_buffer_ci = vku::InitStructHelper();
-    small_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     small_buffer_ci.size = 64;
     small_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 

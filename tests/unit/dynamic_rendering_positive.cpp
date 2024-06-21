@@ -239,15 +239,14 @@ TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.imageView = image_view;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.colorAttachmentCount = 1;
-    begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
     fragment_density_map.imageView = fdm_image_view;
     fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    begin_rendering_info.pNext = &fragment_density_map;
+
+    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper(&fragment_density_map);
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
     begin_rendering_info.layerCount = 1;
 
     m_commandBuffer->begin();

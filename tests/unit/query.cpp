@@ -156,24 +156,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
 
     // Not the first command.
     {
-        VkBufferCreateInfo buf_info = vku::InitStructHelper();
-        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        buf_info.size = 4096;
-        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_EQ(VK_SUCCESS, err);
-
-        VkMemoryRequirements mem_reqs;
-        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        alloc_info.allocationSize = 4096;
-        VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_EQ(VK_SUCCESS, err);
-        vk::BindBufferMemory(device(), buffer, mem, 0);
-
+        vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         m_commandBuffer->begin();
         vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
         vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
@@ -194,39 +177,16 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         submit_info.pSignalSemaphores = NULL;
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(queue);
-
-        vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
     }
 
     // Not last command.
     {
-        VkBufferCreateInfo buf_info = vku::InitStructHelper();
-        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        buf_info.size = 4096;
-        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_EQ(VK_SUCCESS, err);
-
-        VkMemoryRequirements mem_reqs;
-        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        alloc_info.allocationSize = 4096;
-        VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_EQ(VK_SUCCESS, err);
-        vk::BindBufferMemory(device(), buffer, mem, 0);
+        vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         m_commandBuffer->begin();
-
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-
         vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-
         vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
-
         m_commandBuffer->end();
 
         VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -240,9 +200,6 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-queryPool-03227");
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
-
-        vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
     }
 
     vk::ReleaseProfilingLockKHR(device());
@@ -425,23 +382,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     }
 
     {
-        VkBufferCreateInfo buf_info = vku::InitStructHelper();
-        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        buf_info.size = 4096;
-        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_EQ(VK_SUCCESS, err);
-
-        VkMemoryRequirements mem_reqs;
-        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        alloc_info.allocationSize = 4096;
-        VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_EQ(VK_SUCCESS, err);
-        vk::BindBufferMemory(device(), buffer, mem, 0);
+        vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         m_commandBuffer->reset();
         m_commandBuffer->begin();
@@ -474,9 +415,6 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         m_errorMonitor->VerifyFound();
 
         vk::QueueWaitIdle(queue);
-
-        vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
     }
 
     vk::ReleaseProfilingLockKHR(device());
@@ -569,24 +507,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     {
         const VkDeviceSize buf_size =
             std::max((VkDeviceSize)4096, (VkDeviceSize)(sizeof(VkPerformanceCounterResultKHR) * counterIndices.size()));
-
-        VkBufferCreateInfo buf_info = vku::InitStructHelper();
-        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        buf_info.size = buf_size;
-        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_EQ(VK_SUCCESS, err);
-
-        VkMemoryRequirements mem_reqs;
-        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        alloc_info.allocationSize = mem_reqs.size;
-        VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_EQ(VK_SUCCESS, err);
-        vk::BindBufferMemory(device(), buffer, mem, 0);
+        vkt::Buffer buffer(*m_device, buf_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -731,9 +652,6 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
-
-        vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
     }
 
     vk::ReleaseProfilingLockKHR(device());
@@ -801,23 +719,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     }
 
     {
-        VkBufferCreateInfo buf_info = vku::InitStructHelper();
-        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        buf_info.size = 4096;
-        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-        ASSERT_EQ(VK_SUCCESS, err);
-
-        VkMemoryRequirements mem_reqs;
-        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        alloc_info.allocationSize = 4096;
-        VkDeviceMemory mem;
-        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-        ASSERT_EQ(VK_SUCCESS, err);
-        vk::BindBufferMemory(device(), buffer, mem, 0);
+        vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -848,9 +750,6 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
 
         vk::QueueWaitIdle(queue);
         m_errorMonitor->VerifyFound();
-
-        vk::DestroyBuffer(device(), buffer, nullptr);
-        vk::FreeMemory(device(), mem, NULL);
     }
 
     vk::ReleaseProfilingLockKHR(device());
@@ -2107,10 +2006,7 @@ TEST_F(NegativeQuery, CmdCopyQueryPoolResultsWithoutQueryPool) {
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 1024;
-    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryPool-parameter");
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), bad_query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);

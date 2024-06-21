@@ -320,7 +320,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
         #version 460
         void main() {
             vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
-            gl_Position = vec4(pos - 0.5f, 0.0f, 1.0f);;
+            gl_Position = vec4(pos - 0.5f, 0.0f, 1.0f);
         }
     )glsl";
 
@@ -477,56 +477,19 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     vkt::Buffer storageBuffer(*m_device, sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    ds_type_count.descriptorCount = 1;
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, storageBuffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
-    ds_pool_ci.maxSets = 1;
-    ds_pool_ci.poolSizeCount = 1;
-    ds_pool_ci.flags = 0;
-    ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = nullptr;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
-
-    VkDescriptorSet descriptorSet;
-    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
-    alloc_info.pSetLayouts = &ds_layout.handle();
-    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptorSet);
-
-    VkDescriptorBufferInfo storage_buffer_info = {storageBuffer.handle(), 0, sizeof(uint32_t)};
-
-    VkWriteDescriptorSet descriptorWrite = vku::InitStructHelper();
-    descriptorWrite.dstSet = descriptorSet;
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptorWrite.pBufferInfo = &storage_buffer_info;
-
-    vk::UpdateDescriptorSets(m_device->handle(), 1u, &descriptorWrite, 0u, nullptr);
-
-    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {dsl_binding});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
-
-    VkDescriptorSetLayout descriptorSetLayout = descriptor_set_layout.handle();
+    VkDescriptorSetLayout descriptorSetLayout = descriptor_set.layout_.handle();
 
     const vkt::Shader compShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], comp_src), &descriptorSetLayout);
 
     m_commandBuffer->begin();
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
-                              &descriptorSet, 0u, nullptr);
+                              &descriptor_set.set_, 0u, nullptr);
 
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, shaderStages, &compShader.handle());
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -662,7 +625,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
         #version 460
         void main() {
             vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
-            gl_Position = vec4(pos - 0.5f, 0.0f, 1.0f);;
+            gl_Position = vec4(pos - 0.5f, 0.0f, 1.0f);
         }
     )glsl";
 
@@ -1110,7 +1073,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
         #version 460
         void main() {
             vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
-            gl_Position = vec4(pos - 0.5f, 0.0f, 1.0f);;
+            gl_Position = vec4(pos - 0.5f, 0.0f, 1.0f);
         }
     )glsl";
 

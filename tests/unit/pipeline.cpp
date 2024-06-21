@@ -68,10 +68,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 1024;
-    vkt::Buffer buffer(*m_device, bci);
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
@@ -258,10 +255,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    VkBufferCreateInfo ci = vku::InitStructHelper();
-    ci.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    ci.size = 1024;
-    vkt::Buffer buffer(*m_device, ci);
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-None-08606");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 1, 0);
     m_errorMonitor->VerifyFound();
@@ -305,7 +299,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchIndirect-None-08606");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchIndirect-offset-00407");
-    vk::CmdDispatchIndirect(m_commandBuffer->handle(), buffer.handle(), ci.size);
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), buffer.handle(), 1024);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1681,18 +1675,8 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
         GTEST_SKIP() << "compute queue not supported";
     }
 
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    bci.size = 4;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer storage_buffer(*m_device, bci, mem_props);
-
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 20;
-    vkt::Buffer uniform_buffer(*m_device, bci, mem_props);
+    vkt::Buffer storage_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     OneOffDescriptorSet::Bindings binding_defs = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -1703,28 +1687,12 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
 
     // We now will use a slightly different Layout definition for the descriptors we acutally bind with (but that would still be
     // correct for the shader
-    binding_defs[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    OneOffDescriptorSet binding_descriptor_set(m_device, binding_defs);
-    const vkt::PipelineLayout binding_pipeline_layout(*m_device, {&binding_descriptor_set.layout_});
-
-    VkDescriptorBufferInfo storage_buffer_info = {storage_buffer.handle(), 0, sizeof(uint32_t)};
-    VkDescriptorBufferInfo uniform_buffer_info = {uniform_buffer.handle(), 0, 5 * sizeof(uint32_t)};
-
-    VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0] = vku::InitStructHelper();
-    descriptor_writes[0].dstSet = binding_descriptor_set.set_;
-    descriptor_writes[0].dstBinding = 0;
-    descriptor_writes[0].descriptorCount = 1;
-    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_writes[0].pBufferInfo = &storage_buffer_info;
-
-    descriptor_writes[1] = vku::InitStructHelper();
-    descriptor_writes[1].dstSet = binding_descriptor_set.set_;
-    descriptor_writes[1].dstBinding = 1;
-    descriptor_writes[1].descriptorCount = 1;  // Write 4 bytes to val
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_writes[1].pBufferInfo = &uniform_buffer_info;
-    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, NULL);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+    const vkt::PipelineLayout binding_pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
 
     char const *csSource = R"glsl(
         #version 450
@@ -1736,36 +1704,19 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
         }
     )glsl";
 
-    VkShaderObj shader_module(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineShaderStageCreateInfo stage = vku::InitStructHelper();
-    stage.flags = 0;
-    stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    stage.module = shader_module.handle();
-    stage.pName = "main";
-    stage.pSpecializationInfo = nullptr;
-
-    // CreateComputePipelines
-    VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
-    pipeline_info.flags = 0;
-    pipeline_info.layout = pipeline_layout.handle();
-    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-    pipeline_info.basePipelineIndex = -1;
-    pipeline_info.stage = stage;
-
-    VkPipeline c_pipeline;
-    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, binding_pipeline_layout.handle(), 0, 1,
-                              &binding_descriptor_set.set_, 0, nullptr);
+                              &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
-
-    vk::DestroyPipeline(device(), c_pipeline, nullptr);
 }
 
 TEST_F(NegativePipeline, MaxPerStageResources) {
@@ -2026,34 +1977,13 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;  // turned off feature bit for test
     vkt::Sampler sampler_mipmap(*m_device, sampler_ci);
 
-    VkDescriptorImageInfo combined_sampler_info = {sampler_filter.handle(), imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkDescriptorImageInfo seperate_sampled_image_info = {VK_NULL_HANDLE, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkDescriptorImageInfo seperate_sampler_info = {sampler_filter.handle(), VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
+    combined_descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler_filter);
+    combined_descriptor_set.UpdateDescriptorSets();
 
-    // first item is combined, second/third item are seperate
-    VkWriteDescriptorSet descriptor_writes[3] = {};
-    descriptor_writes[0] = vku::InitStructHelper();
-    descriptor_writes[0].dstSet = combined_descriptor_set.set_;
-    descriptor_writes[0].dstBinding = 0;
-    descriptor_writes[0].descriptorCount = 1;
-    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_writes[0].pImageInfo = &combined_sampler_info;
-
-    descriptor_writes[1] = vku::InitStructHelper();
-    descriptor_writes[1].dstSet = seperate_descriptor_set.set_;
-    descriptor_writes[1].dstBinding = 0;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    descriptor_writes[1].pImageInfo = &seperate_sampled_image_info;
-
-    descriptor_writes[2] = vku::InitStructHelper();
-    descriptor_writes[2].dstSet = seperate_descriptor_set.set_;
-    descriptor_writes[2].dstBinding = 1;
-    descriptor_writes[2].descriptorCount = 1;
-    descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    descriptor_writes[2].pImageInfo = &seperate_sampler_info;
-
-    vk::UpdateDescriptorSets(device(), 3, descriptor_writes, 0, nullptr);
+    seperate_descriptor_set.WriteDescriptorImageInfo(0, imageView, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    seperate_descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler_filter, VK_DESCRIPTOR_TYPE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_UNDEFINED);
+    seperate_descriptor_set.UpdateDescriptorSets();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -2089,9 +2019,15 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
 
     // Same test but for mipmap, so need to update descriptors
     {
-        combined_sampler_info.sampler = sampler_mipmap.handle();
-        seperate_sampler_info.sampler = sampler_mipmap.handle();
-        vk::UpdateDescriptorSets(device(), 3, descriptor_writes, 0, nullptr);
+        combined_descriptor_set.Clear();
+        combined_descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler_mipmap);
+        combined_descriptor_set.UpdateDescriptorSets();
+
+        seperate_descriptor_set.Clear();
+        seperate_descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler_mipmap, VK_DESCRIPTOR_TYPE_SAMPLER,
+                                                         VK_IMAGE_LAYOUT_UNDEFINED);
+        seperate_descriptor_set.UpdateDescriptorSets();
+
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0,
                                   1, &combined_descriptor_set.set_, 0, nullptr);
 

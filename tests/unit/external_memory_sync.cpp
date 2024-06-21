@@ -79,7 +79,6 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypes) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-00990");
 
     // Get all exportable handle types supported by the platform.
@@ -134,7 +133,6 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypesNV) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     // Get all exportable handle types supported by the platform.
     VkExternalMemoryHandleTypeFlagsNV supported_handle_types = 0;
@@ -2640,8 +2638,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
     metal_object_create_info.pNext = nullptr;
 
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.pNext = &metal_object_create_info;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&metal_object_create_info);
     alloc_info.allocationSize = 1024;
     VkDeviceMemory memory;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-06780");
@@ -2657,8 +2654,6 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_LINEAR;
     ici.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    ici.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     ici.pNext = &metal_object_create_info;
     CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06783");
 
@@ -2676,12 +2671,9 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_2_BIT;
     CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06786");
 
-    uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
     vkt::Buffer buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();

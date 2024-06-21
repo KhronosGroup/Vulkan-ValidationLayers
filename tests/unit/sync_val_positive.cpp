@@ -652,11 +652,8 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 1024;
-    buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    const vkt::Buffer buffer0(*m_device, buffer_ci);
-    const vkt::Buffer buffer1(*m_device, buffer_ci);
+    const vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    const vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     const vkt::BufferView buffer_view0(*m_device, vkt::BufferView::createInfo(buffer0, VK_FORMAT_R8G8B8A8_UINT));
     const vkt::BufferView buffer_view1(*m_device, vkt::BufferView::createInfo(buffer1, VK_FORMAT_R8G8B8A8_UINT));
 

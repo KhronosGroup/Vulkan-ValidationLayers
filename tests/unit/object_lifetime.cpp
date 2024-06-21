@@ -31,7 +31,6 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
@@ -71,7 +70,6 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkt::Buffer buffer(*m_device, buf_info, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
@@ -162,7 +160,6 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
@@ -282,11 +279,8 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     VkBufferView view;
 
     {
-        uint32_t queue_family_index = 0;
         buffer_create_info.size = 1024;
         buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-        buffer_create_info.queueFamilyIndexCount = 1;
-        buffer_create_info.pQueueFamilyIndices = &queue_family_index;
         vkt::Buffer buffer(*m_device, buffer_create_info);
 
         bvci.buffer = buffer.handle();
@@ -880,14 +874,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t queue_family_index = 0;
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = 1024;
-    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    vkt::Buffer buffer(*m_device, buffer_create_info);
-
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     VkBufferView view;
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = buffer.handle();

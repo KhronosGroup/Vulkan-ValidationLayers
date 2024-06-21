@@ -264,13 +264,10 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         const auto ocddci = vku::InitStruct<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(nullptr, &data);
 
         {
-            uint32_t qfi = 0;
             VkBufferCreateInfo buffCI = vku::InitStructHelper();
             buffCI.size = 4096;
             buffCI.flags = VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
             buffCI.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-            buffCI.queueFamilyIndexCount = 1;
-            buffCI.pQueueFamilyIndices = &qfi;
 
             buffCI.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
             CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-flags-08099");
@@ -856,7 +853,6 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
 
     // Create a large and a small buffer
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     buffer_ci.size = large_buffer_size;
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
     auto large_buffer = std::make_unique<vkt::Buffer>(*m_device, buffer_ci, vkt::no_mem);

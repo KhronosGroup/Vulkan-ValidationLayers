@@ -65,11 +65,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    VkBufferCreateInfo buffCI = vku::InitStructHelper();
-    buffCI.size = 1024;
-    buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    vkt::Buffer dynamic_uniform_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffInfo[2] = {};
     buffInfo[0].buffer = dynamic_uniform_buffer.handle();
@@ -164,10 +160,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     VkDescriptorSet ds = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds));
 
-    VkBufferCreateInfo buff_create_info = vku::InitStructHelper();
-    buff_create_info.size = 1024;
-    buff_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    vkt::Buffer buffer(*m_device, buff_create_info);
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo bufferInfo[3] = {};
     bufferInfo[0].buffer = buffer.handle();
@@ -375,8 +368,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayoutBindings) {
     flags_create_info.bindingCount = 2;
     flags_create_info.pBindingFlags = flags;
 
-    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper();
-    create_info.pNext = &flags_create_info;
+    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&flags_create_info);
     create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
     create_info.bindingCount = 2;
     create_info.pBindings = bindings;

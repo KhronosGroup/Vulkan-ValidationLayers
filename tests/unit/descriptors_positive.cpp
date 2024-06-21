@@ -149,14 +149,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
 
     // Buffer Case
     {
-        uint32_t queue_family_index = 0;
-        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-        buffer_create_info.size = 1024;
-        buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffer_create_info.queueFamilyIndexCount = 1;
-        buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-
-        vkt::Buffer buffer(*m_device, buffer_create_info);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
         OneOffDescriptorSet descriptor_set(m_device, {
                                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -188,14 +181,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
 
     // Texel Buffer Case
     {
-        uint32_t queue_family_index = 0;
-        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-        buffer_create_info.size = 1024;
-        buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-        buffer_create_info.queueFamilyIndexCount = 1;
-        buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-
-        vkt::Buffer buffer(*m_device, buffer_create_info);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
         VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
         buff_view_ci.buffer = buffer.handle();
@@ -256,22 +242,14 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
 
 TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
     TEST_DESCRIPTION("Update last descriptor in a set that includes an empty binding");
-
     RETURN_IF_SKIP(Init());
-
     // Create layout with two uniform buffer descriptors w/ empty binding between them
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0 /*!*/, 0, nullptr},
                                          {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                      });
-
-    // Create a buffer to be used for update
-    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
-    buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buff_ci.size = 256;
-    buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkt::Buffer buffer(*m_device, buff_ci);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Only update the descriptor at binding 2
     VkDescriptorBufferInfo buff_info = {};
@@ -306,17 +284,8 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
 
     // Create two buffers to update the descriptors with
     // The first will be 2k and used for bindings 0 & 1, the second is 1k for binding 2
-    uint32_t qfi = 0;
-    VkBufferCreateInfo buffCI = vku::InitStructHelper();
-    buffCI.size = 2048;
-    buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffCI.queueFamilyIndexCount = 1;
-    buffCI.pQueueFamilyIndices = &qfi;
-
-    vkt::Buffer dynamic_uniform_buffer_1, dynamic_uniform_buffer_2;
-    dynamic_uniform_buffer_1.init(*m_device, buffCI);
-    buffCI.size = 1024;
-    dynamic_uniform_buffer_2.init(*m_device, buffCI);
+    vkt::Buffer dynamic_uniform_buffer_1(*m_device, 2048, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer dynamic_uniform_buffer_2(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Update descriptors
     const uint32_t BINDING_COUNT = 3;
@@ -436,17 +405,12 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
         GTEST_SKIP() << "Pool memory not allocated";
     }
-
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 32;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer.handle();
     buffer_info.offset = 0;
-    buffer_info.range = buffer_ci.size;
+    buffer_info.range = VK_WHOLE_SIZE;
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_sets[0];
@@ -540,13 +504,11 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     blas_descriptor.accelerationStructureCount = 1;
     blas_descriptor.pAccelerationStructures = &tlas->handle();
 
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&blas_descriptor);
     descriptor_write.dstSet = descriptor_sets[0];
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = blas_descriptor.accelerationStructureCount;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    descriptor_write.pNext = &blas_descriptor;
-
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     VkCopyDescriptorSet copy_set = vku::InitStructHelper();
@@ -619,21 +581,10 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
                                         {
                                             {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                         });
-    VkDescriptorImageInfo image_info = {};
-    image_info.sampler = sampler.handle();
-    image_info.imageView = image_view.handle();
-    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptor_set.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-    descriptor_write.dstSet = descriptor_set2.set_;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+    descriptor_set2.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set2.UpdateDescriptorSets();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, m_renderPassClearValues.data());
@@ -949,17 +900,8 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptor_set.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    descriptor_write.pTexelBufferView = &buffer_view.handle();
-    descriptor_write.pImageInfo = nullptr;
-    descriptor_write.pBufferInfo = nullptr;
-
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    descriptor_set.WriteDescriptorBufferView(0, buffer_view);
+    descriptor_set.UpdateDescriptorSets();
 }
 
 TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {

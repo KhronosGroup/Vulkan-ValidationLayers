@@ -54,12 +54,10 @@ TEST_F(NegativeDynamicRendering, CommandBufferInheritanceRenderingInfo) {
     cmd_buffer_inheritance_rendering_info.stencilAttachmentFormat = VK_FORMAT_R8G8B8_SNORM;
     cmd_buffer_inheritance_rendering_info.viewMask = 1 << multiview_props.maxMultiviewViewCount;
 
-    VkAttachmentSampleCountInfoAMD sample_count_info_amd = vku::InitStructHelper();
-    sample_count_info_amd.pNext = &cmd_buffer_inheritance_rendering_info;
+    VkAttachmentSampleCountInfoAMD sample_count_info_amd = vku::InitStructHelper(&cmd_buffer_inheritance_rendering_info);
     sample_count_info_amd.colorAttachmentCount = 2;
 
-    VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper();
-    cmd_buffer_inheritance_info.pNext = &sample_count_info_amd;
+    VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper(&sample_count_info_amd);
 
     VkCommandBufferAllocateInfo cmd_buffer_allocate_info = vku::InitStructHelper();
     cmd_buffer_allocate_info.commandPool = m_command_pool.handle();
@@ -336,10 +334,6 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
     imci.samples = VK_SAMPLE_COUNT_1_BIT;
     imci.tiling = VK_IMAGE_TILING_OPTIMAL;
     imci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    imci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imci.queueFamilyIndexCount = 0;
-    imci.pQueueFamilyIndices = nullptr;
-    imci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image color_image(*m_device, imci, vkt::set_layout);
     vkt::ImageView color_image_view = color_image.CreateView();
 
@@ -1461,16 +1455,15 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     depth_attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
     depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.pDepthAttachment = &depth_attachment;
-    begin_rendering_info.viewMask = 0x4;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
         vku::InitStructHelper();
     fragment_density_map.imageView = depth_image_view;
     fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    begin_rendering_info.pNext = &fragment_density_map;
+
+    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper(&fragment_density_map);
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.viewMask = 0x4;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06116");
@@ -1498,8 +1491,7 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
     VkCommandBufferInheritanceRenderingInfoKHR cmd_buffer_inheritance_rendering_info = vku::InitStructHelper();
     cmd_buffer_inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper();
-    cmd_buffer_inheritance_info.pNext = &cmd_buffer_inheritance_rendering_info;
+    VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper(&cmd_buffer_inheritance_rendering_info);
     cmd_buffer_inheritance_info.renderPass = VK_NULL_HANDLE;
 
     VkCommandBufferAllocateInfo cmd_buffer_allocate_info = vku::InitStructHelper();
@@ -1621,7 +1613,6 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (shading_rate) {
         image_create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
@@ -2208,9 +2199,8 @@ TEST_F(NegativeDynamicRendering, WithoutShaderTileImageAndBarrier) {
 
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceVulkan13Features vk13features = vku::InitStructHelper();
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
-    vk13features.pNext = &shader_tile_image_features;
+    VkPhysicalDeviceVulkan13Features vk13features = vku::InitStructHelper(&shader_tile_image_features);
 
     auto features2 = GetPhysicalDeviceFeatures2(vk13features);
     if (!vk13features.dynamicRendering) {
@@ -2276,12 +2266,10 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
-
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceVulkan13Features vk13features = vku::InitStructHelper();
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features = vku::InitStructHelper();
-    vk13features.pNext = &shader_tile_image_features;
+    VkPhysicalDeviceVulkan13Features vk13features = vku::InitStructHelper(&shader_tile_image_features);
 
     auto features2 = GetPhysicalDeviceFeatures2(vk13features);
     if (!vk13features.dynamicRendering) {
@@ -4075,7 +4063,6 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView();
 

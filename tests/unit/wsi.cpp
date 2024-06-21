@@ -1737,9 +1737,6 @@ TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
     swapchain_info.imageExtent = img_ext;
     swapchain_info.imageArrayLayers = 1;
     swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_info.queueFamilyIndexCount = 0;
-    swapchain_info.pQueueFamilyIndices = nullptr;
     swapchain_info.preTransform = m_surface_capabilities.currentTransform;
     swapchain_info.compositeAlpha = m_surface_composite_alpha;
     swapchain_info.presentMode = m_surface_present_modes[0];

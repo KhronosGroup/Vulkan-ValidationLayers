@@ -374,13 +374,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     vkt::Device test_device(gpu(), device_ci);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.flags = 0;
     buffer_ci.size = 0x100000;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buffer_ci.queueFamilyIndexCount = 0;
-    buffer_ci.pQueueFamilyIndices = nullptr;
-
     vkt::Buffer buffer_a(test_device, buffer_ci, vkt::no_mem);
     vkt::Buffer buffer_b(test_device, buffer_ci, vkt::no_mem);
 

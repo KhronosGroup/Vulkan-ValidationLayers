@@ -50,11 +50,7 @@ TEST_F(NegativeParent, FillBuffer) {
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_ci.queueFamilyIndexCount = 0;
-    vkt::Buffer buffer(*m_second_device, buffer_ci);
+    vkt::Buffer buffer(*m_second_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-commonparent");
@@ -638,10 +634,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsBuffer) {
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vkt::Buffer buffer(*m_second_device, buffer_ci);
+    vkt::Buffer buffer(*m_second_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},

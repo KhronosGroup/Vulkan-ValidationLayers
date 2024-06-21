@@ -679,10 +679,6 @@ TEST_F(NegativeCopyBufferImage, CompressedImageMip) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image image(*m_device, ci, vkt::set_layout);
 
     ci.extent = {31, 32, 1};  // Mips are [31,32] [15,16] [7,8] [3,4], [1,2] [1,1]
@@ -981,10 +977,6 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Create 1D image
     vkt::Image image_1D(*m_device, ci, vkt::set_layout);
@@ -1235,10 +1227,6 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatchMaintenance1) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Create 1D image
     vkt::Image image_1D(*m_device, ci, vkt::set_layout);
@@ -1358,10 +1346,6 @@ TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), ci.format, ci.imageType, ci.tiling,
@@ -1474,10 +1458,6 @@ TEST_F(NegativeCopyBufferImage, ImageSrcSizeExceeded) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image src_image(*m_device, ci, vkt::set_layout);
 
     // Dest image with one more mip level
@@ -1549,10 +1529,6 @@ TEST_F(NegativeCopyBufferImage, ImageDstSizeExceeded) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image dst_image(*m_device, ci, vkt::set_layout);
 
     // Src image with one more mip level
@@ -1622,10 +1598,6 @@ TEST_F(NegativeCopyBufferImage, ImageZeroSize) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image src_image(*m_device, ci, vkt::set_layout);
 
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -1990,10 +1962,6 @@ TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     vkt::Image image1(*m_device, ci, vkt::set_layout);
 
@@ -2494,10 +2462,6 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
     ci.arrayLayers = 8;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ci.queueFamilyIndexCount = 0;
-    ci.pQueueFamilyIndices = NULL;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Copy from a to b
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -2528,10 +2492,8 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.size = 32 * 32 * 4;
-    bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    vkt::Buffer buffer(*m_device, bci);
+    const uint32_t buffer_size = 32 * 32 * 4;
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy buffer_copy{};
     buffer_copy.bufferImageHeight = ci.extent.height;
@@ -2639,8 +2601,6 @@ TEST_F(NegativeCopyBufferImage, BufferToCompressedImage) {
     depth_image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     depth_image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     depth_image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    depth_image_create_info.queueFamilyIndexCount = 0;
-    depth_image_create_info.pQueueFamilyIndices = NULL;
 
     VkImage depth_image = VK_NULL_HANDLE;
     err = vk::CreateImage(m_device->handle(), &depth_image_create_info, NULL, &depth_image);

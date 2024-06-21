@@ -6919,13 +6919,11 @@ TEST_F(NegativeVideo, DecodeBufferMissingDecodeSrcUsage) {
     profile_list.profileCount = 1;
     profile_list.pProfiles = config.Profile();
 
-    auto create_info = vku::InitStruct<VkBufferCreateInfo>();
+    auto create_info = vku::InitStruct<VkBufferCreateInfo>(&profile_list);
     create_info.flags = 0;
-    create_info.pNext = &profile_list;
     create_info.size = std::max((VkDeviceSize)4096, config.Caps()->minBitstreamBufferSizeAlignment);
     create_info.usage = VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
     vkt::Buffer buffer(*m_device, create_info);
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -6959,13 +6957,11 @@ TEST_F(NegativeVideo, EncodeBufferMissingEncodeDstUsage) {
     profile_list.profileCount = 1;
     profile_list.pProfiles = config.Profile();
 
-    auto create_info = vku::InitStruct<VkBufferCreateInfo>();
+    auto create_info = vku::InitStruct<VkBufferCreateInfo>(&profile_list);
     create_info.flags = 0;
-    create_info.pNext = &profile_list;
     create_info.size = std::max((VkDeviceSize)4096, config.Caps()->minBitstreamBufferSizeAlignment);
     create_info.usage = VK_BUFFER_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
     vkt::Buffer buffer(*m_device, create_info);
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -11547,7 +11543,6 @@ TEST_F(NegativeVideo, CreateBufferInvalidProfileList) {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkVideoProfileListInfoKHR video_profiles = vku::InitStructHelper();
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    ;
     buffer_ci.size = 2048;
 
     if (decode_config) {
@@ -11603,7 +11598,6 @@ TEST_F(NegativeVideo, CreateBufferProfileIndependentNotSupported) {
 
     VkBuffer buffer = VK_NULL_HANDLE;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    ;
     buffer_ci.flags = VK_BUFFER_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
     buffer_ci.size = 2048;
 
@@ -12397,10 +12391,7 @@ TEST_F(NegativeVideo, CopyQueryPoolResultsStatusBit) {
 
     VkQueryResultFlags flags;
 
-    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
-    buffer_ci.size = sizeof(uint32_t);
-    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_commandBuffer->begin();
 

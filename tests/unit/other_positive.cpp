@@ -55,16 +55,10 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info = vku::InitStructHelper();
     dedicated_buffer_create_info.dedicatedAllocation = VK_TRUE;
 
-    uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&dedicated_buffer_create_info);
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-
-    VkBuffer buffer;
-    VkResult err = vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer);
-    ASSERT_EQ(VK_SUCCESS, err);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements memory_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &memory_reqs);
@@ -80,15 +74,8 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
 
-    VkDeviceMemory buffer_memory;
-    err = vk::AllocateMemory(device(), &memory_info, NULL, &buffer_memory);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    err = vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    vk::DestroyBuffer(device(), buffer, NULL);
-    vk::FreeMemory(device(), buffer_memory, NULL);
+    vkt::DeviceMemory buffer_memory(*m_device, memory_info);
+    vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
 }
 
 TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
