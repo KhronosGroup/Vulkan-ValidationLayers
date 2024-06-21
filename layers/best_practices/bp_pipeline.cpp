@@ -40,40 +40,35 @@ static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
     }
 }
 
-bool BestPractices::ValidateMultisampledBlendingArm(uint32_t create_info_count, const VkGraphicsPipelineCreateInfo* create_infos,
+bool BestPractices::ValidateMultisampledBlendingArm(const VkGraphicsPipelineCreateInfo& create_info,
                                                     const Location& create_info_loc) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < create_info_count; i++) {
-        auto create_info = &create_infos[i];
+    if (!create_info.pColorBlendState || !create_info.pMultisampleState ||
+        create_info.pMultisampleState->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT ||
+        create_info.pMultisampleState->sampleShadingEnable) {
+        return skip;
+    }
 
-        if (!create_info->pColorBlendState || !create_info->pMultisampleState ||
-            create_info->pMultisampleState->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT ||
-            create_info->pMultisampleState->sampleShadingEnable) {
-            return skip;
-        }
+    auto rp_state = Get<vvl::RenderPass>(create_info.renderPass);
+    if (!rp_state) return skip;
 
-        auto rp_state = Get<vvl::RenderPass>(create_info->renderPass);
-        if (!rp_state) continue;
+    const auto& subpass = rp_state->create_info.pSubpasses[create_info.subpass];
 
-        const auto& subpass = rp_state->create_info.pSubpasses[create_info->subpass];
+    // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
+    uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
 
-        // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
-        uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info->pColorBlendState->attachmentCount);
+    for (uint32_t j = 0; j < num_color_attachments; j++) {
+        const auto& blend_att = create_info.pColorBlendState->pAttachments[j];
+        uint32_t att = subpass.pColorAttachments[j].attachment;
 
-        for (uint32_t j = 0; j < num_color_attachments; j++) {
-            const auto& blend_att = create_info->pColorBlendState->pAttachments[j];
-            uint32_t att = subpass.pColorAttachments[j].attachment;
-
-            if (att != VK_ATTACHMENT_UNUSED && blend_att.blendEnable && blend_att.colorWriteMask) {
-                if (!FormatHasFullThroughputBlendingArm(rp_state->create_info.pAttachments[att].format)) {
-                    skip |=
-                        LogPerformanceWarning("BestPractices-Arm-vkCreatePipelines-multisampled-blending", device, create_info_loc,
+        if (att != VK_ATTACHMENT_UNUSED && blend_att.blendEnable && blend_att.colorWriteMask) {
+            if (!FormatHasFullThroughputBlendingArm(rp_state->create_info.pAttachments[att].format)) {
+                skip |= LogPerformanceWarning("BestPractices-Arm-vkCreatePipelines-multisampled-blending", device, create_info_loc,
                                               "%s Pipeline is multisampled and "
                                               "color attachment #%u makes use "
                                               "of a format which cannot be blended at full throughput when using MSAA.",
                                               VendorSpecificTag(kBPVendorArm), j);
-                }
             }
         }
     }
@@ -89,6 +84,90 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
                                                                chassis::CreateComputePipelines& chassis_state) {
     // AMD best practice
     pipeline_cache_ = pipelineCache;
+}
+
+bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& create_info, const vvl::Pipeline& pipeline,
+                                                   const Location create_info_loc) const {
+    bool skip = false;
+    if (!(pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
+        const auto& vertex_input = *create_info.pVertexInputState;
+        uint32_t count = 0;
+        for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
+            if (vertex_input.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
+                count++;
+            }
+        }
+        if (count > kMaxInstancedVertexBuffers) {
+            skip |= LogPerformanceWarning(
+                "BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers", device, create_info_loc,
+                "The pipeline is using %u instanced vertex buffers (current limit: %u), but this can be inefficient on the "
+                "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
+                count, kMaxInstancedVertexBuffers);
+        }
+    }
+
+    if ((create_info.pRasterizationState) && (create_info.pRasterizationState->depthBiasEnable) &&
+        (create_info.pRasterizationState->depthBiasConstantFactor == 0.0f) &&
+        (create_info.pRasterizationState->depthBiasSlopeFactor == 0.0f) && VendorCheckEnabled(kBPVendorArm)) {
+        skip |=
+            LogPerformanceWarning("BestPractices-Arm-vkCreatePipelines-depthbias-zero", device, create_info_loc,
+                                  "%s This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
+                                  "and both depthBiasConstantFactor and depthBiasSlopeFactor are set to 0. This can cause reduced "
+                                  "efficiency during rasterization. Consider disabling depthBias or increasing either "
+                                  "depthBiasConstantFactor or depthBiasSlopeFactor.",
+                                  VendorSpecificTag(kBPVendorArm));
+    }
+
+    const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+    if (create_info.renderPass == VK_NULL_HANDLE &&
+        !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfoKHR>(create_info.pNext) &&
+        (!graphics_lib_info ||
+         (graphics_lib_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                      VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0)) {
+        skip |= LogWarning("BestPractices-Pipeline-NoRendering", device, create_info_loc,
+                           "renderPass is VK_NULL_HANDLE and pNext chain does not contain VkPipelineRenderingCreateInfoKHR.");
+    }
+
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        skip |= ValidateMultisampledBlendingArm(create_info, create_info_loc);
+    }
+
+    if (VendorCheckEnabled(kBPVendorAMD)) {
+        if (create_info.pInputAssemblyState && create_info.pInputAssemblyState->primitiveRestartEnable) {
+            skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelines-AvoidPrimitiveRestart", device, create_info_loc,
+                                          "%s Use of primitive restart is not recommended", VendorSpecificTag(kBPVendorAMD));
+        }
+
+        // TODO: this might be too aggressive of a check
+        if (create_info.pDynamicState && create_info.pDynamicState->dynamicStateCount > kDynamicStatesWarningLimitAMD) {
+            skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelines-MinimizeNumDynamicStates", device, create_info_loc,
+                                          "%s Dynamic States usage incurs a performance cost. Ensure that they are truly needed",
+                                          VendorSpecificTag(kBPVendorAMD));
+        }
+    }
+
+    for (const auto& stage : pipeline.stage_states) {
+        if (stage.GetStage() != VK_SHADER_STAGE_FRAGMENT_BIT) {
+            continue;
+        }
+        const auto& rp_state = pipeline.RenderPassState();
+        if (rp_state && !rp_state->UsesDynamicRendering() && stage.entrypoint) {
+            auto rpci = rp_state->create_info.ptr();
+            auto subpass = pipeline.Subpass();
+            for (const auto& variable : stage.entrypoint->resource_interface_variables) {
+                if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+                    continue;
+                }
+                auto slot = variable.decorations.input_attachment_index_start;
+                if (!rpci->pSubpasses[subpass].pInputAttachments || slot >= rpci->pSubpasses[subpass].inputAttachmentCount) {
+                    const LogObjectList objlist(stage.module_state->Handle(), pipeline.PipelineLayoutState()->Handle());
+                    skip |= LogWarning("BestPractices-Shader-MissingInputAttachment", device, create_info_loc,
+                                       "Shader consumes input attachment index %" PRIu32 " but not provided in subpass", slot);
+                }
+            }
+        }
+    }
+    return skip;
 }
 
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -112,89 +191,11 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     }
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        const auto& create_info = pCreateInfos[i];
-        const auto pipeline = pipeline_states[i].get();
+        const auto* pipeline = pipeline_states[i].get();
         ASSERT_AND_CONTINUE(pipeline);
-
-        if (!(pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
-            const auto& vertex_input = *create_info.pVertexInputState;
-            uint32_t count = 0;
-            for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
-                if (vertex_input.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
-                    count++;
-                }
-            }
-            if (count > kMaxInstancedVertexBuffers) {
-                skip |= LogPerformanceWarning(
-                    "BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers", device, create_info_loc,
-                    "The pipeline is using %u instanced vertex buffers (current limit: %u), but this can be inefficient on the "
-                    "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
-                    count, kMaxInstancedVertexBuffers);
-            }
-        }
-
-        if ((pCreateInfos[i].pRasterizationState) && (pCreateInfos[i].pRasterizationState->depthBiasEnable) &&
-            (pCreateInfos[i].pRasterizationState->depthBiasConstantFactor == 0.0f) &&
-            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f) && VendorCheckEnabled(kBPVendorArm)) {
-            skip |= LogPerformanceWarning(
-                "BestPractices-Arm-vkCreatePipelines-depthbias-zero", device, create_info_loc,
-                "%s This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
-                "and both depthBiasConstantFactor and depthBiasSlopeFactor are set to 0. This can cause reduced "
-                "efficiency during rasterization. Consider disabling depthBias or increasing either "
-                "depthBiasConstantFactor or depthBiasSlopeFactor.",
-                VendorSpecificTag(kBPVendorArm));
-        }
-
-        skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos, create_info_loc);
-
-        const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
-        if (pCreateInfos[i].renderPass == VK_NULL_HANDLE &&
-            !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfoKHR>(pCreateInfos[i].pNext) &&
-            (!graphics_lib_info ||
-             (graphics_lib_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                                          VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0)) {
-            skip |= LogWarning("BestPractices-Pipeline-NoRendering", device, create_info_loc,
-                               "renderPass is VK_NULL_HANDLE and pNext chain does not contain VkPipelineRenderingCreateInfoKHR.");
-        }
-
-        if (VendorCheckEnabled(kBPVendorAMD)) {
-            if (pCreateInfos[i].pInputAssemblyState && pCreateInfos[i].pInputAssemblyState->primitiveRestartEnable) {
-                skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelines-AvoidPrimitiveRestart", device, create_info_loc,
-                                              "%s Use of primitive restart is not recommended", VendorSpecificTag(kBPVendorAMD));
-            }
-
-            // TODO: this might be too aggressive of a check
-            if (pCreateInfos[i].pDynamicState && pCreateInfos[i].pDynamicState->dynamicStateCount > kDynamicStatesWarningLimitAMD) {
-                skip |=
-                    LogPerformanceWarning("BestPractices-AMD-CreatePipelines-MinimizeNumDynamicStates", device, create_info_loc,
-                                          "%s Dynamic States usage incurs a performance cost. Ensure that they are truly needed",
-                                          VendorSpecificTag(kBPVendorAMD));
-            }
-        }
-
-        for (const auto& stage : pipeline->stage_states) {
-            if (stage.GetStage() != VK_SHADER_STAGE_FRAGMENT_BIT) {
-                continue;
-            }
-            const auto& rp_state = pipeline->RenderPassState();
-            if (rp_state && !rp_state->UsesDynamicRendering() && stage.entrypoint) {
-                auto rpci = rp_state->create_info.ptr();
-                auto subpass = pipeline->Subpass();
-                for (const auto& variable : stage.entrypoint->resource_interface_variables) {
-                    if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
-                        continue;
-                    }
-                    auto slot = variable.decorations.input_attachment_index_start;
-                    if (!rpci->pSubpasses[subpass].pInputAttachments || slot >= rpci->pSubpasses[subpass].inputAttachmentCount) {
-                        const LogObjectList objlist(stage.module_state->Handle(), pipeline->PipelineLayoutState()->Handle());
-                        skip |= LogWarning("BestPractices-Shader-MissingInputAttachment", device, create_info_loc,
-                                           "Shader consumes input attachment index %" PRIu32 " but not provided in subpass", slot);
-                    }
-                }
-            }
-        }
+        skip |= ValidateCreateGraphicsPipeline(pCreateInfos[i], *pipeline, error_obj.location.dot(Field::pCreateInfos, i));
     }
+
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto prev_pipeline = pipeline_cache_.load();
         if (pipelineCache && prev_pipeline && pipelineCache != prev_pipeline) {
