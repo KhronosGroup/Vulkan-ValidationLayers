@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "gpu/error_message/gpuav_error_message.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpu/resources/gpu_resources.h"
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"

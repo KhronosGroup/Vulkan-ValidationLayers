@@ -16,12 +16,12 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
-void NegativeDebugPrintf::InitDebugPrintfFramework() {
+void NegativeDebugPrintf::InitDebugPrintfFramework(void *p_next) {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     VkValidationFeatureDisableEXT disables[] = {
         VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
         VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
-    VkValidationFeaturesEXT features = vku::InitStructHelper();
+    VkValidationFeaturesEXT features = vku::InitStructHelper(p_next);
     features.enabledValidationFeatureCount = 1;
     features.disabledValidationFeatureCount = 4;
     features.pEnabledValidationFeatures = enables;
@@ -40,12 +40,8 @@ void NegativeDebugPrintf::InitDebugPrintfFramework() {
 }
 
 TEST_F(NegativeDebugPrintf, BasicCompute) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::multiDraw);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
     char const *shader_source = R"glsl(
         #version 450

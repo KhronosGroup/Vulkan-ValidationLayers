@@ -275,6 +275,11 @@ class GpuAVBufferDeviceAddressTest : public GpuAVTest {
 class NegativeGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
 class PositiveGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
 
+class NegativeGpuAVShaderDebugInfo : public GpuAVBufferDeviceAddressTest {
+  public:
+    void BasicSingleStorageBufferComputeOOB(const char *shader, const char *error);
+};
+
 class GpuAVDescriptorIndexingTest : public GpuAVTest {
   public:
     void InitGpuVUDescriptorIndexing();
@@ -307,10 +312,10 @@ class PositiveGpuAVRayQuery : public GpuAVRayQueryTest {};
 
 class NegativeDebugPrintf : public VkLayerTest {
   public:
-    void InitDebugPrintfFramework();
-
-  protected:
+    void InitDebugPrintfFramework(void *p_next = nullptr);
 };
+
+class NegativeDebugPrintfShaderDebugInfo : public NegativeDebugPrintf {};
 
 class VkSyncValTest : public VkLayerTest {
   public:

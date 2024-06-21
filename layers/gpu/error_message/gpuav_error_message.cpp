@@ -16,15 +16,10 @@
  */
 
 #include "gpu/core/gpuav.h"
-#include "gpu/error_message/gpuav_error_message.h"
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "spirv-tools/instrument.hpp"
 #include "state_tracker/shader_instruction.h"
 #include "gpu/shaders/gpu_error_header.h"
-
-#include <algorithm>
-#include <regex>
 
 // Generate the stage-specific part of the message.
 static void GenerateStageMessage(const uint32_t *error_record, std::string &msg) {
@@ -59,7 +54,7 @@ static void GenerateStageMessage(const uint32_t *error_record, std::string &msg)
         } break;
         case spv::ExecutionModelGLCompute: {
             strm << "Stage = Compute.  Global invocation ID (x, y, z) = (" << error_record[kHeaderInvocationIdXOffset] << ", "
-                 << error_record[kHeaderInvocationIdYOffset] << ", " << error_record[kHeaderInvocationIdZOffset] << " )";
+                 << error_record[kHeaderInvocationIdYOffset] << ", " << error_record[kHeaderInvocationIdZOffset] << ")";
         } break;
         case spv::ExecutionModelRayGenerationKHR: {
             strm << "Stage = Ray Generation.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset]
@@ -116,262 +111,8 @@ static void GenerateStageMessage(const uint32_t *error_record, std::string &msg)
             assert(false);
         } break;
     }
+    strm << "\n";
     msg = strm.str();
-}
-
-// The lock (debug_output_mutex) is held by the caller (UtilGenerateCommonMessage),
-// because the latter has code paths that make multiple calls of this function,
-// and all such calls have to access the same debug reporting state to ensure consistency of output information.
-static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, const uint64_t object) {
-    auto object_label = debug_report->GetUtilsObjectNameNoLock(object);
-    if (object_label != "") {
-        object_label = "(" + object_label + ")";
-    }
-    return object_label;
-}
-
-// Generate message from the common portion of the debug report record.
-void UtilGenerateCommonMessage(const DebugReport *debug_report, const VkCommandBuffer commandBuffer, const uint32_t *debug_record,
-                               const VkShaderModule shader_module_handle, const VkPipeline pipeline_handle,
-                               const VkShaderEXT shader_object_handle, const VkPipelineBindPoint pipeline_bind_point,
-                               const uint32_t operation_index, std::string &msg) {
-    using namespace spvtools;
-    std::ostringstream strm;
-    if (shader_module_handle == VK_NULL_HANDLE && shader_object_handle == VK_NULL_HANDLE) {
-        std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
-        strm << std::hex << std::showbase << "Internal Error: Unable to locate information for shader used in command buffer "
-             << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
-             << ")\n";
-        assert(true);
-    } else {
-        std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
-        strm << std::hex << std::showbase << "Command buffer "
-             << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
-             << ")\n";
-
-        if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            strm << "Draw ";
-        } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            strm << "Compute Dispatch ";
-        } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-            strm << "Ray Trace ";
-        } else {
-            assert(false);
-            strm << "Unknown Pipeline Operation ";
-        }
-
-        strm << "Index " << operation_index << "\n";
-        if (shader_module_handle == VK_NULL_HANDLE) {
-            strm << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_object_handle)) << "("
-                 << HandleToUint64(shader_object_handle) << ")\n";
-        } else {
-            strm << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(pipeline_handle)) << "("
-                 << HandleToUint64(pipeline_handle) << ")\n";
-            if (shader_module_handle == gpu::kPipelineStageInfoHandle) {
-                strm << "Shader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
-            } else {
-                strm << "Shader Module " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_module_handle)) << "("
-                     << HandleToUint64(shader_module_handle) << ")\n";
-            }
-        }
-    }
-    strm << std::dec << std::noshowbase;
-    strm << "Shader Instruction Index = " << debug_record[gpuav::glsl::kHeaderInstructionIdOffset] << "\n";
-    msg = strm.str();
-}
-
-// Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
-// Split the single string into a vector of strings, one for each line, for easier processing.
-static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, const uint32_t reported_file_id,
-                         std::vector<std::string> &opsource_lines) {
-    for (size_t i = 0; i < instructions.size(); i++) {
-        const spirv::Instruction &insn = instructions[i];
-        if ((insn.Opcode() == spv::OpSource) && (insn.Length() >= 5) && (insn.Word(3) == reported_file_id)) {
-            std::istringstream in_stream;
-            std::string cur_line;
-            in_stream.str(insn.GetAsString(4));
-            while (std::getline(in_stream, cur_line)) {
-                opsource_lines.push_back(cur_line);
-            }
-
-            for (size_t k = i + 1; k < instructions.size(); k++) {
-                const spirv::Instruction &continue_insn = instructions[k];
-                if (continue_insn.Opcode() != spv::OpSourceContinued) {
-                    break;
-                }
-                in_stream.str(continue_insn.GetAsString(1));
-                while (std::getline(in_stream, cur_line)) {
-                    opsource_lines.push_back(cur_line);
-                }
-            }
-            break;
-        }
-    }
-}
-
-// The task here is to search the OpSource content to find the #line directive with the
-// line number that is closest to, but still prior to the reported error line number and
-// still within the reported filename.
-// From this known position in the OpSource content we can add the difference between
-// the #line line number and the reported error line number to determine the location
-// in the OpSource content of the reported error line.
-//
-// Considerations:
-// - Look only at #line directives that specify the reported_filename since
-//   the reported error line number refers to its location in the reported filename.
-// - If a #line directive does not have a filename, the file is the reported filename, or
-//   the filename found in a prior #line directive.  (This is C-preprocessor behavior)
-// - It is possible (e.g., inlining) for blocks of code to get shuffled out of their
-//   original order and the #line directives are used to keep the numbering correct.  This
-//   is why we need to examine the entire contents of the source, instead of leaving early
-//   when finding a #line line number larger than the reported error line number.
-//
-static bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::string &filename) {
-    static const std::regex line_regex(  // matches #line directives
-        "^"                              // beginning of line
-        "\\s*"                           // optional whitespace
-        "#"                              // required text
-        "\\s*"                           // optional whitespace
-        "line"                           // required text
-        "\\s+"                           // required whitespace
-        "([0-9]+)"                       // required first capture - line number
-        "(\\s+)?"                        // optional second capture - whitespace
-        "(\".+\")?"                      // optional third capture - quoted filename with at least one char inside
-        ".*");                           // rest of line (needed when using std::regex_match since the entire line is tested)
-
-    std::smatch captures;
-
-    const bool found_line = std::regex_match(string, captures, line_regex);
-    if (!found_line) return false;
-
-    // filename is optional and considered found only if the whitespace and the filename are captured
-    if (captures[2].matched && captures[3].matched) {
-        // Remove enclosing double quotes.  The regex guarantees the quotes and at least one char.
-        filename = captures[3].str().substr(1, captures[3].str().size() - 2);
-    }
-    *linenumber = (uint32_t)std::stoul(captures[1]);
-    return true;
-}
-
-// Extract the filename, line number, and column number from the correct OpLine and build a message string from it.
-// Scan the source (from OpSource) to find the line of source at the reported line number and place it in another message string.
-void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructions, const uint32_t *error_record, bool from_printf,
-                                std::string &filename_msg, std::string &source_msg) {
-    using namespace spvtools;
-    if (instructions.empty()) {
-        // TODO - We currently don't have a good single code path if the shader_map can't find the shader module handle
-        return;
-    }
-
-    std::ostringstream filename_stream;
-    std::ostringstream source_stream;
-    // Find the OpLine just before the failing instruction indicated by the debug info.
-    // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
-    uint32_t instruction_index = 0;
-    uint32_t reported_file_id = 0;
-    uint32_t reported_line_number = 0;
-    uint32_t reported_column_number = 0;
-    for (const spirv::Instruction &insn : instructions) {
-        if (insn.Opcode() == spv::OpLine) {
-            reported_file_id = insn.Word(1);
-            reported_line_number = insn.Word(2);
-            reported_column_number = insn.Word(3);
-        }
-        if (instruction_index == error_record[gpuav::glsl::kHeaderInstructionIdOffset]) {
-            break;
-        }
-        instruction_index++;
-    }
-    // Create message with file information obtained from the OpString pointed to by the discovered OpLine.
-    std::string reported_filename;
-    if (reported_file_id == 0) {
-        filename_stream
-            << "Unable to find SPIR-V OpLine for source information.  Build shader with debug info to get source information.\n";
-    } else {
-        bool found_opstring = false;
-        std::string prefix;
-        if (from_printf) {
-            prefix = "Debug shader printf message generated ";
-        } else {
-            prefix = "Shader validation error occurred ";
-        }
-
-        for (const spirv::Instruction &insn : instructions) {
-            if (insn.Opcode() == spv::OpString && insn.Length() >= 3 && insn.Word(1) == reported_file_id) {
-                found_opstring = true;
-                reported_filename = insn.GetAsString(2);
-                if (reported_filename.empty()) {
-                    filename_stream << prefix << "at line " << reported_line_number;
-                } else {
-                    filename_stream << prefix << "in file " << reported_filename << " at line " << reported_line_number;
-                }
-                if (reported_column_number > 0) {
-                    filename_stream << ", column " << reported_column_number;
-                }
-                filename_stream << "\n";
-                break;
-            }
-        }
-
-        if (!found_opstring) {
-            filename_stream << "Unable to find SPIR-V OpString for file id " << reported_file_id << " from OpLine instruction.\n";
-            filename_stream << "File ID = " << reported_file_id << ", Line Number = " << reported_line_number
-                            << ", Column = " << reported_column_number << "\n";
-        }
-    }
-    filename_msg = filename_stream.str();
-
-    // Create message to display source code line containing error.
-    if ((reported_file_id != 0)) {
-        // Read the source code and split it up into separate lines.
-        std::vector<std::string> opsource_lines;
-        ReadOpSource(instructions, reported_file_id, opsource_lines);
-        // Find the line in the OpSource content that corresponds to the reported error file and line.
-        if (!opsource_lines.empty()) {
-            uint32_t saved_line_number = 0;
-            std::string current_filename = reported_filename;  // current "preprocessor" filename state.
-            std::vector<std::string>::size_type saved_opsource_offset = 0;
-            bool found_best_line = false;
-            for (auto it = opsource_lines.begin(); it != opsource_lines.end(); ++it) {
-                uint32_t parsed_line_number;
-                std::string parsed_filename;
-                const bool found_line = GetLineAndFilename(*it, &parsed_line_number, parsed_filename);
-                if (!found_line) continue;
-
-                const bool found_filename = parsed_filename.size() > 0;
-                if (found_filename) {
-                    current_filename = parsed_filename;
-                }
-                if ((!found_filename) || (current_filename == reported_filename)) {
-                    // Update the candidate best line directive, if the current one is prior and closer to the reported line
-                    if (reported_line_number >= parsed_line_number) {
-                        if (!found_best_line ||
-                            (reported_line_number - parsed_line_number <= reported_line_number - saved_line_number)) {
-                            saved_line_number = parsed_line_number;
-                            saved_opsource_offset = std::distance(opsource_lines.begin(), it);
-                            found_best_line = true;
-                        }
-                    }
-                }
-            }
-            if (found_best_line) {
-                assert(reported_line_number >= saved_line_number);
-                std::vector<std::string>::size_type opsource_index =
-                    (reported_line_number - saved_line_number) + 1 + saved_opsource_offset;
-                if (opsource_index < opsource_lines.size()) {
-                    source_stream << "\n" << reported_line_number << ": " << opsource_lines[opsource_index].c_str() << "\n";
-                } else {
-                    source_stream << "Internal error: calculated source line of " << opsource_index << " for source size of "
-                                  << opsource_lines.size() << " lines\n";
-                }
-            } else {
-                source_stream << "Unable to find suitable #line directive in SPIR-V OpSource\n";
-            }
-        } else {
-            source_stream << "Unable to find SPIR-V OpSource\n";
-        }
-    }
-    source_msg = source_stream.str();
 }
 
 namespace gpuav {
@@ -588,45 +329,39 @@ bool Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, const LogO
     }
 
     if (error_found) {
-        VkShaderModule shader_module_handle = VK_NULL_HANDLE;
-        VkPipeline pipeline_handle = VK_NULL_HANDLE;
-        VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
-        vvl::span<const uint32_t> instrumented_spirv;
-
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
-        auto it = shader_map_.find(error_record[glsl::kHeaderShaderIdOffset]);
+        const gpu::GpuAssistedShaderTracker *tracker_info = nullptr;
+        const uint32_t shader_id = error_record[glsl::kHeaderShaderIdOffset];
+        auto it = shader_map_.find(shader_id);
         if (it != shader_map_.end()) {
-            shader_module_handle = it->second.shader_module;
-            pipeline_handle = it->second.pipeline;
-            shader_object_handle = it->second.shader_object;
-            instrumented_spirv = it->second.instrumented_spirv;
+            tracker_info = &it->second;
         }
 
+        // If we somehow can't find our state, we can still report our error message
         std::vector<spirv::Instruction> instructions;
-        spirv::GenerateInstructions(instrumented_spirv, instructions);
+        if (tracker_info) {
+            spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
+        }
+        std::string debug_info_message =
+            GenerateDebugInfoMessage(cmd_buffer, instructions, error_record[gpuav::glsl::kHeaderInstructionIdOffset], tracker_info,
+                                     pipeline_bind_point, operation_index);
 
+        // TODO - Need to unify with debug printf
         std::string stage_message;
-        std::string common_message;
-        std::string filename_message;
-        std::string source_message;
         GenerateStageMessage(error_record, stage_message);
-        UtilGenerateCommonMessage(debug_report, cmd_buffer, error_record, shader_module_handle, pipeline_handle,
-                                  shader_object_handle, pipeline_bind_point, operation_index, common_message);
-        UtilGenerateSourceMessages(instructions, error_record, false, filename_message, source_message);
 
         if (uses_robustness && oob_access) {
             if (gpuav_settings.warn_on_robust_oob) {
-                LogWarning(vuid_msg.c_str(), objlist, loc, "%s\n%s%s%s%s", error_msg.c_str(), common_message.c_str(),
-                           stage_message.c_str(), filename_message.c_str(), source_message.c_str());
+                LogWarning(vuid_msg.c_str(), objlist, loc, "%s\n%s%s", error_msg.c_str(), stage_message.c_str(),
+                           debug_info_message.c_str());
             }
         } else {
-            LogError(vuid_msg.c_str(), objlist, loc, "%s\n%s%s%s%s", error_msg.c_str(), common_message.c_str(),
-                     stage_message.c_str(), filename_message.c_str(), source_message.c_str());
+            LogError(vuid_msg.c_str(), objlist, loc, "%s\n%s%s", error_msg.c_str(), stage_message.c_str(),
+                     debug_info_message.c_str());
         }
     }
 
     return error_found;
 }
-
 }  // namespace gpuav

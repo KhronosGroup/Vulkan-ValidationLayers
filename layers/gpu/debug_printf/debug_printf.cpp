@@ -294,24 +294,24 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
     uint32_t index = spvtools::kDebugOutputDataOffset;
     while (debug_output_buffer[index]) {
         std::stringstream shader_message;
-        VkShaderModule shader_module_handle = VK_NULL_HANDLE;
-        VkPipeline pipeline_handle = VK_NULL_HANDLE;
-        VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
-        vvl::span<const uint32_t> instrumented_spirv;
 
         OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[index]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
+        const gpu::GpuAssistedShaderTracker *tracker_info = nullptr;
         auto it = shader_map_.find(debug_record->shader_id);
         if (it != shader_map_.end()) {
-            shader_module_handle = it->second.shader_module;
-            pipeline_handle = it->second.pipeline;
-            shader_object_handle = it->second.shader_object;
-            instrumented_spirv = it->second.instrumented_spirv;
+            tracker_info = &it->second;
         }
-        ASSERT_AND_RETURN(!instrumented_spirv.empty());
+
+        // without the instrumented spirv, there is nothing valuable to print out
+        if (!tracker_info || tracker_info->instrumented_spirv.empty()) {
+            InternalWarning(queue, loc, "Can't find instructions from any handles in shader_map");
+            return;
+        }
+
         std::vector<spirv::Instruction> instructions;
-        spirv::GenerateInstructions(instrumented_spirv, instructions);
+        spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
 
         // Search through the shader source for the printf format string for this invocation
         const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
@@ -378,20 +378,15 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         }
 
         if (verbose) {
-            std::string common_message;
-            std::string filename_message;
-            std::string source_message;
-            UtilGenerateCommonMessage(debug_report, command_buffer, &debug_output_buffer[index], shader_module_handle,
-                                      pipeline_handle, shader_object_handle, buffer_info.pipeline_bind_point, operation_index,
-                                      common_message);
-            UtilGenerateSourceMessages(instructions, &debug_output_buffer[index], true, filename_message, source_message);
+            std::string debug_info_message =
+                GenerateDebugInfoMessage(command_buffer, instructions, debug_record->instruction_position, tracker_info,
+                                         buffer_info.pipeline_bind_point, operation_index);
             if (use_stdout) {
-                std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str().c_str() << "\n"
-                          << common_message.c_str() << " " << filename_message.c_str() << " " << source_message.c_str();
+                std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str() << "\n" << debug_info_message;
             } else {
-                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s\n%s%s%s", shader_message.str().c_str(), common_message.c_str(),
-                        filename_message.c_str(), source_message.c_str());
+                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s\n%s", shader_message.str().c_str(), debug_info_message.c_str());
             }
+
         } else {
             if (use_stdout) {
                 std::cout << shader_message.str();
