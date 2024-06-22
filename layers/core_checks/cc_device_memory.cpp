@@ -288,19 +288,17 @@ bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, co
 
     const bool bind_2 = (loc.function != Func::vkBindBufferMemory) && (loc.function != Func::vkBindImageMemory);
     auto typed_handle = mem_binding.Handle();
+    const bool is_buffer = typed_handle.type == kVulkanObjectTypeBuffer;
 
     if (mem_binding.sparse) {
-        const char *vuid = nullptr;
-        const char *handle_type = nullptr;
-        if (typed_handle.type == kVulkanObjectTypeBuffer) {
-            handle_type = "BUFFER";
+        const char *vuid = kVUIDUndefined;
+        const char *handle_type = is_buffer ? "BUFFER" : "IMAGE";
+        if (is_buffer) {
             vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-buffer-01030" : "VUID-vkBindBufferMemory-buffer-01030";
-        } else if (typed_handle.type == kVulkanObjectTypeImage) {
-            handle_type = "IMAGE";
-            vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-01045" : "VUID-vkBindImageMemory-image-01045";
         } else {
-            assert(false);  // Unsupported object type
+            vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-01045" : "VUID-vkBindImageMemory-image-01045";
         }
+
         const LogObjectList objlist(memory_state.Handle(), typed_handle);
         skip |= LogError(vuid, objlist, loc,
                          "attempting to bind %s to %s which was created with sparse memory flags "
@@ -309,19 +307,30 @@ bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, co
     }
 
     const auto *prev_binding = mem_binding.MemState();
-    if (prev_binding) {
-        const char *vuid = nullptr;
-        if (typed_handle.type == kVulkanObjectTypeBuffer) {
+    if (prev_binding || mem_binding.partial_bound) {
+        const char *vuid = kVUIDUndefined;
+        if (is_buffer) {
             vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-buffer-07459" : "VUID-vkBindBufferMemory-buffer-07459";
-        } else if (typed_handle.type == kVulkanObjectTypeImage) {
-            vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-07460" : "VUID-vkBindImageMemory-image-07460";
         } else {
-            assert(false);  // Unsupported object type
+            vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-07460" : "VUID-vkBindImageMemory-image-07460";
         }
-        const LogObjectList objlist(memory_state.Handle(), typed_handle, prev_binding->Handle());
-        skip |= LogError(vuid, objlist, loc, "attempting to bind %s to %s which has already been bound to %s.",
-                         FormatHandle(memory_state.Handle()).c_str(), FormatHandle(typed_handle).c_str(),
-                         FormatHandle(prev_binding->Handle()).c_str());
+
+        if (mem_binding.partial_bound) {
+            Func bind_call = is_buffer ? Func::vkBindBufferMemory2 : Func::vkBindImageMemory2;
+            const char *handle_type = is_buffer ? "buffer" : "image";
+            const LogObjectList objlist(memory_state.Handle(), typed_handle);
+            skip |= LogError(
+                vuid, objlist, loc,
+                "attempting to bind %s to %s which is in an indeterminate (possibly bound) state. A previous call to %s failed and "
+                "we have to assume the %s was bound (but best advise is to handle the case and recreate the %s).",
+                FormatHandle(memory_state.Handle()).c_str(), FormatHandle(typed_handle).c_str(), String(bind_call), handle_type,
+                handle_type);
+        } else {
+            const LogObjectList objlist(memory_state.Handle(), typed_handle, prev_binding->Handle());
+            skip |= LogError(vuid, objlist, loc, "attempting to bind %s to %s which has already been bound to %s.",
+                             FormatHandle(memory_state.Handle()).c_str(), FormatHandle(typed_handle).c_str(),
+                             FormatHandle(prev_binding->Handle()).c_str());
+        }
     }
     return skip;
 }
@@ -1063,7 +1072,6 @@ bool CoreChecks::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffe
 bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo *pBindInfos,
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const Location loc = error_obj.location.dot(Field::pBindInfos, i);
         skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset,
@@ -2061,7 +2069,16 @@ bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindI
 
 void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                 const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
+    if (VK_SUCCESS != record_obj.result) {
+        if (bindInfoCount > 1) {
+            for (uint32_t i = 0; i < bindInfoCount; i++) {
+                if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
+                    image_state->partial_bound = true;
+                }
+            }
+        }
+        return;
+    }
     StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {

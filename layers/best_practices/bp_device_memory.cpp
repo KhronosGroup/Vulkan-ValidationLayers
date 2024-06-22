@@ -311,3 +311,26 @@ std::shared_ptr<vvl::DeviceMemory> BestPractices::CreateDeviceMemoryState(
     return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
         handle, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
 }
+
+void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                          const VkBindBufferMemoryInfo* pBindInfos,
+                                                          const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
+        // Details of check found in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527
+        LogWarning(
+            "BestPractices-Partial-Bound-Buffer", device, record_obj.location,
+            "all buffer are now in an indeterminate state because the call failed to return VK_SUCCESS. The best action to take "
+            "is to destroy the buffers instead of trying to rebind");
+    }
+}
+
+void BestPractices::ManualPostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                         const VkBindImageMemoryInfo* pBindInfos, const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
+        // Details of check found in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527
+        LogWarning(
+            "BestPractices-Partial-Bound-Image", device, record_obj.location,
+            "all image are now in an indeterminate state because the call failed to return VK_SUCCESS. The best action to take is "
+            "to destroy the images instead of trying to rebind");
+    }
+}

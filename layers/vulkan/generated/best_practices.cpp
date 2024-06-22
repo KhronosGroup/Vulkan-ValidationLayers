@@ -747,6 +747,7 @@ void BestPractices::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuff
 void BestPractices::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
                                                     const VkBindBufferMemoryInfo* pBindInfos, const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
+    ManualPostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -756,6 +757,7 @@ void BestPractices::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bi
 void BestPractices::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                                    const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
+    ManualPostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);

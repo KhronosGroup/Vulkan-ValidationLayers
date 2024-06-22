@@ -2299,3 +2299,40 @@ TEST_F(NegativeMemory, BadMemoryBindMemory2) {
     vk::BindImageMemory2KHR(device(), 1, &image_bind_info);
     m_errorMonitor->VerifyFound();
 }
+
+// TODO - Need a way to trigger Test ICD to fail call
+TEST_F(NegativeMemory, DISABLED_PartialBoundBuffer) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527");
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test needs to force a failure";
+    }
+
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    vkt::Buffer buffer_0(*m_device, buffer_create_info, vkt::no_mem);
+    vkt::Buffer buffer_1(*m_device, buffer_create_info, vkt::no_mem);
+
+    VkMemoryAllocateInfo alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_0.memory_requirements(), 0);
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    VkBindBufferMemoryInfo bind_buffer_infos[2];
+    bind_buffer_infos[0] = vku::InitStructHelper();
+    bind_buffer_infos[0].buffer = buffer_0.handle();
+    bind_buffer_infos[0].memory = buffer_memory.handle();
+    bind_buffer_infos[1] = vku::InitStructHelper();
+    bind_buffer_infos[1].buffer = buffer_1.handle();
+    bind_buffer_infos[1].memory = buffer_memory.handle();
+
+    VkResult result = vk::BindBufferMemory2KHR(device(), 2, bind_buffer_infos);
+    if (result == VK_SUCCESS) {
+        GTEST_SKIP() << "Test needs a to fail call";
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-07459");
+    vk::BindBufferMemory(device(), buffer_0, buffer_memory, 0);
+    m_errorMonitor->VerifyFound();
+}
