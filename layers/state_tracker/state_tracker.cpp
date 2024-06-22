@@ -1614,6 +1614,17 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory(VkDevice device, VkB
 void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
                                                              const VkBindBufferMemoryInfo *pBindInfos,
                                                              const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) {
+        if (bindInfoCount > 1) {
+            for (uint32_t i = 0; i < bindInfoCount; i++) {
+                if (auto buffer_state = Get<vvl::Buffer>(pBindInfos[i].buffer)) {
+                    buffer_state->partial_bound = true;
+                }
+            }
+        }
+        return;
+    }
+
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindBufferMemoryState(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
     }

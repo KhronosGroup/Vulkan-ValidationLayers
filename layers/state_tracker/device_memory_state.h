@@ -314,6 +314,10 @@ class Bindable : public StateObject {
     const VkExternalMemoryHandleTypeFlags external_memory_handle_types;
     const bool sparse;       // Is this object being bound with sparse memory or not?
     const bool unprotected;  // can't be used for protected memory
+
+    // For when an array of binds don't succeed and the object is in an indeterminate state
+    bool partial_bound = false;
+
   private:
     mutable bool need_to_recache_invalid_memory_ = false;
     BindableMemoryTracker *memory_tracker_;

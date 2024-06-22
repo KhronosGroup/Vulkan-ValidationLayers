@@ -66,6 +66,8 @@ class BestPracticesOutputGenerator(BaseGenerator):
             'vkGetPhysicalDeviceSurfaceFormats2KHR',
             'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
             'vkGetSwapchainImagesKHR',
+            'vkBindBufferMemory2',
+            'vkBindImageMemory2',
             # AMD tracked
             'vkCreateComputePipelines',
             'vkCmdPipelineBarrier',
