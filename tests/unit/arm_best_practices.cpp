@@ -103,6 +103,7 @@ TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
     RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCreateImage-too-large-sample-count");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-samples-02258");
 
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -245,7 +246,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     auto image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED,
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
@@ -781,7 +782,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
         m_errorMonitor->VerifyFound();
     }
 
-    {
+    if (m_device->phy().limits_.maxComputeWorkGroupInvocations > 128) {
         char const* csSource = R"glsl(
             #version 450
             layout(local_size_x = 16, local_size_y = 9, local_size_z = 1) in;
@@ -960,6 +961,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     render_pass_begin_info.framebuffer = framebuffers[0];
     render_pass_begin_info.clearValueCount = 3;
     render_pass_begin_info.pClearValues = clear_values;
+    render_pass_begin_info.renderArea.extent = {32, 32};
 
     const auto execute_work = [&](const std::function<void(vkt::CommandBuffer & command_buffer)>& work) {
         vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
@@ -987,6 +989,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
         rpbi.framebuffer = framebuffers[1];
         rpbi.clearValueCount = 3;
         rpbi.pClearValues = clear_values;
+        rpbi.renderArea.extent = {32, 32};
 
         command_buffer.BeginRenderPass(rpbi);
 

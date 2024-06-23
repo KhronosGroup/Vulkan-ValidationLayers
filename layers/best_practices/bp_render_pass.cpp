@@ -169,12 +169,6 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
 
     if (!pRenderPassBegin) return skip;
 
-    if (pRenderPassBegin->renderArea.extent.width == 0 || pRenderPassBegin->renderArea.extent.height == 0) {
-        skip |= LogWarning("BestPractices-Arm-vkCmdBeginRenderPass-zero-size-render-area", commandBuffer, loc,
-                           "This render pass has a zero-size render area. It cannot write to any attachments, "
-                           "and can only be used for side effects such as layout transitions.");
-    }
-
     auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     ASSERT_AND_RETURN_SKIP(rp_state);
 

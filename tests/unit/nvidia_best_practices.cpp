@@ -465,6 +465,9 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
 TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
+    if (m_device->phy().limits_.maxPerStageDescriptorStorageBuffers < 16) {
+        GTEST_SKIP() << "maxPerStageDescriptorStorageBuffers of 16 required";
+    }
 
     VkDescriptorSetLayoutBinding large_bindings[] = {
         { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
@@ -573,19 +576,13 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
-{
+// TODO - This test needs to move the positive checks to new test because currently they will trigger many other errors
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceSynchronization2Features synchronization2_features = vku::InitStructHelper(&dynamic_rendering_features);
-    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(synchronization2_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "This test requires dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
@@ -660,10 +657,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_commandBuffer->begin(&begin_info);
-
     auto cmd = m_commandBuffer->handle();
+    m_commandBuffer->begin();
 
     vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDepthTestEnable(cmd, VK_TRUE);
@@ -683,7 +678,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
         vk::CmdEndRendering(cmd);
         m_errorMonitor->Finish();
     }
-
     {
         SCOPED_TRACE("Balance");
 
@@ -698,6 +692,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
         set_desired_failure_msg();
         vk::CmdEndRendering(cmd);
         m_errorMonitor->VerifyFound();
+
+        vk::CmdEndRendering(cmd);  // need to actually end rendering
     }
 
     {
@@ -754,7 +750,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
         vk::CmdClearAttachments(cmd, 1, &attachment, 1, &clear_rect);
         m_errorMonitor->VerifyFound();
 
-        vk::CmdEndRendering(cmd);
+        vk::CmdEndRendering(cmd);  // need to actually end rendering
     }
 
     // The tests below use LOAD_OP for depth
@@ -778,6 +774,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
         set_desired_failure_msg();
         vk::CmdEndRendering(cmd);
         m_errorMonitor->VerifyFound();
+
+        vk::CmdEndRendering(cmd);  // need to actually end rendering
     }
 
     {

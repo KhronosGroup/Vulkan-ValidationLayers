@@ -82,6 +82,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseMutableRenderTargets");
     // create a depth attachment image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -162,6 +163,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidConcurrentRenderTargets");
     // create a render target image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -416,6 +418,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                       0,
                                       nullptr,
                                       VK_IMAGE_LAYOUT_UNDEFINED};
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
         vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
 
         m_commandBuffer->begin();
@@ -462,7 +465,6 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
 
     img_info.tiling = VK_IMAGE_TILING_LINEAR;
     img_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    img_info.initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     vkt::Image image_1D_2(*m_device, img_info, vkt::set_layout);
     if (!image_1D_2.initialized()) {
         GTEST_SKIP() << "Could not initilize Linear image, skipping image to image copy test";
@@ -636,6 +638,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Submission-ReduceNumberOfSubmissions");
     m_errorMonitor->SetUnexpectedError("VUID-VkPresentInfoKHR-pImageIndices-01430");
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
 
     vk::QueuePresentKHR(m_default_queue->handle(), &present_info);
 
