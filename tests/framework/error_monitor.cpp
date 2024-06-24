@@ -25,7 +25,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT messag
     auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
 
     if (message_flags & error_monitor->GetMessageFlags()) {
-        return error_monitor->CheckForDesiredMsg(message);
+        return error_monitor->CheckForDesiredMsg("", message);
     }
     return VK_FALSE;
 }
@@ -54,11 +54,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
                                                     VkDebugUtilsMessageTypeFlagsEXT message_types,
                                                     const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
     const auto message_flags = DebugAnnotFlagsToMsgTypeFlags(message_severity, message_types);
+    const char *vuid = callback_data->pMessageIdName;
     const char *message = callback_data->pMessage;
     auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
 
     if (message_flags & error_monitor->GetMessageFlags()) {
-        return error_monitor->CheckForDesiredMsg(message);
+        return error_monitor->CheckForDesiredMsg(vuid, message);
     }
     return VK_FALSE;
 }
@@ -119,7 +120,7 @@ void ErrorMonitor::MonitorReset() {
     bailout_ = nullptr;
     message_found_ = false;
     failure_message_strings_.clear();
-    desired_message_strings_.clear();
+    desired_messages_.clear();
     ignore_message_strings_.clear();
     allowed_message_strings_.clear();
 }
@@ -139,13 +140,34 @@ void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const char *con
     }
 
     auto guard = Lock();
-    desired_message_strings_.insert(msg_string);
+    VuidAndMessage vuid_and_regex;
+    vuid_and_regex.SetMsgString(msg_string);
+    desired_messages_.emplace_back(std::move(vuid_and_regex));
+    message_flags_ |= msg_flags;
+}
+
+void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string msg_regex) {
+    if (NeedCheckSuccess()) {
+        VerifyNotFound();
+    }
+
+    auto guard = Lock();
+    VuidAndMessage vuid_and_regex;
+    vuid_and_regex.vuid = vuid;
+    vuid_and_regex.SetMsgRegex(msg_regex);
+    desired_messages_.emplace_back(std::move(vuid_and_regex));
     message_flags_ |= msg_flags;
 }
 
 void ErrorMonitor::SetDesiredError(const char *msg, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
         SetDesiredFailureMsg(kErrorBit, msg);
+    }
+}
+
+void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string msg_regex, uint32_t count /*= 1*/) {
+    for (uint32_t i = 0; i < count; i++) {
+        SetDesiredFailureMsgRegex(kErrorBit, vuid, msg_regex);
     }
 }
 
@@ -168,7 +190,7 @@ void ErrorMonitor::SetUnexpectedError(const char *const msg) {
     ignore_message_strings_.emplace_back(msg);
 }
 
-VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msg_string) {
+VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *vuid, const char *const msg_string) {
     VkBool32 result = VK_FALSE;
     auto guard = Lock();
     if (bailout_ != nullptr) {
@@ -180,36 +202,39 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msg_string) {
     if (print_all_errors_) {
         std::cout << error_string << "\n\n";
     }
-    if (!IgnoreMessage(error_string)) {
-        for (auto desired_msg_it = desired_message_strings_.begin(); desired_msg_it != desired_message_strings_.end();
-             ++desired_msg_it) {
-            if (error_string.find(*desired_msg_it) != std::string::npos) {
+
+    if (IgnoreMessage(error_string)) {
+        return result;
+    }
+
+    for (size_t desired_message_i = 0; desired_message_i < desired_messages_.size(); ++desired_message_i) {
+        auto &desired_message = desired_messages_[desired_message_i];
+        if (desired_message.Search(vuid, msg_string)) {
+            found_expected = true;
+            failure_message_strings_.emplace_back(error_string);
+            message_found_ = true;
+            result = VK_TRUE;
+            // Remove desired message
+            std::swap(desired_message, desired_messages_[desired_messages_.size() - 1]);
+            desired_messages_.resize(desired_messages_.size() - 1);
+            break;
+        }
+    }
+
+    if (!found_expected && !allowed_message_strings_.empty()) {
+        for (const auto &allowed_msg : allowed_message_strings_) {
+            if (error_string.find(allowed_msg) != std::string::npos) {
                 found_expected = true;
-                failure_message_strings_.insert(error_string);
-                message_found_ = true;
-                result = VK_TRUE;
-                // Remove a maximum of one failure message from the set
-                // Multiset mutation is acceptable because `break` causes flow of control to exit the for loop
-                desired_message_strings_.erase(desired_msg_it);
                 break;
             }
         }
-
-        if (!found_expected && !allowed_message_strings_.empty()) {
-            for (auto allowed_msg_it = allowed_message_strings_.begin(); allowed_msg_it != allowed_message_strings_.end();
-                 ++allowed_msg_it) {
-                if (error_string.find(*allowed_msg_it) != std::string::npos) {
-                    found_expected = true;
-                    break;
-                }
-            }
-        }
-
-        if (!found_expected) {
-            result = VK_TRUE;
-            ADD_FAILURE() << error_string;
-        }
     }
+
+    if (!found_expected) {
+        result = VK_TRUE;
+        ADD_FAILURE() << error_string;
+    }
+
     return result;
 }
 
@@ -220,7 +245,7 @@ bool ErrorMonitor::AnyDesiredMsgFound() const { return message_found_; }
 void ErrorMonitor::SetError(const char *const errorString) {
     auto guard = Lock();
     message_found_ = true;
-    failure_message_strings_.insert(errorString);
+    failure_message_strings_.emplace_back(errorString);
 }
 
 void ErrorMonitor::SetBailout(std::atomic<bool> *bailout) {
@@ -231,12 +256,12 @@ void ErrorMonitor::SetBailout(std::atomic<bool> *bailout) {
 void ErrorMonitor::ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask) {
     // Match ANY message matching specified type
     auto guard = Lock();
-    desired_message_strings_.clear();
+    desired_messages_.clear();
     message_flags_ = message_flag_mask;
 }
 
 bool ErrorMonitor::ExpectingSuccess() const {
-    return (desired_message_strings_.size() == 1) && (desired_message_strings_.count("") == 1 && ignore_message_strings_.empty());
+    return (desired_messages_.size() == 1) && (desired_messages_.begin()->msg_string == "") && ignore_message_strings_.empty();
 }
 
 bool ErrorMonitor::NeedCheckSuccess() const { return ExpectingSuccess(); }
@@ -246,11 +271,10 @@ void ErrorMonitor::VerifyFound() {
         // The lock must be released before the ExpectSuccess call at the end
         auto guard = Lock();
         // Not receiving expected message(s) is a failure.
-        if (!desired_message_strings_.empty()) {
-            for (const auto &desired_msg : desired_message_strings_) {
-                ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
-            }
+        for (const auto &desired_msg : desired_messages_) {
+            ADD_FAILURE() << "Did not receive expected error '" << desired_msg.Print() << "'";
         }
+
         MonitorReset();
     }
 
@@ -281,4 +305,42 @@ bool ErrorMonitor::IgnoreMessage(std::string const &msg) const {
     return std::find_if(ignore_message_strings_.begin(), ignore_message_strings_.end(), [&msg](std::string const &str) {
                return msg.find(str) != std::string::npos;
            }) != ignore_message_strings_.end();
+}
+
+bool ErrorMonitor::VuidAndMessage::Search(const char *vuid_, std::string_view msg) const {
+#ifndef VK_USE_PLATFORM_ANDROID_KHR
+    assert(msg_type != VuidAndMessage::Undefined);
+    const bool vuid_compare = !vuid.empty() ? (vuid == vuid_) : true;
+    switch (msg_type) {
+        case ErrorMonitor::VuidAndMessage::String:
+            return vuid_compare && msg.find(msg_string) != std::string::npos;
+        case ErrorMonitor::VuidAndMessage::Regex:
+            return vuid_compare && std::regex_search(msg.data(), msg_regex);
+        default:
+            return false;
+    }
+#else
+    // With VK_EXT_debug_report, VUID is in msg
+    (void)vuid_;
+    assert(msg_type != VuidAndMessage::Undefined);
+    const bool vuid_compare = !vuid.empty() ? msg.find(vuid) != std::string::npos : true;
+    switch (msg_type) {
+        case ErrorMonitor::VuidAndMessage::String:
+            return vuid_compare && msg.find(msg_string) != std::string::npos;
+        case ErrorMonitor::VuidAndMessage::Regex:
+            return vuid_compare && std::regex_search(msg.data(), msg_regex);
+        default:
+            return false;
+    }
+#endif
+}
+
+std::string ErrorMonitor::VuidAndMessage::Print() const {
+    std::string str(vuid);
+    if (!str.empty()) {
+        str += ' ';
+    }
+    str += msg_string;
+
+    return str;
 }

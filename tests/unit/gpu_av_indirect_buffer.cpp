@@ -241,7 +241,9 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-countBuffer-03122");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndirectCount-countBuffer-03122",
+                                         "Indirect draw count of 2 would exceed buffer size 16 of buffer .* stride = 16 offset = 0 "
+                                         ".* = 36");
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 2;
     count_buffer.memory().unmap();
