@@ -249,19 +249,19 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
     assert(chain_info->u.pfnSetDeviceLoaderData);
     vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
 
-    // Some devices have extremely high limits here, so set a reasonable max because we have to pad
-    // the pipeline layout with dummy descriptor set layouts.
-    adjusted_max_desc_sets_ = phys_dev_props.limits.maxBoundDescriptorSets;
-    adjusted_max_desc_sets_ = std::min(33U, adjusted_max_desc_sets_);
+    // maxBoundDescriptorSets limit, but possibly adjusted
+    const uint32_t adjusted_max_desc_sets_limit =
+        std::min(gpu::kMaxAdjustedBoundDescriptorSet, phys_dev_props.limits.maxBoundDescriptorSets);
+    // If gpu_validation_reserve_binding_slot: the max slot is where we reserved
+    // else: always use the last possible set as least likely to be used
+    desc_set_bind_index_ = adjusted_max_desc_sets_limit - 1;
 
     // We can't do anything if there is only one.
     // Device probably not a legit Vulkan device, since there should be at least 4. Protect ourselves.
-    if (adjusted_max_desc_sets_ == 1) {
+    if (adjusted_max_desc_sets_limit == 1) {
         InternalError(device, loc, "Device can bind only a single descriptor set.");
         return;
     }
-
-    desc_set_bind_index_ = adjusted_max_desc_sets_ - 1;
 
     VkResult result = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address_, &vma_allocator_);
     if (result != VK_SUCCESS) {
@@ -293,7 +293,7 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
     }
 
     std::vector<VkDescriptorSetLayout> debug_layouts;
-    for (uint32_t j = 0; j < adjusted_max_desc_sets_ - 1; ++j) {
+    for (uint32_t j = 0; j < desc_set_bind_index_; ++j) {
         debug_layouts.push_back(dummy_desc_layout_);
     }
     debug_layouts.push_back(debug_desc_layout_);
@@ -344,6 +344,40 @@ void GpuShaderInstrumentor::PreCallRecordDestroyDevice(VkDevice device, const Vk
     desc_set_manager_.reset();
 }
 
+void GpuShaderInstrumentor::ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits &limits,
+                                               const Location &loc) {
+    // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
+    if (limits.maxBoundDescriptorSets == 0) return;
+
+    if (limits.maxBoundDescriptorSets > gpu::kMaxAdjustedBoundDescriptorSet) {
+        std::stringstream ss;
+        ss << "A descriptor binding slot is required to store GPU-side information, but the device maxBoundDescriptorSets is "
+           << limits.maxBoundDescriptorSets << " which is too large, so we will be trying to use slot "
+           << gpu::kMaxAdjustedBoundDescriptorSet;
+        InternalWarning(physicalDevice, loc, ss.str().c_str());
+    }
+
+    if (enabled[gpu_validation_reserve_binding_slot]) {
+        if (limits.maxBoundDescriptorSets > 1) {
+            limits.maxBoundDescriptorSets -= 1;
+        } else {
+            InternalWarning(physicalDevice, loc, "Unable to reserve descriptor binding slot on a device with only one slot.");
+        }
+    }
+}
+
+void GpuShaderInstrumentor::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
+                                                                      VkPhysicalDeviceProperties *device_props,
+                                                                      const RecordObject &record_obj) {
+    ReserveBindingSlot(physicalDevice, device_props->limits, record_obj.location);
+}
+
+void GpuShaderInstrumentor::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                                       VkPhysicalDeviceProperties2 *device_props2,
+                                                                       const RecordObject &record_obj) {
+    ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
+}
+
 // Just gives a warning about a possible deadlock.
 bool GpuShaderInstrumentor::ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask,
                                                   const Location &loc) const {
@@ -392,27 +426,28 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
                                                               chassis::CreatePipelineLayout &chassis_state) {
-    if (chassis_state.modified_create_info.setLayoutCount >= adjusted_max_desc_sets_) {
+    if (chassis_state.modified_create_info.setLayoutCount > desc_set_bind_index_) {
         std::ostringstream strm;
-        strm << "Pipeline Layout conflict with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
-             << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
-             << "Validation is not modifying the pipeline layout. "
-             << "Instrumented shaders are replaced with non-instrumented shaders.";
-        InternalError(device, record_obj.location, strm.str().c_str());
+        strm << "pCreateInfo::setLayoutCount (" << chassis_state.modified_create_info.setLayoutCount
+             << ") will conflicts with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
+             << "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
+                "pipelines created with it, therefor no validation error will be repored for them by GPU-AV at "
+                "runtime.";
+        InternalWarning(device, record_obj.location, strm.str().c_str());
     } else {
         // Modify the pipeline layout by:
         // 1. Copying the caller's descriptor set desc_layouts
         // 2. Fill in dummy descriptor layouts up to the max binding
         // 3. Fill in with the debug descriptor layout at the max binding slot
-        chassis_state.new_layouts.reserve(adjusted_max_desc_sets_);
+        chassis_state.new_layouts.reserve(desc_set_bind_index_ + 1);
         chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), &pCreateInfo->pSetLayouts[0],
                                          &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
-        for (uint32_t i = pCreateInfo->setLayoutCount; i < adjusted_max_desc_sets_ - 1; ++i) {
+        for (uint32_t i = pCreateInfo->setLayoutCount; i < desc_set_bind_index_; ++i) {
             chassis_state.new_layouts.push_back(dummy_desc_layout_);
         }
         chassis_state.new_layouts.push_back(debug_desc_layout_);
         chassis_state.modified_create_info.pSetLayouts = chassis_state.new_layouts.data();
-        chassis_state.modified_create_info.setLayoutCount = adjusted_max_desc_sets_;
+        chassis_state.modified_create_info.setLayoutCount = desc_set_bind_index_ + 1;
     }
     BaseClass::PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
 }
@@ -432,27 +467,29 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                                                           const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                                           const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (chassis_state.instrumented_create_info->setLayoutCount >= adjusted_max_desc_sets_) {
+        // TODO - Should check descriptor set layout per-createInfoCount
+        if (chassis_state.instrumented_create_info->setLayoutCount > desc_set_bind_index_) {
             std::ostringstream strm;
-            strm << "Descriptor Set Layout conflict with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
-                 << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
-                 << "Validation is not modifying the pipeline layout. "
-                 << "Instrumented shaders are replaced with non-instrumented shaders.";
-            InternalError(device, record_obj.location, strm.str().c_str());
+            strm << "pCreateInfos[" << i << "]::setLayoutCount (" << chassis_state.instrumented_create_info->setLayoutCount
+                 << ") will conflicts with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
+                 << "This Shader Object has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
+                    "for VkShaderEXT created with it, therefor no validation error will be repored for them by GPU-AV at "
+                    "runtime.";
+            InternalWarning(device, record_obj.location, strm.str().c_str());
         } else {
             // Modify the pipeline layout by:
             // 1. Copying the caller's descriptor set desc_layouts
             // 2. Fill in dummy descriptor layouts up to the max binding
             // 3. Fill in with the debug descriptor layout at the max binding slot
-            chassis_state.new_layouts.reserve(adjusted_max_desc_sets_);
+            chassis_state.new_layouts.reserve(desc_set_bind_index_ + 1);
             chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), pCreateInfos[i].pSetLayouts,
                                              &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
-            for (uint32_t j = pCreateInfos[i].setLayoutCount; j < adjusted_max_desc_sets_ - 1; ++j) {
+            for (uint32_t j = pCreateInfos[i].setLayoutCount; j < desc_set_bind_index_; ++j) {
                 chassis_state.new_layouts.push_back(dummy_desc_layout_);
             }
             chassis_state.new_layouts.push_back(debug_desc_layout_);
             chassis_state.instrumented_create_info->pSetLayouts = chassis_state.new_layouts.data();
-            chassis_state.instrumented_create_info->setLayoutCount = adjusted_max_desc_sets_;
+            chassis_state.instrumented_create_info->setLayoutCount = desc_set_bind_index_ + 1;
         }
     }
 }
@@ -680,7 +717,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
         // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
         // already instrumented shaders need to be replaced with uninstrumented shaders
         const auto pipeline_layout = pipe->PipelineLayoutState();
-        if (pipeline_layout && pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets_) {
+        if (pipeline_layout && pipeline_layout->set_layouts.size() > desc_set_bind_index_) {
             replace_shaders = true;
         }
 
@@ -791,7 +828,7 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreations(const uint32_t count
                 auto &module_state = stage_state.module_state;
 
                 if (pipeline_state->active_slots.find(desc_set_bind_index_) != pipeline_state->active_slots.end() ||
-                    (pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets_)) {
+                    (pipeline_layout->set_layouts.size() > desc_set_bind_index_)) {
                     auto *modified_ci = reinterpret_cast<const CreateInfo *>(modified_create_infos[pipeline].ptr());
                     auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.GetStage());
                     assert(uninstrumented_module != module_state->VkHandle());

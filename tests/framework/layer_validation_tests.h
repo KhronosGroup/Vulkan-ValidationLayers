@@ -263,7 +263,7 @@ class GpuAVRayQueryTest : public GpuAVTest {
 
 class DebugPrintfTests : public VkLayerTest {
   public:
-    void InitDebugPrintfFramework(void *p_next = nullptr);
+    void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false);
 };
 
 class VkSyncValTest : public VkLayerTest {

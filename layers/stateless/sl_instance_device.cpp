@@ -177,11 +177,11 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
                     break;
             }
         }
-        if (reserve_slot && !gpu_assisted) {
+        if (reserve_slot && !gpu_assisted && !debug_printf) {
             skip |= LogError("VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967", instance,
                              create_info_loc.pNext(Struct::VkValidationFeaturesEXT, Field::pEnabledValidationFeatures),
                              "includes VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT but no "
-                             "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT.");
+                             "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT or VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT.");
         }
         if (gpu_assisted && debug_printf) {
             skip |= LogError(

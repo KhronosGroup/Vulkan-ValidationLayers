@@ -38,6 +38,10 @@ namespace gpu {
 // The first is handled because you have to link it in the end, but we need a way to differentiate 2 and 3
 static const VkShaderModule kPipelineStageInfoHandle = CastFromUint64<VkShaderModule>(0xEEEEEEEEEEEEEEEE);
 
+// GPU Info shows 99% of devices have a maxBoundDescriptorSets of 32 or less, but some are 2^30
+// We set a reasonable max because we have to pad the pipeline layout with dummy descriptor set layouts.
+static const uint32_t kMaxAdjustedBoundDescriptorSet = 33;
+
 class SpirvCache {
   public:
     void Add(uint32_t hash, std::vector<uint32_t> spirv);
@@ -73,6 +77,14 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
+
+    void ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits &limits, const Location &loc);
+    void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
+                                                   VkPhysicalDeviceProperties *pPhysicalDeviceProperties,
+                                                   const RecordObject &record_obj) override;
+    void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                    VkPhysicalDeviceProperties2 *pPhysicalDeviceProperties2,
+                                                    const RecordObject &record_obj) override;
 
     bool ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask, const Location &loc) const;
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -184,8 +196,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     bool force_buffer_device_address_;
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
-    uint32_t adjusted_max_desc_sets_ = 0;
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
+    // The descriptor slot we will be injecting our error buffer into
     uint32_t desc_set_bind_index_ = 0;
     VmaAllocator vma_allocator_ = {};
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;

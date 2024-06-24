@@ -231,6 +231,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
@@ -290,8 +291,10 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     for (uint32_t i = 0; i < set_count; i++) {
         layouts[i] = &descriptor_set.layout_;
     }
-    // Expect error since GPU-AV cannot add debug descriptor to layout
-    m_errorMonitor->SetDesiredError("UNASSIGNED-GPU-Assisted-Validation");
+    // Expect warning since GPU-AV cannot add debug descriptor to layout
+    m_errorMonitor->SetDesiredWarning(
+        "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
+        "pipelines created with it");
     vkt::PipelineLayout pl_layout(*m_device, layouts);
     m_errorMonitor->VerifyFound();
 
@@ -304,7 +307,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         void main() {
             u_index.index = inlineubo.val;
         }
-        )glsl";
+    )glsl";
 
     {
         CreateComputePipelineHelper pipe(*this);
