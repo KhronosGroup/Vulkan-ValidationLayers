@@ -58,42 +58,26 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     BaseClass::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, chassis_state);
 }
 
-void Validator::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties *device_props,
-                                                          const RecordObject &record_obj) {
-    // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled[gpu_validation_reserve_binding_slot] && device_props->limits.maxBoundDescriptorSets > 0) {
-        if (device_props->limits.maxBoundDescriptorSets > 1) {
-            device_props->limits.maxBoundDescriptorSets -= 1;
-        } else {
-            InternalWarning(physicalDevice, record_obj.location,
-                            "Unable to reserve descriptor binding slot on a device with only one slot.");
-        }
-    }
-
-    BaseClass::PostCallRecordGetPhysicalDeviceProperties(physicalDevice, device_props, record_obj);
-}
-
 void Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                            VkPhysicalDeviceProperties2 *device_props2,
                                                            const RecordObject &record_obj) {
-    // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled[gpu_validation_reserve_binding_slot] && device_props2->properties.limits.maxBoundDescriptorSets > 0) {
-        if (device_props2->properties.limits.maxBoundDescriptorSets > 1) {
-            device_props2->properties.limits.maxBoundDescriptorSets -= 1;
-        } else {
-            InternalWarning(physicalDevice, record_obj.location,
-                            "Unable to reserve descriptor binding slot on a device with only one slot.");
-        }
-    }
     // override all possible places maxUpdateAfterBindDescriptorsInAllPools can be set
     auto *desc_indexing_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingProperties>(device_props2->pNext);
     if (desc_indexing_props &&
         desc_indexing_props->maxUpdateAfterBindDescriptorsInAllPools > glsl::kDebugInputBindlessMaxDescSets) {
+        std::stringstream ss;
+        ss << "Setting VkPhysicalDeviceDescriptorIndexingProperties::maxUpdateAfterBindDescriptorsInAllPools to "
+           << glsl::kDebugInputBindlessMaxDescSets;
+        InternalWarning(physicalDevice, record_obj.location, ss.str().c_str());
         desc_indexing_props->maxUpdateAfterBindDescriptorsInAllPools = glsl::kDebugInputBindlessMaxDescSets;
     }
 
     auto *vk12_props = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Properties>(device_props2->pNext);
     if (vk12_props && vk12_props->maxUpdateAfterBindDescriptorsInAllPools > glsl::kDebugInputBindlessMaxDescSets) {
+        std::stringstream ss;
+        ss << "Setting VkPhysicalDeviceVulkan12Properties::maxUpdateAfterBindDescriptorsInAllPools to "
+           << glsl::kDebugInputBindlessMaxDescSets;
+        InternalWarning(physicalDevice, record_obj.location, ss.str().c_str());
         vk12_props->maxUpdateAfterBindDescriptorsInAllPools = glsl::kDebugInputBindlessMaxDescSets;
     }
 

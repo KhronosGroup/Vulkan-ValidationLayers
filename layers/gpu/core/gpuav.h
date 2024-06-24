@@ -232,9 +232,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     void PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                const RecordObject& record_obj) final;
 
-    void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                   VkPhysicalDeviceProperties* pPhysicalDeviceProperties,
-                                                   const RecordObject& record_obj) final;
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
                                                     const RecordObject& record_obj) final;
