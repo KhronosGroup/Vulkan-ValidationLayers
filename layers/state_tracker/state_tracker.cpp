@@ -1615,10 +1615,11 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, ui
                                                              const VkBindBufferMemoryInfo *pBindInfos,
                                                              const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) {
+        // if bindInfoCount is 1, we know for sure if that single buffer was bound or not
         if (bindInfoCount > 1) {
             for (uint32_t i = 0; i < bindInfoCount; i++) {
                 if (auto buffer_state = Get<vvl::Buffer>(pBindInfos[i].buffer)) {
-                    buffer_state->partial_bound = true;
+                    buffer_state->indeterminate_state = true;
                 }
             }
         }

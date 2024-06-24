@@ -307,7 +307,7 @@ bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, co
     }
 
     const auto *prev_binding = mem_binding.MemState();
-    if (prev_binding || mem_binding.partial_bound) {
+    if (prev_binding || mem_binding.indeterminate_state) {
         const char *vuid = kVUIDUndefined;
         if (is_buffer) {
             vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-buffer-07459" : "VUID-vkBindBufferMemory-buffer-07459";
@@ -315,7 +315,7 @@ bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, co
             vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-07460" : "VUID-vkBindImageMemory-image-07460";
         }
 
-        if (mem_binding.partial_bound) {
+        if (mem_binding.indeterminate_state) {
             Func bind_call = is_buffer ? Func::vkBindBufferMemory2 : Func::vkBindImageMemory2;
             const char *handle_type = is_buffer ? "buffer" : "image";
             const LogObjectList objlist(memory_state.Handle(), typed_handle);
@@ -2070,10 +2070,11 @@ bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindI
 void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                 const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) {
+        // if bindInfoCount is 1, we know for sure if that single image was bound or not
         if (bindInfoCount > 1) {
             for (uint32_t i = 0; i < bindInfoCount; i++) {
                 if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
-                    image_state->partial_bound = true;
+                    image_state->indeterminate_state = true;
                 }
             }
         }
