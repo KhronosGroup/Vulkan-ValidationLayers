@@ -408,7 +408,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                           "Sampled Type has a width of %" PRIu32 ".",
                                           DescribeDescriptor(binding_info, index).c_str(), string_VkFormat(image_view_ci.format),
                                           variable->image_sampled_type_width);
-            } else if (!dev_state.enabled_features.sparseImageInt64Atomics && image_view_state->image_state->sparse_residency) {
+            } else if (!dev_state.enabled_features.sparseImageInt64Atomics && image_view_state->image_state &&
+                       image_view_state->image_state->sparse_residency) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view, image_view_state->image_state->Handle());
                 return dev_state.LogError(
@@ -612,7 +613,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         }
     }
 
-    if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
+    if (dev_state.enabled_features.protectedMemory == VK_TRUE && image_view_state->image_state) {
         if (dev_state.ValidateProtectedImage(cb_state, *image_view_state->image_state, loc, vuids.unprotected_command_buffer_02707,
                                              " (Image is in a descriptorSet)")) {
             return true;
@@ -770,6 +771,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             }
         }
         const auto image_state = image_view_state->image_state.get();
+        if (!image_state) continue;
         if ((image_state->create_info.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
             (sampler_state->create_info.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
              sampler_state->create_info.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
@@ -957,13 +959,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
 
     auto buffer = buffer_view_state->create_info.buffer;
     const auto *buffer_state = buffer_view_state->buffer_state.get();
-    const VkFormat buffer_view_format = buffer_view_state->create_info.format;
-    if (buffer_state->Destroyed()) {
+    if (!buffer_state || buffer_state->Destroyed()) {
         auto set = descriptor_set.Handle();
         return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
                                   "the descriptor %s is using buffer %s that has been destroyed.",
                                   DescribeDescriptor(binding_info, index).c_str(), FormatHandle(buffer).c_str());
     }
+    const VkFormat buffer_view_format = buffer_view_state->create_info.format;
     const uint32_t format_bits = spirv::GetFormatType(buffer_view_format);
 
     if ((variable->info.image_format_type & format_bits) == 0) {
@@ -1048,7 +1050,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         }
     }
 
-    if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
+    if (dev_state.enabled_features.protectedMemory == VK_TRUE && buffer_view_state->buffer_state) {
         if (dev_state.ValidateProtectedBuffer(cb_state, *buffer_view_state->buffer_state, loc,
                                               vuids.unprotected_command_buffer_02707, " (Buffer is in a descriptorSet)")) {
             return true;
@@ -1091,7 +1093,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                     "the descriptor %s is using acceleration structure %s that is invalid or has been destroyed.",
                     DescribeDescriptor(binding_info, index).c_str(), FormatHandle(acc).c_str());
             }
-        } else {
+        } else if (acc_node->buffer_state) {
             for (const auto &mem_binding : acc_node->buffer_state->GetInvalidMemory()) {
                 auto set = descriptor_set.Handle();
                 return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
