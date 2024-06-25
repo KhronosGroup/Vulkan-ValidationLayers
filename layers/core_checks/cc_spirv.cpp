@@ -1740,32 +1740,28 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_st
         if (!binding) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
             skip |= LogError(vuid_07988, objlist, loc,
-                             "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32
-                             "] (type `%s`) but was not declared in the pipeline layout.",
-                             string_VkShaderStageFlagBits(variable.stage), variable.decorations.set, variable.decorations.binding,
+                             "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in the pipeline layout.",
+                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                              string_DescriptorTypeSet(descriptor_type_set).c_str());
         } else if (~binding->stageFlags & variable.stage) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
             skip |= LogError(vuid_07988, objlist, loc,
-                             "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32
-                             "] (type `%s`) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
-                             string_VkShaderStageFlagBits(variable.stage), variable.decorations.set, variable.decorations.binding,
+                             "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
+                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                              string_DescriptorTypeSet(descriptor_type_set).c_str(),
                              string_VkShaderStageFlags(binding->stageFlags).c_str());
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
             skip |=
-                LogError(vuid_07990, objlist, loc,
-                         "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32 "] of type %s but expected %s.",
-                         string_VkShaderStageFlagBits(variable.stage), variable.decorations.set, variable.decorations.binding,
+                LogError(vuid_07990, objlist, loc, "SPIR-V (%s) uses descriptor %s of type %s but expected %s.",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str());
         } else if (binding->descriptorCount < required_descriptor_count) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
             skip |= LogError(vuid_07991, objlist, loc,
-                             "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32 "] with %" PRIu32
-                             " descriptors, but requires at least %" PRIu32 ".",
-                             string_VkShaderStageFlagBits(variable.stage), variable.decorations.set, variable.decorations.binding,
+                             "SPIR-V (%s) uses descriptor %s with %" PRIu32 " descriptors, but requires at least %" PRIu32 ".",
+                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                              binding->descriptorCount, required_descriptor_count);
         }
 

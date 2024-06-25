@@ -810,8 +810,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t
         const auto *binding = descriptor_set.GetBinding(binding_pair.first);
         if (!binding) {  //  End at construction is the condition for an invalid binding.
             auto set = descriptor_set.Handle();
-            result |= LogError(vuids.descriptor_buffer_bit_set_08114, set, loc, "%s binding #%" PRIu32 " is invalid.",
-                               FormatHandle(set).c_str(), binding_pair.first);
+            result |= LogError(vuids.descriptor_buffer_bit_set_08114, set, loc, "%s %s is invalid.", FormatHandle(set).c_str(),
+                               binding_pair.second.variable->DescribeDescriptor().c_str());
             return result;
         }
 
