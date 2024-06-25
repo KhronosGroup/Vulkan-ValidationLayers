@@ -67,9 +67,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
   public:
     bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
                           std::vector<uint32_t>& out_instrumented_spirv) final;
-    // Allocate memory for the output block that the gpu will use to return any error information
-    [[nodiscard]] bool AllocateErrorLogsBuffer(gpu::DeviceMemoryBlock& error_logs_mem, const Location& loc);
-
     // gpuav_error_message.cpp
     // ---------------------
   public:

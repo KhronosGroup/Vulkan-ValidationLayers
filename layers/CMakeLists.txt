@@ -236,7 +236,6 @@ target_sources(vvl PRIVATE
     gpu/descriptor_validation/gpuav_image_layout.h
     gpu/descriptor_validation/gpuav_image_layout.cpp
     gpu/core/gpuav.h
-    gpu/core/gpuav.cpp
     gpu/core/gpu_state_tracker.cpp
     gpu/core/gpu_state_tracker.h
     gpu/core/gpuav_record.cpp

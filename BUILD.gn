@@ -33,7 +33,7 @@ action("vulkan_clean_old_validation_layer_objects") {
   script = "scripts/gn/remove_files.py"
 
   # inputs is a (random) new file since the vvl roll, used to ensure the cleanup is done only once
-  inputs = [ "layers/gpu/core/gpuav.cpp" ]
+  inputs = [ "layers/gpu/core/gpuav.h" ]
   outputs = [ "$vulkan_gen_dir/old_vvl_files_are_removed" ]
   args = [
     "$raw_vulkan_gen_dir/old_vvl_files_are_removed",
@@ -183,7 +183,6 @@ vvl_sources = [
   "layers/gpu/descriptor_validation/gpuav_image_layout.h",
   "layers/gpu/descriptor_validation/gpuav_image_layout.cpp",
   "layers/gpu/core/gpuav.h",
-  "layers/gpu/core/gpuav.cpp",
   "layers/gpu/core/gpu_state_tracker.cpp",
   "layers/gpu/core/gpu_state_tracker.h",
   "layers/gpu/core/gpuav_record.cpp",

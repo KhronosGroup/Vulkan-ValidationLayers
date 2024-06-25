@@ -215,8 +215,6 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             "Use of descriptor buffers will result in no descriptor checking");
     }
 
-    output_buffer_byte_size_ = glsl::kErrorBufferByteSize;
-
     if (gpuav_settings.validate_descriptors && !force_buffer_device_address_) {
         gpuav_settings.validate_descriptors = false;
         InternalWarning(device, loc, "Buffer Device Address + feature is not available.  No descriptor checking will be attempted");
@@ -243,26 +241,25 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         desc_heap_.emplace(*this, num_descs);
     }
 
-    VkBufferCreateInfo output_buffer_create_info = vku::InitStructHelper();
-    output_buffer_create_info.size = output_buffer_byte_size_;
-    output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VkBufferCreateInfo error_buffer_ci = vku::InitStructHelper();
+    error_buffer_ci.size = glsl::kErrorBufferByteSize;
+    error_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_create_info = {};
     alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     uint32_t mem_type_index;
-    VkResult result =
-        vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
+    VkResult result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &alloc_create_info, &mem_type_index);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to find memory type index. Aborting GPU-AV.");
         return;
     }
-    VmaPoolCreateInfo pool_create_info = {};
-    pool_create_info.memoryTypeIndex = mem_type_index;
-    pool_create_info.blockSize = 0;
-    pool_create_info.maxBlockCount = 0;
+    VmaPoolCreateInfo vma_pool_ci = {};
+    vma_pool_ci.memoryTypeIndex = mem_type_index;
+    vma_pool_ci.blockSize = 0;
+    vma_pool_ci.maxBlockCount = 0;
     if (gpuav_settings.vma_linear_output) {
-        pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+        vma_pool_ci.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
     }
-    result = vmaCreatePool(vma_allocator_, &pool_create_info, &output_buffer_pool_);
+    result = vmaCreatePool(vma_allocator_, &vma_pool_ci, &output_buffer_pool_);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to create VMA memory pool. Aborting GPU-AV.");
         return;

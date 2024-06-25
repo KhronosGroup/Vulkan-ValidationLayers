@@ -186,7 +186,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
     uint32_t adjusted_max_desc_sets_ = 0;
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
-    uint32_t output_buffer_byte_size_ = 0;
     uint32_t desc_set_bind_index_ = 0;
     VmaAllocator vma_allocator_ = {};
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
