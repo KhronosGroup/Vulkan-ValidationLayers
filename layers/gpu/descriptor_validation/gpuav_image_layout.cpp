@@ -327,7 +327,8 @@ bool Validator::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl:
                                   VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
                                   bool *error) const {
     if (disabled[image_layout_validation]) return false;
-    assert(image_view_state.image_state);
+    // Possible the image state was destroyed and we didn't see it waiting for the queue submit callback
+    if (!image_view_state.image_state) return false;
     auto range_factory = [&image_view_state](const ImageSubresourceLayoutMap &map) {
         return image_layout_map::RangeGenerator(image_view_state.range_generator);
     };
