@@ -1,0 +1,17 @@
+# This file enables jitpack.io to build this repository into an AAR (Android
+# Archive) for easier consumption by app developers. Instead of needing to
+# download the VVL release artifacts from GitHub and check those libraries into
+# their repository, they can instead depend on
+# com.github.khronos:vulkan-validationlayers:$TAG. Jitpack will build the
+# repository into an AAR and serve that artifact to developers.
+#
+# One caveat: if the VVL build is not completely deterministic (unlikely), the
+# artifacts served from jitpack will not exactly match those hosted on the
+# GitHub Release page, since jitpack will build the artifacts rather than serve
+# the ones from the release.
+#
+# https://jitpack.io/docs/BUILDING/
+# https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8167
+# https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/8303
+install:
+  - python scripts/jitpack.py
