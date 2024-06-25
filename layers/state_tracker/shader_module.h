@@ -250,6 +250,8 @@ using ImageAccessMap = vvl::unordered_map<uint32_t, std::vector<std::shared_ptr<
 // < Variable ID, [ OpAccessChain ] >
 // Allows for grouping the access chains by which variables they are actually accessing
 using AccessChainVariableMap = vvl::unordered_map<uint32_t, std::vector<const Instruction *>>;
+// Mapping of OpName instructions
+using DebugNameMap = vvl::unordered_map<uint32_t, const Instruction *>;
 
 // A slot is a <Location, Component> mapping
 struct InterfaceSlot {
@@ -305,7 +307,12 @@ struct VariableBase {
     uint32_t access_mask;  // AccessBit
     const VkShaderStageFlagBits stage;
     VariableBase(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                 const VariableAccessMap &variable_access_map);
+                 const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
+
+    // When no SPIR-V debug info is used, this will be empty strings
+    // We need to store a std::string since the original SPIR-V string will be gone when we need to print this in an error message
+    const std::string debug_name;  // OpName
+    std::string DescribeDescriptor() const;
 
     // These are helpers to show how the variable will be STATICALLY accessed.
     // (It would require a lot of GPU-AV overhead to detect if the access is dynamic and that level of fine control is currently not
@@ -327,6 +334,9 @@ struct VariableBase {
     // memory was read
     bool IsImageReadFrom() const { return access_mask & AccessBit::image_read; }
     bool IsImageWrittenTo() const { return access_mask & AccessBit::image_write; }
+
+  private:
+    static const char *FindDebugName(const VariableBase &variable, const DebugNameMap &debug_name_map);
 };
 
 // These are Input/Output OpVariable that go in-between stages
@@ -354,7 +364,7 @@ struct StageInterfaceVariable : public VariableBase {
     uint32_t total_builtin_components = 0;
 
     StageInterfaceVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                           const VariableAccessMap &variable_access_map);
+                           const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
 
   protected:
     static bool IsPerTaskNV(const StageInterfaceVariable &variable);
@@ -444,7 +454,7 @@ struct ResourceInterfaceVariable : public VariableBase {
 
     ResourceInterfaceVariable(const Module &module_state, const EntryPoint &entrypoint, const Instruction &insn,
                               const ImageAccessMap &image_access_map, const AccessChainVariableMap &access_chain_map,
-                              const VariableAccessMap &variable_access_map);
+                              const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const Module &module_state);
@@ -469,7 +479,7 @@ struct PushConstantVariable : public VariableBase {
     uint32_t size;    // total size of block
 
     PushConstantVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                         const VariableAccessMap &variable_access_map);
+                         const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
 };
 
 // Represents a single Entrypoint into a Shader Module
@@ -524,16 +534,19 @@ struct EntryPoint {
     bool has_alpha_to_coverage_variable{false};  // only for Fragment shaders
 
     EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map,
-               const AccessChainVariableMap &access_chain_map, const VariableAccessMap &variable_access_map);
+               const AccessChainVariableMap &access_chain_map, const VariableAccessMap &variable_access_map,
+               const DebugNameMap &debug_name_map);
 
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
     static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint,
-                                                                          const VariableAccessMap &variable_access_map);
+                                                                          const VariableAccessMap &variable_access_map,
+                                                                          const DebugNameMap &debug_name_map);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
                                                                                 const ImageAccessMap &image_access_map,
                                                                                 const AccessChainVariableMap &access_chain_map,
-                                                                                const VariableAccessMap &variable_access_map);
+                                                                                const VariableAccessMap &variable_access_map,
+                                                                                const DebugNameMap &debug_name_map);
     static bool IsBuiltInWritten(spv::BuiltIn built_in, const Module &module_state, const StageInterfaceVariable &variable,
                                  const AccessChainVariableMap &access_chain_map);
 };

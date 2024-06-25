@@ -35,6 +35,10 @@ class CommandBuffer;
 class Sampler;
 class DescriptorSet;
 
+// The reason there is a vector is because we can have a shader that looks like
+//   layout(set = 0, binding = 2) uniform sampler3D tex3d[];
+//   layout(set = 0, binding = 2) uniform sampler2D tex[];
+// And we need a DescriptorRequirement for each OpVariable
 using DescriptorBindingInfo = std::pair<uint32_t, std::vector<DescriptorRequirement>>;
 
 class DescriptorValidator {
@@ -75,6 +79,8 @@ class DescriptorValidator {
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
     bool ValidateSamplerDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index, VkSampler sampler, bool is_immutable,
                                    const vvl::Sampler* sampler_state) const;
+
+    std::string DescribeDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index) const;
 
     ValidationStateTracker& dev_state;
     vvl::CommandBuffer& cb_state;
