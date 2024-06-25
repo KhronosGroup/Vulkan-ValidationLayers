@@ -182,7 +182,7 @@ TEST_F(NegativeParent, RenderPassFramebuffer) {
     TEST_DESCRIPTION("Test RenderPass and Framebuffer");
 
     RETURN_IF_SKIP(Init());
-    InitRenderTarget(); // Renderpass created on first device
+    InitRenderTarget();  // Renderpass created on first device
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -274,7 +274,9 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
+    if (CreateSurface(surface_context, instance2_surface.handle, instance2) != VK_SUCCESS) {
+        GTEST_SKIP() << "Cannot create required surface from 2nd instance";
+    }
 
     VkBool32 supported = VK_FALSE;
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent");
@@ -292,7 +294,9 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
+    if (CreateSurface(surface_context, instance2_surface.handle, instance2) != VK_SUCCESS) {
+        GTEST_SKIP() << "Cannot create required surface from 2nd instance";
+    }
 
     VkDeviceGroupPresentModeFlagsKHR flags = 0;
     m_errorMonitor->SetDesiredError("VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent");
@@ -314,7 +318,7 @@ TEST_F(NegativeParent, Instance_Surface) {
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
     if (CreateSurface(surface_context, instance2_surface.handle, instance2) != VK_SUCCESS) {
-        GTEST_SKIP() << "Cannot create 2nd surface";
+        GTEST_SKIP() << "Cannot create required surface from 2nd instance";
     }
 
     auto swapchain_ci = vku::InitStruct<VkSwapchainCreateInfoKHR>();
@@ -353,7 +357,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
     if (CreateSurface(surface_context, instance2_surface.handle, instance2) != VK_SUCCESS) {
-        GTEST_SKIP() << "Cannot create 2nd surface";
+        GTEST_SKIP() << "Cannot create required surface from 2nd instance";
     }
 
     VkPhysicalDevice instance2_physical_device = VK_NULL_HANDLE;
@@ -405,7 +409,9 @@ TEST_F(NegativeParent, Instance_Surface_2) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
+    if (CreateSurface(surface_context, instance2_surface.handle, instance2) != VK_SUCCESS) {
+        GTEST_SKIP() << "Cannot create required surface from 2nd instance";
+    }
 
     // surface from a different instance
     m_errorMonitor->SetDesiredError("VUID-vkDestroySurfaceKHR-surface-parent");
