@@ -187,7 +187,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     intercept_vectors.resize(InterceptIdCount);
 '''
 
-
 # Generates a LayerFactory layer that intercepts all API entrypoints
 #  This is intended to be used as a starting point for creating custom layers
 class LayerChassisOutputGenerator(BaseGenerator):
@@ -618,6 +617,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }
             ''')
 
+        out.append('// We make many internal dispatch calls to VK_KHR_get_physical_device_properties2 functions which can depend on the API version\n')
+        for command in self.vk.extensions['VK_KHR_get_physical_device_properties2'].commands:
+            parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
+            out.append(f'{command.returnType} Dispatch{command.alias[2:]}Helper({parameters}) const;\n')
+
         out.append('''
         // clang-format off
         // Pre/post hook point declarations
@@ -817,6 +821,18 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }}''')
         out.append('\n')
         out.append('}\n')
+
+        for command in self.vk.extensions['VK_KHR_get_physical_device_properties2'].commands:
+            parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
+            arguments = ','.join([x.name for x in command.params])
+            out.append(f'''\n{command.returnType} ValidationObject::Dispatch{command.alias[2:]}Helper({parameters}) const {{
+                if (api_version >= VK_API_VERSION_1_1) {{
+                    return Dispatch{command.alias[2:]}({arguments});
+                }} else {{
+                    return Dispatch{command.name[2:]}({arguments});
+                }}
+            }}
+            ''')
 
         out.append('''
             // Global list of sType,size identifiers
