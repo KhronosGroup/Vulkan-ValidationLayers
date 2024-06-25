@@ -80,7 +80,6 @@ const VkPhysicalDeviceProperties &VkRenderFramework::physDevProps() const {
 // Return true if layer name is found and spec+implementation values are >= requested values
 bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, const uint32_t spec_version,
                                                const uint32_t impl_version) {
-
     if (available_layers_.empty()) {
         available_layers_ = vkt::GetGlobalLayers();
     }
@@ -696,7 +695,10 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 void VkRenderFramework::InitSurface() {
     // NOTE: Currently InitSurface can leak the WIN32 handle if called multiple times without first calling DestroySurfaceContext.
     // This is intentional. Each swapchain/surface combo needs a unique HWND.
-    ASSERT_EQ(VK_SUCCESS, CreateSurface(m_surface_context, m_surface));
+    VkResult result = CreateSurface(m_surface_context, m_surface);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "Failed to create surface.";
+    }
     ASSERT_TRUE(m_surface != VK_NULL_HANDLE);
 }
 
@@ -763,7 +765,8 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (IsExtensionsEnabled(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
         surface_context.m_surface_xcb_conn = xcb_connect(nullptr, nullptr);
-        if (surface_context.m_surface_xcb_conn) {
+        int err = xcb_connection_has_error(surface_context.m_surface_xcb_conn);
+        if (surface_context.m_surface_xcb_conn && !err) {
             xcb_window_t window = xcb_generate_id(surface_context.m_surface_xcb_conn);
             VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.connection = surface_context.m_surface_xcb_conn;
@@ -773,7 +776,7 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
     }
 #endif
 
-    return VK_SUCCESS;
+    return VK_ERROR_UNKNOWN;
 }
 
 void VkRenderFramework::DestroySurface() {
