@@ -380,14 +380,9 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image &image, VkExter
     VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
     VkImageFormatProperties2 properties = vku::InitStructHelper(&external_properties);
     if (image.create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
-            if (DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties) != VK_SUCCESS) {
-                return false;
-            }
-        } else {
-            if (DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &info, &properties) != VK_SUCCESS) {
-                return false;
-            }
+        // Can't get into function with using external memory extensions which require GPDP2
+        if (DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &info, &properties) != VK_SUCCESS) {
+            return false;
         }
     } else {
         VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
@@ -401,7 +396,7 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image &image, VkExter
             return false;
         }
         drm_format_modifier.drmFormatModifier = drm_format_properties.drmFormatModifier;
-        if (DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties) != VK_SUCCESS) {
+        if (DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &info, &properties) != VK_SUCCESS) {
             return false;
         }
     }
@@ -1747,7 +1742,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             }
                         }
                         auto result =
-                            DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
+                            DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_info, &image_properties);
                         if (result != VK_SUCCESS) {
                             export_supported = false;
                             const LogObjectList objlist(bind_info.image, bind_info.memory);

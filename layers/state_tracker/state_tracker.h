@@ -1665,13 +1665,8 @@ class ValidationStateTracker : public ValidationObject {
             if constexpr (init) {
                 *ext_prop = vku::InitStructHelper();
             }
-            if (api_version < VK_API_VERSION_1_1) {
-                VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-                DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-            } else {
-                VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-                DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
-            }
+            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
+            DispatchGetPhysicalDeviceProperties2Helper(gpu, &prop2);
         }
     }
 
@@ -1679,14 +1674,13 @@ class ValidationStateTracker : public ValidationObject {
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtProp* ext_prop) {
         assert(ext_prop);
         *ext_prop = vku::InitStructHelper();
-        if (api_version < VK_API_VERSION_1_1) {
-            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-            DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        } else {
-            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-            DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
-        }
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
+        DispatchGetPhysicalDeviceProperties2Helper(gpu, &prop2);
     }
+
+    VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device, bool has_format_feature2,
+                                                    bool has_drm_modifiers, VkDevice device, VkImage image, VkFormat format,
+                                                    VkImageTiling tiling);
 
     inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);

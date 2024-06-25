@@ -2425,6 +2425,23 @@ class ValidationObject {
         display_id_reverse_mapping.insert_or_assign(handle, unique_id);
         return (VkDisplayKHR)unique_id;
     }
+    // We make many internal dispatch calls to VK_KHR_get_physical_device_properties2 functions which can depend on the API version
+    void DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) const;
+    void DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                    VkPhysicalDeviceProperties2* pProperties) const;
+    void DispatchGetPhysicalDeviceFormatProperties2Helper(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                          VkFormatProperties2* pFormatProperties) const;
+    VkResult DispatchGetPhysicalDeviceImageFormatProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                                   const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+                                                                   VkImageFormatProperties2* pImageFormatProperties) const;
+    void DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties2* pQueueFamilyProperties) const;
+    void DispatchGetPhysicalDeviceMemoryProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                          VkPhysicalDeviceMemoryProperties2* pMemoryProperties) const;
+    void DispatchGetPhysicalDeviceSparseImageFormatProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                                     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
+                                                                     uint32_t* pPropertyCount,
+                                                                     VkSparseImageFormatProperties2* pProperties) const;
 
     // clang-format off
         // Pre/post hook point declarations
