@@ -36,7 +36,7 @@ struct Range {
     uint64_t end;
 };
 
-// See gpuav::Validator::UpdateBDABuffer in gpuav.cpp for a description of the table format
+// See gpuav::CommandBuffer::UpdateBdaRangesBuffer in gpuav.cpp for a description of the table format
 // Ranges are supposed to:
 // 1) be stored for low to high
 // 2) not overlap

@@ -37,7 +37,6 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         return;
     }
 
-    output_buffer_byte_size_ = printf_settings.buffer_size;
     verbose = printf_settings.verbose;
     use_stdout = printf_settings.to_stdout;
 
@@ -632,7 +631,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     }
 
     VkDescriptorBufferInfo output_desc_buffer_info = {};
-    output_desc_buffer_info.range = output_buffer_byte_size_;
+    output_desc_buffer_info.range = printf_settings.buffer_size;
 
     auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
@@ -652,7 +651,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     // Allocate memory for the output block that the gpu will use to return values for printf
     DeviceMemoryBlock output_block = {};
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = output_buffer_byte_size_;
+    buffer_info.size = printf_settings.buffer_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -666,7 +665,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     uint32_t *data;
     result = vmaMapMemory(vma_allocator_, output_block.allocation, reinterpret_cast<void **>(&data));
     if (result == VK_SUCCESS) {
-        memset(data, 0, output_buffer_byte_size_);
+        memset(data, 0, printf_settings.buffer_size);
         vmaUnmapMemory(vma_allocator_, output_block.allocation);
     }
 

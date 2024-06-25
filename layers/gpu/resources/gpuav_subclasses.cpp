@@ -127,6 +127,37 @@ CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkC
     AllocateResources();
 }
 
+static bool AllocateErrorLogsBuffer(Validator &gpuav, gpu::DeviceMemoryBlock &error_logs_mem, const Location &loc) {
+    VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+    buffer_info.size = glsl::kErrorBufferByteSize;
+    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VmaAllocationCreateInfo alloc_info = {};
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    alloc_info.pool = gpuav.output_buffer_pool_;
+    VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &error_logs_mem.buffer,
+                                      &error_logs_mem.allocation, nullptr);
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for error output buffer. Aborting GPU-AV.", true);
+        return false;
+    }
+
+    uint32_t *output_buffer_ptr;
+    result = vmaMapMemory(gpuav.vma_allocator_, error_logs_mem.allocation, reinterpret_cast<void **>(&output_buffer_ptr));
+    if (result == VK_SUCCESS) {
+        memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
+        if (gpuav.gpuav_settings.validate_descriptors) {
+            output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
+        }
+        vmaUnmapMemory(gpuav.vma_allocator_, error_logs_mem.allocation);
+    } else {
+        gpuav.InternalError(gpuav.device, loc, "Unable to map device memory allocated for error output buffer. Aborting GPU-AV.",
+                            true);
+        return false;
+    }
+
+    return true;
+}
+
 void CommandBuffer::AllocateResources() {
     using Func = vvl::Func;
 
@@ -150,7 +181,7 @@ void CommandBuffer::AllocateResources() {
     }
 
     // Error output buffer
-    if (!gpuav->AllocateErrorLogsBuffer(error_output_buffer_, Location(Func::vkAllocateCommandBuffers))) {
+    if (!AllocateErrorLogsBuffer(*gpuav, error_output_buffer_, Location(Func::vkAllocateCommandBuffers))) {
         return;
     }
 
@@ -297,7 +328,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer() {
     if (result != VK_SUCCESS) {
         if (result != VK_SUCCESS) {
             gpuav->InternalError(gpuav->device, Location(vvl::Func::vkQueueSubmit),
-                                 "Unable to map device memory in UpdateBDABuffer. Aborting GPU-AV.", true);
+                                 "Unable to map device memory in UpdateBdaRangesBuffer. Aborting GPU-AV.", true);
             return false;
         }
     }
@@ -461,9 +492,9 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         // A zero here means that the shader instrumentation didn't write anything.
         if (total_words != 0) {
             uint32_t *const error_records_start = &error_output_buffer_ptr[cst::stream_output_data_offset];
-            assert(gpuav->output_buffer_byte_size_ > cst::stream_output_data_offset);
+            assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);
             uint32_t *const error_records_end =
-                error_output_buffer_ptr + (gpuav->output_buffer_byte_size_ - cst::stream_output_data_offset);
+                error_output_buffer_ptr + (glsl::kErrorBufferByteSize - cst::stream_output_data_offset);
 
             uint32_t *error_record_ptr = error_records_start;
             uint32_t record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
@@ -482,9 +513,9 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
             }
 
             // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
-            assert(gpuav->output_buffer_byte_size_ > cst::stream_output_data_offset);
+            assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);
             memset(&error_output_buffer_ptr[cst::stream_output_data_offset], 0,
-                   gpuav->output_buffer_byte_size_ - cst::stream_output_data_offset * sizeof(uint32_t));
+                   glsl::kErrorBufferByteSize - cst::stream_output_data_offset * sizeof(uint32_t));
         }
         error_output_buffer_ptr[cst::stream_output_size_offset] = 0;
         vmaUnmapMemory(gpuav->vma_allocator_, error_output_buffer_.allocation);
