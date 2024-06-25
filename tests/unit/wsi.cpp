@@ -1574,7 +1574,10 @@ TEST_F(NegativeWsi, LeakASwapchain) {
     SurfaceContext surface_context{};
     VkSurfaceKHR surface{};
     VkSwapchainKHR swapchain{};
-    ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, surface));
+    if (CreateSurface(surface_context, surface) != VK_SUCCESS) {
+        GTEST_SKIP() << "Cannot create required surface";
+    }
+
     ASSERT_TRUE(CreateSwapchain(surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain));
 
     // Warn about the surface/swapchain not being destroyed
