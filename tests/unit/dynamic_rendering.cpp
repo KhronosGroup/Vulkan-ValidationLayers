@@ -824,7 +824,7 @@ TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
+TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color attachment counts and depth/stencil formats");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
@@ -1038,7 +1038,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3Color) {
+TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3Color) {
     TEST_DESCRIPTION(
         "Draw with Dynamic Rendering with mismatching color attachment counts and depth/stencil formats where "
         "dynamicRenderingUnusedAttachments is enabled and neither format is VK_FORMAT_UNDEFINED");
@@ -1081,7 +1081,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3Color) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
+TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
     TEST_DESCRIPTION(
         "Draw with Dynamic Rendering with mismatching color attachment counts and depth/stencil formats where "
         "dynamicRenderingUnusedAttachments is enabled and neither format is VK_FORMAT_UNDEFINED");
@@ -1172,7 +1172,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesColor) {
+TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesColor) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color sample counts");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
@@ -1213,7 +1213,7 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesColor) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesDepthStencil) {
+TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesDepthStencil) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching depth/stencil sample counts");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
