@@ -26,4 +26,18 @@ void SetupShaderInstrumentationResources(Validator& gpuav, LockedSharedPtr<gpuav
 void SetupShaderInstrumentationResources(Validator& gpuav, VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
                                          const Location& loc);
 
+// Return true iff a error has been found
+bool LogInstrumentationError(Validator& gpuav, VkCommandBuffer cmd_buffer, const LogObjectList& objlist, uint32_t operation_index,
+                             const uint32_t* error_record, const std::vector<DescSetState>& descriptor_sets,
+                             VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
+                             const Location& loc);
+
+// Return true iff an error has been found in error_record, among the list of errors this function manages
+bool LogMessageInstBindlessDescriptor(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
+                                      const std::vector<DescSetState>& descriptor_sets, const Location& loc,
+                                      bool uses_shader_object, bool& out_oob_access);
+bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
+                                       bool& out_oob_access);
+bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);
+
 }  // namespace gpuav

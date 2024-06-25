@@ -67,23 +67,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
   public:
     bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
                           std::vector<uint32_t>& out_instrumented_spirv) final;
-    // gpuav_error_message.cpp
-    // ---------------------
-  public:
-    // Return true iff a error has been found
-    bool AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, const LogObjectList& objlist, uint32_t operation_index,
-                                   const uint32_t* error_record, const std::vector<DescSetState>& descriptor_sets,
-                                   VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
-                                   const Location& loc);
-
-  private:
-    // Return true iff an error has been found in error_record, among the list of errors this function manages
-    bool LogMessageInstBindlessDescriptor(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
-                                          const std::vector<DescSetState>& descriptor_sets, const Location& loc,
-                                          bool uses_shader_object, bool& out_oob_access) const;
-    bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
-                                           bool& out_oob_access) const;
-    bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg) const;
 
     // gpuav_setup.cpp
     // -------------

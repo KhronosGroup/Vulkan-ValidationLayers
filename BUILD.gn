@@ -189,7 +189,6 @@ vvl_sources = [
   "layers/gpu/core/gpuav_setup.cpp",
   "layers/gpu/debug_printf/debug_printf.cpp",
   "layers/gpu/debug_printf/debug_printf.h",
-  "layers/gpu/error_message/gpuav_error_message.cpp",
   "layers/gpu/error_message/gpuav_vuids.cpp",
   "layers/gpu/error_message/gpuav_vuids.h",
   "layers/gpu/instrumentation/gpu_shader_instrumentor.cpp",
