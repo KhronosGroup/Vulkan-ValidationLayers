@@ -653,7 +653,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
             const uint32_t input_builtin = input_builtins_block[i];
             const uint32_t output_builtin = output_builtins_block[i];
             if (input_builtin == spirv::kInvalidValue || output_builtin == spirv::kInvalidValue) {
-                continue;  // some stages (TessControl -> TessEval) can have legal block vs non-block mistmatch
+                continue;  // some stages (TessControl -> TessEval) can have legal block vs non-block mismatch
             } else if (input_builtin != output_builtin) {
                 mismatch = true;
             }
@@ -674,7 +674,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
         msg << "}\n";
         const LogObjectList objlist(producer.handle(), consumer.handle());
         skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
-                         "(SPIR-V Interface) Mistmatch in BuiltIn blocks:\n %s", msg.str().c_str());
+                         "(SPIR-V Interface) Mismatch in BuiltIn blocks:\n %s", msg.str().c_str());
     }
     return skip;
 }

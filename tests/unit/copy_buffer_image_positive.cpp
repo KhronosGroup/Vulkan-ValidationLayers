@@ -61,7 +61,7 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
 }
 
 TEST_F(PositiveCopyBufferImage, ImageTypeExtentMismatchMaintenance5) {
-    TEST_DESCRIPTION("Test copying an image with extent mistmatch using VK_KHR_maintenance5");
+    TEST_DESCRIPTION("Test copying an image with extent mismatch using VK_KHR_maintenance5");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
