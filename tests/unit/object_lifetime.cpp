@@ -20,6 +20,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/external_memory_sync.h"
 
+class NegativeObjectLifetime : public VkLayerTest {};
+
 TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
     RETURN_IF_SKIP(Init());

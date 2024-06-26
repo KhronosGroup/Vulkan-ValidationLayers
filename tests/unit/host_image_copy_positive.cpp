@@ -65,6 +65,8 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &create_in
     }
 }
 
+class PositiveHostImageCopy : public HostImageCopyTest {};
+
 TEST_F(PositiveHostImageCopy, BasicUsage) {
     TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy to and from host memory");
     image_ci = vkt::Image::ImageCreateInfo2D(

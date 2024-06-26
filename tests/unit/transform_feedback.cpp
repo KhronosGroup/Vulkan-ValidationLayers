@@ -51,6 +51,11 @@ static const char *kXfbVsSource = R"asm(
                OpFunctionEnd
         )asm";
 
+class NegativeTransformFeedback : public VkLayerTest {
+  public:
+    void InitBasicTransformFeedback();
+};
+
 void NegativeTransformFeedback::InitBasicTransformFeedback() {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::transformFeedback);

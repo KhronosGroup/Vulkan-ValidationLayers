@@ -29,6 +29,8 @@ void AndroidExternalResolveTest::InitBasicAndroidExternalResolve() {
     nullColorAttachmentWithExternalFormatResolve = external_format_resolve_props.nullColorAttachmentWithExternalFormatResolve;
 }
 
+class PositiveAndroidExternalResolve : public AndroidExternalResolveTest {};
+
 TEST_F(PositiveAndroidExternalResolve, NoResolve) {
     TEST_DESCRIPTION("Make sure enabling the feature doesn't break normal usage of API.");
     RETURN_IF_SKIP(InitBasicAndroidExternalResolve());

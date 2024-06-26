@@ -22,6 +22,8 @@ void DynamicStateTest::InitBasicExtendedDynamicState() {
     RETURN_IF_SKIP(Init());
 }
 
+class PositiveDynamicState : public DynamicStateTest {};
+
 TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
     TEST_DESCRIPTION("check version of VK_EXT_discard_rectangles");
 

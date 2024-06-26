@@ -15,6 +15,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class NegativeDebugPrintfShaderDebugInfo : public DebugPrintfTests {};
+
 // These tests print out the verbose info to make sure that info is correct
 static const VkBool32 verbose_value = true;
 static const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "printf_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,

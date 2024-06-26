@@ -15,6 +15,11 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class NegativeGpuAVShaderDebugInfo : public GpuAVBufferDeviceAddressTest {
+  public:
+    void BasicSingleStorageBufferComputeOOB(const char *shader, const char *error);
+};
+
 // shader must have a SSBO at (set = 0, binding = 0)
 void NegativeGpuAVShaderDebugInfo::BasicSingleStorageBufferComputeOOB(const char *shader, const char *error) {
     SetTargetApiVersion(VK_API_VERSION_1_2);

@@ -14,6 +14,8 @@
 #include "../framework/shader_object_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class PositiveGpuAVShaderObject : public GpuAVTest {};
+
 TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
     SetTargetApiVersion(VK_API_VERSION_1_2);

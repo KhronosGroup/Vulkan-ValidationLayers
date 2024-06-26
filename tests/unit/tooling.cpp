@@ -14,6 +14,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
+class NegativeTooling : public VkLayerTest {};
+
 TEST_F(NegativeTooling, PrivateDataFeature) {
     TEST_DESCRIPTION("Test privateData feature not being enabled.");
     AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);

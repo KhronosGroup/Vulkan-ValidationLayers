@@ -43,6 +43,8 @@ std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatF
     return mods;
 }
 
+class PositiveImageDrm : public ImageDrmTest {};
+
 TEST_F(PositiveImageDrm, Basic) {
     // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/2610
     TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");

@@ -17,6 +17,8 @@
 #include "../framework/gpu_av_helper.h"
 #include "../layers/containers/range_vector.h"
 
+class NegativeGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
+
 TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     TEST_DESCRIPTION("Read before the valid pointer - use Push Constants to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());

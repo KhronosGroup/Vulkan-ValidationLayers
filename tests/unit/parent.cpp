@@ -43,6 +43,8 @@ struct Surface {
 };
 }  // namespace
 
+class NegativeParent : public ParentTest {};
+
 TEST_F(NegativeParent, FillBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 

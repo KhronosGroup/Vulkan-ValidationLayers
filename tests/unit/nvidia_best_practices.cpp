@@ -24,6 +24,8 @@ const char *kEnableNVIDIAValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_N
 
 static constexpr float defaultQueuePriority = 0.0f;
 
+class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
+
 TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));

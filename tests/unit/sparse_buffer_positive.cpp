@@ -13,6 +13,8 @@
 
 #include "../framework/layer_validation_tests.h"
 
+class PositiveSparseBuffer : public VkLayerTest {};
+
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     TEST_DESCRIPTION("Test correct non overlapping sparse buffers' copy");
     AddRequiredFeature(vkt::Feature::sparseBinding);

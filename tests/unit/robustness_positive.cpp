@@ -15,6 +15,8 @@
 #include "../framework/descriptor_helper.h"
 #include "generated/vk_extension_helper.h"
 
+class PositiveRobustness : public VkLayerTest {};
+
 TEST_F(PositiveRobustness, WriteDescriptorSetAccelerationStructureNVNullDescriptor) {
     TEST_DESCRIPTION("Validate using NV acceleration structure descriptor writing with null descriptor.");
 

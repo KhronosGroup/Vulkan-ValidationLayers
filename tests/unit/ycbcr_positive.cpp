@@ -33,6 +33,8 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 }
 
+class PositiveYcbcr : public YcbcrTest {};
+
 TEST_F(PositiveYcbcr, PlaneAspectNone) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());

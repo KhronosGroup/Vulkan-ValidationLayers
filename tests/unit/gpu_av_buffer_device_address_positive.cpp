@@ -26,6 +26,8 @@ void GpuAVBufferDeviceAddressTest::InitGpuVUBufferDeviceAddress(void *p_next) {
     RETURN_IF_SKIP(InitState());
 }
 
+class PositiveGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
+
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     TEST_DESCRIPTION("Makes sure that writing to a buffer that was created after command buffer record doesn't get OOB error");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());

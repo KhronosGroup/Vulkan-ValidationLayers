@@ -15,6 +15,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
+class PositivePushDescriptor : public VkLayerTest {};
+
 TEST_F(PositivePushDescriptor, NullDstSet) {
     TEST_DESCRIPTION("Use null dstSet in CmdPushDescriptorSetKHR");
 

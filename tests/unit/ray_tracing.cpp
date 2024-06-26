@@ -41,6 +41,8 @@ constexpr T binom(T n, T k) {
     return numerator / denominator;
 }
 
+class NegativeRayTracing : public RayTracingTest {};
+
 TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     TEST_DESCRIPTION("Test barrier with access ACCELERATION_STRUCTURE bit.");
 

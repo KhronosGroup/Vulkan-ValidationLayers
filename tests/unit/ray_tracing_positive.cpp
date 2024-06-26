@@ -33,6 +33,8 @@ void RayTracingTest::InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* ena
     RETURN_IF_SKIP(InitFramework(enabled_features));
 }
 
+class PositiveRayTracing : public RayTracingTest {};
+
 TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
     TEST_DESCRIPTION("Test enabled features for GetAccelerationStructureBuildSizes");
 

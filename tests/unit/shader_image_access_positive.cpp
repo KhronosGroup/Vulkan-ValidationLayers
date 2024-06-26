@@ -12,6 +12,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class PositiveShaderImageAccess : public VkLayerTest {};
+
 TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a OpFunctionParameter to a OpVariable");
 

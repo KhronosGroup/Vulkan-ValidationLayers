@@ -15,6 +15,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeShaderPushConstants : public VkLayerTest {};
+
 TEST_F(NegativeShaderPushConstants, NotDeclared) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline in which a push constant range containing a push constant block member is not declared in the "

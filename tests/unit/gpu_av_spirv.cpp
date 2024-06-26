@@ -20,6 +20,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class NegativeGpuAVSpirv : public GpuAVTest {};
+
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7462
 TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
     TEST_DESCRIPTION("Require injection in the Loop Header block that contains a Phi");

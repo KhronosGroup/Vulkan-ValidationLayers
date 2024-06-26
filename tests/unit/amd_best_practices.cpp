@@ -18,6 +18,7 @@
 // Tests for AMD-specific best practices
 const char *kEnableAMDValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD";
 
+class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
 // this is a very long test (~10 minutes)
 // disabled for now

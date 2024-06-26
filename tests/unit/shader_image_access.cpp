@@ -12,6 +12,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeShaderImageAccess : public VkLayerTest {};
+
 TEST_F(NegativeShaderImageAccess, FunctionOpImage) {
     TEST_DESCRIPTION("Use Component Format mismatch to test image access edge cases");
     RETURN_IF_SKIP(Init());

@@ -1,7 +1,7 @@
 
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 #include "generated/vk_extension_helper.h"
 #include "utils/vk_layer_utils.h"
 
-class PositiveLayerUtils : public VkPositiveLayerTest {};
+class PositiveLayerUtils : public VkLayerTest {};
 
 // These test check utils in the layer without needing to create a full Vulkan instance
 

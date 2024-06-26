@@ -16,6 +16,8 @@
 #include "../framework/pipeline_helper.h"
 #include "generated/vk_extension_helper.h"
 
+class PositiveBuffer : public VkLayerTest {};
+
 TEST_F(PositiveBuffer, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());

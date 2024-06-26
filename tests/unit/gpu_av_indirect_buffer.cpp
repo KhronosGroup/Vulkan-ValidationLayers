@@ -16,6 +16,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
+
 TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
     SetTargetApiVersion(VK_API_VERSION_1_3);

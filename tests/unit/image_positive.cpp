@@ -37,6 +37,8 @@ VkImageCreateInfo ImageTest::DefaultImageInfo() {
     return ci;
 }
 
+class PositiveImage : public ImageTest {};
+
 TEST_F(PositiveImage, OwnershipTranfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
@@ -1191,7 +1193,7 @@ TEST_F(PositiveImage, RemainingMipLevels2DViewOf3D) {
     vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, VK_REMAINING_MIP_LEVELS, 0, 1);
 }
 
-TEST_F(NegativeImage, RemainingMipLevelsBlockTexelView) {
+TEST_F(PositiveImage, RemainingMipLevelsBlockTexelView) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_create_info = vku::InitStructHelper();

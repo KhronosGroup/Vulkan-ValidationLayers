@@ -13,6 +13,8 @@
 
 #include "../framework/layer_validation_tests.h"
 
+class NegativeImageDrm : public ImageDrmTest {};
+
 TEST_F(NegativeImageDrm, Basic) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 

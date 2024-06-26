@@ -17,6 +17,8 @@
 #include "../framework/thread_helper.h"
 
 #if GTEST_IS_THREADSAFE
+class NegativeThreading : public VkLayerTest {};
+
 TEST_F(NegativeThreading, CommandBufferCollision) {
     m_errorMonitor->SetDesiredError("THREADING ERROR");
     m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one

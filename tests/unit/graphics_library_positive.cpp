@@ -22,6 +22,8 @@ void GraphicsLibraryTest::InitBasicGraphicsLibrary() {
     RETURN_IF_SKIP(Init());
 }
 
+class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
+
 TEST_F(PositiveGraphicsLibrary, VertexInput) {
     TEST_DESCRIPTION("Create a vertex input graphics library");
 

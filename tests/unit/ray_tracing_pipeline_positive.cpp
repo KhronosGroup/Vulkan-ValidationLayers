@@ -15,6 +15,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
+class PositiveRayTracingPipeline : public RayTracingTest {};
+
 TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 

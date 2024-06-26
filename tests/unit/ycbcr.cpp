@@ -19,6 +19,8 @@
 #include "../framework/pipeline_helper.h"
 #include "utils/vk_layer_utils.h"
 
+class NegativeYcbcr : public YcbcrTest {};
+
 TEST_F(NegativeYcbcr, Sampler) {
     TEST_DESCRIPTION("Verify YCbCr sampler creation.");
 

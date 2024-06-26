@@ -19,6 +19,8 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/shader_helper.h"
 
+class NegativePipeline : public VkLayerTest {};
+
 TEST_F(NegativePipeline, NotBound) {
     TEST_DESCRIPTION("Pass in an invalid pipeline object handle into a Vulkan API call.");
 

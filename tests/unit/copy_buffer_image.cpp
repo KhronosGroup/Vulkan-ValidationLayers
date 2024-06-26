@@ -14,6 +14,8 @@
 
 #include "../framework/layer_validation_tests.h"
 
+class NegativeCopyBufferImage : public VkLayerTest {};
+
 TEST_F(NegativeCopyBufferImage, ImageBufferCopy) {
     TEST_DESCRIPTION("Image to buffer and buffer to image tests");
 

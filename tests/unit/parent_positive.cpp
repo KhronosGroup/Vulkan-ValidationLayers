@@ -18,6 +18,8 @@ ParentTest::~ParentTest() {
     }
 }
 
+class PositiveParent : public ParentTest {};
+
 TEST_F(PositiveParent, ImagelessFramebuffer) {
     TEST_DESCRIPTION("pAttachments is ignored even for common parent");
     SetTargetApiVersion(VK_API_VERSION_1_2);

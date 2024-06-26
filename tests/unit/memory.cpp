@@ -20,6 +20,8 @@
 #include <sys/mman.h>
 #endif
 
+class NegativeMemory : public VkLayerTest {};
+
 TEST_F(NegativeMemory, MapMemory) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
     bool pass;

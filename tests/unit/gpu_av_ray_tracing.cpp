@@ -17,6 +17,8 @@
 #include "../framework/shader_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
+
 TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
     TEST_DESCRIPTION("Invalid parameters used in vkCmdTraceRaysIndirectKHR");
 

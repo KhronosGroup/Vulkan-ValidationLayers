@@ -17,6 +17,8 @@
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
+class NegativeAndroidExternalResolve : public AndroidExternalResolveTest {};
+
 TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionSample) {
     TEST_DESCRIPTION("invalid samples for VkSubpassDescription");
     RETURN_IF_SKIP(InitBasicAndroidExternalResolve());

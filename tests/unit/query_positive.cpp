@@ -23,6 +23,8 @@ bool QueryTest::HasZeroTimestampValidBits() {
     return (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0);
 }
 
+class PositiveQuery : public QueryTest {};
+
 TEST_F(PositiveQuery, OutsideRenderPass) {
     AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());

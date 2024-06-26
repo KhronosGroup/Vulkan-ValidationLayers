@@ -229,12 +229,6 @@ VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDevi
 template <>
 VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2 &props2);
 
-// TODO - Want to remove - don't add to any new tests
-class VkPositiveLayerTest : public VkLayerTest {
-  public:
-  protected:
-};
-
 class VkBestPracticesLayerTest : public VkLayerTest {
   public:
     void InitBestPracticesFramework(const char *ValidationChecksToEnable = "");
@@ -245,17 +239,6 @@ class VkBestPracticesLayerTest : public VkLayerTest {
     VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 0, nullptr};
 };
 
-class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
-class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
-  public:
-    std::unique_ptr<vkt::Image> CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
-                                            VkImageUsageFlags attachment_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    VkRenderPass CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                                  VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE);
-    VkFramebuffer CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view, VkRenderPass renderpass);
-};
-class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
-
 class GpuAVTest : public virtual VkLayerTest {
   public:
     void InitGpuAvFramework(void *p_next = nullptr);
@@ -263,59 +246,25 @@ class GpuAVTest : public virtual VkLayerTest {
     VkValidationFeaturesEXT GetGpuAvValidationFeatures();
 };
 
-class NegativeGpuAV : public GpuAVTest {};
-class PositiveGpuAV : public GpuAVTest {};
-class PositiveGpuAVParameterized : public GpuAVTest,
-                                   public ::testing::WithParamInterface<std::tuple<std::vector<const char *>, uint32_t>> {};
-
 class GpuAVBufferDeviceAddressTest : public GpuAVTest {
   public:
     void InitGpuVUBufferDeviceAddress(void *p_next = nullptr);
-};
-class NegativeGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
-class PositiveGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
-
-class NegativeGpuAVShaderDebugInfo : public GpuAVBufferDeviceAddressTest {
-  public:
-    void BasicSingleStorageBufferComputeOOB(const char *shader, const char *error);
 };
 
 class GpuAVDescriptorIndexingTest : public GpuAVTest {
   public:
     void InitGpuVUDescriptorIndexing();
 };
-class NegativeGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
-class PositiveGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
-
-class GpuAVSpirvTest : public GpuAVTest {};
-class NegativeGpuAVSpirv : public GpuAVSpirvTest {};
-class PositiveGpuAVSpirv : public GpuAVSpirvTest {};
-
-class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
-
-class GpuAVOOBTest : public GpuAVTest {};
-class NegativeGpuAVOOB : public GpuAVOOBTest {
-  public:
-    void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
-                              VkDescriptorType descriptor_type, const char *fragment_shader,
-                              std::vector<const char *> expected_errors, bool shader_objects = false);
-    void ComputeStorageBufferTest(const char *expected_error, const char *shader, VkDeviceSize buffer_size);
-};
-class PositiveGpuAVOOB : public GpuAVOOBTest {};
 
 class GpuAVRayQueryTest : public GpuAVTest {
   public:
     void InitGpuAVRayQuery();
 };
-class NegativeGpuAVRayQuery : public GpuAVRayQueryTest {};
-class PositiveGpuAVRayQuery : public GpuAVRayQueryTest {};
 
-class NegativeDebugPrintf : public VkLayerTest {
+class DebugPrintfTests : public VkLayerTest {
   public:
     void InitDebugPrintfFramework(void *p_next = nullptr);
 };
-
-class NegativeDebugPrintfShaderDebugInfo : public NegativeDebugPrintf {};
 
 class VkSyncValTest : public VkLayerTest {
   public:
@@ -331,92 +280,32 @@ class VkSyncValTest : public VkLayerTest {
     VkValidationFeaturesEXT features_ = {};
 };
 
-class AndroidHardwareBufferTest : public VkLayerTest {};
-class NegativeAndroidHardwareBuffer : public AndroidHardwareBufferTest {};
-class PositiveAndroidHardwareBuffer : public AndroidHardwareBufferTest {};
-
 class AndroidExternalResolveTest : public VkLayerTest {
   public:
     void InitBasicAndroidExternalResolve();
     bool nullColorAttachmentWithExternalFormatResolve;
 };
-class NegativeAndroidExternalResolve : public AndroidExternalResolveTest {};
-class PositiveAndroidExternalResolve : public AndroidExternalResolveTest {};
-
-class AtomicTest : public VkLayerTest {};
-class NegativeAtomic : public AtomicTest {};
-class PositiveAtomic : public AtomicTest {};
-
-class BufferTest : public VkLayerTest {};
-class NegativeBuffer : public BufferTest {};
-class PositiveBuffer : public BufferTest {};
-
-class CommandTest : public VkLayerTest {};
-class NegativeCommand : public CommandTest {};
-class PositiveCommand : public CommandTest {};
-
-class SecondaryCommandBufferTest : public VkLayerTest {};
-class NegativeSecondaryCommandBuffer : public SecondaryCommandBufferTest {};
-class PositiveSecondaryCommandBuffer : public SecondaryCommandBufferTest {};
-
-class CopyBufferImageTest : public VkLayerTest {};
-class NegativeCopyBufferImage : public CopyBufferImageTest {};
-class PositiveCopyBufferImage : public CopyBufferImageTest {};
-
-class DescriptorsTest : public VkLayerTest {};
-class NegativeDescriptors : public DescriptorsTest {};
-class PositiveDescriptors : public DescriptorsTest {};
-
-class PushDescriptorTest : public VkLayerTest {};
-class NegativePushDescriptor : public PushDescriptorTest {};
-class PositivePushDescriptor : public PushDescriptorTest {};
-
-class DebugExtensionsTest : public VkLayerTest {};
-class NegativeDebugExtensions : public DebugExtensionsTest {};
-class PositiveDebugExtensions : public DebugExtensionsTest {};
 
 class DescriptorBufferTest : public VkLayerTest {
   public:
     void InitBasicDescriptorBuffer(void *pNextFeatures = nullptr);
 };
-class NegativeDescriptorBuffer : public DescriptorBufferTest {};
-class PositiveDescriptorBuffer : public DescriptorBufferTest {};
 
 class DescriptorIndexingTest : public VkLayerTest {
   public:
     void ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings);
 };
-class NegativeDescriptorIndexing : public DescriptorIndexingTest {};
-class PositiveDescriptorIndexing : public DescriptorIndexingTest {};
-
-class NegativeDeviceQueue : public VkLayerTest {};
 
 class DynamicRenderingTest : public VkLayerTest {
   public:
     void InitBasicDynamicRendering();
     void InitBasicDynamicRenderingLocalRead();
 };
-class NegativeDynamicRendering : public DynamicRenderingTest {};
-class PositiveDynamicRendering : public DynamicRenderingTest {};
-
-class NegativeDynamicRenderingLocalRead : public DynamicRenderingTest {};
-class PositiveDynamicRenderingLocalRead : public DynamicRenderingTest {};
 
 class DynamicStateTest : public VkLayerTest {
   public:
     void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
 };
-class NegativeDynamicState : public DynamicStateTest {
-    // helper functions for tests in this file
-  public:
-    // VK_EXT_extended_dynamic_state - not calling vkCmdSet before draw
-    void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
-    // VK_EXT_extended_dynamic_state3 - Create a pipeline with dynamic state, but the feature disabled
-    void ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char *vuid);
-    // VK_EXT_line_rasterization - Init with LineRasterization features off
-    void InitLineRasterizationFeatureDisabled();
-};
-class PositiveDynamicState : public DynamicStateTest {};
 
 class ExternalMemorySyncTest : public VkLayerTest {
   protected:
@@ -426,22 +315,11 @@ class ExternalMemorySyncTest : public VkLayerTest {
     using ExternalHandle = int;
 #endif
 };
-class NegativeExternalMemorySync : public ExternalMemorySyncTest {};
-class PositiveExternalMemorySync : public ExternalMemorySyncTest {};
-
-class FragmentShadingRateTest : public VkLayerTest {};
-class NegativeFragmentShadingRate : public FragmentShadingRateTest {};
-class PositiveFragmentShadingRate : public FragmentShadingRateTest {};
-
-class NegativeGeometryTessellation : public VkLayerTest {};
-class PositiveGeometryTessellation : public VkLayerTest {};
 
 class GraphicsLibraryTest : public VkLayerTest {
   public:
     void InitBasicGraphicsLibrary();
 };
-class NegativeGraphicsLibrary : public GraphicsLibraryTest {};
-class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
 
 class HostImageCopyTest : public VkLayerTest {
   public:
@@ -459,72 +337,22 @@ class HostImageCopyTest : public VkLayerTest {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageCreateInfo image_ci;
 };
-class NegativeHostImageCopy : public HostImageCopyTest {};
-class PositiveHostImageCopy : public HostImageCopyTest {};
 
 class ImageTest : public VkLayerTest {
   public:
     VkImageCreateInfo DefaultImageInfo();
 };
-class NegativeImage : public ImageTest {};
-class PositiveImage : public ImageTest {};
 
 class ImageDrmTest : public VkLayerTest {
   public:
     void InitBasicImageDrm();
     std::vector<uint64_t> GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count = 1);
 };
-class NegativeImageDrm : public ImageDrmTest {};
-class PositiveImageDrm : public ImageDrmTest {};
-
-class ImagelessFramebufferTest : public VkLayerTest {};
-class NegativeImagelessFramebuffer : public ImagelessFramebufferTest {};
-class PositiveImagelessFramebuffer : public ImagelessFramebufferTest {};
-
-class NegativeInstanceless : public VkLayerTest {};
-
-class PositiveInstance : public VkLayerTest {};
-
-class MemoryTest : public VkLayerTest {};
-class NegativeMemory : public MemoryTest {};
-class PositiveMemory : public MemoryTest {};
-
-class MeshTest : public VkLayerTest {};
-class NegativeMesh : public MeshTest {};
-class PositiveMesh : public MeshTest {};
-
-class NegativeMultiview : public VkLayerTest {};
-
-class ObjectLifetimeTest : public VkLayerTest {};
-class NegativeObjectLifetime : public ObjectLifetimeTest {};
-class PositiveObjectLifetime : public ObjectLifetimeTest {};
-
-class NegativePipelineAdvancedBlend : public VkLayerTest {};
-
-class PipelineLayoutTest : public VkLayerTest {};
-class NegativePipelineLayout : public PipelineLayoutTest {};
-class PositivePipelineLayout : public PipelineLayoutTest {};
-
-class PipelineTopologyTest : public VkLayerTest {};
-class NegativePipelineTopology : public PipelineTopologyTest {};
-class PositivePipelineTopology : public PipelineTopologyTest {};
-
-class PipelineTest : public VkLayerTest {};
-class NegativePipeline : public PipelineTest {};
-class PositivePipeline : public PipelineTest {};
-
-class NegativePortabilitySubset : public VkLayerTest {};
-
-class ProtectedMemoryTest : public VkLayerTest {};
-class NegativeProtectedMemory : public ProtectedMemoryTest {};
-class PositiveProtectedMemory : public ProtectedMemoryTest {};
 
 class QueryTest : public VkLayerTest {
   public:
     bool HasZeroTimestampValidBits();
 };
-class NegativeQuery : public QueryTest {};
-class PositiveQuery : public QueryTest {};
 
 class RayTracingTest : public virtual VkLayerTest {
   public:
@@ -533,91 +361,14 @@ class RayTracingTest : public virtual VkLayerTest {
     void NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
                                           VkValidationFeaturesEXT *enabled_features = nullptr);
 };
-class NegativeRayTracing : public RayTracingTest {};
-class PositiveRayTracing : public RayTracingTest {};
-
-class NegativeRayTracingNV : public RayTracingTest {
-  public:
-    void OOBRayTracingShadersTestBodyNV(bool gpu_assisted);
-};
-
-class RayTracingPipelineTest : public RayTracingTest {};
-class NegativeRayTracingPipeline : public RayTracingPipelineTest {};
-class PositiveRayTracingPipeline : public RayTracingPipelineTest {};
-class NegativeRayTracingPipelineNV : public NegativeRayTracingPipeline {};
-class PositiveRayTracingPipelineNV : public PositiveRayTracingPipeline {};
 
 class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
-class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
-class PositiveGpuAVRayTracing : public GpuAVRayTracingTest {};
-
-class RenderPassTest : public VkLayerTest {};
-class NegativeRenderPass : public RenderPassTest {};
-class PositiveRenderPass : public RenderPassTest {};
-
-class RobustnessTest : public VkLayerTest {};
-class NegativeRobustness : public RobustnessTest {};
-class PositiveRobustness : public RobustnessTest {};
-
-class SamplerTest : public VkLayerTest {};
-class NegativeSampler : public SamplerTest {};
-class PositiveSampler : public SamplerTest {};
-
-class ShaderComputeTest : public VkLayerTest {};
-class NegativeShaderCompute : public ShaderComputeTest {};
-class PositiveShaderCompute : public ShaderComputeTest {};
 
 class ShaderObjectTest : public virtual VkLayerTest {
   public:
     void InitBasicShaderObject();
     void InitBasicMeshShaderObject(APIVersion target_api_version);
 };
-class NegativeShaderObject : public ShaderObjectTest {};
-class PositiveShaderObject : public ShaderObjectTest {};
-
-class PositiveGpuAVShaderObject : public PositiveGpuAV {};
-
-class ShaderInterfaceTest : public VkLayerTest {};
-class NegativeShaderInterface : public ShaderInterfaceTest {};
-class PositiveShaderInterface : public ShaderInterfaceTest {};
-
-class ShaderImageAccessTest : public VkLayerTest {};
-class PositiveShaderImageAccess : public ShaderImageAccessTest {};
-class NegativeShaderImageAccess : public ShaderImageAccessTest {};
-
-class ShaderLimitsTest : public VkLayerTest {};
-class NegativeShaderLimits : public ShaderLimitsTest {};
-class PositiveShaderLimits : public ShaderLimitsTest {};
-
-class NegativeShaderMesh : public VkLayerTest {};
-
-class ShaderPushConstantsTest : public VkLayerTest {};
-class NegativeShaderPushConstants : public ShaderPushConstantsTest {};
-class PositiveShaderPushConstants : public ShaderPushConstantsTest {};
-
-class ShaderSpirvTest : public VkLayerTest {};
-class NegativeShaderSpirv : public ShaderSpirvTest {};
-class PositiveShaderSpirv : public ShaderSpirvTest {};
-
-class ShaderStorageImageTest : public VkLayerTest {};
-class NegativeShaderStorageImage : public ShaderStorageImageTest {};
-class PositiveShaderStorageImage : public ShaderStorageImageTest {};
-
-class ShaderStorageTexelTest : public VkLayerTest {};
-class NegativeShaderStorageTexel : public ShaderStorageTexelTest {};
-class PositiveShaderStorageTexel : public ShaderStorageTexelTest {};
-
-class SparseTest : public VkLayerTest {};
-class NegativeSparseImage : public SparseTest {};
-class PositiveSparseImage : public SparseTest {};
-class NegativeSparseBuffer : public SparseTest {};
-class PositiveSparseBuffer : public SparseTest {};
-
-class NegativeSubgroup : public VkLayerTest {};
-
-class SubpassTest : public VkLayerTest {};
-class NegativeSubpass : public SubpassTest {};
-class PositiveSubpass : public SubpassTest {};
 
 class SyncObjectTest : public VkLayerTest {
   protected:
@@ -627,23 +378,6 @@ class SyncObjectTest : public VkLayerTest {
     using ExternalHandle = int;
 #endif
 };
-class NegativeSyncObject : public SyncObjectTest {};
-class PositiveSyncObject : public SyncObjectTest {};
-
-class NegativeTransformFeedback : public VkLayerTest {
-  public:
-    void InitBasicTransformFeedback();
-};
-
-class ToolingTest : public VkLayerTest {};
-class NegativeTooling : public ToolingTest {};
-class PositiveTooling : public ToolingTest {};
-
-class VertexInputTest : public VkLayerTest {};
-class NegativeVertexInput : public VertexInputTest {};
-class PositiveVertexInput : public VertexInputTest {};
-
-class NegativeViewportInheritance : public VkLayerTest {};
 
 class WsiTest : public VkLayerTest {
   public:
@@ -662,17 +396,12 @@ class WsiTest : public VkLayerTest {
     void InitWaylandContext(WaylandContext& context);
     void ReleaseWaylandContext(WaylandContext& context);
 #endif
-
 };
-class NegativeWsi : public WsiTest {};
-class PositiveWsi : public WsiTest {};
 
 class YcbcrTest : public VkLayerTest {
   public:
     void InitBasicYcbcr(void *pNextFeatures = nullptr);
 };
-class NegativeYcbcr : public YcbcrTest {};
-class PositiveYcbcr : public YcbcrTest {};
 
 class CooperativeMatrixTest : public VkLayerTest {
   public:
@@ -680,21 +409,12 @@ class CooperativeMatrixTest : public VkLayerTest {
     bool HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type);
     std::vector<VkCooperativeMatrixPropertiesKHR> coop_matrix_props;
 };
-class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
-class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
 class ParentTest : public VkLayerTest {
   public:
     ~ParentTest();
     vkt::Device *m_second_device = nullptr;
 };
-class NegativeParent : public ParentTest {};
-class PositiveParent : public ParentTest {};
-
-// Thread safety tests and other tests that implement non-trivial threading scenarios
-class ThreadingTest : public VkLayerTest {};
-class NegativeThreading : public ThreadingTest {};
-class PositiveThreading : public ThreadingTest {};
 
 template <typename T>
 bool IsValidVkStruct(const T &s) {

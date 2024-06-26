@@ -23,6 +23,8 @@ void DynamicRenderingTest::InitBasicDynamicRendering() {
     RETURN_IF_SKIP(Init());
 }
 
+class PositiveDynamicRendering : public DynamicRenderingTest {};
+
 TEST_F(PositiveDynamicRendering, BasicUsage) {
     TEST_DESCRIPTION("Most simple way to use dynamic rendering");
     RETURN_IF_SKIP(InitBasicDynamicRendering());

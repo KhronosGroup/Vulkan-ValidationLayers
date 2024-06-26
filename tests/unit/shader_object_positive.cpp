@@ -38,6 +38,8 @@ void ShaderObjectTest::InitBasicMeshShaderObject(APIVersion target_api_version) 
     RETURN_IF_SKIP(Init());
 }
 
+class PositiveShaderObject : public ShaderObjectTest {};
+
 TEST_F(PositiveShaderObject, CreateAndDestroyShaderObject) {
     TEST_DESCRIPTION("Create and destroy shader object.");
 

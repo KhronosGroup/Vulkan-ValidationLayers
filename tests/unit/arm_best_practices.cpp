@@ -18,6 +18,15 @@
 
 const char* kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
 
+class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
+  public:
+    std::unique_ptr<vkt::Image> CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
+                                            VkImageUsageFlags attachment_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkRenderPass CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                  VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE);
+    VkFramebuffer CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view, VkRenderPass renderpass);
+};
+
 class VkConstantBufferObj : public vkt::Buffer {
   public:
     VkConstantBufferObj(vkt::Device* device, VkDeviceSize size, const void* data,

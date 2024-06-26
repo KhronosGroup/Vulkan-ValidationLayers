@@ -16,6 +16,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class NegativeGpuAV : public GpuAVTest {};
+
 TEST_F(NegativeGpuAV, DestroyedPipelineLayout) {
     TEST_DESCRIPTION("Check if can catch pipeline layout not being bound");
     RETURN_IF_SKIP(InitGpuAvFramework());

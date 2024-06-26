@@ -19,6 +19,8 @@
 #include "wayland-client.h"
 #endif
 
+class NegativeWsi : public WsiTest {};
+
 TEST_F(NegativeWsi, GetPhysicalDeviceDisplayPropertiesNull) {
     TEST_DESCRIPTION("Call vkGetPhysicalDeviceDisplayPropertiesKHR with null pointer");
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -3218,7 +3220,7 @@ TEST_F(NegativeWsi, PresentRegionsKHR) {
     }
 }
 
-TEST_F(PositiveWsi, UseDestroyedSwapchain) {
+TEST_F(NegativeWsi, UseDestroyedSwapchain) {
     TEST_DESCRIPTION("Draw to images of a destroyed swapchain");
     AddSurfaceExtension();
 
