@@ -107,7 +107,7 @@ void CommandBufferAccessContext::Reset() {
     command_number_ = 0;
     subcommand_number_ = 0;
     reset_count_++;
-    command_handles_.clear();
+    current_command_tag_ = vvl::kNoIndex32;
     cb_access_context_.Reset();
     render_pass_contexts_.clear();
     current_context_ = &cb_access_context_;
@@ -782,8 +782,8 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(
     vvl::Func command, const vvl::RenderPass &rp_state, const VkRect2D &render_area,
     const std::vector<const syncval_state::ImageViewState *> &attachment_views) {
     // Create an access context the current renderpass.
-    const auto barrier_tag = NextCommandTag(command, NamedHandle("renderpass", rp_state.Handle()),
-                                            ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    const auto barrier_tag = NextCommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    AddCommandHandle(barrier_tag, rp_state.Handle());
     const auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
     render_pass_contexts_.emplace_back(
         std::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(), attachment_views, &cb_access_context_));
@@ -797,8 +797,9 @@ ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(vvl::Func command
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return NextCommandTag(command);
 
-    auto store_tag = NextCommandTag(command, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
-                                    ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto store_tag = NextCommandTag(command, ResourceUsageRecord::SubcommandType::kStoreOp);
+    AddCommandHandle(store_tag, current_renderpass_context_->GetRenderPassState()->Handle());
+
     auto barrier_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
     auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
 
@@ -811,8 +812,9 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func comma
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return NextCommandTag(command);
 
-    auto store_tag = NextCommandTag(command, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
-                                    ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto store_tag = NextCommandTag(command, ResourceUsageRecord::SubcommandType::kStoreOp);
+    AddCommandHandle(store_tag, current_renderpass_context_->GetRenderPassState()->Handle());
+
     auto barrier_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
 
     current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, store_tag, barrier_tag);
@@ -863,53 +865,73 @@ void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAcce
     }
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
-    return NextSubcommandTag(command, NamedHandle(), subcommand);
-}
-ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, NamedHandle &&handle,
-                                                               ResourceUsageRecord::SubcommandType subcommand) {
-    ResourceUsageTag next = access_log_->size();
-    access_log_->emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_, reset_count_);
-    if (command_handles_.size()) {
-        // This is a duplication, but it keeps tags->log information flat (i.e not depending on some "command tag" entry
-        access_log_->back().handles = command_handles_;
-    }
-    if (handle) {
-        access_log_->back().AddHandle(std::move(handle));
-    }
-    if (!cb_state_->GetLabelCommands().empty()) {
-        access_log_->back().label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
-    }
-    return next;
-}
-
 ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
-    return NextCommandTag(command, NamedHandle(), subcommand);
-}
-
-ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, NamedHandle &&handle,
-                                                            ResourceUsageRecord::SubcommandType subcommand) {
     command_number_++;
-    command_handles_.clear();
     subcommand_number_ = 0;
-    ResourceUsageTag next = access_log_->size();
-    access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
-    if (handle) {
-        access_log_->back().AddHandle(handle);
-        command_handles_.emplace_back(std::move(handle));
-    }
+    current_command_tag_ = access_log_->size();
+
+    auto &record = access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
+
     if (!cb_state_->GetLabelCommands().empty()) {
-        access_log_->back().label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
+        record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
     }
     CheckCommandTagDebugCheckpoint();
-    return next;
+    return current_command_tag_;
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(vvl::Func command, uint32_t index) {
-    if (index == 0) {
-        return NextCommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
+ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
+    subcommand_number_++;
+
+    const ResourceUsageTag tag = access_log_->size();
+    auto &record = access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
+
+    // By default copy handle range from the main command, but can be overwritten with AddSubcommandHandle.
+    const auto &main_command_record = (*access_log_)[current_command_tag_];
+    record.first_handle_index = main_command_record.first_handle_index;
+    record.handle_count = main_command_record.handle_count;
+
+    if (!cb_state_->GetLabelCommands().empty()) {
+        record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
     }
-    return NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
+    return tag;
+}
+
+void CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
+    assert(tag < access_log_->size());
+    const uint32_t handle_index = static_cast<uint32_t>(handles_.size());
+    handles_.emplace_back(HandleRecord(typed_handle, index));
+    // TODO: the following range check is not needed. Test and remove.
+    if (tag < access_log_->size()) {
+        auto &record = (*access_log_)[tag];
+        if (record.first_handle_index == vvl::kNoIndex32) {
+            record.first_handle_index = handle_index;
+            record.handle_count = 1;
+        } else {
+            // assert that command handles occupy continuous range
+            assert(handle_index - record.first_handle_index == record.handle_count);
+            record.handle_count++;
+        }
+    }
+}
+
+void CommandBufferAccessContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
+    assert(tag < access_log_->size());
+    const uint32_t handle_index = static_cast<uint32_t>(handles_.size());
+    handles_.emplace_back(HandleRecord(typed_handle, index));
+    // TODO: the following range check is not needed. Test and remove.
+    if (tag < access_log_->size()) {
+        auto &record = (*access_log_)[tag];
+        const auto &main_command_record = (*access_log_)[current_command_tag_];
+        if (record.first_handle_index == main_command_record.first_handle_index) {
+            // override default behavior that subcommand references the same handles as the main command
+            record.first_handle_index = handle_index;
+            record.handle_count = 1;
+        } else {
+            // assert that command handles occupy continuous range
+            assert(handle_index - record.first_handle_index == record.handle_count);
+            record.handle_count++;
+        }
+    }
 }
 
 std::string CommandBufferAccessContext::GetDebugRegionName(const ResourceUsageRecord &record) const {
@@ -1089,13 +1111,23 @@ std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) 
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const NamedHandle::FormatterState &formatter) {
-    const NamedHandle &handle = formatter.that;
+std::ostream &operator<<(std::ostream &out, const HandleRecord::FormatterState &formatter) {
+    const HandleRecord &handle = formatter.that;
     bool labeled = false;
-    if (!handle.name.empty()) {
-        out << handle.name;
+
+    // Hardcode possible options in order not to store string per HandleRecord object.
+    // If more general solution is needed the preference should be to store const char*
+    // literal (8 bytes on 64 bit) instead of std::string which, even if empty,
+    // can occupy 40 bytes, as was observed in one implementation. HandleRecord is memory
+    // sensitive object (there can be a lot of instances).
+    if (handle.type == kVulkanObjectTypeRenderPass) {
+        out << "renderpass";
+        labeled = true;
+    } else if (handle.type == kVulkanObjectTypeCommandBuffer && handle.IsIndexed()) {
+        out << "pCommandBuffers";
         labeled = true;
     }
+
     if (handle.IsIndexed()) {
         out << "[" << handle.index << "]";
         labeled = true;
@@ -1103,7 +1135,7 @@ std::ostream &operator<<(std::ostream &out, const NamedHandle::FormatterState &f
     if (labeled) {
         out << ": ";
     }
-    out << formatter.state.FormatHandle(handle.handle);
+    out << formatter.state.FormatHandle(handle.TypedHandle());
     return out;
 }
 
@@ -1121,8 +1153,12 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         if (record.sub_command != 0) {
             out << ", subcmd: " << record.sub_command;
         }
-        for (const auto &named_handle : record.handles) {
-            out << ", " << named_handle.Formatter(formatter.sync_state);
+        for (uint32_t i = 0; i < record.handle_count; i++) {
+            assert(record.first_handle_index != vvl::kNoIndex32);
+            const uint32_t handle_index = record.first_handle_index + i;
+            auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
+            const HandleRecord &handle_record = cb_context->access_context.GetHandleRecord(handle_index);
+            out << ", " << handle_record.Formatter(formatter.sync_state);
         }
         out << ", reset_no: " << std::to_string(record.reset_count);
 

@@ -341,10 +341,10 @@ ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_co
     const auto tag = cb_context->NextCommandTag(command_);
     for (const auto &barrier_set : barriers_) {
         for (const auto &buffer_barrier : barrier_set.buffer_memory_barriers) {
-            cb_context->AddHandle(tag, buffer_barrier.buffer->Handle());
+            cb_context->AddCommandHandle(tag, buffer_barrier.buffer->Handle());
         }
         for (const auto &image_barrier : barrier_set.image_memory_barriers) {
-            cb_context->AddHandle(tag, image_barrier.image->Handle());
+            cb_context->AddCommandHandle(tag, image_barrier.image->Handle());
         }
     }
     ReplayRecord(*cb_context, tag);

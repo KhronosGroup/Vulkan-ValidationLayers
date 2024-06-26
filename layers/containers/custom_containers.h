@@ -1105,6 +1105,10 @@ constexpr auto kI32Max = std::numeric_limits<int32_t>::max();
 // Typesafe INT64_MAX
 constexpr auto kI64Max = std::numeric_limits<int64_t>::max();
 
+// Descriptive names to indicate uninitialized/invalid unsigned index values
+constexpr auto kNoIndex32 = kU32Max;
+constexpr auto kNoIndex64 = kU64Max;
+
 template <typename T>
 T GetQuotientCeil(T numerator, T denominator) {
     denominator = std::max(denominator, T{1});
