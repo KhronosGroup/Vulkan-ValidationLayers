@@ -236,7 +236,10 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
+    cb_context->AddCommandHandle(tag, src_buffer->Handle());
+
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
+    cb_context->AddCommandHandle(tag, dst_buffer->Handle());
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -2704,7 +2707,11 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
     // Make working copies of the access and events contexts
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        proxy_cb_context.NextIndexedCommandTag(error_obj.location.function, cb_index);
+        if (cb_index == 0) {
+            proxy_cb_context.NextCommandTag(error_obj.location.function, ResourceUsageRecord::SubcommandType::kIndex);
+        } else {
+            proxy_cb_context.NextSubcommandTag(error_obj.location.function, ResourceUsageRecord::SubcommandType::kIndex);
+        }
 
         const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
         if (!recorded_cb) continue;
@@ -2735,12 +2742,17 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        const ResourceUsageTag cb_tag = cb_context->NextIndexedCommandTag(record_obj.location.function, cb_index);
-        const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
-        if (!recorded_cb) continue;
-        cb_context->AddHandle(cb_tag, "pCommandBuffers", recorded_cb->Handle(), cb_index);
-        const auto *recorded_cb_context = &recorded_cb->access_context;
-        cb_context->RecordExecutedCommandBuffer(*recorded_cb_context);
+        if (const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index])) {
+            const auto subcommand = ResourceUsageRecord::SubcommandType::kIndex;
+            if (cb_index == 0) {
+                ResourceUsageTag cb_tag = cb_context->NextCommandTag(record_obj.location.function, subcommand);
+                cb_context->AddCommandHandle(cb_tag, recorded_cb->Handle(), cb_index);
+            } else {
+                ResourceUsageTag cb_tag = cb_context->NextSubcommandTag(record_obj.location.function, subcommand);
+                cb_context->AddSubcommandHandle(cb_tag, recorded_cb->Handle(), cb_index);
+            }
+            cb_context->RecordExecutedCommandBuffer(recorded_cb->access_context);
+        }
     }
 }
 
