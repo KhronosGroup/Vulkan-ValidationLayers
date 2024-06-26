@@ -32,6 +32,8 @@ void GpuAVRayQueryTest::InitGpuAVRayQuery() {
     RETURN_IF_SKIP(InitState());
 }
 
+class PositiveGpuAVRayQuery : public GpuAVRayQueryTest {};
+
 TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     TEST_DESCRIPTION("Ray query in a compute shader");
     RETURN_IF_SKIP(InitGpuAVRayQuery());

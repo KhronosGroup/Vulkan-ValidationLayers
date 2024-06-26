@@ -14,6 +14,8 @@
 
 #include "../framework/layer_validation_tests.h"
 
+class NegativeDebugExtensions : public VkLayerTest {};
+
 TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     TEST_DESCRIPTION("Ensure debug marker object names are printed in debug report output");
     AddRequiredExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);

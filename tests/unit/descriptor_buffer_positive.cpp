@@ -26,6 +26,8 @@ void DescriptorBufferTest::InitBasicDescriptorBuffer(void* pNextFeatures) {
     RETURN_IF_SKIP(InitState(nullptr, &descriptor_buffer_features));
 }
 
+class PositiveDescriptorBuffer : public DescriptorBufferTest {};
+
 TEST_F(PositiveDescriptorBuffer, BasicUsage) {
     TEST_DESCRIPTION("Create VkBuffer with extension.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());

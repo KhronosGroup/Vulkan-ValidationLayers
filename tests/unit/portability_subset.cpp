@@ -15,6 +15,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
+class NegativePortabilitySubset : public VkLayerTest {};
+
 TEST_F(NegativePortabilitySubset, Device) {
     TEST_DESCRIPTION("Portability: CreateDevice called and VK_KHR_portability_subset not enabled");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);

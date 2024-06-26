@@ -104,6 +104,8 @@ void WsiTest::ReleaseWaylandContext(WaylandContext &context) {
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
+class PositiveWsi : public WsiTest {};
+
 TEST_F(PositiveWsi, CreateWaylandSurface) {
     TEST_DESCRIPTION("Test creating wayland surface");
 

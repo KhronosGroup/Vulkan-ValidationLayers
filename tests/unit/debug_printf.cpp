@@ -16,7 +16,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
-void NegativeDebugPrintf::InitDebugPrintfFramework(void *p_next) {
+void DebugPrintfTests::InitDebugPrintfFramework(void *p_next) {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     VkValidationFeatureDisableEXT disables[] = {
         VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
@@ -38,6 +38,8 @@ void NegativeDebugPrintf::InitDebugPrintfFramework(void *p_next) {
         GTEST_SKIP() << "Currently disabled for Portability";
     }
 }
+
+class NegativeDebugPrintf : public DebugPrintfTests {};
 
 TEST_F(NegativeDebugPrintf, BasicCompute) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());

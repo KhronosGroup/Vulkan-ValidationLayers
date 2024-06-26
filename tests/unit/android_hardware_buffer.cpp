@@ -17,6 +17,8 @@
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
+class NegativeAndroidHardwareBuffer : public VkLayerTest {};
+
 TEST_F(NegativeAndroidHardwareBuffer, ImageCreate) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image create info.");
 

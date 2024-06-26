@@ -19,6 +19,8 @@
 #include "generated/vk_extension_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
+class PositiveDescriptors : public VkLayerTest {};
+
 TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
     TEST_DESCRIPTION("Copy non-updated descriptors");
     unsigned int i;

@@ -15,6 +15,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
+class PositiveSparseImage : public VkLayerTest {};
+
 TEST_F(PositiveSparseImage, MultipleBinds) {
     TEST_DESCRIPTION("Bind 2 memory ranges to one image using vkQueueBindSparse, destroy the image and then free the memory");
 

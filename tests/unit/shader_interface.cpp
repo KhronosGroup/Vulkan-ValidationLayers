@@ -16,6 +16,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 
+class NegativeShaderInterface : public VkLayerTest {};
+
 TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");
 
@@ -1316,7 +1318,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageOutputLocation0) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
 
-TEST_F(PositiveShaderInterface, AlphaToCoverageOutputIndex1) {
+TEST_F(NegativeShaderInterface, AlphaToCoverageOutputIndex1) {
     TEST_DESCRIPTION("DualSource blend has two outputs at location zero, so Index 0 is the one that's required");
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
     RETURN_IF_SKIP(Init());

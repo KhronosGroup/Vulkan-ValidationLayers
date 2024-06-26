@@ -14,6 +14,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
+class PositivePipelineLayout : public VkLayerTest {};
+
 TEST_F(PositivePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
     TEST_DESCRIPTION("HLSL will sometimes produce a SAMPLED_IMAGE / SAMPLER on the same slot that is same as COMBINED_IMAGE_SAMPLER");
 

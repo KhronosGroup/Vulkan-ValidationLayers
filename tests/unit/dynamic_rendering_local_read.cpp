@@ -18,6 +18,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeDynamicRenderingLocalRead : public DynamicRenderingTest {};
+
 TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLayout) {
     TEST_DESCRIPTION("Feature is disabled, but attachment descriptor and/or reference uses VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR");
 

@@ -17,6 +17,8 @@
 #include "../framework/thread_helper.h"
 #include "generated/vk_extension_helper.h"
 
+class PositiveCommand : public VkLayerTest {};
+
 TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.1 before drawIndirectCount feature was added");
 

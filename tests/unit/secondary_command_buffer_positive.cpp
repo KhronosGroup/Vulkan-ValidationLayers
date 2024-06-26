@@ -14,6 +14,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/render_pass_helper.h"
 
+class PositiveSecondaryCommandBuffer : public VkLayerTest {};
+
 TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
     TEST_DESCRIPTION("Add a pipeline barrier in a secondary command buffer");
     RETURN_IF_SKIP(Init());

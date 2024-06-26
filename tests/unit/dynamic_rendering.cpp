@@ -18,6 +18,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeDynamicRendering : public DynamicRenderingTest {};
+
 TEST_F(NegativeDynamicRendering, CommandBufferInheritanceRenderingInfo) {
     TEST_DESCRIPTION("VkCommandBufferInheritanceRenderingInfoKHR Dynamic Rendering Tests.");
     SetTargetApiVersion(VK_API_VERSION_1_2);

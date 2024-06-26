@@ -18,6 +18,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
+class NegativeDescriptorBuffer : public DescriptorBufferTest {};
+
 TEST_F(NegativeDescriptorBuffer, SetLayout) {
     TEST_DESCRIPTION("Descriptor buffer set layout tests.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());

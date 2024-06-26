@@ -14,6 +14,8 @@
 
 #include "../framework/layer_validation_tests.h"
 
+class PositiveCopyBufferImage : public VkLayerTest {};
+
 TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     TEST_DESCRIPTION(
         "Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS using VK_KHR_maintenance5");

@@ -37,6 +37,8 @@ void GpuAVDescriptorIndexingTest::InitGpuVUDescriptorIndexing() {
     RETURN_IF_SKIP(InitState());
 }
 
+class PositiveGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
+
 TEST_F(PositiveGpuAVDescriptorIndexing, Basic) {
     TEST_DESCRIPTION("Basic indexing into a valid descriptor index");
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());

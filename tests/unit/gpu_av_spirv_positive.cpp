@@ -20,6 +20,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class PositiveGpuAVSpirv : public GpuAVTest {};
+
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7462
 TEST_F(PositiveGpuAVSpirv, LoopPhi) {
     TEST_DESCRIPTION("Loop that has the Phi parent pointed to itself");

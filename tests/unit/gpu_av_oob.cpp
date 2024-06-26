@@ -17,6 +17,14 @@
 #include "../framework/gpu_av_helper.h"
 #include "../layers/gpu/shaders/gpu_shaders_constants.h"
 
+class NegativeGpuAVOOB : public GpuAVTest {
+  public:
+    void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
+                              VkDescriptorType descriptor_type, const char *fragment_shader,
+                              std::vector<const char *> expected_errors, bool shader_objects = false);
+    void ComputeStorageBufferTest(const char *expected_error, const char *shader, VkDeviceSize buffer_size);
+};
+
 TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     TEST_DESCRIPTION("Check buffer oob validation when per pipeline robustness is enabled");
 

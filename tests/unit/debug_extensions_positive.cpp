@@ -11,6 +11,8 @@
 
 #include "../framework/layer_validation_tests.h"
 
+class PositiveDebugExtensions : public VkLayerTest {};
+
 TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectBuffer) {
     TEST_DESCRIPTION("call vkSetDebugUtilsObjectNameEXT on a VkBuffer");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

@@ -25,6 +25,8 @@ void DynamicRenderingTest::InitBasicDynamicRenderingLocalRead() {
     RETURN_IF_SKIP(Init());
 }
 
+class PositiveDynamicRenderingLocalRead : public DynamicRenderingTest {};
+
 TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
     TEST_DESCRIPTION("Most simple way to use dynamic rendering local read");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);

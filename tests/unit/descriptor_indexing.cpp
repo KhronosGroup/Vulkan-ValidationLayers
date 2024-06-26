@@ -16,6 +16,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeDescriptorIndexing : public DescriptorIndexingTest {};
+
 TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     TEST_DESCRIPTION("Exercise errors for updating a descriptor set after it is bound.");
 

@@ -18,6 +18,8 @@
 
 #include "../layers/gpu/shaders/gpu_shaders_constants.h"
 
+class NegativeGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
+
 TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ArrayOOBBuffer) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");

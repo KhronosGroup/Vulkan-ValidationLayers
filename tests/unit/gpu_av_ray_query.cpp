@@ -22,6 +22,8 @@
 #include "../framework/ray_tracing_objects.h"
 #include "../../layers/gpu/shaders/gpu_shaders_constants.h"
 
+class NegativeGpuAVRayQuery : public GpuAVRayQueryTest {};
+
 TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
     TEST_DESCRIPTION("Ray query with a negative value for Ray TMin");
     RETURN_IF_SKIP(InitGpuAVRayQuery());

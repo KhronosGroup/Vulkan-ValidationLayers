@@ -16,6 +16,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeMesh : public VkLayerTest {};
+
 TEST_F(NegativeMesh, BasicUsage) {
     TEST_DESCRIPTION("Test VK_EXT_mesh_shader.");
 

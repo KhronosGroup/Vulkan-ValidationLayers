@@ -15,6 +15,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativePipelineAdvancedBlend : public VkLayerTest {};
+
 TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
     TEST_DESCRIPTION("Advanced blending with invalid VkBlendOps");
     SetTargetApiVersion(VK_API_VERSION_1_1);

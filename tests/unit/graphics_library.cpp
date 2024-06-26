@@ -16,6 +16,8 @@
 #include "../framework/descriptor_helper.h"
 #include "generated/vk_extension_helper.h"
 
+class NegativeGraphicsLibrary : public GraphicsLibraryTest {};
+
 TEST_F(NegativeGraphicsLibrary, DSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts");
 

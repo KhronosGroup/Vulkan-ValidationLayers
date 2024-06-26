@@ -17,6 +17,17 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 
+class NegativeDynamicState : public DynamicStateTest {
+    // helper functions for tests in this file
+  public:
+    // VK_EXT_extended_dynamic_state - not calling vkCmdSet before draw
+    void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
+    // VK_EXT_extended_dynamic_state3 - Create a pipeline with dynamic state, but the feature disabled
+    void ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char *vuid);
+    // VK_EXT_line_rasterization - Init with LineRasterization features off
+    void InitLineRasterizationFeatureDisabled();
+};
+
 TEST_F(NegativeDynamicState, DepthBiasNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Depth Bias dynamic state is required but not correctly bound.");

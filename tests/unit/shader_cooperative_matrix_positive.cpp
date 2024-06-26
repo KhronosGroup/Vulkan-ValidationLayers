@@ -82,6 +82,8 @@ bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint3
     return found_a && found_b && found_c && found_r;
 }
 
+class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
+
 TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     TEST_DESCRIPTION("Test VK_NV_cooperative_matrix.");
 

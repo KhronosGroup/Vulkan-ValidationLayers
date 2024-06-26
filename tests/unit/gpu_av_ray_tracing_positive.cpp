@@ -17,6 +17,8 @@
 #include "../framework/shader_helper.h"
 #include "../framework/gpu_av_helper.h"
 
+class PositiveGpuAVRayTracing : public GpuAVRayTracingTest {};
+
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
     TEST_DESCRIPTION(
         "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration structure, and trace one "

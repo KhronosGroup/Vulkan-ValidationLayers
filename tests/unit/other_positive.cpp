@@ -16,6 +16,8 @@
 
 #include <cstdlib>
 
+class VkPositiveLayerTest : public VkLayerTest {};
+
 TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter with stateless validation disabled");
 

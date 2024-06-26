@@ -27,6 +27,8 @@ void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::
     pipe.CreateComputePipeline();
 }
 
+class PositiveDescriptorIndexing : public DescriptorIndexingTest {};
+
 TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     TEST_DESCRIPTION("Ensure that no validation errors for invalid descriptors if binding is PARTIALLY_BOUND");
     SetTargetApiVersion(VK_API_VERSION_1_1);

@@ -16,6 +16,8 @@
 #include "../framework/render_pass_helper.h"
 #include "generated/vk_extension_helper.h"
 
+class PositiveVertexInput : public VkLayerTest {};
+
 TEST_F(PositiveVertexInput, AttributeMatrixType) {
     TEST_DESCRIPTION("Test that pipeline validation accepts matrices passed as vertex attributes");
 

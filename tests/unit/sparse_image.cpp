@@ -18,6 +18,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/external_memory_sync.h"
 
+class NegativeSparseImage : public VkLayerTest {};
+
 TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");
     RETURN_IF_SKIP(Init());

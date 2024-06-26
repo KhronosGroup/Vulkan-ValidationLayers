@@ -14,6 +14,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class PositiveShaderSpirv : public VkLayerTest {};
+
 TEST_F(PositiveShaderSpirv, NonSemanticInfo) {
     // This is a positive test, no errors expected
     // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled
@@ -603,7 +605,7 @@ TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
 }
 
-TEST_F(PositiveShaderInterface, OpTypeArraySpecConstant) {
+TEST_F(PositiveShaderSpirv, OpTypeArraySpecConstant) {
     TEST_DESCRIPTION("Make sure spec constants for a OpTypeArray doesn't assert");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());

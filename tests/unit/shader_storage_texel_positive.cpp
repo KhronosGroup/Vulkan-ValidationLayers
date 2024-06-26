@@ -15,6 +15,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
+class PositiveShaderStorageTexel : public VkLayerTest {};
+
 TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 

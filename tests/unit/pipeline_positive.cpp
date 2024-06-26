@@ -17,6 +17,8 @@
 #include "../framework/render_pass_helper.h"
 #include "generated/vk_extension_helper.h"
 
+class PositivePipeline : public VkLayerTest {};
+
 TEST_F(PositivePipeline, ComplexTypes) {
     TEST_DESCRIPTION("Smoke test for complex types across VS/FS boundary");
     AddRequiredFeature(vkt::Feature::tessellationShader);

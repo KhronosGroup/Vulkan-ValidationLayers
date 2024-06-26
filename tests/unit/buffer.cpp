@@ -19,6 +19,8 @@
 #include "../framework/descriptor_helper.h"
 #include "utils/vk_layer_utils.h"
 
+class NegativeBuffer : public VkLayerTest {};
+
 TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     TEST_DESCRIPTION("Check alignment parameters for vkCmdUpdateBuffer");
     uint32_t updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};

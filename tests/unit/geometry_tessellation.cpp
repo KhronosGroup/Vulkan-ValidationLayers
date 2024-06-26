@@ -16,6 +16,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeGeometryTessellation : public VkLayerTest {};
+
 TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     TEST_DESCRIPTION(
         "Attempt to use a stageMask w/ geometry shader and tesselation shader bits enabled when those features are disabled on the "

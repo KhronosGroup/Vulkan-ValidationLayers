@@ -16,6 +16,8 @@
 #include "../framework/ray_tracing_helper_nv.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeRayTracingPipelineNV : public RayTracingTest {};
+
 TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);

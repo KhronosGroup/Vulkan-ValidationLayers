@@ -19,6 +19,8 @@
 #include "../framework/descriptor_helper.h"
 #include "utils/vk_layer_utils.h"
 
+class NegativeImage : public ImageTest {};
+
 TEST_F(NegativeImage, UsageBits) {
     TEST_DESCRIPTION(
         "Specify wrong usage for image then create conflicting view of image Initialize buffer with wrong usage then perform copy "

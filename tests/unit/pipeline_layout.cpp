@@ -16,6 +16,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
+class NegativePipelineLayout : public VkLayerTest {};
+
 TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout using more than the physical limit of SetLayouts.");
 

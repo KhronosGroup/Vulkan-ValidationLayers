@@ -15,6 +15,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/render_pass_helper.h"
 
+class NegativeSecondaryCommandBuffer : public VkLayerTest {};
+
 TEST_F(NegativeSecondaryCommandBuffer, AsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit.");
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-00075");

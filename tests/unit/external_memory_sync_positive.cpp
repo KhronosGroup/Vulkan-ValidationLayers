@@ -16,6 +16,8 @@
 #include "utils/vk_layer_utils.h"
 #include "generated/enum_flag_bits.h"
 
+class PositiveExternalMemorySync : public ExternalMemorySyncTest {};
+
 TEST_F(PositiveExternalMemorySync, GetMemoryFdHandle) {
     TEST_DESCRIPTION("Get POXIS handle for memory allocation");
     SetTargetApiVersion(VK_API_VERSION_1_1);

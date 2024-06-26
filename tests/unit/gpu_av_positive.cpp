@@ -21,6 +21,8 @@
 #include "../framework/gpu_av_helper.h"
 #include "../../layers/gpu/shaders/gpu_shaders_constants.h"
 
+class PositiveGpuAV : public GpuAVTest {};
+
 static const std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                                           VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
 static const std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
@@ -1198,6 +1200,9 @@ TEST_F(PositiveGpuAV, SwapchainImage) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, ivci);
 }
+
+class PositiveGpuAVParameterized : public GpuAVTest,
+                                   public ::testing::WithParamInterface<std::tuple<std::vector<const char *>, uint32_t>> {};
 
 TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");

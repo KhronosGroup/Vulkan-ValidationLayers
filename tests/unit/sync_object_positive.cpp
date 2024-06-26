@@ -21,6 +21,8 @@
 #include <poll.h>
 #endif
 
+class PositiveSyncObject : public SyncObjectTest {};
+
 TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     SetTargetApiVersion(VK_API_VERSION_1_2);

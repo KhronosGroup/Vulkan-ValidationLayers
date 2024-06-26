@@ -18,6 +18,8 @@
 #include "../framework/external_memory_sync.h"
 #include "utils/vk_layer_utils.h"
 
+class NegativeExternalMemorySync : public ExternalMemorySyncTest {};
+
 TEST_F(NegativeExternalMemorySync, CreateBufferIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating buffer with incompatible external memory handle types");
 

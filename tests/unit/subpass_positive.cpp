@@ -18,6 +18,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class PositiveSubpass : public VkLayerTest {};
+
 TEST_F(PositiveSubpass, SubpassImageBarrier) {
     TEST_DESCRIPTION("Subpass with image barrier (self-dependency)");
     SetTargetApiVersion(VK_API_VERSION_1_3);

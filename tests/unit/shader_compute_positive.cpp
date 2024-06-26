@@ -14,6 +14,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class PositiveShaderCompute : public VkLayerTest {};
+
 TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSize) {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."

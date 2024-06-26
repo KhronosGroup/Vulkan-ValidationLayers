@@ -17,6 +17,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 
+class NegativeFragmentShadingRate : public VkLayerTest {};
+
 TEST_F(NegativeFragmentShadingRate, Values) {
     TEST_DESCRIPTION("Specify invalid fragment shading rate values");
     SetTargetApiVersion(VK_API_VERSION_1_2);

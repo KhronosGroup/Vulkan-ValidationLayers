@@ -18,6 +18,8 @@
 #include "../framework/barrier_queue_family.h"
 #include "../framework/render_pass_helper.h"
 
+class NegativeSyncObject : public SyncObjectTest {};
+
 TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     TEST_DESCRIPTION("Add a pipeline barrier within a subpass that has conflicting state");
     RETURN_IF_SKIP(Init());

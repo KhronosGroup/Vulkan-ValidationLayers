@@ -17,6 +17,8 @@
 #include <sys/mman.h>
 #endif
 
+class PositiveMemory : public VkLayerTest {};
+
 TEST_F(PositiveMemory, MapMemory2) {
     TEST_DESCRIPTION("Validate vkMapMemory2 and vkUnmapMemory2");
 

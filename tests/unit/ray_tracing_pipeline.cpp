@@ -16,6 +16,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
+class NegativeRayTracingPipeline : public RayTracingTest {};
+
 TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 

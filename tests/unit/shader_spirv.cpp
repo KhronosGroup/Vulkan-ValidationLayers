@@ -22,6 +22,8 @@ struct icd_spv_header {
     uint32_t gen_magic = 0;  // Generator's magic number
 };
 
+class NegativeShaderSpirv : public VkLayerTest {};
+
 TEST_F(NegativeShaderSpirv, CodeSize) {
     TEST_DESCRIPTION("Test that errors are produced for a spirv modules with invalid code sizes");
 

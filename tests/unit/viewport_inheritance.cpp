@@ -399,6 +399,8 @@ class ViewportInheritanceTestData {
     }
 };
 
+class NegativeViewportInheritance : public VkLayerTest {};
+
 TEST_F(NegativeViewportInheritance, BasicUsage) {
 #if defined(VVL_ENABLE_TSAN)
     GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";

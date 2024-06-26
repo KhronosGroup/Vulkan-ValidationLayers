@@ -16,6 +16,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 
+class PositiveShaderInterface : public VkLayerTest {};
+
 TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
     TEST_DESCRIPTION("Test shader layout in and out with different components.");
 

@@ -33,6 +33,11 @@ void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2K
     }
 }
 
+class NegativeRayTracingNV : public RayTracingTest {
+  public:
+    void OOBRayTracingShadersTestBodyNV(bool gpu_assisted);
+};
+
 void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);

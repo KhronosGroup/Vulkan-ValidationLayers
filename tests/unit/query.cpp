@@ -17,6 +17,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+class NegativeQuery : public QueryTest {};
+
 TEST_F(NegativeQuery, PerformanceCreation) {
     TEST_DESCRIPTION("Create performance query without support");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
