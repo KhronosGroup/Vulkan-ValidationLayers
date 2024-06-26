@@ -6228,3 +6228,33 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeSyncVal, DebugResourceName) {
+    TEST_DESCRIPTION("Test the buffer debug name is mentioned in the error message");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    buffer_a.SetName("BufferA");
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_b.SetName("BufferB");
+    VkBufferCopy region = {0, 0, 256};
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    cb0.begin();
+    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    cb0.end();
+    m_default_queue->Submit(cb0);
+
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    cb1.SetName(*m_device, "CB1");
+    cb1.begin();
+    vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
+    cb1.end();
+    m_device->SetName("main");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "CB1.*BufferA.*BufferB");
+    m_default_queue->Submit(cb1);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
