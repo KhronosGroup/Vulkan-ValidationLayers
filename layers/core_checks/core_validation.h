@@ -219,6 +219,7 @@ class CoreChecks : public ValidationStateTracker {
                                       VkSharingMode sharing_mode) const;
     bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
                                                  const VkSwapchainCreateInfoKHR& create_info,
+                                                 const std::vector<VkPresentModeKHR>& present_modes,
                                                  const vvl::Surface* surface_state) const;
     bool ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
                                                    const VkSurfaceCapabilitiesKHR& capabilities,
