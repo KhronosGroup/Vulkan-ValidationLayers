@@ -457,11 +457,7 @@ def main(argv):
 
     layer_source_files = [repo_relative(path) for path in [
         'layers/error_message/unimplementable_validation.h',
-        'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
-        'layers/state_tracker/descriptor_sets.cpp',
         'layers/state_tracker/video_session_state.cpp',
-        'layers/gpu/error_message/gpuav_vuids.h',
-        'layers/stateless/stateless_validation.h',
         f'layers/{args.api}/generated/stateless_validation_helper.cpp',
         f'layers/{args.api}/generated/object_tracker.cpp',
         f'layers/{args.api}/generated/spirv_validation_helper.cpp',
@@ -475,6 +471,7 @@ def main(argv):
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/drawdispatch/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu/error_message'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/gpu/instrumentation'), '*.cpp')))
 
     test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 
