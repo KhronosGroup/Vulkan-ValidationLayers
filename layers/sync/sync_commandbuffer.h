@@ -257,7 +257,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     // to use shared_from_this from the constructor.
     void SetSelfReference() { cbs_referenced_->push_back(cb_state_->shared_from_this()); }
 
-    ~CommandBufferAccessContext() override = default;
+    ~CommandBufferAccessContext() override;
     const CommandExecutionContext &GetExecutionContext() const { return *this; }
 
     void Destroy() {
@@ -354,6 +354,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     std::vector<vvl::CommandBuffer::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
 
   private:
+    uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
+
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
     void RecordSyncOp(SyncOpPointer &&sync_op);
 
@@ -362,6 +364,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     void CheckCommandTagDebugCheckpoint();
 
+  private:
     // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.
     vvl::CommandBuffer *cb_state_;

@@ -521,11 +521,21 @@ const typename T::value_type *DataOrNull(const T &container) {
     return nullptr;
 }
 
-
 // Workaround for static_assert(false) before C++ 23 arrives
 // https://en.cppreference.com/w/cpp/language/static_assert
 // https://cplusplus.github.io/CWG/issues/2518.html
 template <typename>
 inline constexpr bool dependent_false_v = false;
+
+// Until C++ 26 std::atomic<T>::fetch_max arrives
+// https://en.cppreference.com/w/cpp/atomic/atomic/fetch_max
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p0493r5.pdf
+template <typename T>
+inline T atomic_fetch_max(std::atomic<T> &current_max, const T &value) noexcept {
+    T t = current_max.load();
+    while (!current_max.compare_exchange_weak(t, std::max(t, value)))
+        ;
+    return t;
+}
 
 }  // namespace vvl

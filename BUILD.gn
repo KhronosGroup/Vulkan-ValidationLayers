@@ -300,6 +300,8 @@ vvl_sources = [
   "layers/sync/sync_op.h",
   "layers/sync/sync_renderpass.cpp",
   "layers/sync/sync_renderpass.h",
+  "layers/sync/sync_stats.cpp",
+  "layers/sync/sync_stats.h",
   "layers/sync/sync_submit.cpp",
   "layers/sync/sync_submit.h",
   "layers/sync/sync_utils.cpp",
