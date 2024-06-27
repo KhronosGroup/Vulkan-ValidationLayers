@@ -146,7 +146,7 @@ void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const char *con
     message_flags_ |= msg_flags;
 }
 
-void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string msg_regex) {
+void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str) {
     if (NeedCheckSuccess()) {
         VerifyNotFound();
     }
@@ -154,7 +154,21 @@ void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char
     auto guard = Lock();
     VuidAndMessage vuid_and_regex;
     vuid_and_regex.vuid = vuid;
-    vuid_and_regex.SetMsgRegex(msg_regex);
+    std::regex regex(regex_str);
+    vuid_and_regex.SetMsgRegex(std::move(regex_str), std::move(regex));
+    desired_messages_.emplace_back(std::move(vuid_and_regex));
+    message_flags_ |= msg_flags;
+}
+
+void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str, std::regex regex) {
+    if (NeedCheckSuccess()) {
+        VerifyNotFound();
+    }
+
+    auto guard = Lock();
+    VuidAndMessage vuid_and_regex;
+    vuid_and_regex.vuid = vuid;
+    vuid_and_regex.SetMsgRegex(std::move(regex_str), std::move(regex));
     desired_messages_.emplace_back(std::move(vuid_and_regex));
     message_flags_ |= msg_flags;
 }
@@ -165,9 +179,10 @@ void ErrorMonitor::SetDesiredError(const char *msg, uint32_t count) {
     }
 }
 
-void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string msg_regex, uint32_t count /*= 1*/) {
+void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count /*= 1*/) {
+    const std::regex regex(regex_str);
     for (uint32_t i = 0; i < count; i++) {
-        SetDesiredFailureMsgRegex(kErrorBit, vuid, msg_regex);
+        SetDesiredFailureMsgRegex(kErrorBit, vuid, regex_str, regex);
     }
 }
 

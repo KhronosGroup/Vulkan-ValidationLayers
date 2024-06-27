@@ -51,11 +51,11 @@ class ErrorMonitor {
     // ErrorMonitor will look for an error message containing the specified string(s)
     void SetDesiredFailureMsg(const VkFlags msg_flags, const char *const msg_string);
     void SetDesiredFailureMsg(const VkFlags msg_flags, const std::string &msg);
-    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string msg_regex);
+    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str);
     // Most tests check for kErrorBit so default to just using it
     void SetDesiredError(const char *msg, uint32_t count = 1);
     // Regex uses modified ECMAScript regular expression grammar https://eel.is/c++draft/re.grammar
-    void SetDesiredErrorRegex(const char *vuid, std::string msg_regex, uint32_t count = 1);
+    void SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count = 1);
     // And use this for warnings
     void SetDesiredWarning(const char *msg, uint32_t count = 1);
 
@@ -82,6 +82,7 @@ class ErrorMonitor {
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
 
   private:
+    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string msg_regex, std::regex regex);
     bool ExpectingSuccess() const;
     bool NeedCheckSuccess() const;
     void VerifyNotFound();
@@ -111,10 +112,10 @@ class ErrorMonitor {
             msg_type = MsgType::String;
             msg_string = std::move(msg);
         }
-        void SetMsgRegex(std::string regex) {
+        void SetMsgRegex(std::string regex_str, std::regex regex) {
             msg_type = MsgType::Regex;
-            msg_string = regex;
-            msg_regex = regex;
+            msg_string = std::move(regex_str);
+            msg_regex = std::move(regex);
         }
         bool Search(const char *vuid, std::string_view msg) const;
         std::string Print() const;
