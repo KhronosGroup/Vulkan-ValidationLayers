@@ -931,6 +931,9 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     // Warning is thrown any time the present mode is not VK_PRESENT_MODE_FIFO_KHR, but only with ARM BP
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-Arm-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
 
+    // present mode might not be supported
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-01281");
+
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();

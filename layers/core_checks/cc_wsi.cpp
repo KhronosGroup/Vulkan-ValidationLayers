@@ -68,60 +68,49 @@ static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(const VkSwapchainCre
     return result;
 }
 
+// Validate VkSwapchainPresentModesCreateInfoEXT data
 bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location &create_info_loc,
                                                          const VkSwapchainCreateInfoKHR &create_info,
+                                                         const std::vector<VkPresentModeKHR> &present_modes,
                                                          const vvl::Surface *surface_state) const {
     bool skip = false;
-    std::vector<VkPresentModeKHR> present_modes{};
-    if (surface_state) {
-        present_modes = surface_state->GetPresentModes(physical_device, create_info_loc, this);
-    } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
-        present_modes = physical_device_state->surfaceless_query_state.present_modes;
-    }
-
-    if (std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
-        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01281", device, create_info_loc,
-                         "called with a non-supported presentMode (%s).", string_VkPresentModeKHR(present_mode));
-    }
-
-    // Validate VkSwapchainPresentModesCreateInfoEXT data
     auto swapchain_present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info.pNext);
-    if (swapchain_present_modes_ci) {
-        ASSERT_AND_RETURN_SKIP(surface_state);
+    if (!swapchain_present_modes_ci) {
+        return skip;
+    }
+    ASSERT_AND_RETURN_SKIP(surface_state);
 
-        bool found_swapchain_modes_ci_present_mode = false;
-        const std::vector<VkPresentModeKHR> compatible_present_modes =
-            surface_state->GetCompatibleModes(physical_device, present_mode);
-        for (uint32_t i = 0; i < swapchain_present_modes_ci->presentModeCount; i++) {
-            VkPresentModeKHR swapchain_present_mode = swapchain_present_modes_ci->pPresentModes[i];
+    bool found_swapchain_modes_ci_present_mode = false;
+    const std::vector<VkPresentModeKHR> compatible_present_modes = surface_state->GetCompatibleModes(physical_device, present_mode);
+    for (uint32_t i = 0; i < swapchain_present_modes_ci->presentModeCount; i++) {
+        VkPresentModeKHR swapchain_present_mode = swapchain_present_modes_ci->pPresentModes[i];
 
-            if (std::find(present_modes.begin(), present_modes.end(), swapchain_present_mode) == present_modes.end()) {
-                if (LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-None-07762", device,
-                             create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::pPresentModes, i),
-                             "%s is a non-supported presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
-                    skip |= true;
-                }
-            }
-
-            if (std::find(compatible_present_modes.begin(), compatible_present_modes.end(), swapchain_present_mode) ==
-                compatible_present_modes.end()) {
-                if (LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-pPresentModes-07763", device,
-                             create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::pPresentModes, i),
-                             "%s is a non-compatible presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
-                    skip |= true;
-                }
-            }
-
-            const bool has_present_mode = (swapchain_present_modes_ci->pPresentModes[i] == present_mode);
-            found_swapchain_modes_ci_present_mode |= has_present_mode;
-        }
-        if (!found_swapchain_modes_ci_present_mode) {
-            if (LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764", device, create_info_loc,
-                         "was called with a present mode (%s) that was not included in the set of present modes specified in "
-                         "the vkSwapchainPresentModesCreateInfoEXT structure included in its pNext chain.",
-                         string_VkPresentModeKHR(present_mode))) {
+        if (std::find(present_modes.begin(), present_modes.end(), swapchain_present_mode) == present_modes.end()) {
+            if (LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-None-07762", device,
+                         create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::pPresentModes, i),
+                         "%s is a non-supported presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
                 skip |= true;
             }
+        }
+
+        if (std::find(compatible_present_modes.begin(), compatible_present_modes.end(), swapchain_present_mode) ==
+            compatible_present_modes.end()) {
+            if (LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-pPresentModes-07763", device,
+                         create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::pPresentModes, i),
+                         "%s is a non-compatible presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
+                skip |= true;
+            }
+        }
+
+        const bool has_present_mode = (swapchain_present_modes_ci->pPresentModes[i] == present_mode);
+        found_swapchain_modes_ci_present_mode |= has_present_mode;
+    }
+    if (!found_swapchain_modes_ci_present_mode) {
+        if (LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764", device, create_info_loc,
+                     "was called with a present mode (%s) that was not included in the set of present modes specified in "
+                     "the vkSwapchainPresentModesCreateInfoEXT structure included in its pNext chain.",
+                     string_VkPresentModeKHR(present_mode))) {
+            skip |= true;
         }
     }
     return skip;
@@ -527,6 +516,23 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         }
     }
 
+    std::vector<VkPresentModeKHR> present_modes{};
+    if (surface_state) {
+        present_modes = surface_state->GetPresentModes(physical_device, create_info_loc, this);
+    } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+        present_modes = physical_device_state->surfaceless_query_state.present_modes;
+    }
+
+    if (std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
+        std::stringstream ss;
+        for (auto mode : present_modes) {
+            ss << string_VkPresentModeKHR(mode) << " ";
+        }
+        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01281", device, create_info_loc.dot(Field::presentMode),
+                         "(%s) is not supported (the following are supported %s).", string_VkPresentModeKHR(present_mode),
+                         ss.str().c_str());
+    }
+
     if (!IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1)) {
         // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
         if (!IsExtentInsideBounds(create_info.imageExtent, surface_caps.minImageExtent, surface_caps.maxImageExtent)) {
@@ -549,7 +555,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
             }
         }
     } else {
-        skip |= ValidateSwapchainPresentModesCreateInfo(present_mode, create_info_loc, create_info, surface_state);
+        skip |= ValidateSwapchainPresentModesCreateInfo(present_mode, create_info_loc, create_info, present_modes, surface_state);
         skip |= ValidateSwapchainPresentScalingCreateInfo(present_mode, create_info_loc, surface_caps, create_info, surface_state);
     }
     // Validate state for shared presentable case
