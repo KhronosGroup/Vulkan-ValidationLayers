@@ -236,10 +236,13 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
-    cb_context->AddCommandHandle(tag, src_buffer->Handle());
-
+    if (src_buffer) {
+        cb_context->AddCommandHandle(tag, src_buffer->Handle());
+    }
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-    cb_context->AddCommandHandle(tag, dst_buffer->Handle());
+    if (dst_buffer) {
+        cb_context->AddCommandHandle(tag, dst_buffer->Handle());
+    }
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -311,7 +314,13 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
+    if (src_buffer) {
+        cb_context->AddCommandHandle(tag, src_buffer->Handle());
+    }
     auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
+    if (dst_buffer) {
+        cb_context->AddCommandHandle(tag, dst_buffer->Handle());
+    }
 
     for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
         const auto &copy_region = pCopyBufferInfo->pRegions[region];
@@ -394,7 +403,13 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
+    if (src_image) {
+        cb_access_context->AddCommandHandle(tag, src_image->Handle());
+    }
     auto dst_image = Get<ImageState>(dstImage);
+    if (dst_image) {
+        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
+    }
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -470,7 +485,13 @@ void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkC
     assert(context);
 
     auto src_image = Get<ImageState>(pCopyImageInfo->srcImage);
+    if (src_image) {
+        cb_access_context->AddCommandHandle(tag, src_image->Handle());
+    }
     auto dst_image = Get<ImageState>(pCopyImageInfo->dstImage);
+    if (dst_image) {
+        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
+    }
 
     for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
@@ -950,7 +971,13 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
     assert(context);
 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
+    if (src_buffer) {
+        cb_access_context->AddCommandHandle(tag, src_buffer->Handle());
+    }
     auto dst_image = Get<ImageState>(dstImage);
+    if (dst_image) {
+        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
+    }
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -1074,7 +1101,14 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
+    if (src_image) {
+        cb_access_context->AddCommandHandle(tag, src_image->Handle());
+    }
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
+    if (dst_buffer) {
+        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
+    }
+
     const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->VkHandle() : VK_NULL_HANDLE;
     const VulkanTypedHandle dst_handle(dst_mem, kVulkanObjectTypeDeviceMemory);
 
@@ -1208,7 +1242,13 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
+    if (src_image) {
+        cb_state->access_context.AddCommandHandle(tag, src_image->Handle());
+    }
     auto dst_image = Get<ImageState>(dstImage);
+    if (dst_image) {
+        cb_state->access_context.AddCommandHandle(tag, dst_image->Handle());
+    }
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &blit_region = pRegions[region];
@@ -1292,11 +1332,15 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
     return skip;
 }
 
-void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag tag, const VkDeviceSize struct_size,
-                                         const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
-                                         uint32_t stride) {
+void SyncValidator::RecordIndirectBuffer(CommandBufferAccessContext &cb_context, const ResourceUsageTag tag,
+                                         const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
+                                         const uint32_t drawCount, uint32_t stride) {
     auto buf_state = Get<vvl::Buffer>(buffer);
+    if (buf_state) {
+        cb_context.AddCommandHandle(tag, buf_state->Handle());
+    }
     VkDeviceSize size = struct_size;
+    AccessContext &context = *cb_context.GetCurrentAccessContext();
     if (drawCount == 1 || stride == size) {
         if (drawCount > 1) size *= drawCount;
         const ResourceAccessRange range = MakeRange(offset, size);
@@ -1327,9 +1371,12 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
     return skip;
 }
 
-void SyncValidator::RecordCountBuffer(AccessContext &context, const ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset) {
+void SyncValidator::RecordCountBuffer(CommandBufferAccessContext &cb_context, const ResourceUsageTag tag, VkBuffer buffer,
+                                      VkDeviceSize offset) {
     auto count_buf_state = Get<vvl::Buffer>(buffer);
+    cb_context.AddCommandHandle(tag, count_buf_state->Handle());
     const ResourceAccessRange range = MakeRange(offset, 4);
+    AccessContext &context = *cb_context.GetCurrentAccessContext();
     context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range, tag);
 }
 
@@ -1379,11 +1426,10 @@ void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
     const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
-    RecordIndirectBuffer(*context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1, sizeof(VkDispatchIndirectCommand));
+    RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
+                         sizeof(VkDispatchIndirectCommand));
 }
 
 bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
@@ -1477,12 +1523,10 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
     const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawAttachment(tag);
-    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride);
+    RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride);
 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
@@ -1523,12 +1567,10 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
     const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawAttachment(tag);
-    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride);
+    RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride);
 
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
@@ -1570,13 +1612,11 @@ void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, Vk
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
     const auto tag = cb_access_context->NextCommandTag(command);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawAttachment(tag);
-    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, 1, stride);
-    RecordCountBuffer(*context, tag, countBuffer, countBufferOffset);
+    RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, 1, stride);
+    RecordCountBuffer(*cb_access_context, tag, countBuffer, countBufferOffset);
 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
@@ -1657,13 +1697,11 @@ void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuf
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
     const auto tag = cb_access_context->NextCommandTag(command);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawAttachment(tag);
-    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, 1, stride);
-    RecordCountBuffer(*context, tag, countBuffer, countBufferOffset);
+    RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, 1, stride);
+    RecordCountBuffer(*cb_access_context, tag, countBuffer, countBufferOffset);
 
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
@@ -1756,6 +1794,9 @@ void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
     assert(context);
 
     auto image_state = Get<ImageState>(image);
+    if (image_state) {
+        cb_access_context->AddCommandHandle(tag, image_state->Handle());
+    }
 
     for (uint32_t index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
@@ -1811,6 +1852,9 @@ void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     assert(context);
 
     auto image_state = Get<ImageState>(image);
+    if (image_state) {
+        cb_access_context->AddCommandHandle(tag, image_state->Handle());
+    }
 
     for (uint32_t index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
@@ -1901,6 +1945,7 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
+        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
         context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
@@ -1949,6 +1994,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
+        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
         context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
@@ -2016,7 +2062,13 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
+    if (src_image) {
+        cb_access_context->AddCommandHandle(tag, src_image->Handle());
+    }
     auto dst_image = Get<ImageState>(dstImage);
+    if (dst_image) {
+        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
+    }
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
@@ -2100,7 +2152,13 @@ void SyncValidator::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
     assert(context);
 
     auto src_image = Get<ImageState>(pResolveImageInfo->srcImage);
+    if (src_image) {
+        cb_access_context->AddCommandHandle(tag, src_image->Handle());
+    }
     auto dst_image = Get<ImageState>(pResolveImageInfo->dstImage);
+    if (dst_image) {
+        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
+    }
 
     for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
@@ -2164,6 +2222,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
+        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         // VK_WHOLE_SIZE not allowed
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
         context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
@@ -2212,6 +2271,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
+        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
@@ -2686,6 +2746,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
+        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }

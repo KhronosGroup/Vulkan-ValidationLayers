@@ -315,12 +315,12 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                 VkCommandBuffer commandBuffer, const VkDeviceSize struct_size, const VkBuffer buffer,
                                 const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
                                 const Location &loc) const;
-    void RecordIndirectBuffer(AccessContext &context, ResourceUsageTag tag, const VkDeviceSize struct_size, const VkBuffer buffer,
-                              const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
+    void RecordIndirectBuffer(CommandBufferAccessContext &cb_context, ResourceUsageTag tag, const VkDeviceSize struct_size,
+                              const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
 
     bool ValidateCountBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
                              VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, const Location &loc) const;
-    void RecordCountBuffer(AccessContext &context, ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset);
+    void RecordCountBuffer(CommandBufferAccessContext &cb_context, ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset);
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
                                     const ErrorObject &error_obj) const override;
