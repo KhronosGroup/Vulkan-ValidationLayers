@@ -26,6 +26,7 @@
 #include "sync/sync_access_context.h"
 #include "sync/sync_renderpass.h"
 #include "sync/sync_commandbuffer.h"
+#include "sync/sync_stats.h"
 #include "sync/sync_submit.h"
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, vvl::Image)
@@ -56,6 +57,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     using SignaledFences = vvl::unordered_map<VkFence, FenceSyncState>;
     SignaledFences waitable_fences_;
+
+    mutable syncval_stats::Stats stats;  // Stats update is thread safe
 
     uint32_t debug_command_number = vvl::kU32Max;
     uint32_t debug_reset_count = 1;

@@ -97,6 +97,8 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     // We don't want to copy the full render_pass_context_ history just for the proxy.
 }
 
+CommandBufferAccessContext::~CommandBufferAccessContext() { sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size()); }
+
 void CommandBufferAccessContext::Reset() {
     access_log_ = std::make_shared<AccessLog>();
     cbs_referenced_ = std::make_shared<CommandBufferSet>();
@@ -896,10 +898,16 @@ ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command
     return tag;
 }
 
-void CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
-    assert(tag < access_log_->size());
+uint32_t CommandBufferAccessContext::AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index) {
     const uint32_t handle_index = static_cast<uint32_t>(handles_.size());
     handles_.emplace_back(HandleRecord(typed_handle, index));
+    sync_state_->stats.AddHandleRecord();
+    return handle_index;
+}
+
+void CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
+    assert(tag < access_log_->size());
+    const uint32_t handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
     if (tag < access_log_->size()) {
         auto &record = (*access_log_)[tag];
@@ -916,8 +924,7 @@ void CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const Vu
 
 void CommandBufferAccessContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
     assert(tag < access_log_->size());
-    const uint32_t handle_index = static_cast<uint32_t>(handles_.size());
-    handles_.emplace_back(HandleRecord(typed_handle, index));
+    const uint32_t handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
     if (tag < access_log_->size()) {
         auto &record = (*access_log_)[tag];
