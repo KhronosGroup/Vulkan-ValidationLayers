@@ -180,10 +180,10 @@ void AccessContext::ResolvePreviousAccesses() {
 }
 
 void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const ResourceAccessRange &range, const ResourceUsageTag tag) {
+                                      const ResourceAccessRange &range, ResourceUsageTagEx tag_ex) {
     if (!SimpleBinding(buffer)) return;
     const auto base_address = ResourceBaseAddress(buffer);
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
+    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex);
     UpdateMemoryAccessRangeState(access_state_map_, action, range + base_address);
 }
 
@@ -235,7 +235,7 @@ void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const v
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       ResourceUsageTag tag) {
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag);
+    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, ResourceUsageTagEx{tag});
     UpdateMemoryAccessState(action, range_gen);
 }
 
@@ -523,7 +523,7 @@ ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::
 }
 void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const ResourceAccessRangeMap::iterator &pos) const {
     auto &access_state = pos->second;
-    access_state.Update(usage_info, ordering_rule, tag);
+    access_state.Update(usage_info, ordering_rule, tag_ex);
 }
 
 // This is called with the *recorded* command buffers access context, with the *active* access context pass in, againsts which

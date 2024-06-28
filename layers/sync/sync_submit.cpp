@@ -447,9 +447,9 @@ std::vector<QueueBatchContext::CommandBufferInfo> QueueBatchContext::GetCommandB
 }
 
 // Look up the usage informaiton from the local or global logger
-std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
+std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
     std::stringstream out;
-    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
+    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
     if (access.IsValid()) {
         const BatchAccessLog::BatchRecord& batch = *access.batch;
         const ResourceUsageRecord& record = *access.record;
@@ -461,7 +461,7 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
         out << ", batch_tag: " << batch.base_tag;
 
         // Commandbuffer Usages Information
-        out << ", " << record.Formatter(*sync_state_, nullptr, access.debug_name_provider);
+        out << ", " << record.Formatter(*sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index);
     }
     return out.str();
 }

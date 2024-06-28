@@ -309,7 +309,7 @@ class AccessContext {
                             const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
 
     void UpdateAccessState(const vvl::Buffer &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const ResourceAccessRange &range, ResourceUsageTag tag);
+                           const ResourceAccessRange &range, ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
     void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -397,12 +397,12 @@ class AccessContext {
         Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const;
         void operator()(const Iterator &pos) const;
         UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncStageAccessIndex usage_, SyncOrdering ordering_rule_,
-                                       ResourceUsageTag tag_)
-            : context(context_), usage_info(SyncStageAccess::UsageInfo(usage_)), ordering_rule(ordering_rule_), tag(tag_) {}
+                                       ResourceUsageTagEx tag_ex)
+            : context(context_), usage_info(SyncStageAccess::UsageInfo(usage_)), ordering_rule(ordering_rule_), tag_ex(tag_ex) {}
         const AccessContext &context;
         const SyncStageAccessInfoType &usage_info;
         const SyncOrdering ordering_rule;
-        const ResourceUsageTag tag;
+        const ResourceUsageTagEx tag_ex;
     };
 
     // Follow the context previous to access the access state, supporting "lazy" import into the context. Not intended for

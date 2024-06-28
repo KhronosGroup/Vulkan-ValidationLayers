@@ -53,6 +53,12 @@ using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
 using ResourceAddress = VkDeviceSize;
 using ResourceAccessRange = sparse_container::range<ResourceAddress>;
 
+// Usage tag extended with resource handle information
+struct ResourceUsageTagEx {
+    ResourceUsageTag tag = kInvalidTag;
+    uint32_t handle_index = vvl::kNoIndex32;
+};
+
 template <typename T>
 ResourceAccessRange MakeRange(const T &has_offset_and_size) {
     return ResourceAccessRange(has_offset_and_size.offset, (has_offset_and_size.offset + has_offset_and_size.size));
@@ -80,7 +86,7 @@ class SyncValidationInfo {
         return *sync_state_;
     }
     std::string FormatHazard(const HazardResult& hazard) const;
-    virtual std::string FormatUsage(ResourceUsageTag tag) const = 0;
+    virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
 
   protected:
     const SyncValidator* sync_state_;

@@ -139,16 +139,21 @@ struct DebugNameProvider;
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     struct FormatterState {
         FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_, const vvl::CommandBuffer *cb_state_,
-                       const DebugNameProvider *debug_name_provider_)
-            : sync_state(sync_state_), record(record_), ex_cb_state(cb_state_), debug_name_provider(debug_name_provider_) {}
+                       const DebugNameProvider *debug_name_provider_, uint32_t handle_index)
+            : sync_state(sync_state_),
+              record(record_),
+              ex_cb_state(cb_state_),
+              debug_name_provider(debug_name_provider_),
+              handle_index(handle_index) {}
         const SyncValidator &sync_state;
         const ResourceUsageRecord &record;
         const vvl::CommandBuffer *ex_cb_state;
         const DebugNameProvider *debug_name_provider;
+        uint32_t handle_index;
     };
     FormatterState Formatter(const SyncValidator &sync_state, const vvl::CommandBuffer *ex_cb_state,
-                             const DebugNameProvider *debug_name_provider) const {
-        return FormatterState(sync_state, *this, ex_cb_state, debug_name_provider);
+                             const DebugNameProvider *debug_name_provider, uint32_t handle_index) const {
+        return FormatterState(sync_state, *this, ex_cb_state, debug_name_provider, handle_index);
     }
 
     AlternateResourceUsage alt_usage;
@@ -265,7 +270,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     void Reset();
 
-    std::string FormatUsage(ResourceUsageTag tag) const override;
+    std::string FormatUsage(ResourceUsageTagEx tag_ex) const override;
     std::string FormatUsage(const char *usage_string,
                             const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
@@ -319,7 +324,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
                                     ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
     ResourceUsageTag NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand);
 
-    void AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index = vvl::kNoIndex32);
+    ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
+                                        uint32_t index = vvl::kNoIndex32);
 
     // Default subcommand behavior is that it references the same handles as the main command.
     // The following method allows to set subcommand handles independently of the main command.
