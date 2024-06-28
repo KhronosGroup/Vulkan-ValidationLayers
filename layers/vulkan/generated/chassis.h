@@ -54,6 +54,7 @@
 #include "vk_dispatch_table_helper.h"
 #include "vk_extension_helper.h"
 #include "gpu/core/gpu_settings.h"
+#include "sync/sync_settings.h"
 
 extern std::atomic<uint64_t> global_unique_id;
 
@@ -2227,6 +2228,7 @@ class ValidationObject {
     bool fine_grained_locking{true};
     GpuAVSettings gpuav_settings = {};
     DebugPrintfSettings printf_settings = {};
+    SyncValSettings syncval_settings = {};
 
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
