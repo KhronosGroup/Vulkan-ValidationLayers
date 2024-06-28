@@ -239,7 +239,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             VkExternalImageFormatProperties ext_img_fmt_props = vku::InitStructHelper();
             VkImageFormatProperties2 ifp2 = vku::InitStructHelper(&ext_img_fmt_props);
 
-            VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &pdifi2, &ifp2);
+            VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &pdifi2, &ifp2);
 
             if ((VK_SUCCESS != fmt_lookup_result) || (0 == (ext_img_fmt_props.externalMemoryProperties.externalMemoryFeatures &
                                                             VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT))) {

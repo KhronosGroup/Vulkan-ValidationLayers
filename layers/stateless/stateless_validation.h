@@ -514,7 +514,6 @@ class StatelessValidation : public ValidationObject {
                                             const RecordObject &record_obj) override;
     void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
                                          const RecordObject &record_obj) override;
-    void GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2 &pProperties) const;
     void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                     const RecordObject &record_obj) override;

@@ -143,6 +143,72 @@ static void InitDeviceObjectDispatch(ValidationObject* instance_interceptor, Val
     }
 }
 
+void ValidationObject::DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice,
+                                                                VkPhysicalDeviceFeatures2* pFeatures) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
+    } else {
+        return DispatchGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
+    }
+}
+
+void ValidationObject::DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                                  VkPhysicalDeviceProperties2* pProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceProperties2(physicalDevice, pProperties);
+    } else {
+        return DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
+    }
+}
+
+void ValidationObject::DispatchGetPhysicalDeviceFormatProperties2Helper(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                        VkFormatProperties2* pFormatProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
+    } else {
+        return DispatchGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
+    }
+}
+
+VkResult ValidationObject::DispatchGetPhysicalDeviceImageFormatProperties2Helper(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+    VkImageFormatProperties2* pImageFormatProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+    } else {
+        return DispatchGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+    }
+}
+
+void ValidationObject::DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(
+    VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+    } else {
+        return DispatchGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
+                                                                  pQueueFamilyProperties);
+    }
+}
+
+void ValidationObject::DispatchGetPhysicalDeviceMemoryProperties2Helper(
+    VkPhysicalDevice physicalDevice, VkPhysicalDeviceMemoryProperties2* pMemoryProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
+    } else {
+        return DispatchGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
+    }
+}
+
+void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Helper(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
+    VkSparseImageFormatProperties2* pProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
+    } else {
+        return DispatchGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
+    }
+}
+
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 
