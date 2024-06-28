@@ -608,7 +608,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelinePortability(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidatePipelineLibraryCreateInfo(const vvl::Pipeline& pipeline, const VkPipelineLibraryCreateInfoKHR& library_create_info,
                                            const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineRenderPass(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
@@ -624,10 +624,10 @@ class CoreChecks : public ValidationStateTracker {
                                                     const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& pipeline, const vku::safe_VkSubpassDescription2* subpass_desc,
                                                   const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(const vvl::Pipeline& pipeline,
                                                                     const vku::safe_VkSubpassDescription2* subpass_desc,
                                                                     const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineFragmentShadingRateState(
         const vvl::Pipeline& pipeline, const VkPipelineFragmentShadingRateStateCreateInfoKHR& fragment_shading_rate_state,
