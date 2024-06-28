@@ -44,6 +44,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using Field = vvl::Field;
 
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
+    ~SyncValidator();
 
     // Global tag range for submitted command buffers resource usage logs
     // Started the global tag count at 1 s.t. zero are invalid and ResourceUsageTag normalization can just zero them.
