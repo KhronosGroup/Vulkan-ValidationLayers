@@ -250,23 +250,20 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
-    if (src_buffer) {
-        cb_context->AddCommandHandle(tag, src_buffer->Handle());
-    }
+    auto src_tag_ex = src_buffer ? cb_context->AddCommandHandle(tag, src_buffer->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-    if (dst_buffer) {
-        cb_context->AddCommandHandle(tag, dst_buffer->Handle());
-    }
+    auto dst_tag_ex = dst_buffer ? cb_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
+            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
         }
         if (dst_buffer) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
         }
     }
 }
@@ -328,23 +325,20 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
-    if (src_buffer) {
-        cb_context->AddCommandHandle(tag, src_buffer->Handle());
-    }
+    auto src_tag_ex = src_buffer ? cb_context->AddCommandHandle(tag, src_buffer->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
-    if (dst_buffer) {
-        cb_context->AddCommandHandle(tag, dst_buffer->Handle());
-    }
+    auto dst_tag_ex = dst_buffer ? cb_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
         const auto &copy_region = pCopyBufferInfo->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
+            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
         }
         if (dst_buffer) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
         }
     }
 }
@@ -985,9 +979,8 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
     assert(context);
 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
-    if (src_buffer) {
-        cb_access_context->AddCommandHandle(tag, src_buffer->Handle());
-    }
+    auto src_tag_ex = src_buffer ? cb_access_context->AddCommandHandle(tag, src_buffer->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_image = Get<ImageState>(dstImage);
     if (dst_image) {
         cb_access_context->AddCommandHandle(tag, dst_image->Handle());
@@ -1000,7 +993,8 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
                 ResourceAccessRange src_range = MakeRange(
                     copy_region.bufferOffset,
                     GetBufferSizeFromCopyImage(copy_region, dst_image->create_info.format, dst_image->create_info.arrayLayers));
-                context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
+                context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range,
+                                           src_tag_ex);
             }
             context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
@@ -1118,10 +1112,9 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
     if (src_image) {
         cb_access_context->AddCommandHandle(tag, src_image->Handle());
     }
+
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-    if (dst_buffer) {
-        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
-    }
+    auto dst_tag_ex = dst_buffer ? cb_access_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
 
     const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->VkHandle() : VK_NULL_HANDLE;
     const VulkanTypedHandle dst_handle(dst_mem, kVulkanObjectTypeDeviceMemory);
@@ -1136,7 +1129,8 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
                 ResourceAccessRange dst_range = MakeRange(
                     copy_region.bufferOffset,
                     GetBufferSizeFromCopyImage(copy_region, src_image->create_info.format, src_image->create_info.arrayLayers));
-                context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+                context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range,
+                                           dst_tag_ex);
             }
         }
     }
@@ -1350,20 +1344,20 @@ void SyncValidator::RecordIndirectBuffer(CommandBufferAccessContext &cb_context,
                                          const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
                                          const uint32_t drawCount, uint32_t stride) {
     auto buf_state = Get<vvl::Buffer>(buffer);
-    if (buf_state) {
-        cb_context.AddCommandHandle(tag, buf_state->Handle());
-    }
+    auto tag_ex = buf_state ? cb_context.AddCommandHandle(tag, buf_state->Handle()) : ResourceUsageTagEx{tag};
+
     VkDeviceSize size = struct_size;
     AccessContext &context = *cb_context.GetCurrentAccessContext();
     if (drawCount == 1 || stride == size) {
         if (drawCount > 1) size *= drawCount;
         const ResourceAccessRange range = MakeRange(offset, size);
-        context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range, tag);
+        context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
+                                  tag_ex);
     } else {
         for (uint32_t i = 0; i < drawCount; ++i) {
             const ResourceAccessRange range = MakeRange(offset + i * stride, size);
             context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
-                                      tag);
+                                      tag_ex);
         }
     }
 }
@@ -1388,10 +1382,11 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
 void SyncValidator::RecordCountBuffer(CommandBufferAccessContext &cb_context, const ResourceUsageTag tag, VkBuffer buffer,
                                       VkDeviceSize offset) {
     auto count_buf_state = Get<vvl::Buffer>(buffer);
-    cb_context.AddCommandHandle(tag, count_buf_state->Handle());
     const ResourceAccessRange range = MakeRange(offset, 4);
+    const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, count_buf_state->Handle());
     AccessContext &context = *cb_context.GetCurrentAccessContext();
-    context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range, tag);
+    context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
+                              tag_ex);
 }
 
 bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
@@ -1959,9 +1954,9 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
-        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
-        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
     }
 
     // TODO:Track VkQueryPool
@@ -2008,9 +2003,9 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
-        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
-        context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
+        context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }
 
@@ -2236,10 +2231,10 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
-        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         // VK_WHOLE_SIZE not allowed
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
-        context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
+        context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }
 
@@ -2285,9 +2280,9 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
-        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
-        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }
 
@@ -2378,7 +2373,9 @@ void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer
     auto src_buffer = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
     if (src_buffer) {
         const ResourceAccessRange src_range = MakeRange(*src_buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
-        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, SyncOrdering::kNonAttachment, src_range, tag);
+        const ResourceUsageTagEx src_tag_ex = cb_access_context->AddCommandHandle(tag, src_buffer->Handle());
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, SyncOrdering::kNonAttachment, src_range,
+                                   src_tag_ex);
     }
 
     auto dst_resource = vvl::VideoPictureResource(*this, pDecodeInfo->dstPictureResource);
@@ -2490,7 +2487,9 @@ void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
     auto src_buffer = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
     if (src_buffer) {
         const ResourceAccessRange src_range = MakeRange(*src_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
-        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, SyncOrdering::kNonAttachment, src_range, tag);
+        const ResourceUsageTagEx src_tag_ex = cb_access_context->AddCommandHandle(tag, src_buffer->Handle());
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, SyncOrdering::kNonAttachment, src_range,
+                                   src_tag_ex);
     }
 
     auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource);
@@ -2760,9 +2759,9 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
     if (dst_buffer) {
-        cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
-        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }
 

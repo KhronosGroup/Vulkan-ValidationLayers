@@ -135,14 +135,14 @@ void CommandBufferAccessContext::Reset() {
     dynamic_rendering_info_.reset();
 }
 
-std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) const {
-    if (tag >= access_log_->size()) return std::string();
+std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
+    if (tag_ex.tag >= access_log_->size()) return std::string();
 
     std::stringstream out;
-    assert(tag < access_log_->size());
-    const auto &record = (*access_log_)[tag];
+    assert(tag_ex.tag < access_log_->size());
+    const auto &record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    out << record.Formatter(*sync_state_, cb_state_, debug_name_provider);
+    out << record.Formatter(*sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index);
     return out.str();
 }
 
@@ -150,7 +150,7 @@ std::string CommandBufferAccessContext::FormatUsage(const char *usage_string, co
     std::stringstream out;
     assert(access.usage_info);
     out << "(" << usage_string << ": " << access.usage_info->name;
-    out << ", " << FormatUsage(access.tag) << ")";
+    out << ", " << FormatUsage(access.TagEx()) << ")";
     return out.str();
 }
 
@@ -521,8 +521,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         const auto *buf_view_state = texel_descriptor->GetBufferViewState();
                         const auto *buf_state = buf_view_state->buffer_state.get();
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
-                        AddCommandHandle(tag, buf_view_state->Handle());
-                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
+                        const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_view_state->Handle());
+                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag_ex);
                         break;
                     }
                     case DescriptorClass::GeneralBuffer: {
@@ -541,8 +541,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
                         const ResourceAccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
-                        AddCommandHandle(tag, buf_state->Handle());
-                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
+                        const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
+                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag_ex);
                         break;
                     }
                     // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
@@ -610,8 +610,9 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
             const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
+            const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
             current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ,
-                                                SyncOrdering::kNonAttachment, range, tag);
+                                                SyncOrdering::kNonAttachment, range, tag_ex);
         }
     }
 }
@@ -648,7 +649,8 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<uint3
 
     const auto index_size = GetIndexAlignment(index_binding.index_type);
     const ResourceAccessRange range = MakeRange(index_binding, firstIndex, indexCount, index_size);
-    current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag);
+    const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, index_buf_state->Handle());
+    current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag_ex);
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
@@ -925,7 +927,8 @@ uint32_t CommandBufferAccessContext::AddHandle(const VulkanTypedHandle &typed_ha
     return handle_index;
 }
 
-void CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
+ResourceUsageTagEx CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
+                                                                uint32_t index) {
     assert(tag < access_log_->size());
     const uint32_t handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
@@ -940,6 +943,7 @@ void CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const Vu
             record.handle_count++;
         }
     }
+    return {tag, handle_index};
 }
 
 void CommandBufferAccessContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
@@ -1180,15 +1184,14 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         if (record.sub_command != 0) {
             out << ", subcmd: " << record.sub_command;
         }
-        for (uint32_t i = 0; i < record.handle_count; i++) {
-            assert(record.first_handle_index != vvl::kNoIndex32);
-            const uint32_t handle_index = record.first_handle_index + i;
-            auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
-            const HandleRecord &handle_record = cb_context->access_context.GetHandleRecord(handle_index);
-            out << ", " << handle_record.Formatter(formatter.sync_state);
-        }
         out << ", reset_no: " << std::to_string(record.reset_count);
 
+        // Associated resource
+        if (formatter.handle_index != vvl::kNoIndex32) {
+            auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
+            const HandleRecord &handle_record = cb_context->access_context.GetHandleRecord(formatter.handle_index);
+            out << ", resource: " << handle_record.Formatter(formatter.sync_state);
+        }
         // Report debug region name. Empty name means that we are not inside any debug region.
         if (formatter.debug_name_provider) {
             const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
@@ -1237,7 +1240,7 @@ std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
     std::stringstream out;
     assert(hazard.IsHazard());
     out << hazard.State();
-    out << ", " << FormatUsage(hazard.Tag()) << ")";
+    out << ", " << FormatUsage(hazard.TagEx()) << ")";
     return out.str();
 }
 
