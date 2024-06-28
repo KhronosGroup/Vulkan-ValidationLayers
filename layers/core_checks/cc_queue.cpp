@@ -266,7 +266,7 @@ bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::Co
 
     const VkRenderPassStripeSubmitInfoARM *rp_submit_info = vku::FindStructInPNextChain<VkRenderPassStripeSubmitInfoARM>(pNext);
     if (!rp_submit_info) {
-        if (cb_state.has_render_pass_striped) {
+        if (cb_state.has_render_pass_striped && !cb_state.resumesRenderPassInstance) {
             skip |= LogError("VUID-VkCommandBufferSubmitInfo-commandBuffer-09445", objlist, loc.dot(Field::pNext),
                              "missing VkRenderPassStripeSubmitInfoARM struct because command buffer contain begin info "
                              "with renderpass striped struct");
@@ -274,7 +274,7 @@ bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::Co
         return skip;
     }
 
-    if (rp_submit_info->stripeSemaphoreInfoCount != cb_state.striped_count) {
+    if (rp_submit_info->stripeSemaphoreInfoCount != cb_state.striped_count && !cb_state.resumesRenderPassInstance) {
         skip |= LogError("VUID-VkCommandBufferSubmitInfo-pNext-09446", objlist,
                          loc.pNext(Struct::VkRenderPassStripeSubmitInfoARM, Field::stripeSemaphoreInfoCount),
                          "= %" PRIu32 " must be equal to  VkRenderPassStripeBeginInfoARM::stripeInfoCount = %" PRIu32 ".",

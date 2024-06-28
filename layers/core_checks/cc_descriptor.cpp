@@ -1788,8 +1788,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
 
     const Location dst_binding_loc = write_loc.dot(Field::dstBinding);
     if (dst_layout->GetBindingCount() == 0) {
-        // VUID being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3890
-        return LogError("UNASSIGNED-VkWriteDescriptorSet-zero-binding", objlist, write_loc.dot(Field::dstSet),
+        return LogError("VUID-VkWriteDescriptorSet-dstBinding-10009", objlist, write_loc.dot(Field::dstSet),
                         "was created with %s that has a binding count of zero.", FormatHandle(dst_layout->Handle()).c_str());
     } else if (update.dstBinding > dst_layout->GetMaxBinding()) {
         return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", objlist, dst_binding_loc,
