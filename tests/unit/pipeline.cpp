@@ -882,9 +882,8 @@ TEST_F(NegativePipeline, ColorBlendInvalidLogicOp) {
 
 TEST_F(NegativePipeline, ColorBlendUnsupportedLogicOp) {
     TEST_DESCRIPTION("Attempt enabling VkPipelineColorBlendStateCreateInfo::logicOpEnable when logicOp feature is disabled.");
-
-    VkPhysicalDeviceFeatures features{};
-    RETURN_IF_SKIP(Init(&features));
+    AddDisabledFeature(vkt::Feature::logicOp);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const auto set_shading_enable = [](CreatePipelineHelper &helper) { helper.cb_ci_.logicOpEnable = VK_TRUE; };
