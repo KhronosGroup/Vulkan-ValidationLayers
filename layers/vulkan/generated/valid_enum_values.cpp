@@ -1042,8 +1042,11 @@ ValidValue StatelessValidation::IsValidEnumValue(VkSubpassContents value) const 
         case VK_SUBPASS_CONTENTS_INLINE:
         case VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS:
             return ValidValue::Valid;
-        case VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT:
-            return IsExtEnabled(device_extensions.vk_ext_nested_command_buffer) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR:
+            return IsExtEnabled(device_extensions.vk_khr_maintenance7) ||
+                           IsExtEnabled(device_extensions.vk_ext_nested_command_buffer)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2534,8 +2537,8 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkIndexType value) const 
 template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkSubpassContents value) const {
     switch (value) {
-        case VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT:
-            return {vvl::Extension::_VK_EXT_nested_command_buffer};
+        case VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR:
+            return {vvl::Extension::_VK_KHR_maintenance7, vvl::Extension::_VK_EXT_nested_command_buffer};
         default:
             return {};
     };

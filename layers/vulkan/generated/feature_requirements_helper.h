@@ -496,6 +496,8 @@ enum class Feature {
     maintenance5,
     // VkPhysicalDeviceMaintenance6FeaturesKHR
     maintenance6,
+    // VkPhysicalDeviceMaintenance7FeaturesKHR
+    maintenance7,
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
     memoryMapPlaced,
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT

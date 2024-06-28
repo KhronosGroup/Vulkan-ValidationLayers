@@ -643,6 +643,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderRelaxedExtendedInstruction |= enabled->shaderRelaxedExtendedInstruction == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_7_FEATURES_KHR: {
+                const VkPhysicalDeviceMaintenance7FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance7FeaturesKHR *>(pNext);
+                features->maintenance7 |= enabled->maintenance7 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
                 const VkPhysicalDeviceTransformFeedbackFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceTransformFeedbackFeaturesEXT *>(pNext);

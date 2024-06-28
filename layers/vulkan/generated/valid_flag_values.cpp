@@ -782,14 +782,15 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
             }
             return {};
         case vvl::FlagBitmask::VkRenderingFlagBits:
-            if (value & (VK_RENDERING_CONTENTS_INLINE_BIT_EXT)) {
-                if (!IsExtEnabled(device_extensions.vk_ext_nested_command_buffer)) {
-                    return {vvl::Extension::_VK_EXT_nested_command_buffer};
-                }
-            }
             if (value & (VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_legacy_dithering)) {
                     return {vvl::Extension::_VK_EXT_legacy_dithering};
+                }
+            }
+            if (value & (VK_RENDERING_CONTENTS_INLINE_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_maintenance7) &&
+                    !IsExtEnabled(device_extensions.vk_ext_nested_command_buffer)) {
+                    return {vvl::Extension::_VK_KHR_maintenance7, vvl::Extension::_VK_EXT_nested_command_buffer};
                 }
             }
             return {};

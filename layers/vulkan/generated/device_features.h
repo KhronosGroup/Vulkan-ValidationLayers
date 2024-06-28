@@ -501,6 +501,8 @@ struct DeviceFeatures {
     bool maintenance5;
     // VkPhysicalDeviceMaintenance6FeaturesKHR
     bool maintenance6;
+    // VkPhysicalDeviceMaintenance7FeaturesKHR
+    bool maintenance7;
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
     bool memoryMapPlaced;
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
