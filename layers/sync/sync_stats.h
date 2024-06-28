@@ -20,7 +20,9 @@
 #include <string>
 #include <cstdint>
 
+#ifndef VVL_ENABLE_SYNCVAL_STATS
 #define VVL_ENABLE_SYNCVAL_STATS 0
+#endif
 
 #if VVL_ENABLE_SYNCVAL_STATS != 0
 #include <atomic>
@@ -56,7 +58,7 @@ struct Stats {
 struct Stats {
     void AddHandleRecord(uint32_t count = 1) {}
     void RemoveHandleRecord(uint32_t count = 1) {}
-    std::string CreateReport() { return "SyncVal stats are disabled in current build configuration"; }
+    std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };
 #endif  // VVL_ENABLE_SYNCVAL_STATS != 0
 }  // namespace syncval_stats
