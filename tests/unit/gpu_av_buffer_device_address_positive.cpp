@@ -76,16 +76,10 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
 
     // Make another buffer to write to
     const uint32_t storage_buffer_size = 16 * 4;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                               &allocate_flag_info);
-
-    // Get device address of buffer to write to
-    auto storage_buffer_addr = storage_buffer.address();
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    uniform_buffer_ptr[0] = storage_buffer_addr;
+    uniform_buffer_ptr[0] = storage_buffer.address();
     uniform_buffer_ptr[1] = 4;
     uniform_buffer.memory().unmap();
 
@@ -151,25 +145,16 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
 
     // Make another buffer to write to
     const uint32_t storage_buffer_size = 16 * 4;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                               &allocate_flag_info);
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     // Create storage buffers for the sake of storing multiple device address ranges
     std::vector<vkt::Buffer> dummy_storage_buffers;
     for (int i = 0; i < 1024; ++i) {
-        (void)dummy_storage_buffers
-            .emplace_back(vkt::Buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                                      &allocate_flag_info))
-            .address();
+        (void)dummy_storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address)).address();
     }
 
-    // Get device address of buffer to write to
-    auto storage_buffer_addr = storage_buffer.address();
-
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    uniform_buffer_ptr[0] = storage_buffer_addr;
+    uniform_buffer_ptr[0] = storage_buffer.address();
     uniform_buffer_ptr[1] = 4;
     uniform_buffer.memory().unmap();
 
@@ -233,16 +218,10 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
 
     // Make another buffer to write to
     const uint32_t storage_buffer_size = 4 * 4;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                               &allocate_flag_info);
-
-    // Get device address of buffer to write to
-    auto storage_buffer_addr = storage_buffer.address();
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    data[0] = storage_buffer_addr;
+    data[0] = storage_buffer.address();
     data[1] = 4;
     uniform_buffer.memory().unmap();
 
@@ -287,11 +266,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     pipe.CreateComputePipeline();
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer bda_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
-
     vkt::Buffer in_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
 
     VkDeviceAddress buffer_ptr = bda_buffer.address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
@@ -353,17 +329,15 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 16, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
 
     float expected_output = 0x00EEAADD;
     uint8_t *block_buffer_ptr = (uint8_t *)block_buffer.memory().map();
     memcpy(block_buffer_ptr, &expected_output, sizeof(float));
     block_buffer.memory().unmap();
 
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress block_ptr = block_buffer.address();
 
@@ -430,17 +404,15 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 32, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 32, 0, vkt::device_address);
 
     float expected_output = 0x00EEAADD;
     uint8_t *block_buffer_ptr = (uint8_t *)block_buffer.memory().map();
     memcpy(block_buffer_ptr + 24, &expected_output, sizeof(float));
     block_buffer.memory().unmap();
 
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress block_ptr = block_buffer.address();
 
@@ -498,13 +470,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, UVec3Array) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     // Hold 4 indices
-    vkt::Buffer block_buffer(*m_device, 48, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 48, 0, vkt::device_address);
 
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress block_ptr = block_buffer.address();
     const uint32_t n_reads = 4;  // uvec3[0] to uvec3[3]
@@ -566,13 +536,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     pipe.cp_ci_.layout = pipeline_layout.handle();
     pipe.CreateComputePipeline();
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 32, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 32, 0, vkt::device_address);
     VkDeviceAddress block_ptr = block_buffer.address();
 
-    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *buffer_ptr = (uint8_t *)storage_buffer.memory().map();
     const uint32_t index = 0;
@@ -628,11 +596,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer_node_a(*m_device, 4, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
-    vkt::Buffer buffer_node_b(*m_device, 4, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+    vkt::Buffer buffer_node_a(*m_device, 4, 0, vkt::device_address);
+    vkt::Buffer buffer_node_b(*m_device, 4, 0, vkt::device_address);
     VkDeviceAddress block_a_ptr = buffer_node_a.address();
     VkDeviceAddress block_b_ptr = buffer_node_b.address();
 
@@ -640,7 +605,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
     *buffer_ptr = 1234;  // data to pass
     buffer_node_b.memory().unmap();
 
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_a_ptr, sizeof(VkDeviceAddress));
@@ -762,18 +728,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    // Create storage buffer
     const uint32_t storage_buffer_size = 4 * sizeof(float);  // float + vec3
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                               &allocate_flag_info);
-
-    // Get device address of buffer to write to
-    auto storage_buffer_addr = storage_buffer.address();
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    data[0] = storage_buffer_addr;
+    data[0] = storage_buffer.address();
     uniform_buffer.memory().unmap();
 
     m_default_queue->Submit(*m_commandBuffer);
@@ -836,18 +795,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    // Create storage buffer
     const uint32_t storage_buffer_size = 4 * sizeof(float);  // float + vec3
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                               &allocate_flag_info);
-
-    // Get device address of buffer to write to
-    auto storage_buffer_addr = storage_buffer.address();
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    data[0] = storage_buffer_addr;
+    data[0] = storage_buffer.address();
     uniform_buffer.memory().unmap();
 
     m_default_queue->Submit(*m_commandBuffer);
@@ -916,16 +868,12 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     // Make a list of storage buffers, each one holding a Node
     constexpr size_t nodes_count = 3;
     const uint32_t storage_buffer_size = (4 * sizeof(float)) + sizeof(VkDeviceAddress);
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     std::vector<vkt::Buffer> storage_buffers;
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+
     for (size_t i = 0; i < nodes_count; ++i) {
         const VkDeviceAddress addr =
-            storage_buffers
-                .emplace_back(vkt::Buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                                          &allocate_flag_info))
-                .address();
+            storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address)).address();
         uniform_buffer_ptr[i] = addr;
     }
 
@@ -998,17 +946,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    // Create Foo storage buffer
     const uint32_t foo_storage_buffer_size = 4 * sizeof(float) + sizeof(float) + sizeof(int32_t);
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer foo_storage_buffer(*m_device, foo_storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                                   &allocate_flag_info);
+    vkt::Buffer foo_storage_buffer(*m_device, foo_storage_buffer_size, 0, vkt::device_address);
 
-    // Create Bar storage buffer
     const uint32_t bar_storage_buffer_size = sizeof(float) + sizeof(int32_t) + 4 * sizeof(float);
-    vkt::Buffer bar_storage_buffer(*m_device, bar_storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                                   &allocate_flag_info);
+    vkt::Buffer bar_storage_buffer(*m_device, bar_storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
     data[0] = foo_storage_buffer.address();
@@ -1083,12 +1025,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
         float uv[2];
     };
 
-    // Create storage buffer
     const uint32_t storage_buffer_size = 3 * sizeof(Vertex);  // float + vec3
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props,
-                               &allocate_flag_info);
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     // Write vertex 0
     auto vertex_buffer_ptr = static_cast<Vertex *>(storage_buffer.memory().map());
@@ -1105,11 +1043,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
 
     storage_buffer.memory().unmap();
 
-    // Get device address of buffer to write to
-    auto storage_buffer_addr = storage_buffer.address();
-
     auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    data[0] = storage_buffer_addr;
+    data[0] = storage_buffer.address();
     uniform_buffer.memory().unmap();
 
     m_default_queue->Submit(*m_commandBuffer);
@@ -1186,10 +1121,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
     pipe.CreateGraphicsPipeline();
 
     const uint32_t storage_buffer_size = 2 * sizeof(int);
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    const VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
     std::vector<vkt::CommandBuffer> cmd_buffers;
     std::vector<vkt::Buffer> storage_buffers;
     for (int i = 0; i < 64; ++i) {
@@ -1197,8 +1128,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
 
         // Create a storage buffer and get its address,
         // effectively adding it to the BDA table
-        auto &storage_buffer = storage_buffers.emplace_back(vkt::Buffer(
-            *m_device, storage_buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info));
+        auto &storage_buffer = storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address));
 
         auto storage_buffer_addr = storage_buffer.address();
 
@@ -1251,12 +1181,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoad) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer bda_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
-
-    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress buffer_ptr = bda_buffer.address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();

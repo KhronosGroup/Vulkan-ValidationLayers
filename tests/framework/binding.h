@@ -533,6 +533,8 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
 
 struct NoMemT {};
 static constexpr NoMemT no_mem{};
+struct DeviceAddressT {};
+static constexpr DeviceAddressT device_address{};
 struct SetLayoutT {};
 static constexpr SetLayoutT set_layout{};
 
@@ -548,6 +550,16 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         init(dev, size, usage, mem_props, alloc_info_pnext);
     }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
+
+    // Various spots need a host visiable buffer they can call GetBufferDeviceAddress on
+    explicit Buffer(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage, DeviceAddressT) {
+        usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;  // always add
+        VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+        allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        init(dev, create_info(size, usage), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+             &allocate_flag_info);
+    }
+
     Buffer(Buffer &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
         create_info_ = std::move(rhs.create_info_);
         internal_mem_ = std::move(rhs.internal_mem_);

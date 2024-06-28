@@ -155,8 +155,8 @@ TEST_F(NegativeDescriptorBuffer, GetSupportSetLayout) {
 TEST_F(NegativeDescriptorBuffer, SetLayoutInlineUniformBlockEXT) {
     TEST_DESCRIPTION("Descriptor buffer set layout tests.");
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&inline_uniform_features));
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -177,8 +177,8 @@ TEST_F(NegativeDescriptorBuffer, SetLayoutInlineUniformBlockEXT) {
 TEST_F(NegativeDescriptorBuffer, SetLayoutMutableDescriptorEXT) {
     TEST_DESCRIPTION("Descriptor buffer set layout tests.");
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&mutable_descriptor_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -194,19 +194,13 @@ TEST_F(NegativeDescriptorBuffer, SetLayoutMutableDescriptorEXT) {
 
 TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     TEST_DESCRIPTION("Tests for when descriptor buffer is not enabled");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features =
-        vku::InitStructHelper(&buffer_device_address_features);
-    GetPhysicalDeviceFeatures2(acceleration_structure_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &acceleration_structure_features));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -455,14 +449,9 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        VkBufferCreateInfo buffCI = vku::InitStructHelper();
-        buffCI.size = 4096;
-        buffCI.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
-                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-        VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-        allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-        vkt::Buffer d_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+        vkt::Buffer d_buffer(*m_device, 4096,
+                             VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
+                             vkt::device_address);
 
         VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
         dbbi.address = d_buffer.address();
@@ -496,14 +485,10 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
 
     m_commandBuffer->begin();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
-                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
-
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer d_buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer d_buffer(*m_device, 4096,
+                         VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                             VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT,
+                         vkt::device_address);
 
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = d_buffer.address();
@@ -541,14 +526,9 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptors) {
 
     m_commandBuffer->begin();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
-                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer d_buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer d_buffer(*m_device, 4096,
+                         VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
+                         vkt::device_address);
 
     VkDescriptorBufferBindingPushDescriptorBufferHandleEXT dbbpdbh = vku::InitStructHelper();
     dbbpdbh.buffer = d_buffer.handle();
@@ -591,14 +571,9 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferOffsetAlignment) {
 
     m_commandBuffer->begin();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
-                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer d_buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer d_buffer(*m_device, 4096,
+                         VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
+                         vkt::device_address);
 
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = d_buffer.address() + 1;  // make alignment bad
@@ -622,13 +597,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferBindingInfoUsage) {
 
     m_commandBuffer->begin();
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer buffer(*m_device, 4096, 0, vkt::device_address);
 
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = buffer.address();
@@ -734,12 +703,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
     plci.pSetLayouts = set_layouts;
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = buffer.address();
@@ -830,8 +794,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
     const auto dslci1 = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(
-        nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT),
-        size32(bindings), bindings);
+        nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT, size32(bindings), bindings);
     vkt::DescriptorSetLayout dsl1(*m_device, dslci1);
 
     const VkDescriptorSetLayoutBinding bindings2[] = {
@@ -857,13 +820,13 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = large_buffer_size;
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    auto large_buffer = std::make_unique<vkt::Buffer>(*m_device, buffer_ci, vkt::no_mem);
+    vkt::Buffer large_buffer(*m_device, buffer_ci, vkt::no_mem);
 
     buffer_ci.size = small_buffer_size;
-    auto small_buffer = std::make_unique<vkt::Buffer>(*m_device, buffer_ci, vkt::no_mem);
+    vkt::Buffer small_buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs = {};
-    vk::GetBufferMemoryRequirements(device(), large_buffer->handle(), &buffer_mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), large_buffer.handle(), &buffer_mem_reqs);
 
     // Allocate common buffer memory
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -874,16 +837,16 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Bind those buffers to the same buffer memory
-    vk::BindBufferMemory(device(), large_buffer->handle(), buffer_memory.handle(), 0);
-    vk::BindBufferMemory(device(), small_buffer->handle(), buffer_memory.handle(), 0);
+    vk::BindBufferMemory(device(), large_buffer.handle(), buffer_memory.handle(), 0);
+    vk::BindBufferMemory(device(), small_buffer.handle(), buffer_memory.handle(), 0);
 
     // Check that internal mapping from address to buffers is correctly updated
-    if (large_buffer->address() != small_buffer->address()) {
+    if (large_buffer.address() != small_buffer.address()) {
         GTEST_SKIP() << "Buffers address don't match";
     }
     // calling large_buffer->address() twice should not result in this buffer being mapped twice.
     // If it is mapped twice, the error below will not be thrown.
-    const VkDeviceAddress common_address = large_buffer->address();
+    const VkDeviceAddress common_address = large_buffer.address();
 
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = common_address;
@@ -898,7 +861,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                          &index, &offset);
 
-    large_buffer = nullptr;
+    large_buffer.destroy();
     // Large buffer has been deleted, its entry in the address to buffers map must have been as well.
     // Since offset is too large to fit in small buffer, vkCmdSetDescriptorBufferOffsetsEXT should fail
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063");
@@ -912,8 +875,8 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
 TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     TEST_DESCRIPTION("Dispatch pipeline with descriptor set bound while descriptor buffer expected");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
 
@@ -931,13 +894,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    VkBufferCreateInfo buffCI = vku::InitStructHelper();
-    buffCI.size = 4096;
-    buffCI.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = buffer.address();
@@ -966,8 +923,8 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
 TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     TEST_DESCRIPTION("Dispatch pipeline with descriptor buffer bound while of descriptor set expected");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     VkDescriptorSetLayoutCreateInfo dslci = vku::InitStructHelper();
@@ -1019,8 +976,8 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
 TEST_F(NegativeDescriptorBuffer, BindPoint) {
     TEST_DESCRIPTION("Descriptor buffer invalid bind point.");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -1243,8 +1200,8 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoRtxNV) {
 TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
     TEST_DESCRIPTION("Descriptor buffer vkDescriptorGetInfo() with VkDescriptorAddressInfoEXT.");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     uint8_t buffer[128];
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
@@ -1754,14 +1711,9 @@ TEST_F(NegativeDescriptorBuffer, TexelBufferFormat) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
-                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer buffer(*m_device, 4096,
+                       VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
+                       vkt::device_address);
 
     VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
     dai.address = buffer.address();

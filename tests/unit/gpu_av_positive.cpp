@@ -1356,11 +1356,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     indirect_draw_parameters_buffer.memory().unmap();
 
     constexpr int32_t int_count = 16;
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t),
-                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+    vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     // Use different push constant ranges for vertex and fragment shader.
     // The underlying storage buffer is the same.
@@ -1554,11 +1550,8 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     graphics_plci.pPushConstantRanges = &graphics_push_constant_ranges;
     vkt::PipelineLayout graphics_pipeline_layout(*m_device, graphics_plci);
 
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer graphics_storage_buffer(
-        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+    vkt::Buffer graphics_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                        vkt::device_address);
 
     PushConstants graphics_push_constants;
     graphics_push_constants.storage_buffer = graphics_storage_buffer.address();
@@ -1612,9 +1605,8 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     compute_plci.pPushConstantRanges = &compute_push_constant_ranges;
     vkt::PipelineLayout compute_pipeline_layout(*m_device, compute_plci);
 
-    vkt::Buffer compute_storage_buffer(
-        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+    vkt::Buffer compute_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                       vkt::device_address);
 
     PushConstants compute_push_constants;
     compute_push_constants.storage_buffer = compute_storage_buffer.address();
