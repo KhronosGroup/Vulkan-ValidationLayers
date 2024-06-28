@@ -67,6 +67,8 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
 
 bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
+    // It would be ideal to split all pipeline checks into Dynamic and Non-Dynamic renderpasses, but with GPL it gets a bit tricky.
+    // Also you might be deep in a function and it is easier to do a if/else check if it is dynamic rendering or not there.
     vku::safe_VkSubpassDescription2 *subpass_desc = nullptr;
     const auto rp_state = pipeline.RenderPassState();
 
@@ -93,24 +95,19 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
         }
     }
 
-    // Things such as GPL Vertex Input will not have a render pass state.
-    // Dynamic Rendering will also have a null renderpass
-    if (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE) {
-        skip |= ValidateGraphicsPipelineNullRenderPass(pipeline, create_info_loc);
-    }
-
     // While these are split into the 4 sub-states from GPL, they are validated for normal pipelines too.
     // These are VUs that fall strangely between both GPL and non-GPL pipelines
     skip |= ValidateGraphicsPipelineVertexInputState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelinePreRasterizationState(pipeline, create_info_loc);
 
-    skip |= ValidateGraphicsPipelineRenderPass(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineNullRenderPass(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineLibrary(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineInputAssemblyState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineTessellationState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, create_info_loc);
+    skip |= ValidateGraphicsPipelineNullState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
@@ -492,17 +489,18 @@ bool CoreChecks::ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline &p
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineRenderPass(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     // If the vertex input is by itself renderpass is ignored
     if (!pipeline.IsRenderPassStateRequired()) return skip;
 
-    if (pipeline.GraphicsCreateInfo().renderPass == VK_NULL_HANDLE) {
+    if (pipeline.IsRenderPassNull()) {
         if (!enabled_features.dynamicRendering) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576", device,
                              create_info_loc.dot(Field::renderPass), "is NULL, but the dynamicRendering feature was not enabled");
         }
     } else if (!pipeline.RenderPassState()) {
+        // invalid render pass
         const auto gpl_info =
             vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.GraphicsCreateInfo().pNext);
         const bool has_flags =
@@ -1690,8 +1688,9 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
     if (!color_blend_state) {
         return skip;
     }
-    const auto &rp_state = pipeline.RenderPassState();
-    const bool null_rp = (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE);
+    const auto rp_state = pipeline.RenderPassState();
+    const bool null_rp = pipeline.IsRenderPassNull();
+    if (!null_rp && !rp_state) return skip;  // invalid render pass
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
     const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
@@ -2012,7 +2011,6 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
     bool skip = false;
     const Location ms_loc = create_info_loc.dot(Field::pMultisampleState);
     const auto *multisample_state = pipeline.MultisampleState();
-    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
     if (subpass_desc && multisample_state) {
         const auto &rp_state = pipeline.RenderPassState();
         auto accum_color_samples = [subpass_desc, &rp_state](uint32_t &samples) {
@@ -2323,16 +2321,36 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+    bool skip = false;
+
+    const bool null_rp = pipeline.IsRenderPassNull();
+    if (null_rp) {
+        if (!pipeline.DepthStencilState()) {
+            if (pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+                if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device,
+                                     create_info_loc.dot(Field::pDepthStencilState), "is NULL.");
+                }
+            }
+        }
+    }
+
     if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        if (pipeline.OwnsSubState(pipeline.fragment_output_state) && multisample_state == nullptr) {
+        if (pipeline.OwnsSubState(pipeline.fragment_output_state) && !pipeline.MultisampleState()) {
             // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
-            if (pipeline_ci.renderPass != VK_NULL_HANDLE) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderpass-06631", device, ms_loc,
+            if (!null_rp) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderpass-06631", device,
+                                 create_info_loc.dot(Field::pMultisampleState),
                                  "is NULL, but pipeline is being created with fragment shader that uses samples.");
             }
         }
     }
 
+    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
     if (!pipeline_ci.pMultisampleState && pipeline.OwnsSubState(pipeline.fragment_output_state)) {
         // Don't need to check for VK_EXT_extended_dynamic_state3 since it would be on if using these VkDynamicState
         const bool dynamic_alpha_to_one =
@@ -2340,10 +2358,10 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
             !pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ||
             !pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) || !dynamic_alpha_to_one) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device, ms_loc, "is NULL.");
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device,
+                             create_info_loc.dot(Field::pMultisampleState), "is NULL.");
         }
     }
-
     return skip;
 }
 
@@ -2352,8 +2370,9 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(cons
                                                                             const vku::safe_VkSubpassDescription2 *subpass_desc,
                                                                             const Location &create_info_loc) const {
     bool skip = false;
-    const auto &rp_state = pipeline.RenderPassState();
-    const bool null_rp = (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE);
+    const auto rp_state = pipeline.RenderPassState();
+    const bool null_rp = pipeline.IsRenderPassNull();
+    if (!null_rp && !rp_state) return skip;  // invalid render pass
 
     if (const auto ds_state = pipeline.DepthStencilState()) {
         const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
@@ -2430,21 +2449,6 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(cons
                                  color_loc.dot(Field::flags), "(%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
                                  string_VkPipelineColorBlendStateCreateFlags(color_blend_state->flags).c_str(),
                                  string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
-            }
-        }
-    }
-
-    return skip;
-}
-
-bool CoreChecks::ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
-    bool skip = false;
-
-    if (!pipeline.DepthStencilState()) {
-        if (pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
-            if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device,
-                                 create_info_loc.dot(Field::pDepthStencilState), "is NULL.");
             }
         }
     }
