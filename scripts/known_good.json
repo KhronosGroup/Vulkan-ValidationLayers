@@ -7,7 +7,10 @@
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "v1.3.288"
+            "cmake_options": [
+                "-DVULKAN_HEADERS_ENABLE_MODULE=OFF"
+            ],
+            "commit": "v1.3.289"
         },
         {
             "name": "Vulkan-Utility-Libraries",
@@ -15,7 +18,7 @@
             "sub_dir": "Vulkan-Utility-Libraries",
             "build_dir": "Vulkan-Utility-Libraries/build",
             "install_dir": "Vulkan-Utility-Libraries/build/install",
-            "commit": "v1.3.288",
+            "commit": "v1.3.289",
             "deps": [
                 {
                     "var_name": "VULKAN_HEADERS_INSTALL_DIR",
@@ -110,7 +113,7 @@
             "sub_dir": "Vulkan-Loader",
             "build_dir": "Vulkan-Loader/build",
             "install_dir": "Vulkan-Loader/build/install",
-            "commit": "v1.3.288",
+            "commit": "v1.3.289",
             "build_step": "skip",
             "optional": [
                 "tests"
@@ -136,7 +139,7 @@
             "sub_dir": "Vulkan-Tools",
             "build_dir": "Vulkan-Tools/build",
             "install_dir": "Vulkan-Tools/build/install",
-            "commit": "v1.3.288",
+            "commit": "v1.3.289",
             "build_step": "skip",
             "optional": [
                 "tests"

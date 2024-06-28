@@ -3199,6 +3199,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->maintenance6, "VkPhysicalDeviceMaintenance6FeaturesKHR::maintenance6"};
         }
+        case Feature::maintenance7: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMaintenance7FeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMaintenance7FeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMaintenance7FeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->maintenance7, "VkPhysicalDeviceMaintenance7FeaturesKHR::maintenance7"};
+        }
         case Feature::memoryMapPlaced: {
             auto vk_struct = const_cast<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT>(*inout_pnext_chain));
