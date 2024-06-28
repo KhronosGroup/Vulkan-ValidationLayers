@@ -68,14 +68,12 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
 bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     vku::safe_VkSubpassDescription2 *subpass_desc = nullptr;
-
     const auto rp_state = pipeline.RenderPassState();
-    if (!rp_state) {
-        // Things such as GPL Vertex Input will not have a render pass state.
-    } else if (rp_state->UsesDynamicRendering()) {
+
+    if (rp_state && rp_state->UsesDynamicRendering()) {
         skip |= ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(pipeline, create_info_loc);
-    } else {
-        const auto subpass = pipeline.Subpass();
+    } else if (rp_state && !rp_state->UsesDynamicRendering()) {
+        const uint32_t subpass = pipeline.Subpass();
         if (subpass >= rp_state->create_info.subpassCount) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06046", rp_state->Handle(),
@@ -95,6 +93,12 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
         }
     }
 
+    // Things such as GPL Vertex Input will not have a render pass state.
+    // Dynamic Rendering will also have a null renderpass
+    if (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE) {
+        skip |= ValidateGraphicsPipelineNullRenderPass(pipeline, create_info_loc);
+    }
+
     // While these are split into the 4 sub-states from GPL, they are validated for normal pipelines too.
     // These are VUs that fall strangely between both GPL and non-GPL pipelines
     skip |= ValidateGraphicsPipelineVertexInputState(pipeline, create_info_loc);
@@ -107,7 +111,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, create_info_loc);
-    skip |= ValidateGraphicsPipelineDepthStencilState(pipeline, subpass_desc, create_info_loc);
+    skip |= ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
@@ -1688,31 +1692,6 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
     }
     const auto &rp_state = pipeline.RenderPassState();
     const bool null_rp = (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE);
-    const bool raster_order_attach_color =
-        color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT;
-
-    if (raster_order_attach_color) {
-        if (!enabled_features.rasterizationOrderColorAttachmentAccess) {
-            skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-rasterizationOrderColorAttachmentAccess-06465", device,
-                             color_loc.dot(Field::flags), "(%s) but rasterizationOrderColorAttachmentAccess feature is not enabled",
-                             string_VkPipelineColorBlendStateCreateFlags(color_blend_state->flags).c_str());
-        }
-
-        if (!enabled_features.dynamicRenderingLocalRead && null_rp) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06482", device, color_loc.dot(Field::flags),
-                             "includes "
-                             "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT, but "
-                             "renderpass is not VK_NULL_HANDLE.");
-        }
-
-        if (!null_rp && subpass_desc &&
-            (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_EXT) == 0) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09527", rp_state->Handle(), color_loc.dot(Field::flags),
-                             "(%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
-                             string_VkPipelineColorBlendStateCreateFlags(color_blend_state->flags).c_str(),
-                             string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
-        }
-    }
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
     const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
@@ -2368,65 +2347,104 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline &pipeline,
-                                                           const vku::safe_VkSubpassDescription2 *subpass_desc,
-                                                           const Location &create_info_loc) const {
+// VK_EXT_rasterization_order_attachment_access
+bool CoreChecks::ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(const vvl::Pipeline &pipeline,
+                                                                            const vku::safe_VkSubpassDescription2 *subpass_desc,
+                                                                            const Location &create_info_loc) const {
     bool skip = false;
-    const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
-    const auto ds_state = pipeline.DepthStencilState();
     const auto &rp_state = pipeline.RenderPassState();
     const bool null_rp = (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE);
-    if (!ds_state) {
-        if (null_rp && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
-            if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, ds_loc, "is NULL.");
+
+    if (const auto ds_state = pipeline.DepthStencilState()) {
+        const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
+        const bool raster_order_attach_depth =
+            ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT;
+        const bool raster_order_attach_stencil =
+            ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT;
+
+        if (null_rp) {
+            if (!enabled_features.dynamicRenderingLocalRead && (raster_order_attach_depth || raster_order_attach_stencil)) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09526", device, ds_loc.dot(Field::flags),
+                                 "is %s but renderPass is VK_NULL_HANDLE.",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+            }
+        } else if (!rp_state->UsesDynamicRendering()) {
+            if (raster_order_attach_depth) {
+                // Can't validate these in stateless as possible to have a pDepthStencilState pointer with garbage
+                if (!enabled_features.rasterizationOrderDepthAttachmentAccess) {
+                    skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderDepthAttachmentAccess-06463",
+                                     device, ds_loc.dot(Field::flags),
+                                     "is (%s) but rasterizationOrderDepthAttachmentAccess feature was not enabled",
+                                     string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+                }
+
+                if (subpass_desc &&
+                    (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT) == 0) {
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09528", rp_state->Handle(), ds_loc.dot(Field::flags),
+                                 "is (%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str(),
+                                 string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
+                }
+            }
+            if (raster_order_attach_stencil) {
+                if (!enabled_features.rasterizationOrderStencilAttachmentAccess) {
+                    skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderStencilAttachmentAccess-06464",
+                                     device, ds_loc.dot(Field::flags),
+                                     "is (%s) but rasterizationOrderStencilAttachmentAccess feature was not enabled",
+                                     string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+                }
+
+                if (subpass_desc &&
+                    (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT) == 0) {
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09529", rp_state->Handle(), ds_loc.dot(Field::flags),
+                                 "is (%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str(),
+                                 string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
+                }
             }
         }
-        return skip;  // nothing else to validate if Depth Stencil state is empty
     }
 
-    const bool raster_order_attach_depth =
-        ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT;
-    const bool raster_order_attach_stencil =
-        ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT;
-
-    if (null_rp) {
-        if (!enabled_features.dynamicRenderingLocalRead && (raster_order_attach_depth || raster_order_attach_stencil)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09526", device, ds_loc.dot(Field::flags),
-                             "is %s but renderPass is VK_NULL_HANDLE.",
-                             string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
-        }
-    } else if (!rp_state->UsesDynamicRendering()) {
-        if (raster_order_attach_depth) {
-            if (!enabled_features.rasterizationOrderDepthAttachmentAccess) {
-                skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderDepthAttachmentAccess-06463", device,
-                                 ds_loc.dot(Field::flags),
-                                 "is (%s) but rasterizationOrderDepthAttachmentAccess feature was not enabled",
-                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+    if (const auto color_blend_state = pipeline.ColorBlendState()) {
+        const Location color_loc = create_info_loc.dot(Field::pColorBlendState);
+        if (color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT) {
+            if (!enabled_features.rasterizationOrderColorAttachmentAccess) {
+                skip |=
+                    LogError("VUID-VkPipelineColorBlendStateCreateInfo-rasterizationOrderColorAttachmentAccess-06465", device,
+                             color_loc.dot(Field::flags), "(%s) but rasterizationOrderColorAttachmentAccess feature is not enabled",
+                             string_VkPipelineColorBlendStateCreateFlags(color_blend_state->flags).c_str());
             }
 
-            if (subpass_desc &&
-                (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT) == 0) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09528", rp_state->Handle(), ds_loc.dot(Field::flags),
-                                 "is (%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
-                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str(),
+            if (!enabled_features.dynamicRenderingLocalRead && null_rp) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06482", device, color_loc.dot(Field::flags),
+                                 "includes "
+                                 "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT, but "
+                                 "renderpass is VK_NULL_HANDLE.");
+            }
+
+            if (!null_rp && subpass_desc &&
+                (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_EXT) == 0) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09527", rp_state->Handle(),
+                                 color_loc.dot(Field::flags), "(%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                 string_VkPipelineColorBlendStateCreateFlags(color_blend_state->flags).c_str(),
                                  string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
             }
         }
-        if (raster_order_attach_stencil) {
-            if (!enabled_features.rasterizationOrderStencilAttachmentAccess) {
-                skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderStencilAttachmentAccess-06464",
-                                 device, ds_loc.dot(Field::flags),
-                                 "is (%s) but rasterizationOrderStencilAttachmentAccess feature was not enabled",
-                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
-            }
+    }
 
-            if (subpass_desc &&
-                (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT) == 0) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09529", rp_state->Handle(), ds_loc.dot(Field::flags),
-                                 "is (%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
-                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str(),
-                                 string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+    bool skip = false;
+
+    if (!pipeline.DepthStencilState()) {
+        if (pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+            if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device,
+                                 create_info_loc.dot(Field::pDepthStencilState), "is NULL.");
             }
         }
     }
