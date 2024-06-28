@@ -106,7 +106,6 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDepthStencilState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, create_info_loc);
-    skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
@@ -154,6 +153,12 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pipeline_ci.pNext)) {
         skip |= ValidatePipelineRobustnessCreateInfo(pipeline, *pipeline_robustness_info, create_info_loc);
     }
+
+    if (const auto *fragment_shading_rate_state =
+            vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_ci.pNext)) {
+        skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, *fragment_shading_rate_state, create_info_loc);
+    }
+
     return skip;
 }
 
@@ -2802,92 +2807,90 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline &pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pipeline &pipeline,
-                                                                  const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(
+    const vvl::Pipeline &pipeline, const VkPipelineFragmentShadingRateStateCreateInfoKHR &fragment_shading_rate_state,
+    const Location &create_info_loc) const {
     bool skip = false;
-    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
-    const auto *fragment_shading_rate_state =
-        vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_ci.pNext);
-    if (!fragment_shading_rate_state || pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
+    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
         return skip;
     }
     const Location fragment_loc =
         create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize);
 
-    if (fragment_shading_rate_state->fragmentSize.width == 0) {
+    if (fragment_shading_rate_state.fragmentSize.width == 0) {
         skip |=
             LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04494", device, fragment_loc.dot(Field::width), "is zero.");
     }
 
-    if (fragment_shading_rate_state->fragmentSize.height == 0) {
+    if (fragment_shading_rate_state.fragmentSize.height == 0) {
         skip |=
             LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04495", device, fragment_loc.dot(Field::height), "is zero.");
     }
 
-    if (fragment_shading_rate_state->fragmentSize.width != 0 && !IsPowerOfTwo(fragment_shading_rate_state->fragmentSize.width)) {
+    if (fragment_shading_rate_state.fragmentSize.width != 0 && !IsPowerOfTwo(fragment_shading_rate_state.fragmentSize.width)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04496", device, fragment_loc.dot(Field::width),
-                         "is %" PRIu32 ".", fragment_shading_rate_state->fragmentSize.width);
+                         "is %" PRIu32 ".", fragment_shading_rate_state.fragmentSize.width);
     }
 
-    if (fragment_shading_rate_state->fragmentSize.height != 0 && !IsPowerOfTwo(fragment_shading_rate_state->fragmentSize.height)) {
+    if (fragment_shading_rate_state.fragmentSize.height != 0 && !IsPowerOfTwo(fragment_shading_rate_state.fragmentSize.height)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04497", device, fragment_loc.dot(Field::height),
-                         "is %" PRIu32 ".", fragment_shading_rate_state->fragmentSize.height);
+                         "is %" PRIu32 ".", fragment_shading_rate_state.fragmentSize.height);
     }
 
-    if (fragment_shading_rate_state->fragmentSize.width > 4) {
+    if (fragment_shading_rate_state.fragmentSize.width > 4) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04498", device, fragment_loc.dot(Field::width),
-                         "is %" PRIu32 ".", fragment_shading_rate_state->fragmentSize.width);
+                         "is %" PRIu32 ".", fragment_shading_rate_state.fragmentSize.width);
     }
 
-    if (fragment_shading_rate_state->fragmentSize.height > 4) {
+    if (fragment_shading_rate_state.fragmentSize.height > 4) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04499", device, fragment_loc.dot(Field::height),
-                         "is %" PRIu32 ".", fragment_shading_rate_state->fragmentSize.height);
+                         "is %" PRIu32 ".", fragment_shading_rate_state.fragmentSize.height);
     }
 
-    if (!enabled_features.pipelineFragmentShadingRate && fragment_shading_rate_state->fragmentSize.width != 1) {
+    if (!enabled_features.pipelineFragmentShadingRate && fragment_shading_rate_state.fragmentSize.width != 1) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500", device, fragment_loc.dot(Field::width),
                          "is %" PRIu32 ", but the pipelineFragmentShadingRate feature was not enabled.",
-                         fragment_shading_rate_state->fragmentSize.width);
+                         fragment_shading_rate_state.fragmentSize.width);
     }
 
-    if (!enabled_features.pipelineFragmentShadingRate && fragment_shading_rate_state->fragmentSize.height != 1) {
+    if (!enabled_features.pipelineFragmentShadingRate && fragment_shading_rate_state.fragmentSize.height != 1) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500", device, fragment_loc.dot(Field::height),
                          "is %" PRIu32 ", but the pipelineFragmentShadingRate feature was not enabled.",
-                         fragment_shading_rate_state->fragmentSize.height);
+                         fragment_shading_rate_state.fragmentSize.height);
     }
 
     if (!enabled_features.primitiveFragmentShadingRate &&
-        fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+        fragment_shading_rate_state.combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04501", device,
                          create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
                          "is %s, but the primitiveFragmentShadingRate feature was not enabled.",
-                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]));
+                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state.combinerOps[0]));
     }
 
     if (!enabled_features.attachmentFragmentShadingRate &&
-        fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+        fragment_shading_rate_state.combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04502", device,
                          create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
                          "is %s, but the attachmentFragmentShadingRate feature was not enabled.",
-                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]));
+                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state.combinerOps[1]));
     }
 
     if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
-        (fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
-         fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+        (fragment_shading_rate_state.combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+         fragment_shading_rate_state.combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506", device,
                          create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
                          "is %s, but the fragmentShadingRateNonTrivialCombinerOps feature is not enabled.",
-                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]));
+                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state.combinerOps[0]));
     }
 
     if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
-        (fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
-         fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+        (fragment_shading_rate_state.combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+         fragment_shading_rate_state.combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506", device,
                          create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
                          "is %s, but the fragmentShadingRateNonTrivialCombinerOps feature is not enabled.",
-                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]));
+                         string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state.combinerOps[1]));
     }
 
     auto is_valid_enum_value = [](VkFragmentShadingRateCombinerOpKHR value) {
@@ -2903,7 +2906,7 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pip
         };
     };
 
-    const auto combiner_ops = fragment_shading_rate_state->combinerOps;
+    const auto combiner_ops = fragment_shading_rate_state.combinerOps;
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) || pipeline.OwnsSubState(pipeline.fragment_shader_state)) {
         if (!is_valid_enum_value(combiner_ops[0])) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567", device,

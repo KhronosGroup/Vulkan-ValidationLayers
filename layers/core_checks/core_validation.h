@@ -627,7 +627,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline& pipeline, const vku::safe_VkSubpassDescription2* subpass_desc,
                                                    const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineFragmentShadingRateState(
+        const vvl::Pipeline& pipeline, const VkPipelineFragmentShadingRateStateCreateInfoKHR& fragment_shading_rate_state,
+        const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineMeshTask(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeline& pipeline,
