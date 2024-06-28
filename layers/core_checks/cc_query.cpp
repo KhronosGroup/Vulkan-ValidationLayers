@@ -787,12 +787,13 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const Qu
                                : unexpected_caller_vuid;
         assert(strcmp(vuid, unexpected_caller_vuid) != 0);
 
-        skip |= state_data.LogError(vuid, objlist, loc,
-                                    "%s and query %" PRIu32
-                                    ": query not reset. "
-                                    "After query pool creation, each query must be reset before it is used. "
-                                    "Queries must also be reset between uses.",
-                                    state_data.FormatHandle(query_obj.pool).c_str(), query_obj.slot);
+        skip |= state_data.LogError(
+            vuid, objlist, loc,
+            "%s and query %" PRIu32
+            ": query not reset. "
+            "After query pool creation, each query must be reset (with vkCmdResetQueryPool or vkResetQueryPool) before it is used. "
+            "Queries must also be reset between uses.",
+            state_data.FormatHandle(query_obj.pool).c_str(), query_obj.slot);
     }
 
     return skip;

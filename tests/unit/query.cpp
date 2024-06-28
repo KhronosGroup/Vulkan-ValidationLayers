@@ -2537,3 +2537,23 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     cb.end();
     vk::ReleaseProfilingLockKHR(*m_device);
 }
+
+TEST_F(NegativeQuery, NoInitReset) {
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+    vkt::QueryPool query_pool(*m_device, qpci);
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-None-00807");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
