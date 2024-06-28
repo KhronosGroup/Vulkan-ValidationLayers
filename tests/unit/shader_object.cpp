@@ -3592,7 +3592,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBoundsEXT.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07836");
-
+    AddRequiredFeature(vkt::Feature::depthBounds);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -3735,7 +3735,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCullModeEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetFrontFaceEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetFrontFaceEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08628");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07841");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();

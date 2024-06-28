@@ -1684,6 +1684,27 @@ TEST_F(NegativeDynamicState, SetDepthClampFeature) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeDynamicState, SetDepthBoundsTestEnableFeature) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::depthBounds);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthBoundsTestEnable-depthBounds-10010");
+    vk::CmdSetDepthBoundsTestEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeDynamicState, DrawNotSetPolygonMode) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 dynamic state not set before drawing");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
@@ -3867,6 +3888,7 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
 TEST_F(NegativeDynamicState, DepthBoundsTestEnableState) {
     TEST_DESCRIPTION("Dynamically set depthBoundsTestEnable and not call vkCmdSetDepthBounds before the draw");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthBounds);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     RETURN_IF_SKIP(Init());
 

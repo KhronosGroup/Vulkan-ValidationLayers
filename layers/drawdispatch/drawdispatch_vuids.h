@@ -240,7 +240,6 @@ struct DrawDispatchVuid {
     const char* set_line_stipple_enable_08670 = kVUIDUndefined;
     const char* set_line_stipple_enable_08671 = kVUIDUndefined;
     const char* set_line_stipple_08672 = kVUIDUndefined;
-    const char* set_coverage_to_color_enable_08676 = kVUIDUndefined;
     const char* vertex_shader_08684 = kVUIDUndefined;
     const char* tessellation_control_shader_08685 = kVUIDUndefined;
     const char* tessellation_evaluation_shader_08686 = kVUIDUndefined;
@@ -260,7 +259,6 @@ struct DrawDispatchVuid {
     const char* set_line_width_08617 = kVUIDUndefined;
     const char* set_line_width_08618 = kVUIDUndefined;
     const char* set_blend_constants_08621 = kVUIDUndefined;
-    const char* set_front_face_08628 = kVUIDUndefined;
     const char* set_line_width_08619 = kVUIDUndefined;
     const char* set_viewport_with_count_08642 = kVUIDUndefined;
     const char* alpha_component_word_08920 = kVUIDUndefined;

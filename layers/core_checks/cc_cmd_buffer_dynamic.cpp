@@ -180,6 +180,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV:
                 vuid_str = vuid.dynamic_coverage_reduction_mode_07649;
                 break;
+            case CB_DYNAMIC_STATE_FRONT_FACE:
+                vuid_str = vuid.dynamic_front_face_07841;
+                break;
             default:
                 assert(false);
                 break;
@@ -240,6 +243,11 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_WRITE_MASK, vuid);
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, vuid);
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_OP, vuid);
+        }
+
+        // TODO - Doesn't match up with spec
+        if (last_bound_state.IsStencilTestEnable() || last_bound_state.GetCullMode() != VK_CULL_MODE_NONE) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_FRONT_FACE, vuid);
         }
 
         if (last_bound_state.IsSampleLocationsEnable()) {
@@ -398,12 +406,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
 
     // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer
     const CBDynamicFlags state_status_cb = ~((cb_state.dynamic_state_status.cb ^ pipeline.dynamic_state) & pipeline.dynamic_state);
-
-    // VK_EXT_extended_dynamic_state
-    {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_FRONT_FACE, cb_state, objlist, loc,
-                                          vuid.dynamic_front_face_07841);
-    }
 
     // VK_EXT_extended_dynamic_state2
     {
@@ -1399,13 +1401,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
 
-        if ((cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CULL_MODE) &&
-             cb_state.dynamic_state_value.cull_mode != VK_CULL_MODE_NONE) ||
-            cb_state.dynamic_state_value.stencil_test_enable == VK_TRUE) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_FRONT_FACE, cb_state, objlist, loc,
-                                              vuid.set_front_face_08628);
-        }
-
         if (IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT,
                                               cb_state, objlist, loc, vuid.set_sample_locations_enable_08664);
@@ -2145,16 +2140,30 @@ bool CoreChecks::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuff
 
 bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
                                                                const ErrorObject& error_obj) const {
+    bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, error_obj.location,
-                                        enabled_features.extendedDynamicState || enabled_features.shaderObject,
-                                        "VUID-vkCmdSetDepthBoundsTestEnable-None-08971", "extendedDynamicState or shaderObject");
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location,
+                                         enabled_features.extendedDynamicState || enabled_features.shaderObject,
+                                         "VUID-vkCmdSetDepthBoundsTestEnable-None-08971", "extendedDynamicState or shaderObject");
+    if (depthBoundsTestEnable == VK_TRUE && !enabled_features.depthBounds) {
+        skip |= LogError("VUID-vkCmdSetDepthBoundsTestEnable-depthBounds-10010", commandBuffer,
+                         error_obj.location.dot(Field::depthBoundsTestEnable),
+                         "is VK_TRUE but the depthBounds feature was not enabled.");
+    }
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
+    if (depthBoundsTestEnable == VK_TRUE && !enabled_features.depthBounds) {
+        skip |= LogError("VUID-vkCmdSetDepthBoundsTestEnable-depthBounds-10010", commandBuffer,
+                         error_obj.location.dot(Field::depthBoundsTestEnable),
+                         "is VK_TRUE but the depthBounds feature was not enabled.");
+    }
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,

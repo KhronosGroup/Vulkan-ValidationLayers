@@ -1006,6 +1006,19 @@ VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
     }
 }
 
+VkCullModeFlags LastBound::GetCullMode() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_CULL_MODE)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CULL_MODE)) {
+            return cb_state.dynamic_state_value.cull_mode;
+        }
+    } else {
+        if (auto raster_state = pipeline_state->RasterizationState()) {
+            return raster_state->cullMode;
+        }
+    }
+    return VK_CULL_MODE_NONE;
+}
+
 VkConservativeRasterizationModeEXT LastBound::GetConservativeRasterizationMode() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {

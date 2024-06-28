@@ -937,3 +937,43 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureAddressBadBuffer) {
     vk::GetAccelerationStructureDeviceAddressKHR(device(), &as_address_info);
     vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
 }
+
+// Use to be invalid, but VUID-vkCmdBuildAccelerationStructuresKHR-firstVertex-03770 was removed in
+// https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6733
+TEST_F(PositiveRayTracing, UpdatedFirstVertex) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
+        "VkAccelerationStructureBuildRangeInfoKHR::firstVertex");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    m_commandBuffer->begin();
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    blas.BuildCmdBuffer(m_commandBuffer->handle());
+
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
+
+    m_commandBuffer->begin();
+
+    blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    blas.SetSrcAS(blas.GetDstAS());
+
+    // Create custom build ranges, with the default valid as a template, then somehow supply it?
+    auto build_range_infos = blas.GetDefaultBuildRangeInfos();
+    build_range_infos[0].firstVertex = 666;
+    blas.SetBuildRanges(build_range_infos);
+
+    blas.BuildCmdBuffer(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
