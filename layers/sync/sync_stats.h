@@ -18,6 +18,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 #define VVL_ENABLE_SYNCVAL_STATS 0
 
