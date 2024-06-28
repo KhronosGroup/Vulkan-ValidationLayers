@@ -743,6 +743,23 @@
                                             }
                                         ]
                                     }
+                                },
+                                {
+                                    "key": "sync_report_descriptor_resources",
+                                    "label": "Report descriptor resources",
+                                    "description": "Report resource handles (images, buffers, etc.) associated with descriptors. Might consume significant amount of memory for complex workloads.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "status": "STABLE",
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_sync",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
                                 }
                             ]
                         },

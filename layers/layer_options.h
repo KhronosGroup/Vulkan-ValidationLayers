@@ -86,6 +86,7 @@ using CHECK_ENABLED = std::array<bool, kMaxEnableFlags>;
 
 struct GpuAVSettings;
 struct DebugPrintfSettings;
+struct SyncValSettings;
 struct MessageFormatSettings;
 struct ConfigAndEnvSettings {
     const char *layer_description;
@@ -98,6 +99,7 @@ struct ConfigAndEnvSettings {
     bool *fine_grained_locking;
     GpuAVSettings *gpuav_settings;
     DebugPrintfSettings *printf_settings;
+    SyncValSettings *syncval_settings;
 };
 
 static const vvl::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {

@@ -20,7 +20,8 @@
 
 class PositiveSyncVal : public VkSyncValTest {};
 
-void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
+// TODO: refactor this and use p_next as in gpuav instead of passing parameters about all possible options.
+void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation, bool enable_descriptor_resources_reporting) {
     // Enable synchronization validation
     features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
 
@@ -29,17 +30,28 @@ void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
         features_.disabledValidationFeatureCount = 0;
     }
 
-    // Optionally disable syncval submit validation
+    static VkLayerSettingEXT settings[2];
+    uint32_t setting_count = 0;
+
     static const char *kDisableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
-    static const VkLayerSettingEXT settings[] = {
-        {OBJECT_LAYER_NAME, "disables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, kDisableQueuSubmitSyncValidation}};
-    // The pNext of qs_settings is modified by InitFramework that's why it can't
+    if (disable_queue_submit_validation) {
+        settings[setting_count++] = {OBJECT_LAYER_NAME, "disables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1,
+                                     kDisableQueuSubmitSyncValidation};
+    }
+    static const VkBool32 report_descriptor_resources = true;
+    if (enable_descriptor_resources_reporting) {
+        settings[setting_count++] = {OBJECT_LAYER_NAME, "sync_report_descriptor_resources", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                     &report_descriptor_resources};
+    }
+
+    // The pNext of syncval_setting is modified by InitFramework that's why it can't
     // be static (should be separate instance per stack frame). Also we show
     // explicitly that it's not const (InitFramework casts const pNext to non-const).
-    VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-                                             static_cast<uint32_t>(std::size(settings)), settings};
-    if (disable_queue_submit_validation) {
-        features_.pNext = &qs_settings;
+    VkLayerSettingsCreateInfoEXT syncval_setting = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, setting_count,
+                                                    settings};
+
+    if (setting_count) {
+        features_.pNext = &syncval_setting;
     }
     InitFramework(&features_);
 }

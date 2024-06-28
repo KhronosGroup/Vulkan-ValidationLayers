@@ -317,6 +317,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include "vk_dispatch_table_helper.h"
             #include "vk_extension_helper.h"
             #include "gpu/core/gpu_settings.h"
+            #include "sync/sync_settings.h"
 
             extern std::atomic<uint64_t> global_unique_id;
 
@@ -425,6 +426,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool fine_grained_locking{true};
                 GpuAVSettings gpuav_settings = {};
                 DebugPrintfSettings printf_settings = {};
+                SyncValSettings syncval_settings = {};
 
                 VkInstance instance = VK_NULL_HANDLE;
                 VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -1094,6 +1096,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool lock_setting;
                 GpuAVSettings local_gpuav_settings = {};
                 DebugPrintfSettings local_printf_settings = {};
+                SyncValSettings local_syncval_settings = {};
                 ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION,
                                                                 pCreateInfo,
                                                                 local_enables,
@@ -1103,7 +1106,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                                                                 &debug_report->message_format_settings,
                                                                 &lock_setting,
                                                                 &local_gpuav_settings,
-                                                                &local_printf_settings};
+                                                                &local_printf_settings,
+                                                                &local_syncval_settings};
                 ProcessConfigAndEnvSettings(&config_and_env_settings_data);
                 LayerDebugMessengerActions(debug_report, OBJECT_LAYER_DESCRIPTION);
 
@@ -1164,6 +1168,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 framework->fine_grained_locking = lock_setting;
                 framework->gpuav_settings = local_gpuav_settings;
                 framework->printf_settings = local_printf_settings;
+                framework->syncval_settings = local_syncval_settings;
 
                 framework->instance = *pInstance;
                 layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
@@ -1184,6 +1189,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     intercept->fine_grained_locking = framework->fine_grained_locking;
                     intercept->gpuav_settings = framework->gpuav_settings;
                     intercept->printf_settings = framework->printf_settings;
+                    intercept->syncval_settings = framework->syncval_settings;
                     intercept->instance = *pInstance;
                 }
 
@@ -1324,6 +1330,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     object->fine_grained_locking = instance_interceptor->fine_grained_locking;
                     object->gpuav_settings = instance_interceptor->gpuav_settings;
                     object->printf_settings = instance_interceptor->printf_settings;
+                    object->syncval_settings = instance_interceptor->syncval_settings;
                     object->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
                     object->instance_extensions = instance_interceptor->instance_extensions;
                     object->device_extensions = device_interceptor->device_extensions;
