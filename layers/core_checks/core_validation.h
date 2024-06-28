@@ -631,9 +631,12 @@ class CoreChecks : public ValidationStateTracker {
         const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineMeshTask(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeline& pipeline,
-                                                       const vku::safe_VkSubpassDescription2* subpass_desc,
+    bool ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
+                                                       const vku::safe_VkSubpassDescription2& subpass_desc,
                                                        const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(const vvl::Pipeline& pipeline,
+                                                                       const Location& create_info_loc) const;
+
     bool ValidateComputePipelineShaderState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidatePipelineDiscardRectangleStateCreateInfo(
         const vvl::Pipeline& pipeline, const VkPipelineDiscardRectangleStateCreateInfoEXT& discard_rectangle_state,
