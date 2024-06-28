@@ -940,7 +940,6 @@ TEST_F(NegativeGraphicsLibrary, BadRenderPassFragmentShader) {
     pipe.InitFragmentLibInfo(&fs_stage.stage_ci);
     VkRenderPass bad_rp = CastToHandle<VkRenderPass, uintptr_t>(0xbaadbeef);
     pipe.gp_ci_.renderPass = bad_rp;
-    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06643");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -3206,6 +3205,7 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentOutput) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    exe_pipe_ci.renderPass = renderPass();
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08909");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
