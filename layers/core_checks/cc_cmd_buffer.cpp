@@ -840,14 +840,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 }
             } else {
                 if (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
-                    cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT) {
+                    cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR) {
                     const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
-                    skip |= LogError("VUID-vkCmdExecuteCommands-None-09681", objlist, error_obj.location,
-                                     "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
-                                     "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT"
-                                     "when calling vkCmdExecuteCommands() within a non-first subpass (currently subpass %" PRIu32
-                                     ").",
-                                     cb_state.GetActiveSubpass());
+                    skip |=
+                        LogError("VUID-vkCmdExecuteCommands-None-09681", objlist, error_obj.location,
+                                 "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
+                                 "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR"
+                                 "when calling vkCmdExecuteCommands() within a non-first subpass (currently subpass %" PRIu32 ").",
+                                 cb_state.GetActiveSubpass());
                 }
             }
         }

@@ -13202,6 +13202,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
                                     "VUID-VkPhysicalDeviceProperties2-pNext-pNext", "VUID-VkPhysicalDeviceProperties2-sType-unique",
                                     physicalDevice, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceProperties2(physicalDevice, pProperties, error_obj);
     return skip;
 }
 

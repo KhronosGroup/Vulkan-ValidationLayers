@@ -1347,3 +1347,21 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveRenderPass, NestedCommandBuffersFeatureMaintenance7) {
+    TEST_DESCRIPTION(
+        "Use VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR with maintenance7, but not nextedCommandBuffers is not "
+        "enabled");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance7);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo,
+                           VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}

@@ -2194,3 +2194,28 @@ TEST_F(VkLayerTest, GetDeviceFaultInfoEXT) {
     vk::GetDeviceFaultInfoEXT(device(), &fault_count, &fault_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, PhysicalDeviceLayeredApiVulkanPropertiesKHR) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance7);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan12Properties vulkan_12_props = vku::InitStructHelper();  // not allowed
+    VkPhysicalDeviceDriverProperties driver_props = vku::InitStructHelper(&vulkan_12_props);
+
+    VkPhysicalDeviceLayeredApiVulkanPropertiesKHR api_vulkan_props = vku::InitStructHelper();
+    api_vulkan_props.properties.pNext = &driver_props;
+
+    VkPhysicalDeviceLayeredApiPropertiesKHR api_props = vku::InitStructHelper(&api_vulkan_props);
+
+    VkPhysicalDeviceLayeredApiPropertiesListKHR api_prop_lists = vku::InitStructHelper();
+    api_prop_lists.layeredApiCount = 1;
+    api_prop_lists.pLayeredApis = &api_props;
+
+    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&api_prop_lists);
+
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceLayeredApiVulkanPropertiesKHR-pNext-10011");
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    m_errorMonitor->VerifyFound();
+}

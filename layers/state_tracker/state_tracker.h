@@ -1843,6 +1843,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props;
         VkPhysicalDeviceImageAlignmentControlPropertiesMESA image_alignment_control_props;
         VkPhysicalDeviceMaintenance6PropertiesKHR maintenance6_props;
+        VkPhysicalDeviceMaintenance7PropertiesKHR maintenance7_props;
         VkPhysicalDeviceNestedCommandBufferPropertiesEXT nested_command_buffer_props;
         VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props;
         VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT descriptor_buffer_density_props;

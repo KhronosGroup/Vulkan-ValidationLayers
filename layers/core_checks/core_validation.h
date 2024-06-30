@@ -1434,6 +1434,10 @@ class CoreChecks : public ValidationStateTracker {
                                                   const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                                    const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingFragmentShadingRateRenderArea(
+        VkCommandBuffer commandBuffer, const vvl::ImageView& view_state,
+        const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info, const VkRenderingInfo& rendering_info,
+        const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                            const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingMultisampledRenderToSingleSampled(VkCommandBuffer commandBuffer,
