@@ -547,6 +547,9 @@ class StatelessValidation : public ValidationObject {
     void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
 
+    bool manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                            VkPhysicalDeviceProperties2 *pProperties,
+                                                            const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
                                                const ErrorObject &error_obj) const;

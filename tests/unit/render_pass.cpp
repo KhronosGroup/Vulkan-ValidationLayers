@@ -4222,7 +4222,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
 }
 
 TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature) {
-    TEST_DESCRIPTION("Use VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT when nextedCommandBuffers is not enabled");
+    TEST_DESCRIPTION("Use VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR when nextedCommandBuffers is not enabled");
     AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4230,13 +4230,13 @@ TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature) {
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-contents-09640");
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo,
-                           VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT);
+                           VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
 
 TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature2) {
-    TEST_DESCRIPTION("Use VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT when nextedCommandBuffers is not enabled");
+    TEST_DESCRIPTION("Use VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR when nextedCommandBuffers is not enabled");
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
@@ -4244,7 +4244,7 @@ TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature2) {
     InitRenderTarget();
 
     auto subpassBeginInfo =
-        vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_EXT);
+        vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredError("VUID-VkSubpassBeginInfo-contents-09382");

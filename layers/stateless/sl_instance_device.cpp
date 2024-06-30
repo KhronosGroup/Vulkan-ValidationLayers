@@ -908,3 +908,32 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevi
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                                             VkPhysicalDeviceProperties2 *pProperties,
+                                                                             const ErrorObject &error_obj) const {
+    bool skip = false;
+    const auto *api_props_lists = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiPropertiesListKHR>(pProperties->pNext);
+    if (api_props_lists && api_props_lists->pLayeredApis) {
+        for (uint32_t i = 0; i < api_props_lists->layeredApiCount; i++) {
+            if (const auto *api_vulkan_props = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiVulkanPropertiesKHR>(
+                    api_props_lists->pLayeredApis[i].pNext)) {
+                const VkBaseOutStructure *current = static_cast<const VkBaseOutStructure *>(api_vulkan_props->properties.pNext);
+                while (current) {
+                    // only VkPhysicalDeviceDriverProperties and VkPhysicalDeviceIDProperties allowed
+                    if (current->sType != VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES &&
+                        current->sType != VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES) {
+                        skip |= LogError("VUID-VkPhysicalDeviceLayeredApiVulkanPropertiesKHR-pNext-10011", physicalDevice,
+                                         error_obj.location.dot(Field::pProperties)
+                                             .pNext(Struct::VkPhysicalDeviceLayeredApiPropertiesListKHR, Field::pLayeredApis, i)
+                                             .dot(Field::properties)
+                                             .dot(Field::pNext),
+                                         "contains an invalid struct (%s).", string_VkStructureType(current->sType));
+                    }
+                    current = current->pNext;
+                }
+            }
+        }
+    }
+    return skip;
+}

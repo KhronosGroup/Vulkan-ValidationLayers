@@ -4002,16 +4002,6 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER], phys_dev_props.limits.maxDescriptorSetUniformBuffers);
     }
 
-    // Dynamic uniform buffers
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic) {
-        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03030", device, error_obj.location,
-                         "sum of dynamic uniform buffer bindings among all stages (%" PRIu32
-                         ") exceeds device "
-                         "maxDescriptorSetUniformBuffersDynamic limit (%" PRIu32 ").",
-                         sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
-                         phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic);
-    }
-
     // Storage buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] > phys_dev_props.limits.maxDescriptorSetStorageBuffers) {
         skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03031", device, error_obj.location,
@@ -4021,14 +4011,59 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER], phys_dev_props.limits.maxDescriptorSetStorageBuffers);
     }
 
-    // Dynamic storage buffers
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic) {
-        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03032", device, error_obj.location,
-                         "sum of dynamic storage buffer bindings among all stages (%" PRIu32
-                         ") exceeds device "
-                         "maxDescriptorSetStorageBuffersDynamic limit (%" PRIu32 ").",
-                         sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
-                         phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic);
+    const uint32_t sum_all_uniform_buffer_dynamic = sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC];
+    const uint32_t sum_all_storage_buffer_dynamic = sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC];
+    if (enabled_features.maintenance7) {
+        // Dynamic uniform buffers
+        if (sum_all_uniform_buffer_dynamic > phys_dev_ext_props.maintenance7_props.maxDescriptorSetTotalUniformBuffersDynamic) {
+            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-maintenance7-10003", device, error_obj.location,
+                             "sum of dynamic uniform buffer bindings among all stages (%" PRIu32
+                             ") exceeds device "
+                             "maxDescriptorSetTotalUniformBuffersDynamic limit (%" PRIu32 ").",
+                             sum_all_uniform_buffer_dynamic,
+                             phys_dev_ext_props.maintenance7_props.maxDescriptorSetTotalUniformBuffersDynamic);
+        }
+
+        // Dynamic storage buffers
+        if (sum_all_storage_buffer_dynamic > phys_dev_ext_props.maintenance7_props.maxDescriptorSetTotalStorageBuffersDynamic) {
+            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-maintenance7-10004", device, error_obj.location,
+                             "sum of dynamic storage buffer bindings among all stages (%" PRIu32
+                             ") exceeds device "
+                             "maxDescriptorSetTotalStorageBuffersDynamic limit (%" PRIu32 ").",
+                             sum_all_storage_buffer_dynamic,
+                             phys_dev_ext_props.maintenance7_props.maxDescriptorSetTotalStorageBuffersDynamic);
+        }
+
+        // prevent overflow
+        const uint64_t total_sum =
+            static_cast<uint64_t>(sum_all_uniform_buffer_dynamic) + static_cast<uint64_t>(sum_all_storage_buffer_dynamic);
+        if (total_sum > phys_dev_ext_props.maintenance7_props.maxDescriptorSetTotalBuffersDynamic) {
+            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-None-10005", device, error_obj.location,
+                             "sum of both dynamic storage buffer bindings (%" PRIu32
+                             ") and dynamic uniform buffer bindings (%" PRIu32 ") among all stages (%" PRIu64
+                             ") exceeds device "
+                             "maxDescriptorSetTotalBuffersDynamic limit (%" PRIu32 ").",
+                             sum_all_uniform_buffer_dynamic, sum_all_storage_buffer_dynamic, total_sum,
+                             phys_dev_ext_props.maintenance7_props.maxDescriptorSetTotalBuffersDynamic);
+        }
+    } else {
+        // Dynamic uniform buffers
+        if (sum_all_uniform_buffer_dynamic > phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic) {
+            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03030", device, error_obj.location,
+                             "sum of dynamic uniform buffer bindings among all stages (%" PRIu32
+                             ") exceeds device "
+                             "maxDescriptorSetUniformBuffersDynamic limit (%" PRIu32 ").",
+                             sum_all_uniform_buffer_dynamic, phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic);
+        }
+
+        // Dynamic storage buffers
+        if (sum_all_storage_buffer_dynamic > phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic) {
+            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03032", device, error_obj.location,
+                             "sum of dynamic storage buffer bindings among all stages (%" PRIu32
+                             ") exceeds device "
+                             "maxDescriptorSetStorageBuffersDynamic limit (%" PRIu32 ").",
+                             sum_all_storage_buffer_dynamic, phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic);
+        }
     }
 
     // Sampled images
@@ -4223,17 +4258,6 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                              phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffers);
         }
 
-        // Dynamic uniform buffers
-        if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] >
-            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
-            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038", device, error_obj.location,
-                             "sum of dynamic uniform buffer bindings among all stages (%" PRIu32
-                             ") exceeds device "
-                             "maxDescriptorSetUpdateAfterBindUniformBuffersDynamic limit (%" PRIu32 ").",
-                             sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
-                             phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic);
-        }
-
         // Storage buffers
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] >
             phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffers) {
@@ -4245,15 +4269,67 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                              phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffers);
         }
 
-        // Dynamic storage buffers
-        if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] >
-            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
-            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040", device, error_obj.location,
-                             "sum of dynamic storage buffer bindings among all stages (%" PRIu32
-                             ") exceeds device "
-                             "maxDescriptorSetUpdateAfterBindStorageBuffersDynamic limit (%" PRIu32 ").",
-                             sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
-                             phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic);
+        const uint32_t sum_all_after_bind_uniform_buffer_dynamic =
+            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC];
+        const uint32_t sum_all_after_bind_storage_buffer_dynamic =
+            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC];
+        if (enabled_features.maintenance7) {
+            // Dynamic uniform buffers
+            if (sum_all_after_bind_uniform_buffer_dynamic >
+                phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic) {
+                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-maintenance7-10007", device, error_obj.location,
+                                 "sum of dynamic uniform buffer bindings among all stages (%" PRIu32
+                                 ") exceeds device "
+                                 "maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic limit (%" PRIu32 ").",
+                                 sum_all_after_bind_uniform_buffer_dynamic,
+                                 phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic);
+            }
+
+            // Dynamic storage buffers
+            if (sum_all_after_bind_storage_buffer_dynamic >
+                phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic) {
+                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-maintenance7-10008", device, error_obj.location,
+                                 "sum of dynamic storage buffer bindings among all stages (%" PRIu32
+                                 ") exceeds device "
+                                 "maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic limit (%" PRIu32 ").",
+                                 sum_all_after_bind_storage_buffer_dynamic,
+                                 phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic);
+            }
+
+            // prevent overflow
+            const uint64_t total_sum = static_cast<uint64_t>(sum_all_after_bind_uniform_buffer_dynamic) +
+                                       static_cast<uint64_t>(sum_all_after_bind_storage_buffer_dynamic);
+            if (total_sum > phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalBuffersDynamic) {
+                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-10006", device, error_obj.location,
+                                 "sum of both dynamic storage buffer bindings (%" PRIu32
+                                 ") and dynamic uniform buffer bindings (%" PRIu32 ") among all stages (%" PRIu64
+                                 ") exceeds device "
+                                 "maxDescriptorSetUpdateAfterBindTotalBuffersDynamic limit (%" PRIu32 ").",
+                                 sum_all_after_bind_uniform_buffer_dynamic, sum_all_after_bind_storage_buffer_dynamic, total_sum,
+                                 phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalBuffersDynamic);
+            }
+        } else {
+            // Dynamic uniform buffers
+            if (sum_all_after_bind_uniform_buffer_dynamic >
+                phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
+                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038", device, error_obj.location,
+                                 "sum of dynamic uniform buffer bindings among all stages (%" PRIu32
+                                 ") exceeds device "
+                                 "maxDescriptorSetUpdateAfterBindUniformBuffersDynamic limit (%" PRIu32 ").",
+                                 sum_all_after_bind_uniform_buffer_dynamic,
+                                 phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic);
+            }
+
+            // Dynamic storage buffers
+            if (sum_all_after_bind_storage_buffer_dynamic >
+                phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
+                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040", device, error_obj.location,
+                                 "sum of dynamic storage buffer bindings among all stages (%" PRIu32
+                                 ") exceeds device "
+                                 "maxDescriptorSetUpdateAfterBindStorageBuffersDynamic limit (%" PRIu32 ").",
+                                 sum_all_after_bind_storage_buffer_dynamic,
+                                 phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic);
+            }
         }
 
         // Sampled images

@@ -158,6 +158,9 @@
                 "VkPhysicalDeviceMaintenance6FeaturesKHR": {
                     "maintenance6": true
                 },
+                "VkPhysicalDeviceMaintenance7FeaturesKHR": {
+                    "maintenance7": true
+                },
                 "VkPhysicalDeviceShaderDrawParametersFeatures": {
                     "shaderDrawParameters": true
                 },
@@ -1235,6 +1238,16 @@
                     "maxCombinedImageSamplerDescriptorCount": 1073741824,
                     "fragmentShadingRateClampCombinerInputs": true
                 },
+                "VkPhysicalDeviceMaintenance7PropertiesKHR": {
+                    "robustFragmentShadingRateAttachmentAccess": false,
+                    "separateDepthStencilAttachmentAccess": false,
+                    "maxDescriptorSetTotalUniformBuffersDynamic": 15,
+                    "maxDescriptorSetTotalStorageBuffersDynamic": 16,
+                    "maxDescriptorSetTotalBuffersDynamic": 31,
+                    "maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic": 4294967000,
+                    "maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic": 4294967000,
+                    "maxDescriptorSetUpdateAfterBindTotalBuffersDynamic": 4294967000
+                },
                 "VkPhysicalDeviceFloatControlsProperties": {
                     "shaderSignedZeroInfNanPreserveFloat16": true,
                     "shaderSignedZeroInfNanPreserveFloat32": true,
@@ -2040,6 +2053,7 @@
                 "VK_KHR_maintenance4": 1,
                 "VK_KHR_maintenance5": 1,
                 "VK_KHR_maintenance6": 1,
+                "VK_KHR_maintenance7": 1,
                 "VK_KHR_multiview": 1,
                 "VK_KHR_performance_query": 1,
                 "VK_KHR_pipeline_executable_properties": 1,

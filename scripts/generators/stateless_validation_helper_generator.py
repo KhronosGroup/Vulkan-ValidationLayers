@@ -108,6 +108,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetAccelerationStructureHandleNV',
             'vkGetPhysicalDeviceImageFormatProperties',
             'vkGetPhysicalDeviceImageFormatProperties2',
+            'vkGetPhysicalDeviceProperties2',
             'vkCmdBuildAccelerationStructureNV',
             'vkCmdTraceRaysKHR',
             'vkCmdTraceRaysIndirectKHR',

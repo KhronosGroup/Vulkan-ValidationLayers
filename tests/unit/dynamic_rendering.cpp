@@ -6131,7 +6131,7 @@ TEST_F(NegativeDynamicRendering, DynamicRenderingInlineContents) {
     rendering_info.layerCount = 1u;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-flags-09381");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-flags-10012");
     vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &rendering_info);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();

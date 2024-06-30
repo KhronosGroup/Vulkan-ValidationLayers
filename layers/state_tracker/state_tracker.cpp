@@ -951,6 +951,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_nested_command_buffer,
                                    &phys_dev_props->nested_command_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance6, &phys_dev_props->maintenance6_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance7, &phys_dev_props->maintenance7_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_props);
