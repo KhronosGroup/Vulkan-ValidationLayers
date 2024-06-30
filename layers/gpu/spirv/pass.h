@@ -25,6 +25,12 @@ class Module;
 struct Variable;
 struct BasicBlock;
 
+// Info we know is the same regardless what pass is consuming the CreateFunctionCall()
+struct InjectionData {
+    uint32_t stage_info_id;
+    uint32_t inst_position_id;
+};
+
 // Common helpers for all passes
 class Pass {
   public:
@@ -45,17 +51,59 @@ class Pass {
     uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it = nullptr);
 
   protected:
-    Pass(Module& module) : module_(module) {}
+    Pass(Module& module, bool conditional_function_check)
+        : module_(module), conditional_function_check_(conditional_function_check) {}
     Module& module_;
 
-    BasicBlockIt InjectFunctionCheck(Function* function, BasicBlockIt block_it, InstructionIt inst_it);
+    BasicBlockIt InjectConditionalFunctionCheck(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
+                                                const InjectionData& injection_data);
+    void InjectFunctionCheck(BasicBlockIt block_it, InstructionIt* inst_it, const InjectionData& injection_data);
 
     // Each pass decides if the instruction should needs to have its function check injected
     virtual bool AnalyzeInstruction(const Function& function, const Instruction& inst) = 0;
     // A callback from the function injection logic.
     // Each pass creates a OpFunctionCall and returns its result id.
-    virtual uint32_t CreateFunctionCall(BasicBlock& block) = 0;
+    // When doing a conditional injection, we can be pass and just add it to the end of the block, but otherwise we need the
+    // InstructionIt to know where to put the function call
+    virtual uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
     virtual void Reset() = 0;
+
+    // If this is false, we assume through other means (such as robustness) we won't crash on bad values and go
+    //     PassFunction(original_value)
+    //     value = original_value;
+    //
+    // Otherwise, we will have wrap the checks to be safe
+    // For OpStore we will just ignore the store if it is invalid, example:
+    // Before:
+    //     bda.data[index] = value;
+    // After:
+    //    if (isValid(bda.data, index)) {
+    //         bda.data[index] = value;
+    //    }
+    //
+    // For OpLoad we replace the value with Zero (via Phi node) if it is invalid, example
+    // Before:
+    //     int X = bda.data[index];
+    //     int Y = bda.data[X];
+    // After:
+    //    if (isValid(bda.data, index)) {
+    //         int X = bda.data[index];
+    //    } else {
+    //         int X = 0;
+    //    }
+    //    if (isValid(bda.data, X)) {
+    //         int Y = bda.data[X];
+    //    } else {
+    //         int Y = 0;
+    //    }
+    const bool conditional_function_check_;
+
+    // As various things are modifiying the instruction streams, we need to get back were we were.
+    // Every pass needs to set this in AnalyzeInstruction()
+    const Instruction* target_instruction_ = nullptr;
+
+  private:
+    InstructionIt FindTargetInstruction(BasicBlock& block) const;
 };
 
 }  // namespace spirv

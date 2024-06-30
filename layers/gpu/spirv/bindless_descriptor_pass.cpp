@@ -214,12 +214,8 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block) {
     return new_sum_id;
 }
 
-uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
-    // Add any debug information to pass into the function call
-    const uint32_t stage_info_id = GetStageInfo(block.function_);
-    const uint32_t inst_position = target_instruction_->position_index_;
-    auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-
+uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                    const InjectionData& injection_data) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block);  // might be int32
@@ -262,7 +258,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
                 auto copied = copy_object_map_.find(image_id);
                 if (copied != copy_object_map_.end()) {
                     image_id = copied->second;
-                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id});
+                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, inst_it);
                 } else {
                     copy_object_map_.emplace(image_id, copy_id);
                     // slower, but need to guarantee it is placed after a OpSampledImage
@@ -290,9 +286,11 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, inst_position_constant.Id(), stage_info_id,
-                             set_constant.Id(), binding_constant.Id(), descriptor_index_id, descriptor_offset_id_});
+    block.CreateInstruction(
+        spv::OpFunctionCall,
+        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
+         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_},
+        inst_it);
 
     return function_result;
 }
@@ -419,7 +417,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
         }
     }
 
-    // Save information to be used to make the Function
+    // Save information to be used to make the Function, we can use this to regain the iterator were we were
     target_instruction_ = &inst;
 
     return true;
