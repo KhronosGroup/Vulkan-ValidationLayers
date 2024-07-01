@@ -831,16 +831,15 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     if (cb_state.activeRenderPass) {
         if (!cb_state.activeRenderPass->UsesDynamicRendering() && cb_state.IsPrimary()) {
             // check if first subpass
-            if (cb_state.GetActiveSubpass() == 0) {
-                if (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS) {
+            if (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
+                cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR) {
+                if (cb_state.GetActiveSubpass() == 0) {
                     const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
                     skip |= LogError("VUID-vkCmdExecuteCommands-contents-09680", objlist, error_obj.location,
-                                     "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS"
+                                     "contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
+                                     "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR"
                                      "when calling vkCmdExecuteCommands() within the first subpass.");
-                }
-            } else {
-                if (cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
-                    cb_state.activeSubpassContents != VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR) {
+                } else {
                     const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
                     skip |=
                         LogError("VUID-vkCmdExecuteCommands-None-09681", objlist, error_obj.location,
