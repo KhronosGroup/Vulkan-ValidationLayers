@@ -1084,6 +1084,10 @@ class StatelessValidation : public ValidationObject {
                                                    const VkSubpassBeginInfo *, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                                  const ErrorObject &error_obj) const;
+    bool ValidateBeginRenderingFragmentShadingRateAttachment(
+        VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+        const VkRenderingFragmentShadingRateAttachmentInfoKHR &rendering_fsr_attachment_info,
+        const Location &rendering_info_loc) const;
 
     bool manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                          uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles,

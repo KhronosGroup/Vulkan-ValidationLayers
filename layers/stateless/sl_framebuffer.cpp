@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,24 +23,61 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
                                                                   VkFramebuffer *pFramebuffer, const ErrorObject &error_obj) const {
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-        skip |= ValidateArray(error_obj.location.dot(Field::attachmentCount), error_obj.location.dot(Field::pAttachments),
+        skip |= ValidateArray(create_info_loc.dot(Field::attachmentCount), error_obj.location.dot(Field::pAttachments),
                               pCreateInfo->attachmentCount, &pCreateInfo->pAttachments, false, true, kVUIDUndefined,
                               "VUID-VkFramebufferCreateInfo-flags-02778");
+    } else {
+        if (!enabled_features.imagelessFramebuffer) {
+            skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03189", device, create_info_loc.dot(Field::flags),
+                             "includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, but the imagelessFramebuffer feature is not enabled.");
+        }
+
+        const auto *framebuffer_attachments_create_info =
+            vku::FindStructInPNextChain<VkFramebufferAttachmentsCreateInfo>(pCreateInfo->pNext);
+        if (framebuffer_attachments_create_info == nullptr) {
+            skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03190", device, create_info_loc.dot(Field::flags),
+                             "includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, but no instance of VkFramebufferAttachmentsCreateInfo "
+                             "is present in the pNext chain.");
+        } else {
+            if (framebuffer_attachments_create_info->attachmentImageInfoCount != 0 &&
+                framebuffer_attachments_create_info->attachmentImageInfoCount != pCreateInfo->attachmentCount) {
+                skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03191", device,
+                                 create_info_loc.pNext(Struct::VkFramebufferAttachmentsCreateInfo, Field::attachmentImageInfoCount),
+                                 "is %" PRIu32 " which is not equal to pCreateInfo->attachmentCount (%" PRIu32 ").",
+                                 framebuffer_attachments_create_info->attachmentImageInfoCount, pCreateInfo->attachmentCount);
+            }
+        }
     }
 
     // Verify FB dimensions are greater than zero
     if (pCreateInfo->width == 0) {
-        skip |= LogError("VUID-VkFramebufferCreateInfo-width-00885", device,
-                         error_obj.location.dot(Field::pCreateInfo).dot(Field::width), "is zero.");
+        skip |= LogError("VUID-VkFramebufferCreateInfo-width-00885", device, create_info_loc.dot(Field::width), "is zero.");
     }
     if (pCreateInfo->height == 0) {
-        skip |= LogError("VUID-VkFramebufferCreateInfo-height-00887", device,
-                         error_obj.location.dot(Field::pCreateInfo).dot(Field::height), "is zero.");
+        skip |= LogError("VUID-VkFramebufferCreateInfo-height-00887", device, create_info_loc.dot(Field::height), "is zero.");
     }
     if (pCreateInfo->layers == 0) {
-        skip |= LogError("VUID-VkFramebufferCreateInfo-layers-00889", device,
-                         error_obj.location.dot(Field::pCreateInfo).dot(Field::layers), "is zero.");
+        skip |= LogError("VUID-VkFramebufferCreateInfo-layers-00889", device, create_info_loc.dot(Field::layers), "is zero.");
     }
+
+    if (pCreateInfo->width > device_limits.maxFramebufferWidth) {
+        skip |= LogError("VUID-VkFramebufferCreateInfo-width-00886", device, create_info_loc.dot(Field::width),
+                         "(%" PRIu32 ") exceeds physical device limits (%" PRIu32 ").", pCreateInfo->width,
+                         device_limits.maxFramebufferWidth);
+    }
+    if (pCreateInfo->height > device_limits.maxFramebufferHeight) {
+        skip |= LogError("VUID-VkFramebufferCreateInfo-height-00888", device, create_info_loc.dot(Field::height),
+                         "(%" PRIu32 ") exceeds physical device limits (%" PRIu32 ").", pCreateInfo->height,
+                         device_limits.maxFramebufferHeight);
+    }
+    if (pCreateInfo->layers > device_limits.maxFramebufferLayers) {
+        skip |= LogError("VUID-VkFramebufferCreateInfo-layers-00890", device, create_info_loc.dot(Field::layers),
+                         "(%" PRIu32 ") exceeds physical device limits (%" PRIu32 ").", pCreateInfo->layers,
+                         device_limits.maxFramebufferLayers);
+    }
+
     return skip;
 }

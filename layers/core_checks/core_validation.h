@@ -250,7 +250,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                   const ErrorObject& error_obj) const;
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
-    bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
+    bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo& fbci,
                     VkImageUsageFlagBits usage_flag, const char* vuid, const Location& create_info_loc) const;
     bool ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                  const ErrorObject& error_obj) const;
@@ -1756,6 +1756,13 @@ class CoreChecks : public ValidationStateTracker {
                                                                   const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                   VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery,
                                                                   const RecordObject& record_obj) override;
+    bool ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& create_info, const Location& create_info_loc,
+                                        const vvl::RenderPass& rp_state, const VkRenderPassCreateInfo2& rpci) const;
+    bool ValidateFrameBufferAttachmentsImageless(
+        const VkFramebufferCreateInfo& create_info, const Location& create_info_loc, const VkRenderPassCreateInfo2& rpci,
+        const VkFramebufferAttachmentsCreateInfo& framebuffer_attachments_create_info) const;
+    bool ValidateFrameBufferSubpasses(const VkFramebufferCreateInfo& create_info, const Location& create_info_loc,
+                                      const VkRenderPassCreateInfo2& rpci) const;
     bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                           const ErrorObject& error_obj) const override;
@@ -1765,7 +1772,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory, VkDeviceSize* pCommittedMem,
                                                   const ErrorObject& error_obj) const override;
     bool MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, const VkAttachmentReference2* attachments,
-                                                        const VkFramebufferCreateInfo* fbci, const VkRenderPassCreateInfo2* rpci,
+                                                        const VkFramebufferCreateInfo& fbci, const VkRenderPassCreateInfo2& rpci,
                                                         uint32_t subpass, VkSampleCountFlagBits sample_count,
                                                         const Location& create_info_loc) const;
     bool ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
