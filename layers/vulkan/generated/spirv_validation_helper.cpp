@@ -249,8 +249,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
     {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
     {spv::CapabilityRawAccessChainsNV, {0, &DeviceFeatures::shaderRawAccessChains, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},
+    {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},
 };
 // clang-format on
 
@@ -487,6 +486,8 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "TileImageDepthReadAccessEXT";
         case spv::CapabilityTileImageStencilReadAccessEXT:
             return "TileImageStencilReadAccessEXT";
+        case spv::CapabilityCooperativeMatrixLayoutsARM:
+            return "CooperativeMatrixLayoutsARM";
         case spv::CapabilityFragmentShadingRateKHR:
             return "FragmentShadingRateKHR";
         case spv::CapabilitySubgroupBallotKHR:
@@ -691,6 +692,8 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "RayCullMaskKHR";
         case spv::CapabilityCooperativeMatrixKHR:
             return "CooperativeMatrixKHR";
+        case spv::CapabilityReplicatedCompositesEXT:
+            return "ReplicatedCompositesEXT";
         case spv::CapabilityBitInstructions:
             return "BitInstructions";
         case spv::CapabilityGroupNonUniformRotateKHR:
@@ -961,6 +964,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityFloatControls2, "VkPhysicalDeviceShaderFloatControls2FeaturesKHR::shaderFloatControls2"},
     {spv::CapabilityQuadControlKHR, "VkPhysicalDeviceShaderQuadControlFeaturesKHR::shaderQuadControl"},
     {spv::CapabilityRawAccessChainsNV, "VkPhysicalDeviceRawAccessChainsFeaturesNV::shaderRawAccessChains"},
+    {spv::CapabilityReplicatedCompositesEXT, "VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT::shaderReplicatedComposites"},
     };
 
     // VUs before catch unknown capabilities
