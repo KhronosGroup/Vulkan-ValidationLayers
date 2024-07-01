@@ -1426,17 +1426,9 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_features = vku::InitStructHelper();
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper(&dynamic_features);
-    GetPhysicalDeviceFeatures2(fdm_features);
-    if (!dynamic_features.dynamicRendering) {
-        GTEST_SKIP() << "dynamicRendering not supported";
-    }
-    if (!fdm_features.fragmentDensityMap) {
-        GTEST_SKIP() << "fragmentDensityMap not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &fdm_features));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    RETURN_IF_SKIP(Init());
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
@@ -1464,7 +1456,7 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper(&fragment_density_map);
     begin_rendering_info.pDepthAttachment = &depth_attachment;
-    begin_rendering_info.viewMask = 0x4;
+    begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_commandBuffer->begin();
@@ -1473,8 +1465,6 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     m_errorMonitor->VerifyFound();
     fragment_density_map.imageView = depth_image_view_fragment;
 
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-multiview-06127");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06108");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06145");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06146");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
@@ -3305,7 +3295,6 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-multiview-06127");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
