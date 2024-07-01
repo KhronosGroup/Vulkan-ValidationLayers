@@ -270,6 +270,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpSubgroupAllEqualKHR:
         case spv::OpGroupNonUniformRotateKHR:
         case spv::OpSubgroupReadInvocationKHR:
+        case spv::OpExtInstWithForwardRefsKHR:
         case spv::OpConvertUToAccelerationStructureKHR:
         case spv::OpSDot:
         case spv::OpUDot:
@@ -280,6 +281,9 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpCooperativeMatrixLoadKHR:
         case spv::OpCooperativeMatrixMulAddKHR:
         case spv::OpCooperativeMatrixLengthKHR:
+        case spv::OpConstantCompositeReplicateEXT:
+        case spv::OpSpecConstantCompositeReplicateEXT:
+        case spv::OpCompositeConstructReplicateEXT:
         case spv::OpRayQueryProceedKHR:
         case spv::OpRayQueryGetIntersectionTypeKHR:
         case spv::OpImageSampleWeightedQCOM:
@@ -640,6 +644,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpSubgroupAllEqualKHR:
         case spv::OpGroupNonUniformRotateKHR:
         case spv::OpSubgroupReadInvocationKHR:
+        case spv::OpExtInstWithForwardRefsKHR:
         case spv::OpConvertUToAccelerationStructureKHR:
         case spv::OpSDot:
         case spv::OpUDot:
@@ -651,6 +656,9 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpCooperativeMatrixLoadKHR:
         case spv::OpCooperativeMatrixMulAddKHR:
         case spv::OpCooperativeMatrixLengthKHR:
+        case spv::OpConstantCompositeReplicateEXT:
+        case spv::OpSpecConstantCompositeReplicateEXT:
+        case spv::OpCompositeConstructReplicateEXT:
         case spv::OpTypeRayQueryKHR:
         case spv::OpRayQueryProceedKHR:
         case spv::OpRayQueryGetIntersectionTypeKHR:

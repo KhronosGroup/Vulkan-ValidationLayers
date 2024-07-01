@@ -609,6 +609,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpGroupNonUniformRotateKHR";
         case spv::OpSubgroupReadInvocationKHR:
             return "OpSubgroupReadInvocationKHR";
+        case spv::OpExtInstWithForwardRefsKHR:
+            return "OpExtInstWithForwardRefsKHR";
         case spv::OpTraceRayKHR:
             return "OpTraceRayKHR";
         case spv::OpExecuteCallableKHR:
@@ -641,6 +643,12 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpCooperativeMatrixMulAddKHR";
         case spv::OpCooperativeMatrixLengthKHR:
             return "OpCooperativeMatrixLengthKHR";
+        case spv::OpConstantCompositeReplicateEXT:
+            return "OpConstantCompositeReplicateEXT";
+        case spv::OpSpecConstantCompositeReplicateEXT:
+            return "OpSpecConstantCompositeReplicateEXT";
+        case spv::OpCompositeConstructReplicateEXT:
+            return "OpCompositeConstructReplicateEXT";
         case spv::OpTypeRayQueryKHR:
             return "OpTypeRayQueryKHR";
         case spv::OpRayQueryInitializeKHR:
@@ -2109,6 +2117,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpSubgroupAllEqualKHR, {{OperandKind::Id}}},
         {spv::OpGroupNonUniformRotateKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupReadInvocationKHR, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpExtInstWithForwardRefsKHR, {{OperandKind::Id, OperandKind::Literal, OperandKind::Id}}},
         {spv::OpTraceRayKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpExecuteCallableKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpConvertUToAccelerationStructureKHR, {{OperandKind::Id}}},
@@ -2125,6 +2134,9 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpCooperativeMatrixStoreKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeMatrixMulAddKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeMatrixLengthKHR, {{OperandKind::Id}}},
+        {spv::OpConstantCompositeReplicateEXT, {{OperandKind::Id}}},
+        {spv::OpSpecConstantCompositeReplicateEXT, {{OperandKind::Id}}},
+        {spv::OpCompositeConstructReplicateEXT, {{OperandKind::Id}}},
         {spv::OpTypeRayQueryKHR, {{}}},
         {spv::OpRayQueryInitializeKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpRayQueryTerminateKHR, {{OperandKind::Id}}},
