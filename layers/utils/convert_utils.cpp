@@ -275,3 +275,56 @@ vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMem
     barrier2.subresourceRange = barrier.subresourceRange;
     return vku::safe_VkImageMemoryBarrier2(&barrier2);
 }
+
+VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::WaitSemaphore(const VkSubmitInfo& info, uint32_t index) {
+    VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.semaphore = info.pWaitSemaphores[index];
+    semaphore_info.stageMask = info.pWaitDstStageMask[index];
+    return semaphore_info;
+}
+VkCommandBufferSubmitInfo SubmitInfoConverter::BatchStore::CommandBuffer(const VkSubmitInfo& info, uint32_t index) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = info.pCommandBuffers[index];
+    return cb_info;
+}
+
+VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkSubmitInfo& info, uint32_t index) {
+    VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.semaphore = info.pSignalSemaphores[index];
+    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    return semaphore_info;
+}
+
+SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo& info) {
+    info2 = vku::InitStructHelper();
+
+    info2.waitSemaphoreInfoCount = info.waitSemaphoreCount;
+    waits.reserve(info2.waitSemaphoreInfoCount);
+    for (uint32_t i = 0; i < info2.waitSemaphoreInfoCount; ++i) {
+        waits.emplace_back(WaitSemaphore(info, i));
+    }
+    info2.pWaitSemaphoreInfos = waits.data();
+
+    info2.commandBufferInfoCount = info.commandBufferCount;
+    cbs.reserve(info2.commandBufferInfoCount);
+    for (uint32_t i = 0; i < info2.commandBufferInfoCount; ++i) {
+        cbs.emplace_back(CommandBuffer(info, i));
+    }
+    info2.pCommandBufferInfos = cbs.data();
+
+    info2.signalSemaphoreInfoCount = info.signalSemaphoreCount;
+    signals.reserve(info2.signalSemaphoreInfoCount);
+    for (uint32_t i = 0; i < info2.signalSemaphoreInfoCount; ++i) {
+        signals.emplace_back(SignalSemaphore(info, i));
+    }
+    info2.pSignalSemaphoreInfos = signals.data();
+}
+
+SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo* infos) {
+    info_store.reserve(count);
+    info2s.reserve(count);
+    for (uint32_t batch = 0; batch < count; ++batch) {
+        info_store.emplace_back(infos[batch]);
+        info2s.emplace_back(info_store.back().info2);
+    }
+}

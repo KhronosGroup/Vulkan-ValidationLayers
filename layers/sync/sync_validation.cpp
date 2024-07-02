@@ -25,6 +25,7 @@
 #include "sync/sync_image.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/buffer_state.h"
+#include "utils/convert_utils.h"
 
 SyncValidator ::~SyncValidator() {
     // Instance level SyncValidator does not have much to say
@@ -3032,9 +3033,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                                const ErrorObject &error_obj) const {
-    auto queue_state = GetQueueSyncStateShared(queue);
-    if (!bool(queue_state)) return false;
-    SubmitInfoConverter submit_info(submitCount, pSubmits, queue_state->GetQueueFlags());
+    SubmitInfoConverter submit_info(submitCount, pSubmits);
     return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, error_obj);
 }
 
