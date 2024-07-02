@@ -224,17 +224,9 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT ptl_restart_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(ptl_restart_features);
-
-    if (!ptl_restart_features.primitiveTopologyListRestart) {
-        GTEST_SKIP() << "primitive topology list restart feature is not available, skipping test";
-    }
-    ptl_restart_features.primitiveTopologyListRestart = false;
-    ptl_restart_features.primitiveTopologyPatchListRestart = false;
-    RETURN_IF_SKIP(InitState(nullptr, &ptl_restart_features));
+    AddDisabledFeature(vkt::Feature::primitiveTopologyListRestart);
+    AddDisabledFeature(vkt::Feature::primitiveTopologyPatchListRestart);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);

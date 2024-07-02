@@ -1781,3 +1781,51 @@ TEST_F(PositivePipeline, NoRasterizationStateDynamicRendering) {
     pipe.ms_ci_ = ms_ci;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, ColorBlendUnsupportedLogicOpDynamic) {
+    TEST_DESCRIPTION("VkPipelineColorBlendStateCreateInfo::logicOpEnable is ignored with VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LogicOpEnable);
+    AddDisabledFeature(vkt::Feature::logicOp);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
+    pipe.cb_ci_.logicOpEnable = VK_TRUE;  // ignored now
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositivePipeline, PipelineMissingFeaturesDynamic) {
+    TEST_DESCRIPTION("Use dynamic state to set state that would be invalid since the features are not set");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3DepthClampEnable);
+    AddDisabledFeature(vkt::Feature::depthBounds);
+    AddDisabledFeature(vkt::Feature::depthClamp);
+    AddDisabledFeature(vkt::Feature::alphaToOne);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->phy().handle());
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddDepthStencilAttachment(0);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.ds_ci_.depthBoundsTestEnable = VK_TRUE;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
+
+    pipe.ms_ci_.alphaToOneEnable = VK_TRUE;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
+
+    pipe.rs_state_ci_.depthClampEnable = VK_TRUE;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
+
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.CreateGraphicsPipeline();
+}

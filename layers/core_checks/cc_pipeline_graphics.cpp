@@ -1361,7 +1361,7 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline 
     const auto *ia_state = pipeline.InputAssemblyState();
     if (ia_state) {
         const VkPrimitiveTopology topology = ia_state->topology;
-        if ((ia_state->primitiveRestartEnable == VK_TRUE) &&
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) && (ia_state->primitiveRestartEnable == VK_TRUE) &&
             IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                                  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
                                  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
@@ -1529,6 +1529,7 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pi
     bool skip = false;
     const auto &attachment_states = pipeline.AttachmentStates();
     if (attachment_states.empty()) return skip;
+    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) return skip;
 
     if (!enabled_features.independentBlend && attachment_states.size() > 1) {
         for (size_t i = 1; i < attachment_states.size(); i++) {
@@ -1689,6 +1690,32 @@ bool CoreChecks::IsColorBlendStateAttachmentCountIgnore(const vvl::Pipeline &pip
            pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
            (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) || !enabled_features.advancedBlendCoherentOperations);
 }
+bool CoreChecks::ValidatePipelineColorBlendAdvancedStateCreateInfo(
+    const vvl::Pipeline &pipeline, const VkPipelineColorBlendAdvancedStateCreateInfoEXT &color_blend_advanced,
+    const Location &color_loc) const {
+    bool skip = false;
+    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) return skip;
+
+    const auto &prop = phys_dev_ext_props.blend_operation_advanced_props;
+    if (!prop.advancedBlendCorrelatedOverlap && color_blend_advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT) {
+        skip |= LogError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426", device,
+                         color_loc.pNext(Struct::VkPipelineColorBlendAdvancedStateCreateInfoEXT, Field::blendOverlap),
+                         "is %s, but advancedBlendCorrelatedOverlap was not enabled.",
+                         string_VkBlendOverlapEXT(color_blend_advanced.blendOverlap));
+    }
+    if (!prop.advancedBlendNonPremultipliedDstColor && color_blend_advanced.dstPremultiplied != VK_TRUE) {
+        skip |= LogError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425", device,
+                         color_loc.pNext(Struct::VkPipelineColorBlendAdvancedStateCreateInfoEXT, Field::dstPremultiplied),
+                         "is VK_FALSE, but advancedBlendNonPremultipliedDstColor was not enabled.");
+    }
+    if (!prop.advancedBlendNonPremultipliedSrcColor && color_blend_advanced.srcPremultiplied != VK_TRUE) {
+        skip |= LogError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424", device,
+                         color_loc.pNext(Struct::VkPipelineColorBlendAdvancedStateCreateInfoEXT, Field::srcPremultiplied),
+                         "is VK_FALSE, but advancedBlendNonPremultipliedSrcColor was not enabled.");
+    }
+
+    return skip;
+}
 
 bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pipeline,
                                                          const vku::safe_VkSubpassDescription2 *subpass_desc,
@@ -1727,7 +1754,8 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
 
     skip |= ValidateGraphicsPipelineColorBlendAttachmentState(pipeline, subpass_desc, color_loc);
 
-    if (!enabled_features.logicOp && (color_blend_state->logicOpEnable != VK_FALSE)) {
+    if (!enabled_features.logicOp && (color_blend_state->logicOpEnable == VK_TRUE) &&
+        !pipeline.IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
         skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606", device,
                          color_loc.dot(Field::logicOpEnable), "is VK_TRUE, but the logicOp feature was not enabled.");
     }
@@ -1739,7 +1767,7 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
                              "(%" PRIu32 ") is larger than the maxColorAttachments limit (%" PRIu32 ").",
                              color_write->attachmentCount, phys_dev_props.limits.maxColorAttachments);
         }
-        if (!enabled_features.colorWriteEnable) {
+        if (!enabled_features.colorWriteEnable && !pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
             for (uint32_t i = 0; i < color_write->attachmentCount; ++i) {
                 if (color_write->pColorWriteEnables[i] != VK_TRUE) {
                     skip |= LogError("VUID-VkPipelineColorWriteCreateInfoEXT-pAttachments-04801", device,
@@ -1752,26 +1780,88 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
 
     if (const auto *color_blend_advanced =
             vku::FindStructInPNextChain<VkPipelineColorBlendAdvancedStateCreateInfoEXT>(color_blend_state->pNext)) {
-        if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
-            color_blend_advanced->blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT) {
-            skip |= LogError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426", device,
-                             color_loc.pNext(Struct::VkPipelineColorBlendAdvancedStateCreateInfoEXT, Field::blendOverlap),
-                             "is %s, but advancedBlendCorrelatedOverlap was not enabled.",
-                             string_VkBlendOverlapEXT(color_blend_advanced->blendOverlap));
-        }
-        if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&
-            color_blend_advanced->dstPremultiplied != VK_TRUE) {
-            skip |= LogError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425", device,
-                             color_loc.pNext(Struct::VkPipelineColorBlendAdvancedStateCreateInfoEXT, Field::dstPremultiplied),
-                             "is VK_FALSE, but advancedBlendNonPremultipliedDstColor was not enabled.");
-        }
-        if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor &&
-            color_blend_advanced->srcPremultiplied != VK_TRUE) {
-            skip |= LogError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424", device,
-                             color_loc.pNext(Struct::VkPipelineColorBlendAdvancedStateCreateInfoEXT, Field::srcPremultiplied),
-                             "is VK_FALSE, but advancedBlendNonPremultipliedSrcColor was not enabled.");
+        skip |= ValidatePipelineColorBlendAdvancedStateCreateInfo(pipeline, *color_blend_advanced, color_loc);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidatePipelineRasterizationStateStreamCreateInfo(
+    const vvl::Pipeline &pipeline, const VkPipelineRasterizationStateStreamCreateInfoEXT &rasterization_state_stream_ci,
+    const Location &raster_loc) const {
+    bool skip = false;
+    if (!enabled_features.geometryStreams) {
+        skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324", device, raster_loc,
+                         "pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT, but "
+                         "geometryStreams feature was not enabled.");
+    } else if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)) {
+        const auto &props = phys_dev_ext_props.transform_feedback_props;
+        if (props.transformFeedbackRasterizationStreamSelect == VK_FALSE &&
+            rasterization_state_stream_ci.rasterizationStream != 0) {
+            skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02326", device,
+                             raster_loc.pNext(Struct::VkPipelineRasterizationStateStreamCreateInfoEXT, Field::rasterizationStream),
+                             "is (%" PRIu32 ") but transformFeedbackRasterizationStreamSelect is VK_FALSE.",
+                             rasterization_state_stream_ci.rasterizationStream);
+        } else if (rasterization_state_stream_ci.rasterizationStream >= props.maxTransformFeedbackStreams) {
+            skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02325", device,
+                             raster_loc.pNext(Struct::VkPipelineRasterizationStateStreamCreateInfoEXT, Field::rasterizationStream),
+                             "(%" PRIu32 ") is not less than maxTransformFeedbackStreams (%" PRIu32 ").",
+                             rasterization_state_stream_ci.rasterizationStream, props.maxTransformFeedbackStreams);
         }
     }
+    return skip;
+}
+
+bool CoreChecks::ValidatePipelineRasterizationConservativeStateCreateInfo(
+    const vvl::Pipeline &pipeline, const VkPipelineRasterizationConservativeStateCreateInfoEXT &rasterization_conservative_state_ci,
+    const Location &raster_loc) const {
+    bool skip = false;
+
+    if (rasterization_conservative_state_ci.extraPrimitiveOverestimationSize < 0.0f ||
+        rasterization_conservative_state_ci.extraPrimitiveOverestimationSize >
+            phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
+        skip |=
+            LogError("VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769", device,
+                     raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
+                                      Field::extraPrimitiveOverestimationSize),
+                     "is (%f), which is not between 0.0 and "
+                     "maxExtraPrimitiveOverestimationSize (%f).",
+                     rasterization_conservative_state_ci.extraPrimitiveOverestimationSize,
+                     phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
+    }
+
+    if (!phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization) {
+        if (IsValueIn(
+                pipeline.topology_at_rasterizer,
+                {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+                 VK_PRIMITIVE_TOPOLOGY_LINE_STRIP, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
+            if (rasterization_conservative_state_ci.conservativeRasterizationMode !=
+                VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
+                if ((pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) != 0) {
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06760", device,
+                                     raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
+                                                      Field::conservativeRasterizationMode),
+                                     "is %s, but geometry shader output primitive is %s and "
+                                     "VkPhysicalDeviceConservativeRasterizationPropertiesEXT::"
+                                     "conservativePointAndLineRasterization is false.",
+                                     string_VkConservativeRasterizationModeEXT(
+                                         rasterization_conservative_state_ci.conservativeRasterizationMode),
+                                     string_VkPrimitiveTopology(pipeline.topology_at_rasterizer));
+                }
+                if ((pipeline.create_info_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) != 0) {
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06761", device,
+                                     raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
+                                                      Field::conservativeRasterizationMode),
+                                     "is %s, but mesh shader output primitive is %s and "
+                                     "VkPhysicalDeviceConservativeRasterizationPropertiesEXT::"
+                                     "conservativePointAndLineRasterization is false.",
+                                     string_VkConservativeRasterizationModeEXT(
+                                         rasterization_conservative_state_ci.conservativeRasterizationMode),
+                                     string_VkPrimitiveTopology(pipeline.topology_at_rasterizer));
+                }
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -1781,13 +1871,14 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
     if (!raster_state) return skip;
     const Location raster_loc = create_info_loc.dot(Field::pRasterizationState);
 
-    if ((raster_state->depthClampEnable == VK_TRUE) && (!enabled_features.depthClamp)) {
+    if ((raster_state->depthClampEnable == VK_TRUE) && !enabled_features.depthClamp &&
+        !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
         skip |= LogError("VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782", device,
                          raster_loc.dot(Field::depthClampEnable), "is VK_TRUE, but the depthClamp feature was not enabled.");
     }
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS) && (raster_state->depthBiasClamp != 0.0) &&
-        (!enabled_features.depthBiasClamp)) {
+        !enabled_features.depthBiasClamp) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00754", device, raster_loc.dot(Field::depthBiasClamp),
                          "is %f, but the depthBiasClamp feature was not enabled", raster_state->depthBiasClamp);
     }
@@ -1801,7 +1892,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
                                             VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0);
         if (has_ms_state) {
             const auto ms_state = pipeline.MultisampleState();
-            if (ms_state && (ms_state->alphaToOneEnable == VK_TRUE) && (!enabled_features.alphaToOne)) {
+            if (ms_state && (ms_state->alphaToOneEnable == VK_TRUE) && !enabled_features.alphaToOne &&
+                !pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
                 skip |= LogError("VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785", device,
                                  create_info_loc.dot(Field::pMultisampleState).dot(Field::alphaToOneEnable),
                                  "is VK_TRUE, but the alphaToOne feature was not enabled.");
@@ -1812,7 +1904,7 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
     if (auto provoking_vertex_state_ci =
             vku::FindStructInPNextChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(raster_state->pNext)) {
         if (provoking_vertex_state_ci->provokingVertexMode == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT &&
-            !enabled_features.provokingVertexLast) {
+            !enabled_features.provokingVertexLast && !pipeline.IsDynamic(CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT)) {
             skip |= LogError(
                 "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883", device,
                 raster_loc.pNext(Struct::VkPipelineRasterizationProvokingVertexStateCreateInfoEXT, Field::provokingVertexMode),
@@ -1822,73 +1914,13 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
 
     if (const auto rasterization_state_stream_ci =
             vku::FindStructInPNextChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(raster_state->pNext)) {
-        if (!enabled_features.geometryStreams) {
-            skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324", device, raster_loc,
-                             "pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT, but "
-                             "geometryStreams feature was not enabled.");
-        } else if (phys_dev_ext_props.transform_feedback_props.transformFeedbackRasterizationStreamSelect == VK_FALSE &&
-                   rasterization_state_stream_ci->rasterizationStream != 0) {
-            skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02326", device,
-                             raster_loc.pNext(Struct::VkPipelineRasterizationStateStreamCreateInfoEXT, Field::rasterizationStream),
-                             "is (%" PRIu32 ") but transformFeedbackRasterizationStreamSelect is VK_FALSE.",
-                             rasterization_state_stream_ci->rasterizationStream);
-        } else if (rasterization_state_stream_ci->rasterizationStream >=
-                   phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
-            skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02325", device,
-                             raster_loc.pNext(Struct::VkPipelineRasterizationStateStreamCreateInfoEXT, Field::rasterizationStream),
-                             "(%" PRIu32 ") is not less than maxTransformFeedbackStreams (%" PRIu32 ").",
-                             rasterization_state_stream_ci->rasterizationStream,
-                             phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
-        }
+        skip |= ValidatePipelineRasterizationStateStreamCreateInfo(pipeline, *rasterization_state_stream_ci, raster_loc);
     }
 
     if (const auto rasterization_conservative_state_ci =
             vku::FindStructInPNextChain<VkPipelineRasterizationConservativeStateCreateInfoEXT>(raster_state->pNext)) {
-        if (rasterization_conservative_state_ci->extraPrimitiveOverestimationSize < 0.0f ||
-            rasterization_conservative_state_ci->extraPrimitiveOverestimationSize >
-                phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
-            skip |= LogError("VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769",
-                             device,
-                             raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
-                                              Field::extraPrimitiveOverestimationSize),
-                             "is (%f), which is not between 0.0 and "
-                             "maxExtraPrimitiveOverestimationSize (%f).",
-                             rasterization_conservative_state_ci->extraPrimitiveOverestimationSize,
-                             phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
-        }
-
-        if (!phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization) {
-            if (IsValueIn(pipeline.topology_at_rasterizer,
-                          {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-                           VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-                           VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
-                if (rasterization_conservative_state_ci->conservativeRasterizationMode !=
-                    VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
-                    if ((pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) != 0) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06760", device,
-                                         raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
-                                                          Field::conservativeRasterizationMode),
-                                         "is %s, but geometry shader output primitive is %s and "
-                                         "VkPhysicalDeviceConservativeRasterizationPropertiesEXT::"
-                                         "conservativePointAndLineRasterization is false.",
-                                         string_VkConservativeRasterizationModeEXT(
-                                             rasterization_conservative_state_ci->conservativeRasterizationMode),
-                                         string_VkPrimitiveTopology(pipeline.topology_at_rasterizer));
-                    }
-                    if ((pipeline.create_info_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) != 0) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06761", device,
-                                         raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
-                                                          Field::conservativeRasterizationMode),
-                                         "is %s, but mesh shader output primitive is %s and "
-                                         "VkPhysicalDeviceConservativeRasterizationPropertiesEXT::"
-                                         "conservativePointAndLineRasterization is false.",
-                                         string_VkConservativeRasterizationModeEXT(
-                                             rasterization_conservative_state_ci->conservativeRasterizationMode),
-                                         string_VkPrimitiveTopology(pipeline.topology_at_rasterizer));
-                    }
-                }
-            }
-        }
+        skip |=
+            ValidatePipelineRasterizationConservativeStateCreateInfo(pipeline, *rasterization_conservative_state_ci, raster_loc);
     } else {
         if (pipeline.IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) &&
             !pipeline.IsDynamic(CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
@@ -1926,11 +1958,12 @@ bool CoreChecks::ValidateGraphicsPipelineRenderPassRasterization(const vvl::Pipe
                                      "and subpass %" PRIu32 " uses a depth/stencil attachment.",
                                      pipeline.Subpass());
                 }
-            } else if (ds_state->depthBoundsTestEnable == VK_TRUE) {
+            } else if (ds_state->depthBoundsTestEnable == VK_TRUE &&
+                       !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
                 if (!enabled_features.depthBounds) {
-                    skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598", device,
-                                     ds_loc.dot(Field::depthBoundsTestEnable),
-                                     "depthBoundsTestEnable is VK_TRUE, but depthBounds feature was not enabled.");
+                    skip |=
+                        LogError("VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598", device,
+                                 ds_loc.dot(Field::depthBoundsTestEnable), "is VK_TRUE, but depthBounds feature was not enabled.");
                 }
 
                 if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
@@ -2016,8 +2049,8 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         }
     };
 
-    const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
         if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
               IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
               (enabled_features.multisampledRenderToSingleSampled))) {
@@ -2248,8 +2281,8 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
     if (sample_location_state != nullptr) {
         if ((sample_location_state->sampleLocationsEnable == VK_TRUE) &&
-            (pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) == false) &&
-            (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) == false)) {
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             const VkSampleLocationsInfoEXT sample_location_info = sample_location_state->sampleLocationsInfo;
             const Location sample_info_loc =
                 ms_loc.pNext(Struct::VkPipelineSampleLocationsStateCreateInfoEXT, Field::sampleLocationsInfo);
@@ -2299,6 +2332,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         }
 
         if ((subpass_desc.flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
+            const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
             if ((raster_samples != subpass_input_attachment_samples) &&
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-rasterizationSamples-04899", device,
@@ -4342,7 +4376,8 @@ bool CoreChecks::ValidatePipelineDiscardRectangleStateCreateInfo(
     const vvl::Pipeline &pipeline, const VkPipelineDiscardRectangleStateCreateInfoEXT &discard_rectangle_state,
     const Location &create_info_loc) const {
     bool skip = false;
-    if (discard_rectangle_state.discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
+    if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT) &&
+        discard_rectangle_state.discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
         skip |= LogError("VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleCount-00582", device,
                          create_info_loc.pNext(Struct::VkPipelineDiscardRectangleStateCreateInfoEXT, Field::discardRectangleCount),
                          "(%" PRIu32 ") is not less than maxDiscardRectangles (%" PRIu32 ").",
