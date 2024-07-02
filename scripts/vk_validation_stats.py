@@ -26,17 +26,24 @@ import subprocess
 from collections import defaultdict
 from generate_spec_error_message import ValidationJSON
 
+_VENDOR_SUFFIXES = ['IMG', 'AMD', 'AMDX', 'ARM', 'FSL', 'BRCM', 'NXP', 'NV', 'NVX',
+                    'VIV', 'VSI', 'KDAB', 'ANDROID', 'CHROMIUM', 'FUCHSIA', 'GGP',
+                    'GOOGLE', 'QCOM', 'LUNARG', 'NZXT', 'SAMSUNG', 'SEC', 'TIZEN',
+                    'RENDERDOC', 'NN', 'MVK', 'MESA', 'INTEL', 'HUAWEI', 'VALVE',
+                    'QNX', 'JUICE', 'FB', 'RASTERGRID', 'MSFT']
+_CROSS_VENDOR_SUFFIXES = ['KHR', 'EXT']
+
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
-def IsVendor(vuid : str):
-    for vendor in ['IMG', 'AMD', 'AMDX', 'ARM', 'FSL', 'BRCM', 'NXP', 'NV', 'NVX',
-                   'VIV', 'VSI', 'KDAB', 'ANDROID', 'CHROMIUM', 'FUCHSIA', 'GGP',
-                   'GOOGLE', 'QCOM', 'LUNARG', 'NZXT', 'SAMSUNG', 'SEC', 'TIZEN',
-                   'RENDERDOC', 'NN', 'MVK', 'MESA', 'INTEL', 'HUAWEI', 'VALVE',
-                   'QNX', 'JUICE', 'FB', 'RASTERGRID', 'MSFT']:
-        vkObject = vuid.split('-')[1]
+def IsVendor(vuid : str, target_vendor : str = None):
+    vkObject = vuid.split('-')[1]
+
+    if target_vendor and target_vendor != "ALL":
+        return vkObject.endswith(target_vendor)
+
+    for vendor in _VENDOR_SUFFIXES:
         if vkObject.endswith(vendor):
             return True
     return False
@@ -278,11 +285,15 @@ class Consistency:
 # Class to output database in various flavors
 #
 class OutputDatabase:
-    def __init__(self, val_json, val_source, val_tests, spirv_val):
+    def __init__(self, val_json, val_source, val_tests, spirv_val, target_vendor=None):
         self.vj = val_json
         self.vs = val_source
         self.vt = val_tests
         self.sv = spirv_val
+        self.target_vendor = target_vendor
+
+    def _is_vendor_skip(self, vuid):
+        return self.target_vendor and not IsVendor(vuid, self.target_vendor)
 
     def dump_txt(self, filename, only_unimplemented=False):
         print(f'\nDumping database to text file: {filename}')
@@ -292,6 +303,9 @@ class OutputDatabase:
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
+                if self._is_vendor_skip(vuid):
+                    continue
+
                 db_list = self.vj.vuid_db[vuid]
                 for db_entry in db_list:
                     checked = 'N'
@@ -321,6 +335,9 @@ class OutputDatabase:
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
+                if self._is_vendor_skip(vuid):
+                    continue
+
                 for db_entry in self.vj.vuid_db[vuid]:
                     row = [vuid]
                     if vuid in self.vs.all_vuids:
@@ -356,8 +373,9 @@ class OutputDatabase:
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
-                if (not IsVendor(vuid)):
+                if self._is_vendor_skip(vuid):
                     continue
+
                 for db_entry in self.vj.vuid_db[vuid]:
                     checked = '<span style="color:red;">N</span>'
                     spirv = ''
@@ -449,6 +467,8 @@ def main(argv):
                         help='output summary of VUID coverage')
     parser.add_argument('-verbose', action='store_true',
                         help='show your work (to stdout)')
+    parser.add_argument('-vendor', default=None, choices=_VENDOR_SUFFIXES + _CROSS_VENDOR_SUFFIXES + ["ALL"],
+                        help='report only vendor specific vuids, defaults to none, "ALL" means only vendor specific vuids')
     args = parser.parse_args()
 
     # We need python modules found in the registry directory. This assumes that the validusage.json file is in that directory,
@@ -615,7 +635,7 @@ def main(argv):
             print("  OK! No inconsistencies found.")
 
     # Output database in requested format(s)
-    db_out = OutputDatabase(val_json, val_source, val_tests, spirv_val)
+    db_out = OutputDatabase(val_json, val_source, val_tests, spirv_val, args.vendor)
     if args.text:
         db_out.dump_txt(args.text, args.todo)
     if args.csv:
