@@ -73,15 +73,16 @@ class HazardResult {
         SyncStageAccessIndex usage_index = std::numeric_limits<SyncStageAccessIndex>::max();
         SyncStageAccessFlags prior_access;
         ResourceUsageTag tag = ResourceUsageTag();
+        uint32_t handle_index = vvl::kNoIndex32;
         SyncHazard hazard = NONE;
-        HazardState(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
-                    const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
+        HazardState(const ResourceAccessState *access_state, const SyncStageAccessInfoType &usage_info, SyncHazard hazard,
+                    const SyncStageAccessFlags &prior, ResourceUsageTagEx tag_ex);
     };
 
-    void Set(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
+    void Set(const ResourceAccessState *access_state, const SyncStageAccessInfoType &usage_info, SyncHazard hazard,
              const ResourceAccessWriteState &prior_write);
-    void Set(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
-             const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
+    void Set(const ResourceAccessState *access_state, const SyncStageAccessInfoType &usage_info, SyncHazard hazard,
+             const SyncStageAccessFlags &prior, ResourceUsageTagEx tag);
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
 
     bool IsHazard() const { return state_.has_value() && NONE != state_->hazard; }
@@ -89,6 +90,10 @@ class HazardResult {
     ResourceUsageTag Tag() const {
         assert(state_);
         return state_->tag;
+    }
+    ResourceUsageTagEx TagEx() const {
+        assert(state_);
+        return ResourceUsageTagEx{state_->tag, state_->handle_index};
     }
     SyncHazard Hazard() const {
         assert(state_);
@@ -166,18 +171,17 @@ struct SyncBarrier {
 };
 
 struct ResourceFirstAccess {
-    ResourceUsageTag tag;
     const SyncStageAccessInfoType *usage_info;
+    ResourceUsageTag tag;
+    uint32_t handle_index;
     SyncOrdering ordering_rule;
-    ResourceFirstAccess(ResourceUsageTag tag_, const SyncStageAccessInfoType &usage_info_, SyncOrdering ordering_rule_)
-        : tag(tag_), usage_info(&usage_info_), ordering_rule(ordering_rule_){};
-    ResourceFirstAccess(const ResourceFirstAccess &other) = default;
-    ResourceFirstAccess(ResourceFirstAccess &&other) = default;
-    ResourceFirstAccess &operator=(const ResourceFirstAccess &rhs) = default;
-    ResourceFirstAccess &operator=(ResourceFirstAccess &&rhs) = default;
+
+    ResourceFirstAccess(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule)
+        : usage_info(&usage_info), tag(tag_ex.tag), handle_index(tag_ex.handle_index), ordering_rule(ordering_rule) {}
     bool operator==(const ResourceFirstAccess &rhs) const {
         return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule);
     }
+    ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
 };
 
 using QueueId = uint32_t;
@@ -215,7 +219,7 @@ class ResourceAccessWriteState {
     bool WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
                            QueueId scope_queue, ResourceUsageTag scope_tag) const;
 
-    ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
+    ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex);
     ResourceAccessWriteState() = default;
 
     SyncStageAccessIndex Index() const { return access_->stage_access_index; }
@@ -224,6 +228,7 @@ class ResourceAccessWriteState {
     const SyncStageAccessInfoType &Access() const { return *access_; }
     const SyncStageAccessFlags &Barriers() const { return barriers_; }
     ResourceUsageTag Tag() const { return tag_; }
+    ResourceUsageTagEx TagEx() const { return {tag_, handle_index_}; }
     bool IsWriteHazard(const SyncStageAccessInfoType &usage_info) const;
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
 
@@ -231,7 +236,7 @@ class ResourceAccessWriteState {
                               const SyncStageAccessFlags &src_access_scope) const;
 
     void SetQueueId(QueueId id);
-    void Set(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
+    void Set(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex);
     void MergeBarriers(const ResourceAccessWriteState &other);
     void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
 
@@ -246,6 +251,7 @@ class ResourceAccessWriteState {
     const SyncStageAccessInfoType *access_;
     SyncStageAccessFlags barriers_;  // union of applicable barrier masks since last write
     ResourceUsageTag tag_;
+    uint32_t handle_index_;
     QueueId queue_;
     // intially zero, but accumulating the dstStages of barriers if they chain.
     VkPipelineStageFlags2KHR dependency_chain_;
@@ -275,12 +281,14 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags2KHR barriers;     // all applicable barriered stages
         VkPipelineStageFlags2KHR sync_stages;  // reads known to have happened after this
         ResourceUsageTag tag;
+        uint32_t handle_index;
         QueueId queue;
         VkPipelineStageFlags2KHR pending_dep_chain;  // Should be zero except during barrier application
                                                      // Excluded from comparison
         ReadState() = default;
         ReadState(VkPipelineStageFlags2KHR stage_, SyncStageAccessFlags access_, VkPipelineStageFlags2KHR barriers_,
-                  ResourceUsageTag tag_);
+                  ResourceUsageTagEx tag_ex);
+        ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
         bool operator==(const ReadState &rhs) const {
             return (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) &&
                    (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
@@ -318,7 +326,7 @@ class ResourceAccessState : public SyncStageAccess {
 
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
         void Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_, VkPipelineStageFlags2KHR barriers_,
-                 ResourceUsageTag tag_);
+                 ResourceUsageTagEx tag_ex);
         bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
         bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
         bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, QueueId scope_queue, ResourceUsageTag scope_tag) const {
@@ -350,8 +358,8 @@ class ResourceAccessState : public SyncStageAccess {
                                      VkPipelineStageFlags2KHR source_exec_scope, const SyncStageAccessFlags &source_access_scope,
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
-    void Update(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, ResourceUsageTag tag);
-    void SetWrite(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
+    void Update(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex);
+    void SetWrite(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex);
     void ClearWrite();
     void ClearRead();
     void ClearPending();
@@ -482,7 +490,7 @@ class ResourceAccessState : public SyncStageAccess {
     }
     VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering) const;
 
-    void UpdateFirst(ResourceUsageTag tag, const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule);
+    void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule);
     void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
     void MergePending(const ResourceAccessState &other);
     void MergeReads(const ResourceAccessState &other);
@@ -539,7 +547,7 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
     //       transistion *as* a write and in scope with the barrier (it's before visibility).
     if (layout_transition) {
         if (!last_write.has_value()) {
-            last_write.emplace(UsageInfo(SYNC_ACCESS_INDEX_NONE), 0U);
+            last_write.emplace(UsageInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0U});
         }
         last_write->UpdatePendingBarriers(barrier);
         last_write->UpdatePendingLayoutOrdering(barrier);
