@@ -25,29 +25,16 @@ vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMem
                                                                VkPipelineStageFlags2 srcStageMask,
                                                                VkPipelineStageFlags2 dstStageMask);
 
-// The converter needs to be more complex than simply an array of VkSubmitInfo2 structures.
-// In order to convert from Info->Info2, arrays of VkSemaphoreSubmitInfo and VkCommandBufferSubmitInfo
-// structures must be created for the pWaitSemaphoreInfos, pCommandBufferInfos, and pSignalSemaphoreInfos
-// which comprise the converted VkSubmitInfo information. The created VkSubmitInfo2 structure then references the storage
-// of the arrays, which must have a lifespan longer than the conversion, s.t. the ensuing valdation/record operations
-// can reference them.  The resulting VkSubmitInfo2 is then copied into an additional which takes the place of the pSubmits
-// parameter.
+// Converts array of VkSubmitInfo into array of VkSubmitInfo2.
+// Constructor performs the conversion. The result is stored into submit_infos2.
 struct SubmitInfoConverter {
-    struct BatchStore {
-        BatchStore(const VkSubmitInfo &info);
+    SubmitInfoConverter(const VkSubmitInfo* submit_infos, uint32_t count);
 
-        static VkSemaphoreSubmitInfo WaitSemaphore(const VkSubmitInfo &info, uint32_t index);
-        static VkCommandBufferSubmitInfo CommandBuffer(const VkSubmitInfo &info, uint32_t index);
-        static VkSemaphoreSubmitInfo SignalSemaphore(const VkSubmitInfo &info, uint32_t index);
+    // That's the conversion result
+    std::vector<VkSubmitInfo2> submit_infos2;
 
-        std::vector<VkSemaphoreSubmitInfo> waits;
-        std::vector<VkCommandBufferSubmitInfo> cbs;
-        std::vector<VkSemaphoreSubmitInfo> signals;
-        VkSubmitInfo2 info2;
-    };
-
-    SubmitInfoConverter(uint32_t count, const VkSubmitInfo *infos);
-
-    std::vector<BatchStore> info_store;
-    std::vector<VkSubmitInfo2> info2s;
+    // Helper structures referenced by VkSubmitInfo2 objects
+    std::vector<VkSemaphoreSubmitInfo> wait_infos;
+    std::vector<VkCommandBufferSubmitInfo> cb_infos;
+    std::vector<VkSemaphoreSubmitInfo> signal_infos;
 };
