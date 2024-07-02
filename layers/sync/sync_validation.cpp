@@ -3033,8 +3033,8 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                                const ErrorObject &error_obj) const {
-    SubmitInfoConverter submit_info(submitCount, pSubmits);
-    return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, error_obj);
+    SubmitInfoConverter submit_info(pSubmits, submitCount);
+    return ValidateQueueSubmit(queue, submitCount, submit_info.submit_infos2.data(), fence, error_obj);
 }
 
 bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,

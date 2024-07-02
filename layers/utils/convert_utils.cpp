@@ -276,55 +276,57 @@ vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMem
     return vku::safe_VkImageMemoryBarrier2(&barrier2);
 }
 
-VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::WaitSemaphore(const VkSubmitInfo& info, uint32_t index) {
-    VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
-    semaphore_info.semaphore = info.pWaitSemaphores[index];
-    semaphore_info.stageMask = info.pWaitDstStageMask[index];
-    return semaphore_info;
-}
-VkCommandBufferSubmitInfo SubmitInfoConverter::BatchStore::CommandBuffer(const VkSubmitInfo& info, uint32_t index) {
-    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = info.pCommandBuffers[index];
-    return cb_info;
-}
+SubmitInfoConverter::SubmitInfoConverter(const VkSubmitInfo* submit_infos, uint32_t count) {
+    size_t wait_count = 0;
+    size_t cb_count = 0;
+    size_t signal_count = 0;
 
-VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkSubmitInfo& info, uint32_t index) {
-    VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
-    semaphore_info.semaphore = info.pSignalSemaphores[index];
-    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    return semaphore_info;
-}
-
-SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo& info) {
-    info2 = vku::InitStructHelper();
-
-    info2.waitSemaphoreInfoCount = info.waitSemaphoreCount;
-    waits.reserve(info2.waitSemaphoreInfoCount);
-    for (uint32_t i = 0; i < info2.waitSemaphoreInfoCount; ++i) {
-        waits.emplace_back(WaitSemaphore(info, i));
+    for (uint32_t batch = 0; batch < count; batch++) {
+        const VkSubmitInfo& info = submit_infos[batch];
+        wait_count += info.waitSemaphoreCount;
+        cb_count += info.commandBufferCount;
+        signal_count += info.signalSemaphoreCount;
     }
-    info2.pWaitSemaphoreInfos = waits.data();
+    wait_infos.resize(wait_count);
+    auto* current_wait = wait_infos.data();
 
-    info2.commandBufferInfoCount = info.commandBufferCount;
-    cbs.reserve(info2.commandBufferInfoCount);
-    for (uint32_t i = 0; i < info2.commandBufferInfoCount; ++i) {
-        cbs.emplace_back(CommandBuffer(info, i));
-    }
-    info2.pCommandBufferInfos = cbs.data();
+    cb_infos.resize(cb_count);
+    auto* current_cb = cb_infos.data();
 
-    info2.signalSemaphoreInfoCount = info.signalSemaphoreCount;
-    signals.reserve(info2.signalSemaphoreInfoCount);
-    for (uint32_t i = 0; i < info2.signalSemaphoreInfoCount; ++i) {
-        signals.emplace_back(SignalSemaphore(info, i));
-    }
-    info2.pSignalSemaphoreInfos = signals.data();
-}
+    signal_infos.resize(signal_count);
+    auto* current_signal = signal_infos.data();
 
-SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo* infos) {
-    info_store.reserve(count);
-    info2s.reserve(count);
-    for (uint32_t batch = 0; batch < count; ++batch) {
-        info_store.emplace_back(infos[batch]);
-        info2s.emplace_back(info_store.back().info2);
+    submit_infos2.resize(count);
+    for (uint32_t batch = 0; batch < count; batch++) {
+        const VkSubmitInfo& info = submit_infos[batch];
+        VkSubmitInfo2& info2 = submit_infos2[batch];
+        info2 = vku::InitStructHelper();
+
+        if (info.waitSemaphoreCount) {
+            info2.waitSemaphoreInfoCount = info.waitSemaphoreCount;
+            info2.pWaitSemaphoreInfos = current_wait;
+            for (uint32_t i = 0; i < info.waitSemaphoreCount; i++, current_wait++) {
+                *current_wait = vku::InitStructHelper();
+                current_wait->semaphore = info.pWaitSemaphores[i];
+                current_wait->stageMask = info.pWaitDstStageMask[i];
+            }
+        }
+        if (info.commandBufferCount) {
+            info2.commandBufferInfoCount = info.commandBufferCount;
+            info2.pCommandBufferInfos = current_cb;
+            for (uint32_t i = 0; i < info.commandBufferCount; i++, current_cb++) {
+                *current_cb = vku::InitStructHelper();
+                current_cb->commandBuffer = info.pCommandBuffers[i];
+            }
+        }
+        if (info.signalSemaphoreCount) {
+            info2.signalSemaphoreInfoCount = info.signalSemaphoreCount;
+            info2.pSignalSemaphoreInfos = current_signal;
+            for (uint32_t i = 0; i < info.signalSemaphoreCount; i++, current_signal++) {
+                *current_signal = vku::InitStructHelper();
+                current_signal->semaphore = info.pSignalSemaphores[i];
+                current_signal->stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+            }
+        }
     }
 }
