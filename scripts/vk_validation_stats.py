@@ -310,7 +310,8 @@ class OutputDatabase:
                         sep = ', '
                         test = sep.join(test_list)
 
-                    txt.write(f'{vuid} | {checked} | {test} | {spirv} | {db_entry["type"]} | {db_entry["api"]} | {db_entry["ext"]}\n')
+                    vuid_text = db_entry["text"].replace('\n', ' ')
+                    txt.write(f'{vuid} | {checked} | {test} | {spirv} | {db_entry["type"]} | {db_entry["api"]} | {vuid_text}\n')
 
     def dump_csv(self, filename, only_unimplemented=False):
         print(f'\nDumping database to csv file: {filename}')
