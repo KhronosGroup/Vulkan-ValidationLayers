@@ -4571,6 +4571,12 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                              ") different from 1.",
                                              view_state->normalized_subresource_range.layerCount);
                         }
+                        if ((ici.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
+                            LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-02552", objlist, attachment_loc,
+                                             "must not be created with flag value VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT if it is "
+                                             "used as a fragment density map");
+                        }
                     } else if (!enabled_features.fragmentDensityMapNonSubsampledImages &&
                                (ici.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) == 0) {
                         LogObjectList objlist(pCreateInfo->renderPass, image_views[i], ivci.image);
