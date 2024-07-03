@@ -285,7 +285,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'test_icd_helper.h' : {
             'generator' : TestIcdGenerator,
-            'genCombined': True,
+            'genCombined': False,
         },
     }
 
@@ -344,7 +344,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
                 cacheVkObjectData = pickle.load(file)
                 file.close()
 
-        if caching and cacheVkObjectData and 'regenerate' not in generators[target]:
+        if caching and cacheVkObjectData and ('regenerate' not in generators[target] or not generators[target]['regenerate']):
             # TODO - We shouldn't have to regenerate any files, need to investigate why we some scripts need it
             reg.gen.generateFromCache(cacheVkObjectData, reg.genOpts)
         else:

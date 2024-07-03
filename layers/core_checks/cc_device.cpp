@@ -824,7 +824,7 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
 
-    auto query_function = (error_obj.location.function == Func::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR)
+    auto query_function = (error_obj.location.function == Func::vkGetCalibratedTimestampsKHR)
                               ? DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR
                               : DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT;
     uint32_t count = 0;

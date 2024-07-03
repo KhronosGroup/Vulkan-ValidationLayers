@@ -389,6 +389,19 @@ class Pipeline : public StateObject {
         return rt->sType;
     }
 
+    const void *GetCreateInfoPNext() const {
+        const auto *gfx = std::get_if<vku::safe_VkGraphicsPipelineCreateInfo>(&create_info);
+        if (gfx) {
+            return gfx->pNext;
+        }
+        const auto *cmp = std::get_if<vku::safe_VkComputePipelineCreateInfo>(&create_info);
+        if (cmp) {
+            return cmp->pNext;
+        }
+        const auto *rt = std::get_if<vku::safe_VkRayTracingPipelineCreateInfoCommon>(&create_info);
+        return rt->pNext;
+    }
+
     bool BlendConstantsEnabled() const { return fragment_output_state && fragment_output_state->blend_constants_enabled; }
 
     bool SampleLocationEnabled() const { return fragment_output_state && fragment_output_state->sample_location_enabled; }

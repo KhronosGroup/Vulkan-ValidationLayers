@@ -231,7 +231,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            static bool NotDispatchableHandle(VkObjectType object_type) {
+            [[maybe_unused]] static bool NotDispatchableHandle(VkObjectType object_type) {
                 switch(object_type) {
         ''')
         out.extend([f'case {handle.type}:\n' for handle in self.vk.handles.values() if handle.dispatchable])
@@ -528,7 +528,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                         post_code += tmp_post
                         if process_pnext:
                             pre_code += f'WrapPnextChainHandles(layer_data, {prefix}{member.name}.pNext);\n'
-            elif member.type == 'VkObjectType':
+            elif member.type == 'VkObjectType' and member.name == 'objectType' and any(m.name == 'objectHandle' for m in members):
                 pre_code += '''
                     if (NotDispatchableHandle(objectType)) {
                         objectHandle = layer_data->Unwrap(objectHandle);

@@ -24,7 +24,6 @@ endif()
 # These variables enable downstream users to customize the CMake targets
 # based on the target API variant (e.g. Vulkan SC)
 set(ICD_NAME VVL_Test_ICD)
-set(GENERATED ${CMAKE_SOURCE_DIR}/layers/vulkan/generated)
 
 if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX -DWIN32_LEAN_AND_MEAN)
@@ -56,7 +55,7 @@ target_link_libraries(VVL_Test_ICD PRIVATE
 )
 
 target_include_directories(VVL_Test_ICD PRIVATE
-    ${GENERATED}
+    ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated
     .
 )
 
@@ -126,7 +125,7 @@ if (UNIX)
     set(JSON_LIBRARY_PATH "lib${ICD_NAME}.so")
 
     configure_file(${INPUT_FILE} ${UNIX_INTERMEDIATE_FILE} @ONLY)
-    install(FILES ${UNIX_INTERMEDIATE_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/icd.d RENAME ${OUTPUT_FILE_FINAL_NAME})
+    install(FILES ${UNIX_INTERMEDIATE_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${API_TYPE}/icd.d RENAME ${OUTPUT_FILE_FINAL_NAME})
 elseif (WIN32)
     install(FILES ${INTERMEDIATE_FILE} DESTINATION ${LAYER_INSTALL_DIR} RENAME ${OUTPUT_FILE_FINAL_NAME})
 endif()

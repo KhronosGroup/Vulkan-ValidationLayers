@@ -435,14 +435,14 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysi
                                                                          uint32_t* pQueueFamilyPropertyCount,
                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) {
     if (pQueueFamilyProperties) {
-        std::vector<VkQueueFamilyProperties2KHR> props2(*pQueueFamilyPropertyCount,
-                                                        {VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2_KHR, nullptr, {}});
-        GetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount, props2.data());
+        std::vector<VkQueueFamilyProperties2> props2(*pQueueFamilyPropertyCount,
+                                                     {VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, nullptr, {}});
+        GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, props2.data());
         for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; ++i) {
             pQueueFamilyProperties[i] = props2[i].queueFamilyProperties;
         }
     } else {
-        GetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount, nullptr);
+        GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, nullptr);
     }
 }
 

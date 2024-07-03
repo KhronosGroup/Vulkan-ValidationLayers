@@ -36,7 +36,7 @@ vulkanConventions = VulkanConventions()
 
 # Helpers to keep things cleaner
 def splitIfGet(elem, name):
-    return elem.get(name).split(',') if elem.get(name) is not None else None
+    return elem.get(name).split(',') if elem.get(name) is not None and elem.get(name) != '' else None
 
 def textIfFind(elem, name):
     return elem.find(name).text if elem.find(name) is not None else None
