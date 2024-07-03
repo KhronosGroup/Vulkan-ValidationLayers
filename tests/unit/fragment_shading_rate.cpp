@@ -2990,3 +2990,95 @@ TEST_F(NegativeFragmentShadingRate, AttachmentFragmentDensityFlags) {
     vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeFragmentShadingRate, ImagelessAttachmentFragmentDensity) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState(nullptr, nullptr));
+
+    VkPhysicalDeviceFragmentDensityMapPropertiesEXT fdm_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fdm_properties);
+    const auto &maxFragmentDensityTexelSize = fdm_properties.maxFragmentDensityTexelSize;
+
+    VkFormat image_format = VK_FORMAT_R8G8_UNORM;
+
+    VkAttachmentReference ref;
+    ref.attachment = 0;
+    ref.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+
+    VkRenderPassFragmentDensityMapCreateInfoEXT rpfdmi = vku::InitStructHelper();
+    rpfdmi.fragmentDensityMapAttachment = ref;
+
+    VkAttachmentDescription attach = {};
+    attach.format = VK_FORMAT_R8G8_UNORM;
+    attach.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper(&rpfdmi);
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    vkt::RenderPass render_pass(*m_device, rpci);
+
+    VkFramebufferAttachmentImageInfo fb_fdm = vku::InitStructHelper();
+    fb_fdm.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    // FDM width and height must be greater than framebuffer.{width, height} / maxFragmentDensityTexelSize.{width, height}
+    fb_fdm.width = 1;
+    fb_fdm.height = 1;
+    fb_fdm.layerCount = 1;
+    fb_fdm.viewFormatCount = 1;
+    fb_fdm.pViewFormats = &image_format;
+
+    VkFramebufferAttachmentsCreateInfo fb_aci_fdm = vku::InitStructHelper();
+    fb_aci_fdm.attachmentImageInfoCount = 1;
+    fb_aci_fdm.pAttachmentImageInfos = &fb_fdm;
+
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fb_aci_fdm);
+    fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_info.renderPass = render_pass.handle();
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = nullptr;
+    fb_info.width = 64;
+    fb_info.height = 64;
+    fb_info.layers = 1;
+
+    VkFramebuffer framebuffer;
+    {
+        // fb.width / maxFragmentDensityTexelSize.width > attachment.width
+        fb_fdm.width = 1;
+        fb_fdm.height = 2048;
+
+        fb_info.width = maxFragmentDensityTexelSize.width * 5;
+        fb_info.height = 2;
+
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03196");
+        vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        // fb.height / maxFragmentDensityTexelSize.height > attachment.height
+        fb_fdm.width = 2048;
+        fb_fdm.height = 1;
+
+        fb_info.width = 2;
+        fb_info.height = maxFragmentDensityTexelSize.width * 5;
+
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03197");
+        vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer);
+        m_errorMonitor->VerifyFound();
+    }
+}
