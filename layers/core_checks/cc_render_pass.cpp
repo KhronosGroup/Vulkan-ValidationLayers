@@ -4749,6 +4749,39 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                         }
                     }
                 }
+
+                if (enabled_features.fragmentDensityMap) {
+                    const auto *fdm_attachment =
+                        vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
+
+                    if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
+                        const auto &maxFragmentDensityTexelSize =
+                            phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize;
+                        const uint32_t ceiling_width = vvl::GetQuotientCeil(pCreateInfo->width, maxFragmentDensityTexelSize.width);
+                        if (aii.width < ceiling_width) {
+                            LogObjectList objlist(pCreateInfo->renderPass);
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03196", objlist, attachment_loc,
+                                             "is used as a fragment density map attachment in subpass %" PRIu32
+                                             ", but the quotient of the framebuffer width (%" PRIu32
+                                             ") and the allowed maximum fragment density texel width (%" PRIu32
+                                             ") is greater than the corresponding fragment density attachment "
+                                             "width (%" PRIu32 ").",
+                                             j, pCreateInfo->width, maxFragmentDensityTexelSize.width, aii.width);
+                        }
+                        const uint32_t ceiling_height =
+                            vvl::GetQuotientCeil(pCreateInfo->height, maxFragmentDensityTexelSize.height);
+                        if (aii.height < ceiling_height) {
+                            LogObjectList objlist(pCreateInfo->renderPass);
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03197", objlist, attachment_loc,
+                                             "is used as a fragment density map attachment in subpass %" PRIu32
+                                             ", but the quotient of the framebuffer height (%" PRIu32
+                                             ") and the allowed maximum fragment density texel height (%" PRIu32
+                                             ") is greater than the corresponding fragment density attachment "
+                                             "height (%" PRIu32 ").",
+                                             j, pCreateInfo->height, maxFragmentDensityTexelSize.height, aii.height);
+                        }
+                    }
+                }
             }
 
             if (used_as_input_color_resolve_depth_stencil_attachment) {
