@@ -1093,6 +1093,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageFormat) {
 TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     TEST_DESCRIPTION("Begin cmd buffer with imageless framebuffer and missing VkCommandBufferInheritanceRenderingInfo structure");
 
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     RETURN_IF_SKIP(Init());

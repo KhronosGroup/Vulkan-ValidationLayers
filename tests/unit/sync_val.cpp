@@ -3872,18 +3872,11 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::descriptorBindingUpdateUnusedWhilePending);
 
     RETURN_IF_SKIP(InitSyncValFramework());
-
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-    if (!indexing_features.descriptorBindingPartiallyBound) {
-        GTEST_SKIP() << "Partially bound bindings not supported, skipping test\n";
-    }
-    if (!indexing_features.descriptorBindingUpdateUnusedWhilePending) {
-        GTEST_SKIP() << "Updating unused while pending is not supported, skipping test\n";
-    }
+    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
 

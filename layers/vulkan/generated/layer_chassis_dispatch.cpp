@@ -334,7 +334,7 @@ void WrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
     }
 }
 
-static bool NotDispatchableHandle(VkObjectType object_type) {
+[[maybe_unused]] static bool NotDispatchableHandle(VkObjectType object_type) {
     switch (object_type) {
         case VK_OBJECT_TYPE_INSTANCE:
         case VK_OBJECT_TYPE_PHYSICAL_DEVICE:
