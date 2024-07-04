@@ -90,6 +90,9 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     subcommand_number_ = from.subcommand_number_;
     reset_count_ = from.reset_count_;
 
+    handles_ = from.handles_;
+    sync_state_->stats.AddHandleRecord((uint32_t)from.handles_.size());
+
     const auto *from_context = from.GetCurrentAccessContext();
     assert(from_context);
 
@@ -119,6 +122,10 @@ void CommandBufferAccessContext::Reset() {
     command_number_ = 0;
     subcommand_number_ = 0;
     reset_count_++;
+
+    sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size());
+    handles_.clear();
+
     current_command_tag_ = vvl::kNoIndex32;
     cb_access_context_.Reset();
     render_pass_contexts_.clear();
@@ -503,9 +510,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         } else {
                             current_context_->UpdateAccessState(*img_view_state, sync_index, SyncOrdering::kNonAttachment, tag);
                         }
-                        if (sync_state_->syncval_settings.report_descriptor_resources) {
-                            AddCommandHandle(tag, img_view_state->Handle());
-                        }
+                        AddCommandHandle(tag, img_view_state->Handle());
                         break;
                     }
                     case DescriptorClass::TexelBuffer: {
@@ -516,10 +521,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         const auto *buf_view_state = texel_descriptor->GetBufferViewState();
                         const auto *buf_state = buf_view_state->buffer_state.get();
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
+                        AddCommandHandle(tag, buf_view_state->Handle());
                         current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
-                        if (sync_state_->syncval_settings.report_descriptor_resources) {
-                            AddCommandHandle(tag, buf_view_state->Handle());
-                        }
                         break;
                     }
                     case DescriptorClass::GeneralBuffer: {
@@ -538,10 +541,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
                         const ResourceAccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
+                        AddCommandHandle(tag, buf_state->Handle());
                         current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
-                        if (sync_state_->syncval_settings.report_descriptor_resources) {
-                            AddCommandHandle(tag, buf_state->Handle());
-                        }
                         break;
                     }
                     // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR

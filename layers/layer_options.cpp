@@ -93,10 +93,6 @@ const char *VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
 const char *VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "gpuav_debug_validate_instrumented_shaders";
 const char *VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS = "gpuav_debug_dump_instrumented_shaders";
 
-// SyncVal
-// ---
-const char *VK_LAYER_SYNCVAL_REPORT_DESCRIPTOR_RESOURCES = "sync_report_descriptor_resources";
-
 // Message Formatting
 const char *VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_display_application_name";
 
@@ -561,12 +557,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (gpuav_settings.debug_validate_instrumented_shaders || gpuav_settings.debug_dump_instrumented_shaders) {
         // When debugging instrumented shaders, if it is cached, it will never get to the InstrumentShader() call
         gpuav_settings.cache_instrumented_shaders = false;
-    }
-
-    SyncValSettings &syncval_settings = *settings_data->syncval_settings;
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_REPORT_DESCRIPTOR_RESOURCES)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_REPORT_DESCRIPTOR_RESOURCES,
-                                syncval_settings.report_descriptor_resources);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {

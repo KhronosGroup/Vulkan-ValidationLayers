@@ -268,7 +268,7 @@ class DebugPrintfTests : public VkLayerTest {
 
 class VkSyncValTest : public VkLayerTest {
   public:
-    void InitSyncValFramework(bool disable_queue_submit_validation = false, bool report_descriptor_resources = false);
+    void InitSyncValFramework(bool disable_queue_submit_validation = false);
     void InitSyncVal();
     void InitTimelineSemaphore();
 

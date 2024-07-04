@@ -21,7 +21,7 @@
 class PositiveSyncVal : public VkSyncValTest {};
 
 // TODO: refactor this and use p_next as in gpuav instead of passing parameters about all possible options.
-void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation, bool enable_descriptor_resources_reporting) {
+void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
     // Enable synchronization validation
     features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
 
@@ -37,11 +37,6 @@ void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation, b
     if (disable_queue_submit_validation) {
         settings[setting_count++] = {OBJECT_LAYER_NAME, "disables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1,
                                      kDisableQueuSubmitSyncValidation};
-    }
-    static const VkBool32 report_descriptor_resources = true;
-    if (enable_descriptor_resources_reporting) {
-        settings[setting_count++] = {OBJECT_LAYER_NAME, "sync_report_descriptor_resources", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                     &report_descriptor_resources};
     }
 
     // The pNext of syncval_setting is modified by InitFramework that's why it can't

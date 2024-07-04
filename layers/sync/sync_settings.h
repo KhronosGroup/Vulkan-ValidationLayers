@@ -17,8 +17,4 @@
 
 #pragma once
 
-struct SyncValSettings {
-    // Report resource handles (images, buffers, etc.) associated with descriptors.
-    // Might consume significant amount of memory for complex workloads.
-    bool report_descriptor_resources = false;
-};
+struct SyncValSettings {};

@@ -6255,8 +6255,7 @@ TEST_F(NegativeSyncVal, DebugResourceName) {
 TEST_F(NegativeSyncVal, DebugDescriptorBufferName) {
     TEST_DESCRIPTION("Test that the name of the buffer used by the shader appears in the error message");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitSyncValFramework(false, true));
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
     vkt::Buffer buffer_a(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     buffer_a.SetName("BufferA");
