@@ -59,8 +59,8 @@ bool CommandExecutionContext::ValidForSyncOps() const {
     return valid;
 }
 
-CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator *sync_validator)
-    : CommandExecutionContext(sync_validator),
+CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync_validator)
+    : CommandExecutionContext(&sync_validator),
       cb_state_(),
       access_log_(std::make_shared<AccessLog>()),
       cbs_referenced_(std::make_shared<CommandBufferSet>()),
@@ -74,9 +74,15 @@ CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator *sync
       current_renderpass_context_(),
       sync_ops_() {}
 
+CommandBufferAccessContext::CommandBufferAccessContext(SyncValidator &sync_validator, vvl::CommandBuffer *cb_state)
+    : CommandBufferAccessContext(sync_validator) {
+    cb_state_ = cb_state;
+    sync_state_->stats.AddCommandBufferContext();
+}
+
 // NOTE: Make sure the proxy doesn't outlive from, as the proxy is pointing directly to access contexts owned by from.
 CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccessContext &from, AsProxyContext dummy)
-    : CommandBufferAccessContext(from.sync_state_) {
+    : CommandBufferAccessContext(*from.sync_state_) {
     // Copy only the needed fields out of from for a temporary, proxy command buffer context
     cb_state_ = from.cb_state_;
     access_log_ = std::make_shared<AccessLog>(*from.access_log_);  // potentially large, but no choice given tagging lookup.
@@ -95,9 +101,13 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     events_context_ = from.events_context_;
 
     // We don't want to copy the full render_pass_context_ history just for the proxy.
+    sync_state_->stats.AddCommandBufferContext();
 }
 
-CommandBufferAccessContext::~CommandBufferAccessContext() { sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size()); }
+CommandBufferAccessContext::~CommandBufferAccessContext() {
+    sync_state_->stats.RemoveCommandBufferContext();
+    sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size());
+}
 
 void CommandBufferAccessContext::Reset() {
     access_log_ = std::make_shared<AccessLog>();

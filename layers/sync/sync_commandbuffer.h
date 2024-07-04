@@ -244,20 +244,17 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
         SyncOpEntry(const SyncOpEntry &other) = default;
     };
 
-    CommandBufferAccessContext(const SyncValidator *sync_validator = nullptr);
-    CommandBufferAccessContext(SyncValidator &sync_validator, vvl::CommandBuffer *cb_state)
-        : CommandBufferAccessContext(&sync_validator) {
-        cb_state_ = cb_state;
-    }
+    CommandBufferAccessContext(SyncValidator &sync_validator, vvl::CommandBuffer *cb_state);
 
     struct AsProxyContext {};
     CommandBufferAccessContext(const CommandBufferAccessContext &real_context, AsProxyContext dummy);
+
+    ~CommandBufferAccessContext() override;
 
     // NOTE: because this class is encapsulated in syncval_state::CommandBuffer, it isn't safe
     // to use shared_from_this from the constructor.
     void SetSelfReference() { cbs_referenced_->push_back(cb_state_->shared_from_this()); }
 
-    ~CommandBufferAccessContext() override;
     const CommandExecutionContext &GetExecutionContext() const { return *this; }
 
     void Destroy() {
@@ -354,6 +351,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     std::vector<vvl::CommandBuffer::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
 
   private:
+    CommandBufferAccessContext(const SyncValidator &sync_validator);
+
     uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
 
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
