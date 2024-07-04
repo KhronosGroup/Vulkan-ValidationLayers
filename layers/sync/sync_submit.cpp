@@ -449,7 +449,7 @@ std::vector<QueueBatchContext::CommandBufferInfo> QueueBatchContext::GetCommandB
 // Look up the usage informaiton from the local or global logger
 std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
     std::stringstream out;
-    BatchAccessLog::AccessRecord access = batch_log_[tag];
+    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
     if (access.IsValid()) {
         const BatchAccessLog::BatchRecord& batch = *access.batch;
         const ResourceUsageRecord& record = *access.record;
@@ -692,10 +692,10 @@ void BatchAccessLog::Trim(const ResourceUsageTagSet& used_tags) {
     }
 }
 
-BatchAccessLog::AccessRecord BatchAccessLog::operator[](ResourceUsageTag tag) const {
+BatchAccessLog::AccessRecord BatchAccessLog::GetAccessRecord(ResourceUsageTag tag) const {
     auto found_log = log_map_.find(tag);
     if (found_log != log_map_.cend()) {
-        return found_log->second[tag];
+        return found_log->second.GetAccessRecord(tag);
     }
     // tag not found
     assert(false);
@@ -708,7 +708,7 @@ std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageR
     return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index, initial_label_stack_);
 }
 
-BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsageTag tag) const {
+BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(ResourceUsageTag tag) const {
     assert(tag >= batch_.base_tag);
     const size_t index = tag - batch_.base_tag;
     assert(log_);
