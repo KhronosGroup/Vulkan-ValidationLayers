@@ -149,7 +149,7 @@ class BatchAccessLog {
         CBSubmitLog(const BatchRecord &batch, const CommandBufferAccessContext &cb,
                     const std::vector<std::string> &initial_label_stack);
         size_t Size() const { return log_->size(); }
-        AccessRecord operator[](ResourceUsageTag tag) const;
+        AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
 
         // DebugNameProvider
         std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
@@ -180,7 +180,7 @@ class BatchAccessLog {
 
     void Trim(const ResourceUsageTagSet &used);
     // AccessRecord lookup is based on global tags
-    AccessRecord operator[](ResourceUsageTag tag) const;
+    AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
     BatchAccessLog() {}
 
   private:
