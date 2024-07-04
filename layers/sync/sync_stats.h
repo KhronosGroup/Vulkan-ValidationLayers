@@ -47,10 +47,18 @@ struct ValueMax32 {
 };
 
 struct Stats {
+    ~Stats();
+    bool report_on_destruction = false;
+
+    ValueMax32 command_buffer_context_counter;
+    void AddCommandBufferContext();
+    void RemoveCommandBufferContext();
+
     ValueMax32 handle_record_counter;
     void AddHandleRecord(uint32_t count = 1);
     void RemoveHandleRecord(uint32_t count = 1);
 
+    void ReportOnDestruction();
     std::string CreateReport();
 };
 
@@ -58,6 +66,9 @@ struct Stats {
 struct Stats {
     void AddHandleRecord(uint32_t count = 1) {}
     void RemoveHandleRecord(uint32_t count = 1) {}
+    void AddCommandBufferContext() {}
+    void RemoveCommandBufferContext() {}
+    void ReportOnDestruction() {}
     std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };
 #endif  // VVL_ENABLE_SYNCVAL_STATS != 0

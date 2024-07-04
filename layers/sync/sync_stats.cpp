@@ -21,6 +21,8 @@
 #include "sync_commandbuffer.h"
 #include "utils/vk_layer_utils.h"
 
+#include <iostream>
+
 namespace syncval_stats {
 
 void Value32::Update(uint32_t new_value) { u32.store(new_value); }
@@ -42,22 +44,43 @@ void ValueMax32::Sub(uint32_t n) {
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
 
+Stats::~Stats() {
+    if (report_on_destruction) {
+        const std::string report = CreateReport();
+        std::cout << report;
+    }
+}
+
+void Stats::AddCommandBufferContext() { command_buffer_context_counter.Add(1); }
+void Stats::RemoveCommandBufferContext() { command_buffer_context_counter.Sub(1); }
+
 void Stats::AddHandleRecord(uint32_t count) { handle_record_counter.Add(count); }
 void Stats::RemoveHandleRecord(uint32_t count) { handle_record_counter.Sub(count); }
 
+void Stats::ReportOnDestruction() { report_on_destruction = true; }
+
 std::string Stats::CreateReport() {
-    uint32_t handle_record = handle_record_counter.value.u32;
-    uint64_t handle_record_memory = handle_record * sizeof(HandleRecord);
-
-    uint32_t handle_record_max = handle_record_counter.max_value.u32;
-    uint64_t handle_record_max_memory = handle_record_max * sizeof(HandleRecord);
-
     std::ostringstream str;
-    str << "HandleRecord:\n";
-    str << "\tcount = " << handle_record << "\n";
-    str << "\tmemory = " << handle_record_memory << " bytes\n";
-    str << "\tmax_count = " << handle_record_max << "\n";
-    str << "\tmax_memory = " << handle_record_max_memory << " bytes\n";
+    {
+        uint32_t cb_contex = command_buffer_context_counter.value.u32;
+        uint32_t cb_context_max = command_buffer_context_counter.max_value.u32;
+
+        str << "CommandBufferAccessContext:\n";
+        str << "\tcount = " << cb_contex << "\n";
+        str << "\tmax_count = " << cb_context_max << "\n";
+    }
+    {
+        uint32_t handle_record = handle_record_counter.value.u32;
+        uint64_t handle_record_memory = handle_record * sizeof(HandleRecord);
+        uint32_t handle_record_max = handle_record_counter.max_value.u32;
+        uint64_t handle_record_max_memory = handle_record_max * sizeof(HandleRecord);
+
+        str << "HandleRecord:\n";
+        str << "\tcount = " << handle_record << "\n";
+        str << "\tmemory = " << handle_record_memory << " bytes\n";
+        str << "\tmax_count = " << handle_record_max << "\n";
+        str << "\tmax_memory = " << handle_record_max_memory << " bytes\n";
+    }
     return str.str();
 }
 

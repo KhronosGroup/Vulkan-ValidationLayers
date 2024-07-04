@@ -46,6 +46,11 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
     ~SyncValidator();
 
+    // Stats object must be the first member of this class:
+    // - it is the first to be constructed: can observe all subsequent syncval stats events
+    // - it is the last to be destroyed: ensures there are no unreported syncval stats events.
+    mutable syncval_stats::Stats stats;  // Stats object is thread safe
+
     // Global tag range for submitted command buffers resource usage logs
     // Started the global tag count at 1 s.t. zero are invalid and ResourceUsageTag normalization can just zero them.
     mutable std::atomic<ResourceUsageTag> tag_limit_{1};  // This is reserved in Validation phase, thus mutable and atomic
@@ -58,8 +63,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     using SignaledFences = vvl::unordered_map<VkFence, FenceSyncState>;
     SignaledFences waitable_fences_;
-
-    mutable syncval_stats::Stats stats;  // Stats update is thread safe
 
     uint32_t debug_command_number = vvl::kU32Max;
     uint32_t debug_reset_count = 1;

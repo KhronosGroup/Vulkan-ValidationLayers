@@ -27,7 +27,7 @@
 #include "state_tracker/buffer_state.h"
 #include "utils/convert_utils.h"
 
-SyncValidator ::~SyncValidator() {
+SyncValidator::~SyncValidator() {
     // Instance level SyncValidator does not have much to say
     const bool device_validation_object = (device != nullptr);
     // Get environment variable. Specify non-zero number to enable
@@ -35,11 +35,7 @@ SyncValidator ::~SyncValidator() {
     const bool show_stats = !show_stats_str.empty() && std::stoul(show_stats_str) != 0;
 
     if (device_validation_object && show_stats) {
-        const std::string report = stats.CreateReport();
-        // LogInfo at this point can print the message but then hangs in the mutex lock.
-        // Everything is being destroyed here can be the reason.
-        // LogInfo("SYNCVAL_STATS", LogObjectList(), Location(vvl::Func::Empty), "%s", report.c_str());
-        std::cout << report;
+        stats.ReportOnDestruction();
     }
 }
 
