@@ -20,6 +20,11 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "utils/vk_layer_utils.h"
 
+#include <atomic>
+
+static_assert(sizeof(std::atomic_uint32_t) == 4, "sizeof(std::atomic_uint32_t) is not 4");
+static_assert(std::atomic_uint32_t::is_always_lock_free, "std::atomic_uint32_t is not lock free");
+
 namespace gpu {
 
 // Implementation for Descriptor Set Manager class
