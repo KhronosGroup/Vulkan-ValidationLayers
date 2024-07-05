@@ -26,8 +26,8 @@ namespace gpu_tracker {
 
 class Queue : public vvl::Queue {
   public:
-    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-          const VkQueueFamilyProperties &queueFamilyProperties);
+    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
+          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties);
     virtual ~Queue();
 
   protected:

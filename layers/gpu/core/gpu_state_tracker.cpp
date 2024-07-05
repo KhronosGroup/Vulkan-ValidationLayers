@@ -24,9 +24,10 @@ CommandBuffer::CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor, Vk
                              const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
     : vvl::CommandBuffer(shader_instrumentor, handle, pCreateInfo, pool) {}
 
-Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-             const VkQueueFamilyProperties &queueFamilyProperties)
-    : vvl::Queue(shader_instrumentor, q, index, flags, queueFamilyProperties), shader_instrumentor_(shader_instrumentor) {}
+Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t family_index, uint32_t queue_index,
+             VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
+    : vvl::Queue(shader_instrumentor, q, family_index, queue_index, flags, queueFamilyProperties),
+      shader_instrumentor_(shader_instrumentor) {}
 
 Queue::~Queue() {
     if (barrier_command_buffer_) {

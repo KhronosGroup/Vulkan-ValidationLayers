@@ -85,10 +85,11 @@ struct PreSubmitResult {
 
 class Queue: public StateObject {
   public:
-    Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t index, VkDeviceQueueCreateFlags flags,
-          const VkQueueFamilyProperties &queueFamilyProperties)
+    Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
+          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
         : StateObject(handle, kVulkanObjectTypeQueue),
-          queueFamilyIndex(index),
+          queueFamilyIndex(family_index),
+          queue_index(queue_index),
           flags(flags),
           queueFamilyProperties(queueFamilyProperties),
           dev_data_(dev_data) {}
@@ -114,7 +115,12 @@ class Queue: public StateObject {
     // Helper that combines Notify and Wait
     void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
 
+    // Queue family index. As queueFamilyIndex parameter in vkGetDeviceQueue.
     const uint32_t queueFamilyIndex;
+
+    // Index of the queue within a queue family. As queueIndex parameter in vkGetDeviceQueue.
+    const uint32_t queue_index;
+
     const VkDeviceQueueCreateFlags flags;
     const VkQueueFamilyProperties queueFamilyProperties;
 
