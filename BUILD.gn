@@ -20,28 +20,7 @@ if (is_win) {
   vulkan_undefine_configs += [ "//build/config/win:unicode" ]
 }
 
-vulkan_gen_dir = "$target_gen_dir/$vulkan_gen_subdir"
-raw_vulkan_gen_dir = rebase_path(vulkan_gen_dir, root_build_dir)
-
 vulkan_data_dir = "$root_out_dir/$vulkan_data_subdir"
-raw_vulkan_data_dir = rebase_path(vulkan_data_dir, root_build_dir)
-
-raw_root_out_dir = rebase_path(root_out_dir, root_build_dir)
-
-# This special action is needed to remove old VVL objects that are now renamed.
-action("vulkan_clean_old_validation_layer_objects") {
-  script = "scripts/gn/remove_files.py"
-
-  # inputs is a (random) new file since the vvl roll, used to ensure the cleanup is done only once
-  inputs = [ "layers/gpu/core/gpuav.h" ]
-  outputs = [ "$vulkan_gen_dir/old_vvl_files_are_removed" ]
-  args = [
-    "$raw_vulkan_gen_dir/old_vvl_files_are_removed",
-    "$raw_root_out_dir/libVkLayer*",
-    "$raw_root_out_dir/VkLayer*",
-    "$raw_vulkan_data_dir/VkLayer*.json",
-  ]
-}
 
 config("generated_layers_config") {
   if (is_clang) {
@@ -419,10 +398,6 @@ if (!is_android) {
     script = "scripts/gn/generate_vulkan_layers_json.py"
 
     deps = [ "$vulkan_headers_dir:vulkan_headers" ]
-    if (!is_fuchsia) {
-      # Make sure that the cleanup of old layer JSON files happens before the new ones are generated.
-      deps += [ ":vulkan_clean_old_validation_layer_objects" ]
-    }
 
     sources = [ "layers/VkLayer_khronos_validation.json.in" ]
     outputs = [ "$vulkan_data_dir/VkLayer_khronos_validation.json" ]
@@ -537,12 +512,6 @@ foreach(layer_info, layers) {
       ":vulkan_layer_utils",
       "$vulkan_utility_libraries_dir:vulkan_layer_settings",
     ]
-    if (!is_fuchsia) {
-      deps += [
-        # Make sure the cleanup of old layers happen before the new ones are compiled.
-        ":vulkan_clean_old_validation_layer_objects",
-      ]
-    }
     if (layer_info[2] != "") {
       deps += layer_info[2]
     }
