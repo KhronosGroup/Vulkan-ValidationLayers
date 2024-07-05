@@ -41,8 +41,7 @@ using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
 // The resource tag index is relative to the command buffer or queue in which it's found
 using QueueId = uint32_t;
-constexpr static QueueId kQueueIdBase = QueueId(0);
-constexpr static QueueId kQueueIdInvalid = ~kQueueIdBase;
+constexpr static QueueId kQueueIdInvalid = QueueId(vvl::kU32Max);
 constexpr static QueueId kQueueAny = kQueueIdInvalid - 1;
 
 using ResourceUsageTag = size_t;

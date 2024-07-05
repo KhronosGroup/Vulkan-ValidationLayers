@@ -606,8 +606,7 @@ void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, cons
     StateTracker::PostCreateDevice(pCreateInfo, loc);
 
     ForEachShared<vvl::Queue>([this](const std::shared_ptr<vvl::Queue> &queue_state) {
-        auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
-        queue_sync_states_.emplace_back(std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id_limit_++));
+        queue_sync_states_.emplace_back(std::make_shared<QueueSyncState>(queue_state, queue_id_limit_++));
     });
 
     const auto env_debug_command_number = GetEnvironment("VK_SYNCVAL_DEBUG_COMMAND_NUMBER");
