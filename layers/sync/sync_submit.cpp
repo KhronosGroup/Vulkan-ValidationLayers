@@ -592,7 +592,7 @@ void QueueSyncState::UpdateLastBatch() {
 std::vector<QueueBatchContext::ConstPtr> SyncValidator::GetLastBatches(
     std::function<bool(const QueueBatchContext::ConstPtr&)> filter) const {
     std::vector<QueueBatchContext::ConstPtr> snapshot;
-    for (auto& [_, queue_sync_state] : queue_sync_states_) {
+    for (const auto& queue_sync_state : queue_sync_states_) {
         auto batch = queue_sync_state->LastBatch();
         if (batch && filter(batch)) {
             snapshot.emplace_back(std::move(batch));
@@ -603,7 +603,7 @@ std::vector<QueueBatchContext::ConstPtr> SyncValidator::GetLastBatches(
 
 std::vector<QueueBatchContext::Ptr> SyncValidator::GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr&)> filter) {
     std::vector<QueueBatchContext::Ptr> snapshot;
-    for (auto& [_, queue_sync_state] : queue_sync_states_) {
+    for (const auto& queue_sync_state : queue_sync_states_) {
         auto batch = queue_sync_state->LastBatch();
         if (batch && filter(batch)) {
             snapshot.emplace_back(std::move(batch));

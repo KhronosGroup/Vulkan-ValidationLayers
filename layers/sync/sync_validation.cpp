@@ -159,11 +159,12 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
 }
 
 std::shared_ptr<const QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue queue) const {
-    return GetMapped(queue_sync_states_, queue);
-}
-
-std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue queue) {
-    return GetMapped(queue_sync_states_, queue);
+    for (const auto &queue_sync_state : queue_sync_states_) {
+        if (queue_sync_state->GetQueueState()->VkHandle() == queue) {
+            return queue_sync_state;
+        }
+    }
+    return {};
 }
 
 std::shared_ptr<vvl::CommandBuffer> SyncValidator::CreateCmdBufferState(VkCommandBuffer handle,
@@ -606,9 +607,7 @@ void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, cons
 
     ForEachShared<vvl::Queue>([this](const std::shared_ptr<vvl::Queue> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
-        std::shared_ptr<QueueSyncState> queue_sync_state =
-            std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id_limit_++);
-        queue_sync_states_.emplace(std::make_pair(queue_state->VkHandle(), std::move(queue_sync_state)));
+        queue_sync_states_.emplace_back(std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id_limit_++));
     });
 
     const auto env_debug_command_number = GetEnvironment("VK_SYNCVAL_DEBUG_COMMAND_NUMBER");

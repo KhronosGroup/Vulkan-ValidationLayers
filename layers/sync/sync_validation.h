@@ -56,7 +56,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     mutable std::atomic<ResourceUsageTag> tag_limit_{1};  // This is reserved in Validation phase, thus mutable and atomic
     ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
 
-    vvl::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
+    std::vector<std::shared_ptr<QueueSyncState>> queue_sync_states_;
     QueueId queue_id_limit_ = kQueueIdBase;
 
     SignaledSemaphores signaled_semaphores_;
@@ -86,7 +86,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos);
 
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
-    std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }
 
     std::vector<QueueBatchContext::ConstPtr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
