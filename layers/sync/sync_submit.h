@@ -298,20 +298,14 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
 
 class QueueSyncState {
   public:
-    QueueSyncState(const std::shared_ptr<vvl::Queue> &queue_state, VkQueueFlags queue_flags, QueueId id)
-        : submit_index_(0), queue_state_(queue_state), last_batch_(), queue_flags_(queue_flags), id_(id) {}
+    QueueSyncState(const std::shared_ptr<vvl::Queue> &queue_state, QueueId id) : id_(id), queue_state_(queue_state) {}
 
-    VulkanTypedHandle Handle() const {
-        if (queue_state_) {
-            return queue_state_->Handle();
-        }
-        return VulkanTypedHandle(static_cast<VkQueue>(VK_NULL_HANDLE), kVulkanObjectTypeQueue);
-    }
+    VulkanTypedHandle Handle() const { return queue_state_->Handle(); }
     QueueBatchContext::ConstPtr LastBatch() const { return last_batch_; }
     QueueBatchContext::Ptr LastBatch() { return last_batch_; }
     void UpdateLastBatch();
     const vvl::Queue *GetQueueState() const { return queue_state_.get(); }
-    VkQueueFlags GetQueueFlags() const { return queue_flags_; }
+    VkQueueFlags GetQueueFlags() const { return queue_state_->queueFamilyProperties.queueFlags; }
     QueueId GetQueueId() const { return id_; }
 
     // Method is const but updates mutable sumbit_index atomically.
@@ -323,12 +317,13 @@ class QueueSyncState {
     QueueBatchContext::Ptr PendingLastBatch() const { return pending_last_batch_; }
 
   private:
-    mutable std::atomic<uint64_t> submit_index_;
-    mutable QueueBatchContext::Ptr pending_last_batch_;
+    const QueueId id_;
     std::shared_ptr<vvl::Queue> queue_state_;
+
+    mutable std::atomic<uint64_t> submit_index_ = 0;
+
+    mutable QueueBatchContext::Ptr pending_last_batch_;
     QueueBatchContext::Ptr last_batch_;
-    const VkQueueFlags queue_flags_;
-    QueueId id_;
 };
 
 struct QueueSubmitCmdState {

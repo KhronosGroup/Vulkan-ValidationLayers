@@ -57,7 +57,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
 
     std::vector<std::shared_ptr<QueueSyncState>> queue_sync_states_;
-    QueueId queue_id_limit_ = kQueueIdBase;
+    QueueId queue_id_limit_ = 0;
 
     SignaledSemaphores signaled_semaphores_;
 
