@@ -180,10 +180,11 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
     }
 }
 
-std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue q, uint32_t family_index, uint32_t queue_index,
+                                                               VkDeviceQueueCreateFlags flags,
                                                                const VkQueueFamilyProperties &queueFamilyProperties) {
     return std::static_pointer_cast<vvl::Queue>(
-        std::make_shared<gpu_tracker::Queue>(*this, q, index, flags, queueFamilyProperties));
+        std::make_shared<gpu_tracker::Queue>(*this, q, family_index, queue_index, flags, queueFamilyProperties));
 }
 
 // These are the common things required for anything that deals with shader instrumentation
