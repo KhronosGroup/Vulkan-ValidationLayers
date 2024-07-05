@@ -173,12 +173,3 @@ class SingleRangeGenerator {
     const KeyType range_;
     KeyType current_;
 };
-
-template <typename Map>
-typename Map::mapped_type GetMapped(const Map &map, const typename Map::key_type &key) {
-    auto it = map.find(key);
-    if (it != map.cend()) {
-        return it->second;
-    }
-    return typename Map::mapped_type{};
-}
