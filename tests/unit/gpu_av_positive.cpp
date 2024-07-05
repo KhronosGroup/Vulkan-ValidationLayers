@@ -21,6 +21,11 @@
 #include "../framework/gpu_av_helper.h"
 #include "../../layers/gpu/shaders/gpu_shaders_constants.h"
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <cinttypes>
+
 class PositiveGpuAV : public GpuAVTest {};
 
 static const std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
@@ -1731,4 +1736,409 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
 
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAV, DISABLED_GpuToCpuRingBufferAtomicExchange) {
+    TEST_DESCRIPTION(
+        "Gpu does atomicEchange at one memory location, CPU concurrently reads same location. Check that memory operations appear "
+        "atomic from the CPU point of view.");
+
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *csSource = R"glsl(
+#version 450
+
+layout(set = 0, binding=0, std430) buffer RingBuffer {
+  uint ring_buffer[];
+};
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+    const uint values [8] = {
+      0xBBAADDCC,
+      0xFFFFFFFF,
+      0xAABBCCDD,
+      0xEEFFBBAA,
+      0x00112233,
+      0x44556677,
+      0x8899AABB,
+      0xCCDDEEFF
+    };
+
+    for (int i = 0; i < 1000000; ++i) {
+      uint tid = gl_GlobalInvocationID.x;
+      atomicExchange(ring_buffer[0], values[tid % 8]);
+    }
+}
+    )glsl";
+
+    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 128 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    uint32_t *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    *buffer_ptr = 0;
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, buffer.create_info().size,
+                                                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 16 * 1024, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+
+    std::atomic_uint32_t *atomic_ptr = new (buffer_ptr) std::atomic_uint32_t;
+
+    const std::vector<uint32_t> allowed_values = {0x0,        0xBBAADDCC, 0xFFFFFFFF, 0xAABBCCDD, 0xEEFFBBAA,
+                                                  0x00112233, 0x44556677, 0x8899AABB, 0xCCDDEEFF};
+
+    std::map<int, int> value_counts;
+    for (uint32_t x : allowed_values) {
+        value_counts[x] = 0;
+    }
+
+    for (int i = 0; i < 100000; ++i) {
+        const uint32_t v = atomic_ptr->load();
+
+        if (std::find(allowed_values.begin(), allowed_values.end(), v) == allowed_values.end()) {
+            ADD_FAILURE() << "At iteration " << i << ", read value " << v << "which is not among allowed values.";
+            break;
+        }
+
+        value_counts[v] += 1;
+    }
+
+    printf("Found values counts:\n");
+    for (auto [key, value] : value_counts) {
+        printf("%#x: %d\n", key, value);
+    }
+
+    m_default_queue->Wait();
+    buffer.memory().unmap();
+}
+
+TEST_F(PositiveGpuAV, GpuToCpuSmallRingBuffer) {
+    TEST_DESCRIPTION("Ring buffer, GPU writes from multiple threads, reads done single thread on the CPU.");
+
+    using namespace std::chrono_literals;
+
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *csSource = R"glsl(
+#version 450
+
+layout(set = 0, binding=0, std430) buffer RingBuffer {
+    uint size;// number of elements to be scanned
+    uint write_i;
+    // uint read_i; can be maintaned on the CPU
+    uint _pad[2];
+    uint ring_buffer[];// array
+};
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+    const uint values [8] = {
+      0xBBAADDCC,
+      0xFFFFFFFF,
+      0xAABBCCDD,
+      0xEEFFBBAA,
+      0x00112233,
+      0x44556677,
+      0x8899AABB,
+      0xCCDDEEFF
+    };
+
+    uint tid = gl_GlobalInvocationID.x;
+    
+    const uint u32_capacity = ring_buffer.length();
+    const uint write_pos = atomicAdd(write_i, 1u) % u32_capacity;
+    
+    ring_buffer[write_pos] = values[tid % 8];
+
+    atomicAdd(size, 1u);
+}
+    )glsl";
+
+    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.CreateComputePipeline();
+
+    constexpr uint32_t ring_buffer_elements_count = 32 * 1024 * 64;
+    vkt::Buffer ring_buffer(*m_device, 4 * sizeof(uint32_t) * (1 * sizeof(uint32_t)) * ring_buffer_elements_count,
+                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    uint32_t *buffer_ptr = static_cast<uint32_t *>(ring_buffer.memory().map());
+    buffer_ptr[0] = 0;
+    buffer_ptr[1] = 0;
+    buffer_ptr[2] = 0;
+    buffer_ptr[3] = 0;
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, ring_buffer.handle(), 0, ring_buffer.create_info().size,
+                                                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    constexpr uint32_t dispatch_x_size = ring_buffer_elements_count / 64;
+    vk::CmdDispatch(m_commandBuffer->handle(), dispatch_x_size, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+
+    // std::atomic_uint32_t *size_atomic_ptr = new (buffer_ptr) std::atomic_uint32_t;
+    uint32_t *size_atomic_ptr = buffer_ptr;
+    const std::vector<uint32_t> allowed_values = {0x0,        0xBBAADDCC, 0xFFFFFFFF, 0xAABBCCDD, 0xEEFFBBAA,
+                                                  0x00112233, 0x44556677, 0x8899AABB, 0xCCDDEEFF};
+
+    std::map<int, int> value_counts;
+    for (uint32_t x : allowed_values) {
+        value_counts[x] = 0;
+    }
+
+    uint32_t read_i = 0;
+
+    printf("Number of values that will be written: %u\n", 64 * dispatch_x_size);
+
+    for (int i = 0; i < 1000; ++i) {
+        // uint32_t size = size_atomic_ptr->load();
+        uint32_t size = *size_atomic_ptr;
+
+        if (size == 0) {
+            printf("Z");
+            std::this_thread::sleep_for(1ms);
+        }
+
+        // size = size_atomic_ptr->load();
+        size = *size_atomic_ptr;
+        if (size == 0) {
+            continue;
+        }
+
+        printf("\nReading %u elements\n", size);
+        for (uint32_t k = 0; k < size; ++k) {
+            const uint32_t v = buffer_ptr[4 + read_i];
+            ++read_i;
+
+            if (std::find(allowed_values.begin(), allowed_values.end(), v) == allowed_values.end()) {
+                ADD_FAILURE() << "At iteration " << i << ", read value " << v << "which is not among allowed values.";
+                break;
+            }
+
+            value_counts[v] += 1;
+        }
+        printf("Done reading.\n");
+
+        // size_atomic_ptr->fetch_sub(size);
+        printf("Decreasing size...\n");
+        *size_atomic_ptr -= size;
+        printf("Size decreased by %u\n", size);
+    }
+
+    uint32_t read_count = 0;
+    printf("\nFound values counts:\n");
+    for (auto [key, value] : value_counts) {
+        printf("%#x: %d\n", key, value);
+        if (key != 0) {
+            read_count += value;
+        }
+    }
+    printf("Read a total of %u non zero values\n", read_count);
+    const int difference = int(dispatch_x_size * 64) - int(read_count);
+    printf("Difference with expected: %d\n", difference);
+
+    if (difference != 0) {
+        ADD_FAILURE() << "Failure, difference is not 0.";
+    }
+
+    m_default_queue->Wait();
+
+    ring_buffer.memory().unmap();
+}
+
+TEST_F(PositiveGpuAV, GpuToCpuSmallRingBufferMultipleDispatches) {
+    TEST_DESCRIPTION("Ring buffer, GPU writes from multiple threads, reads done single thread on the CPU.");
+
+    using namespace std::chrono_literals;
+
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *csSource = R"glsl(
+#version 450
+
+layout(set = 0, binding=0, std430) buffer RingBuffer {
+    uint size;// number of elements to be scanned
+    uint write_i;
+    // uint read_i; can be maintaned on the CPU
+    uint _pad[2];
+    uint ring_buffer[];// array
+};
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+    const uint values [8] = {
+      0xBBAADDCC,
+      0xFFFFFFFF,
+      0xAABBCCDD,
+      0xEEFFBBAA,
+      0x00112233,
+      0x44556677,
+      0x8899AABB,
+      0xCCDDEEFF
+    };
+
+    uint tid = gl_GlobalInvocationID.x;
+    
+    const uint u32_capacity = ring_buffer.length();
+    const uint write_pos = atomicAdd(write_i, 1u) % u32_capacity;
+    
+    ring_buffer[write_pos] = values[tid % 8];
+
+    atomicAdd(size, 1u);
+}
+    )glsl";
+
+    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.CreateComputePipeline();
+
+    uint32_t ring_buffer_elements_count = 32 * 1024 * 1024;
+    VkBufferCreateInfo ring_buffer_ci = vku::InitStructHelper();
+    ring_buffer_ci.size = 4 * sizeof(uint32_t) * (1 * sizeof(uint32_t)) * ring_buffer_elements_count;
+    ring_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    if (m_device->phy().limits_.maxStorageBufferRange < ring_buffer_ci.size) {
+        ring_buffer_ci.size = m_device->phy().limits_.maxStorageBufferRange;
+        ring_buffer_elements_count = uint32_t(ring_buffer_ci.size) / (4 * sizeof(uint32_t) * (1 * sizeof(uint32_t)));
+    }
+
+    vkt::Buffer ring_buffer(*m_device, ring_buffer_ci, vkt::no_mem);
+    const VkMemoryRequirements ring_buffer_mem_reqs = ring_buffer.memory_requirements();
+    const VkMemoryAllocateInfo alloc_info = vkt::DeviceMemory::get_resource_alloc_info(
+        *m_device, ring_buffer_mem_reqs, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::DeviceMemory ring_buffer_memory(*m_device, alloc_info);
+    ring_buffer.bind_memory(ring_buffer_memory, 0);
+
+    uint32_t *buffer_ptr = static_cast<uint32_t *>(ring_buffer_memory.map());
+    buffer_ptr[0] = 0;
+    buffer_ptr[1] = 0;
+    buffer_ptr[2] = 0;
+    buffer_ptr[3] = 0;
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, ring_buffer.handle(), 0, ring_buffer.create_info().size,
+                                                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    constexpr uint32_t dispatches_count = 16;
+    uint32_t dispatch_x_size = (ring_buffer_elements_count / 64) / dispatches_count;
+    for (uint32_t i = 0; i < dispatches_count; ++i) {
+        vk::CmdDispatch(m_commandBuffer->handle(), dispatch_x_size, 1, 1);
+    }
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+
+    // std::atomic_uint32_t *size_atomic_ptr = new (buffer_ptr) std::atomic_uint32_t;
+    uint32_t *size_atomic_ptr = buffer_ptr;
+    const std::vector<uint32_t> allowed_values = {0x0,        0xBBAADDCC, 0xFFFFFFFF, 0xAABBCCDD, 0xEEFFBBAA,
+                                                  0x00112233, 0x44556677, 0x8899AABB, 0xCCDDEEFF};
+
+    std::map<int, int> value_counts;
+    for (uint32_t x : allowed_values) {
+        value_counts[x] = 0;
+    }
+
+    const int64_t expected_ring_buffer_elements_count = int64_t(dispatch_x_size * 64 * dispatches_count);
+
+    uint32_t read_i = 0;
+    printf("Number of values that will be written: %" PRId64 "\n", expected_ring_buffer_elements_count);
+
+    for (int i = 0; i < 1000; ++i) {
+        // uint32_t size = size_atomic_ptr->load();
+        uint32_t size = *size_atomic_ptr;
+
+        if (size == 0) {
+            printf("Z");
+            std::this_thread::sleep_for(300ns);
+        }
+
+        // size = size_atomic_ptr->load();
+        size = *size_atomic_ptr;
+        if (size == 0) {
+            continue;
+        }
+
+        printf("\nReading %u elements\n", size);
+        const auto start = std::chrono::high_resolution_clock::now();
+        for (uint32_t k = 0; k < size; ++k) {
+            const uint32_t v = buffer_ptr[4 + read_i];
+            ++read_i;
+
+            if (std::find(allowed_values.begin(), allowed_values.end(), v) == allowed_values.end()) {
+                ADD_FAILURE() << "At iteration " << i << ", read value " << v << "which is not among allowed values.";
+                break;
+            }
+
+            value_counts[v] += 1;
+        }
+        const auto end = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<double, std::milli> elapsed = end - start;
+        printf("Done reading. Elapsed time: %.0f ms\n", elapsed.count());
+
+        // size_atomic_ptr->fetch_sub(size);
+        printf("Decreasing size...\n");
+        *size_atomic_ptr -= size;
+        printf("Size decreased by %u\n", size);
+    }
+
+    uint32_t read_count = 0;
+    printf("\nFound values counts:\n");
+    for (auto [key, value] : value_counts) {
+        printf("%#x: %d\n", key, value);
+        if (key != 0) {
+            read_count += value;
+        }
+    }
+    printf("Read a total of %u non zero values\n", read_count);
+
+    const int64_t difference = expected_ring_buffer_elements_count - int64_t(read_count);
+    printf("Difference with expected: %" PRId64 "\n", difference);
+
+    if (difference != 0) {
+        ADD_FAILURE() << "Failure, difference is not 0.";
+    }
+
+    m_default_queue->Wait();
+
+    ring_buffer_memory.unmap();
 }
