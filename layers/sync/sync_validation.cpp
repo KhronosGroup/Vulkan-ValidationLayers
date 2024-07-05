@@ -605,9 +605,21 @@ void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, cons
     // The state tracker sets up the device state
     StateTracker::PostCreateDevice(pCreateInfo, loc);
 
-    ForEachShared<vvl::Queue>([this](const std::shared_ptr<vvl::Queue> &queue_state) {
-        queue_sync_states_.emplace_back(std::make_shared<QueueSyncState>(queue_state, queue_id_limit_++));
-    });
+    // Returns queues in the same order as advertised by the driver.
+    // This allows to have deterministic QueueId between runs that simplifies debugging.
+    auto get_sorted_queues = [this]() {
+        std::vector<std::shared_ptr<vvl::Queue>> queues;
+        ForEachShared<vvl::Queue>([&queues](const std::shared_ptr<vvl::Queue> &queue) { queues.emplace_back(queue); });
+        std::sort(queues.begin(), queues.end(), [](const auto &q1, const auto &q2) {
+            return (q1->queueFamilyIndex < q2->queueFamilyIndex) ||
+                   (q1->queueFamilyIndex == q2->queueFamilyIndex && q1->queue_index < q2->queue_index);
+        });
+        return queues;
+    };
+    queue_sync_states_.reserve(Count<vvl::Queue>());
+    for (const auto &queue : get_sorted_queues()) {
+        queue_sync_states_.emplace_back(std::make_shared<QueueSyncState>(queue, queue_id_limit_++));
+    }
 
     const auto env_debug_command_number = GetEnvironment("VK_SYNCVAL_DEBUG_COMMAND_NUMBER");
     if (!env_debug_command_number.empty()) {
