@@ -148,7 +148,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 
     auto queue_state = Get<vvl::Queue>(queue);
     CommandBufferSubmitState cb_submit_state(*this, queue_state.get());
-    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queueFamilyProperties.queueFlags);
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queue_family_properties.queueFlags);
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -224,7 +224,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         auto protected_submit_info = vku::FindStructInPNextChain<VkProtectedSubmitInfo>(submit.pNext);
         if (protected_submit_info) {
             protected_submit = protected_submit_info->protectedSubmit == VK_TRUE;
-            if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) == 0)) {
+            if ((protected_submit == true) && ((queue_state->create_flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) == 0)) {
                 skip |= LogError("VUID-vkQueueSubmit-queue-06448", queue, submit_loc,
                                  "contains a protected submission to %s which was not created with "
                                  "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
@@ -316,7 +316,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
     auto queue_state = Get<vvl::Queue>(queue);
     CommandBufferSubmitState cb_submit_state(*this, queue_state.get());
-    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queueFamilyProperties.queueFlags);
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queue_family_properties.queueFlags);
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -328,7 +328,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, submit_loc);
 
         const bool protected_submit = (submit.flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
-        if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
+        if ((protected_submit == true) && ((queue_state->create_flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
             skip |= LogError("VUID-vkQueueSubmit2-queue-06447", queue, submit_loc,
                              "contains a protected submission to %s which was not created with "
                              "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
@@ -488,14 +488,14 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
     auto pool = cb_state.command_pool;
     ASSERT_AND_RETURN_SKIP(pool);
 
-    if (pool->queueFamilyIndex != queue_state.queueFamilyIndex) {
+    if (pool->queueFamilyIndex != queue_state.queue_family_index) {
         const LogObjectList objlist(cb_state.Handle(), queue_state.Handle());
         const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
         skip |= LogError(vuid, objlist, loc,
                          "Primary command buffer %s created in queue family %d is being submitted on %s "
                          "from queue family %d.",
                          FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue_state.Handle()).c_str(),
-                         queue_state.queueFamilyIndex);
+                         queue_state.queue_family_index);
     }
 
     // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
@@ -504,7 +504,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
             case kVulkanObjectTypeImage: {
                 auto image_state = static_cast<const vvl::Image *>(state_object.get());
                 if (image_state && image_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state.queueFamilyIndex,
+                    skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state.queue_family_index,
                                                   image_state->create_info.queueFamilyIndexCount,
                                                   image_state->create_info.pQueueFamilyIndices, loc);
                 }
@@ -513,7 +513,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
             case kVulkanObjectTypeBuffer: {
                 auto buffer_state = static_cast<const vvl::Buffer *>(state_object.get());
                 if (buffer_state && buffer_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state.queueFamilyIndex,
+                    skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state.queue_family_index,
                                                   buffer_state->create_info.queueFamilyIndexCount,
                                                   buffer_state->create_info.pQueueFamilyIndices, loc);
                 }
@@ -645,10 +645,10 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     if (skip) return skip;
 
     auto queue_state = Get<vvl::Queue>(queue);
-    const VkQueueFlags queue_flags = queue_state->queueFamilyProperties.queueFlags;
+    const VkQueueFlags queue_flags = queue_state->queue_family_properties.queueFlags;
     if (!(queue_flags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         skip |= LogError("VUID-vkQueueBindSparse-queuetype", queue, error_obj.location,
-                         "queueFamilyIndex %" PRIu32 " queueFlags are %s.", queue_state->queueFamilyIndex,
+                         "queueFamilyIndex %" PRIu32 " queueFlags are %s.", queue_state->queue_family_index,
                          string_VkQueueFlags(queue_flags).c_str());
     }
 

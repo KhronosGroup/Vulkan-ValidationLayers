@@ -2112,7 +2112,7 @@ class ValidatorState {
     // application input.
     static bool ValidateAtQueueSubmit(const vvl::Queue *queue_state, const ValidationStateTracker &device_data, uint32_t src_family,
                                       uint32_t dst_family, const ValidatorState &val) {
-        uint32_t queue_family = queue_state->queueFamilyIndex;
+        uint32_t queue_family = queue_state->queue_family_index;
         if ((src_family != queue_family) && (dst_family != queue_family)) {
             const char *src_annotation = val.GetFamilyAnnotation(src_family);
             const char *dst_annotation = val.GetFamilyAnnotation(dst_family);

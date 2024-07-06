@@ -255,7 +255,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
 
 void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::CommandBuffer& cbs, Func command, bp_state::Image& state,
                                          IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
-    auto queue_family = qs.queueFamilyIndex;
+    auto queue_family = qs.queue_family_index;
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
     // Concurrent sharing usage of image with exclusive sharing mode

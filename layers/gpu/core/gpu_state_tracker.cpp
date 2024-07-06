@@ -51,7 +51,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         VkResult result = VK_SUCCESS;
 
         VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
-        pool_create_info.queueFamilyIndex = queueFamilyIndex;
+        pool_create_info.queueFamilyIndex = queue_family_index;
         result = DispatchCreateCommandPool(shader_instrumentor_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
             shader_instrumentor_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
