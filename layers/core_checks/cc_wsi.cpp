@@ -293,7 +293,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     if (!IsExtEnabled(instance_extensions.vk_khr_android_surface)) {
         // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
         const bool is_supported = AnyOf<vvl::Queue>([this, surface_state](const vvl::Queue &queue_state) {
-            return surface_state->GetQueueSupport(physical_device, queue_state.queueFamilyIndex);
+            return surface_state->GetQueueSupport(physical_device, queue_state.queue_family_index);
         });
 
         if (!is_supported) {
@@ -794,8 +794,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     bool skip = false;
     auto queue_state = Get<vvl::Queue>(queue);
 
-    SemaphoreSubmitState sem_submit_state(*this, queue,
-                                          physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queue_family_properties.queueFlags);
 
     const Location present_info_loc = error_obj.location.dot(Struct::VkPresentInfoKHR, Field::pPresentInfo);
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
@@ -866,7 +865,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         // All physical devices and queue families are required to be able to present to any native window on Android
         if (!IsExtEnabled(instance_extensions.vk_khr_android_surface)) {
             auto surface_state = Get<vvl::Surface>(swapchain_data->create_info.surface);
-            if (surface_state && !surface_state->GetQueueSupport(physical_device, queue_state->queueFamilyIndex)) {
+            if (surface_state && !surface_state->GetQueueSupport(physical_device, queue_state->queue_family_index)) {
                 skip |= LogError("VUID-vkQueuePresentKHR-pSwapchains-01292", pPresentInfo->pSwapchains[i], swapchain_loc,
                                  "image on queue that cannot present to this surface.");
             }

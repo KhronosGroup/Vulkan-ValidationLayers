@@ -305,7 +305,7 @@ class QueueSyncState {
     QueueBatchContext::Ptr LastBatch() { return last_batch_; }
     void UpdateLastBatch();
     const vvl::Queue *GetQueueState() const { return queue_state_.get(); }
-    VkQueueFlags GetQueueFlags() const { return queue_state_->queueFamilyProperties.queueFlags; }
+    VkQueueFlags GetQueueFlags() const { return queue_state_->queue_family_properties.queueFlags; }
     QueueId GetQueueId() const { return id_; }
 
     // Method is const but updates mutable sumbit_index atomically.

@@ -611,8 +611,8 @@ void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, cons
         std::vector<std::shared_ptr<vvl::Queue>> queues;
         ForEachShared<vvl::Queue>([&queues](const std::shared_ptr<vvl::Queue> &queue) { queues.emplace_back(queue); });
         std::sort(queues.begin(), queues.end(), [](const auto &q1, const auto &q2) {
-            return (q1->queueFamilyIndex < q2->queueFamilyIndex) ||
-                   (q1->queueFamilyIndex == q2->queueFamilyIndex && q1->queue_index < q2->queue_index);
+            return (q1->queue_family_index < q2->queue_family_index) ||
+                   (q1->queue_family_index == q2->queue_family_index && q1->queue_index < q2->queue_index);
         });
         return queues;
     };
