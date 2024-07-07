@@ -1767,25 +1767,35 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_st
 
         if ((variable.is_storage_image || variable.is_storage_texel_buffer || variable.is_storage_buffer) &&
             !variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-            switch (variable.stage) {
-                case VK_SHADER_STAGE_FRAGMENT_BIT:
-                    if (!enabled_features.fragmentStoresAndAtomics) {
-                        skip |= LogError("VUID-RuntimeSpirv-NonWritable-06340", module_state.handle(), loc,
-                                         "fragmentStoresAndAtomics was not enabled");
-                    }
-                    break;
-                case VK_SHADER_STAGE_VERTEX_BIT:
-                case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-                case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-                case VK_SHADER_STAGE_GEOMETRY_BIT:
-                    if (!enabled_features.vertexPipelineStoresAndAtomics) {
-                        skip |= LogError("VUID-RuntimeSpirv-NonWritable-06341", module_state.handle(), loc,
-                                         "vertexPipelineStoresAndAtomics was not enabled");
-                    }
-                    break;
-                default:
-                    // No feature requirements for writes and atomics for other stages
-                    break;
+            // If the variable is a struct, all members must contain NonWritable
+            if (!variable.type_struct_info ||
+                !variable.type_struct_info->decorations.AllMemberHave(spirv::DecorationSet::nonwritable_bit)) {
+                switch (variable.stage) {
+                    case VK_SHADER_STAGE_FRAGMENT_BIT:
+                        if (!enabled_features.fragmentStoresAndAtomics) {
+                            skip |= LogError("VUID-RuntimeSpirv-NonWritable-06340", module_state.handle(), loc,
+                                             "SPIR-V (VK_SHADER_STAGE_FRAGMENT_BIT) uses descriptor %s (type %s) which is not "
+                                             "marked with NonWritable, but fragmentStoresAndAtomics was not enabled.",
+                                             variable.DescribeDescriptor().c_str(),
+                                             string_DescriptorTypeSet(descriptor_type_set).c_str());
+                        }
+                        break;
+                    case VK_SHADER_STAGE_VERTEX_BIT:
+                    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+                    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+                    case VK_SHADER_STAGE_GEOMETRY_BIT:
+                        if (!enabled_features.vertexPipelineStoresAndAtomics) {
+                            skip |= LogError("VUID-RuntimeSpirv-NonWritable-06341", module_state.handle(), loc,
+                                             "SPIR-V (%s) uses descriptor %s (type %s) which is not marked with NonWritable, but "
+                                             "vertexPipelineStoresAndAtomics was not enabled.",
+                                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                                             string_DescriptorTypeSet(descriptor_type_set).c_str());
+                        }
+                        break;
+                    default:
+                        // No feature requirements for writes and atomics for other stages
+                        break;
+                }
             }
         }
 

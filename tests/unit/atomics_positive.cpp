@@ -936,3 +936,28 @@ TEST_F(PositiveAtomic, ImageFloat16Vector) {
     current_shader = cs_image_exchange.c_str();
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveAtomic, VertexPipelineStoresAndAtomics) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8223");
+    AddDisabledFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(set=0, binding=0, std430) readonly buffer SSBO {
+            float a;
+            float b;
+        } data;
+        layout(location=0) out float o;
+        void main(void) {
+            o = data.b;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+    pipe.CreateGraphicsPipeline();
+}
