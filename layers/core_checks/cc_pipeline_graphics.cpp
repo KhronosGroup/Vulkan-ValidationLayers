@@ -148,23 +148,23 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
     skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, create_info_loc.dot(Field::flags));
 
-    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
+    const void *pipeline_pnext = pipeline.GetCreateInfoPNext();
     if (const auto *discard_rectangle_state =
-            vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline_ci.pNext)) {
+            vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline_pnext)) {
         skip |= ValidatePipelineDiscardRectangleStateCreateInfo(pipeline, *discard_rectangle_state, create_info_loc);
     }
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-    if (const auto attachment_sample_count_info = vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(pipeline_ci.pNext)) {
+    if (const auto attachment_sample_count_info = vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(pipeline_pnext)) {
         skip |= ValidatePipelineAttachmentSampleCountInfo(pipeline, *attachment_sample_count_info, create_info_loc);
     }
 
-    if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pipeline_ci.pNext)) {
+    if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pipeline_pnext)) {
         skip |= ValidatePipelineRobustnessCreateInfo(pipeline, *pipeline_robustness_info, create_info_loc);
     }
 
     if (const auto *fragment_shading_rate_state =
-            vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_ci.pNext)) {
+            vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_pnext)) {
         skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, *fragment_shading_rate_state, create_info_loc);
     }
 
@@ -282,7 +282,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
     bool uses_descriptor_buffer = false;
     bool lib_all_has_capture_internal = false;
 
-    const auto gpl_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.GraphicsCreateInfo().pNext);
+    const auto gpl_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.GetCreateInfoPNext());
 
     for (uint32_t i = 0; i < library_create_info.libraryCount; ++i) {
         const auto lib = Get<vvl::Pipeline>(library_create_info.pLibraries[i]);
@@ -423,7 +423,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                     const auto lib = Get<vvl::Pipeline>(library_create_info.pLibraries[i]);
                     if (!lib) continue;
                     const auto lib_gpl_info =
-                        vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->GraphicsCreateInfo().pNext);
+                        vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->GetCreateInfoPNext());
                     if (!lib_gpl_info) {
                         continue;
                     }
@@ -508,8 +508,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline &pip
         }
     } else if (!pipeline.RenderPassState()) {
         // If the vvl::RenderPass object is not found AND the handle is not null, this we know this is an invalid render pass
-        const auto gpl_info =
-            vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.GraphicsCreateInfo().pNext);
+        const auto gpl_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.GetCreateInfoPNext());
         const bool has_flags =
             gpl_info && (gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
                                             VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
@@ -1250,9 +1249,8 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
         }
     }
 
-    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
     const auto fragment_shading_rate =
-        vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_ci.pNext);
+        vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.GetCreateInfoPNext());
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
         if (fragment_shading_rate->fragmentSize.width != 1) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09315", device,
@@ -1278,7 +1276,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(c
     bool skip = false;
     if (!enabled_features.externalFormatResolve) return skip;
 
-    const uint64_t external_format = GetExternalFormat(pipeline.GraphicsCreateInfo().pNext);
+    const uint64_t external_format = GetExternalFormat(pipeline.GetCreateInfoPNext());
     const auto *rendering_struct = pipeline.rendering_create_info;
     if (external_format == 0 || !rendering_struct) {
         return skip;
@@ -1330,9 +1328,8 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(c
         }
     }
 
-    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
     const auto fragment_shading_rate =
-        vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_ci.pNext);
+        vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.GetCreateInfoPNext());
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR) && fragment_shading_rate) {
         if (fragment_shading_rate->fragmentSize.width != 1) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09306", device,
@@ -1731,8 +1728,8 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
     if (!null_rp && !rp_state) return skip;  // invalid render pass
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
-    const auto *attachment_sample_count_info = vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(pipeline_ci.pNext);
+    const auto *attachment_sample_count_info =
+        vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(pipeline.GetCreateInfoPNext());
     const auto *rendering_struct = pipeline.rendering_create_info;
     if (null_rp && rendering_struct && attachment_sample_count_info &&
         (attachment_sample_count_info->colorAttachmentCount != rendering_struct->colorAttachmentCount)) {
@@ -3186,9 +3183,8 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
         skip |= LogError("VUID-vkCmdBindPipeline-commandBuffer-04808", objlist, loc,
                          "Graphics pipeline incompatible with viewport/scissor inheritance.");
     }
-    const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
     const auto *discard_rectangle_state =
-        vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline_ci.pNext);
+        vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.GetCreateInfoPNext());
     if ((discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) ||
         (pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
@@ -3721,7 +3717,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassExternalFormatResolve(cons
                                                                             const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
-    const uint64_t pipeline_external_format = GetExternalFormat(pipeline.GraphicsCreateInfo().pNext);
+    const uint64_t pipeline_external_format = GetExternalFormat(pipeline.GetCreateInfoPNext());
     if (pipeline_external_format == 0) return skip;
 
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
@@ -3796,7 +3792,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
     if (auto p_attachment_sample_count_info =
-            vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(pipeline.GraphicsCreateInfo().pNext)) {
+            vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(pipeline.GetCreateInfoPNext())) {
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
             if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
                 continue;
