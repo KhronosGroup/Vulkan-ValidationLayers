@@ -986,7 +986,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 (create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL_RECTANGLE_NV) &&
                 (!enabled_features.fillModeNonSolid)) {
                 skip |= LogError("VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507", device,
-                                 rasterization_loc.dot(Field::polygonMode), "is %s, but fillModeNonSolid feature is note enabled.",
+                                 rasterization_loc.dot(Field::polygonMode), "is %s, but fillModeNonSolid feature is not enabled.",
                                  string_VkPolygonMode(create_info.pRasterizationState->polygonMode));
             }
 
