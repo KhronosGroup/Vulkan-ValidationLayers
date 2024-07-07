@@ -471,7 +471,7 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
                                                                               const vvl::CommandBuffer& cbs) -> bool {
             ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
                 // Update queue family index without changing usage, signifying a correct queue family transfer
-                image->UpdateUsage(layer, level, image->GetUsageType(layer, level), qs.queueFamilyIndex);
+                image->UpdateUsage(layer, level, image->GetUsageType(layer, level), qs.queue_family_index);
             });
             return false;
         });

@@ -695,9 +695,10 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     device_state->PostCreateDevice(pCreateInfo, record_obj.location);
 }
 
-std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue handle, uint32_t index, VkDeviceQueueCreateFlags flags,
+std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
+                                                                VkDeviceQueueCreateFlags flags,
                                                                 const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::make_shared<vvl::Queue>(*this, handle, index, flags, queueFamilyProperties);
+    return std::make_shared<vvl::Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties);
 }
 
 void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
@@ -1046,7 +1047,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
                     DispatchGetDeviceQueue(device, queue_info.queue_family_index, i, &queue);
                 }
                 assert(queue != VK_NULL_HANDLE);
-                Add(CreateQueue(queue, queue_info.queue_family_index, queue_info.flags,
+                Add(CreateQueue(queue, queue_info.queue_family_index, i, queue_info.flags,
                                 queue_family_properties_list[queue_info.queue_family_index]));
             }
         }
@@ -1522,7 +1523,8 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
     }
 }
 
-void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkDeviceQueueCreateFlags flags, VkQueue queue) {
+void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, uint32_t queue_index,
+                                                       VkDeviceQueueCreateFlags flags, VkQueue queue) {
     if (Get<vvl::Queue>(queue) == nullptr) {
         uint32_t num_queue_families = 0;
         instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
@@ -1530,18 +1532,18 @@ void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_ind
         instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
                                                                        queue_family_properties_list.data());
 
-        Add(CreateQueue(queue, queue_family_index, flags, queue_family_properties_list[queue_family_index]));
+        Add(CreateQueue(queue, queue_family_index, queue_index, flags, queue_family_properties_list[queue_family_index]));
     }
 }
 
 void ValidationStateTracker::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
                                                           VkQueue *pQueue, const RecordObject &record_obj) {
-    RecordGetDeviceQueueState(queueFamilyIndex, {}, *pQueue);
+    RecordGetDeviceQueueState(queueFamilyIndex, queueIndex, {}, *pQueue);
 }
 
 void ValidationStateTracker::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue,
                                                            const RecordObject &record_obj) {
-    RecordGetDeviceQueueState(pQueueInfo->queueFamilyIndex, pQueueInfo->flags, *pQueue);
+    RecordGetDeviceQueueState(pQueueInfo->queueFamilyIndex, pQueueInfo->queueIndex, pQueueInfo->flags, *pQueue);
 }
 
 void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject &record_obj) {

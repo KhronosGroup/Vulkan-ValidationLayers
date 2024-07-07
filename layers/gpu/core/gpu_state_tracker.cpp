@@ -24,9 +24,10 @@ CommandBuffer::CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor, Vk
                              const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
     : vvl::CommandBuffer(shader_instrumentor, handle, pCreateInfo, pool) {}
 
-Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-             const VkQueueFamilyProperties &queueFamilyProperties)
-    : vvl::Queue(shader_instrumentor, q, index, flags, queueFamilyProperties), shader_instrumentor_(shader_instrumentor) {}
+Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t family_index, uint32_t queue_index,
+             VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
+    : vvl::Queue(shader_instrumentor, q, family_index, queue_index, flags, queueFamilyProperties),
+      shader_instrumentor_(shader_instrumentor) {}
 
 Queue::~Queue() {
     if (barrier_command_buffer_) {
@@ -50,7 +51,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         VkResult result = VK_SUCCESS;
 
         VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
-        pool_create_info.queueFamilyIndex = queueFamilyIndex;
+        pool_create_info.queueFamilyIndex = queue_family_index;
         result = DispatchCreateCommandPool(shader_instrumentor_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
             shader_instrumentor_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");

@@ -70,9 +70,11 @@ std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuf
     return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, pCreateInfo, pool));
 }
 
-std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue q, uint32_t family_index, uint32_t queue_index,
+                                                   VkDeviceQueueCreateFlags flags,
                                                    const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::static_pointer_cast<vvl::Queue>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
+    return std::static_pointer_cast<vvl::Queue>(
+        std::make_shared<Queue>(*this, q, family_index, queue_index, flags, queueFamilyProperties));
 }
 
 void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
