@@ -551,7 +551,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
 
-    // Various spots need a host visiable buffer they can call GetBufferDeviceAddress on
+    // Various spots need a host visible buffer they can call GetBufferDeviceAddress on
     explicit Buffer(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage, DeviceAddressT) {
         usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;  // always add
         VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
