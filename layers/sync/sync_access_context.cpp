@@ -181,7 +181,12 @@ void AccessContext::ResolvePreviousAccesses() {
 
 void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const ResourceAccessRange &range, ResourceUsageTagEx tag_ex) {
-    if (!SimpleBinding(buffer)) return;
+    if (current_usage == SYNC_ACCESS_INDEX_NONE) {
+        return;
+    }
+    if (!SimpleBinding(buffer)) {
+        return;
+    }
     const auto base_address = ResourceBaseAddress(buffer);
     UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex);
     UpdateMemoryAccessRangeState(access_state_map_, action, range + base_address);
@@ -235,6 +240,9 @@ void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const v
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       ResourceUsageTag tag) {
+    if (current_usage == SYNC_ACCESS_INDEX_NONE) {
+        return;
+    }
     UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, ResourceUsageTagEx{tag});
     UpdateMemoryAccessState(action, range_gen);
 }
