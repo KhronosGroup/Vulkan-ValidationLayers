@@ -24,15 +24,14 @@ def BuildGn():
     update_cmd = './scripts/gn/update_deps.sh'
     subprocess.check_call(update_cmd)
 
-    gn_check_cmd = 'gn gen --check out/Debug'.split(" ")
-    subprocess.check_call(gn_check_cmd)
-
-    # Generating Ninja Files
-    gn_gen_cmd = 'gn gen out/Debug'.split(" ")
+    # Generating Ninja Files with Checking
+    gn_gen_cmd= 'gn gen --check out'.split(" ")
+    # Forward extra build args from command line
+    gn_gen_cmd.extend(sys.argv[1:])
     subprocess.check_call(gn_gen_cmd)
 
     # Running Ninja Build
-    ninja_build_cmd = 'ninja -C out/Debug'.split(" ")
+    ninja_build_cmd = 'ninja -C out'.split(" ")
     subprocess.check_call(ninja_build_cmd)
 
 #

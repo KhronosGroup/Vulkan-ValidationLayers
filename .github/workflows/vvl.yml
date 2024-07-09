@@ -352,10 +352,15 @@ jobs:
 
   chromium:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        args:
+          - 'target_os="linux" target_cpu="x64"'
+          - 'target_os="android" target_cpu="arm64"'
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: python scripts/gn/gn.py
+      - run: python scripts/gn/gn.py --args='${{ matrix.args }}'
 
   check_vvl:
     runs-on: ubuntu-latest
