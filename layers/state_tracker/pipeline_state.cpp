@@ -483,6 +483,13 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<Shade
 
 static VkPrimitiveTopology GetTopologyAtRasterizer(const Pipeline &pipeline) {
     auto result = (pipeline.InputAssemblyState()) ? pipeline.InputAssemblyState()->topology : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+
+    // When dealing with GPL, if there is no Vertex Input stage, check if the topology was linked in, but don't go searching in
+    // shaders, otherwise a pre-raster GPL stage can have a mismatched topology
+    if (!pipeline.OwnsSubState(pipeline.vertex_input_state)) {
+        return result;
+    }
+
     for (const auto &stage : pipeline.stage_states) {
         if (!stage.entrypoint) {
             continue;
