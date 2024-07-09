@@ -141,7 +141,14 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
     ASSERT_AND_RETURN_SKIP(query_pool_state);
 
     for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
-        if (query_pool_state->GetQueryState(i, 0u) == QUERYSTATE_RESET) {
+        // Some query type can't have a begin call on it (see VUID-vkCmdBeginQuery-queryType-02804)
+        const bool can_have_begin =
+            !IsValueIn(query_pool_state->create_info.queryType,
+                       {VK_QUERY_TYPE_TIMESTAMP, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR,
+                        VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR,
+                        VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR,
+                        VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV});
+        if (can_have_begin && query_pool_state->GetQueryState(i, 0u) == QUERYSTATE_RESET) {
             const LogObjectList objlist(queryPool);
             skip |= LogWarning("BestPractices-QueryPool-Unavailable", objlist, error_obj.location,
                                "QueryPool %s and query %" PRIu32 ": vkCmdBeginQuery() was never called.",
