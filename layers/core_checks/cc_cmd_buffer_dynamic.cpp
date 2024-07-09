@@ -1490,8 +1490,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             if (attachment_count > 0) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
                                                   cb_state, objlist, loc, vuid.set_color_blend_enable_08657);
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
-                                                  cb_state, objlist, loc, vuid.set_blend_equation_09418);
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, cb_state,
                                                   objlist, loc, vuid.set_color_write_mask_08659);
             }
@@ -1522,6 +1520,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                             }
                         }
                     }
+                    skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
+                                                      cb_state, objlist, loc, vuid.set_blend_equation_09418);
                 }
                 if (!cb_state.dynamic_state_value.color_write_mask_attachments[i]) {
                     skip |= LogError(vuid.set_color_write_09419, objlist, loc,
