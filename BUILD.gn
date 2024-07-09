@@ -20,8 +20,6 @@ if (is_win) {
   vulkan_undefine_configs += [ "//build/config/win:unicode" ]
 }
 
-vulkan_data_dir = "$root_out_dir/$vulkan_data_subdir"
-
 config("generated_layers_config") {
   if (is_clang) {
     cflags = [
@@ -395,11 +393,14 @@ layers = [ [
 
 if (!is_android) {
   action("vulkan_gen_json_files") {
+    vulkan_data_dir = "$root_out_dir/$vulkan_data_subdir"
+
     script = "scripts/gn/generate_vulkan_layers_json.py"
 
     deps = [ "$vulkan_headers_dir:vulkan_headers" ]
 
     sources = [ "layers/VkLayer_khronos_validation.json.in" ]
+
     outputs = [ "$vulkan_data_dir/VkLayer_khronos_validation.json" ]
 
     if (is_linux) {
