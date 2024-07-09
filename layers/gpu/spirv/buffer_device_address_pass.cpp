@@ -35,17 +35,13 @@ uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block) {
-    // Add any debug information to pass into the function call
-    const uint32_t stage_info_id = GetStageInfo(block.function_);
-    const uint32_t inst_position = target_instruction_->position_index_;
-    auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-
+uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                     const InjectionData& injection_data) {
     // Convert reference pointer to uint64
     const uint32_t pointer_id = target_instruction_->Operand(0);
     const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
     const uint32_t convert_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id});
+    block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id}, inst_it);
 
     const Constant& length_constant = module_.type_manager_.GetConstantUInt32(type_length_);
     const Constant& access_opcode = module_.type_manager_.GetConstantUInt32(access_opcode_);
@@ -54,8 +50,10 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block) {
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def, inst_position_constant.Id(),
-                                                  stage_info_id, convert_id, length_constant.Id(), access_opcode.Id()});
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {bool_type, function_result, function_def, injection_data.inst_position_id,
+                             injection_data.stage_info_id, convert_id, length_constant.Id(), access_opcode.Id()},
+                            inst_it);
 
     return function_result;
 }

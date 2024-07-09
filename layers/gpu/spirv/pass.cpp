@@ -58,22 +58,14 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
 
 // To reduce having to load this information everytime we do a OpFunctionCall, instead just create it once per Function block and
 // reference it each time
-uint32_t Pass::GetStageInfo(Function& function) {
+uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& target_inst_it) {
     // Cached so only need to compute this once
     if (function.stage_info_id_ != 0) {
         return function.stage_info_id_;
     }
 
-    // Get the first block of function to add stage info
-    BasicBlock& block = *function.blocks_[0];
-
-    // All OpVariable instructions in a function must be the first instructions in the first block
-    InstructionIt inst_it;
-    for (inst_it = block.instructions_.begin(); inst_it != block.instructions_.end(); ++inst_it) {
-        if ((*inst_it)->Opcode() != spv::OpLabel && (*inst_it)->Opcode() != spv::OpVariable) {
-            break;
-        }
-    }
+    BasicBlock& block = function.GetFirstBlock();
+    InstructionIt inst_it = block.GetFirstInjectableInstrution();
 
     // Stage info is always passed in as a uvec4
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
@@ -184,6 +176,12 @@ uint32_t Pass::GetStageInfo(Function& function) {
                             {uvec4_type.Id(), function.stage_info_id_, stage_info[0], stage_info[1], stage_info[2], stage_info[3]},
                             &inst_it);
 
+    // because we are injecting things in the first block, there is a chance we just destroyed the iterator if the target
+    // instruction was also in the first block, so need to regain it for the caller
+    if ((*target_block_it)->GetLabelId() == block.GetLabelId()) {
+        target_inst_it = FindTargetInstruction(block);
+    }
+
     return function.stage_info_id_;
 }
 
@@ -265,7 +263,8 @@ uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_
     return new_id;  // Return an id to the Uint equivalent.
 }
 
-BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it, InstructionIt inst_it) {
+BasicBlockIt Pass::InjectConditionalFunctionCheck(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
+                                                  const InjectionData& injection_data) {
     // We turn the block into 4 separate blocks
     block_it = function->InsertNewBlock(block_it);
     block_it = function->InsertNewBlock(block_it);
@@ -347,18 +346,34 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
     original_block.instructions_.erase(inst_it, original_block.instructions_.end());
 
     // Go back to original Block and add function call and branch from the bool result
-    const uint32_t function_result = CreateFunctionCall(original_block);
+    const uint32_t function_result = CreateFunctionCall(original_block, nullptr, injection_data);
 
     original_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label, spv::SelectionControlMaskNone});
     original_block.CreateInstruction(spv::OpBranchConditional, {function_result, valid_block_label, invalid_block_label});
 
-    // clear values incase multiple calls are made
     Reset();
 
     return block_it;
 }
 
+void Pass::InjectFunctionCheck(BasicBlockIt block_it, InstructionIt* inst_it, const InjectionData& injection_data) {
+    CreateFunctionCall(**block_it, inst_it, injection_data);
+    Reset();
+}
+
+InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
+    const uint32_t target_id = target_instruction_->ResultId();
+    for (auto inst_it = block.instructions_.begin(); inst_it != block.instructions_.end(); ++inst_it) {
+        if ((*inst_it)->ResultId() == target_id) {
+            return inst_it;
+        }
+    }
+    assert(false);
+    return block.instructions_.end();
+}
+
 void Pass::Run() {
+    // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             if ((*block_it)->loop_header_) {
@@ -366,12 +381,24 @@ void Pass::Run() {
             }
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (AnalyzeInstruction(*(function.get()), *(inst_it->get()))) {
-                    block_it = InjectFunctionCheck(function.get(), block_it, inst_it);
+                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
+                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
 
+                // Add any debug information to pass into the function call
+                InjectionData injection_data;
+                injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
+                const uint32_t inst_position = target_instruction_->position_index_;
+                auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
+                injection_data.inst_position_id = inst_position_constant.Id();
+
+                if (conditional_function_check_) {
+                    block_it = InjectConditionalFunctionCheck(function.get(), block_it, inst_it, injection_data);
                     // will start searching again from newly split merge block
                     block_it--;
                     break;
+                } else {
+                    // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
+                    InjectFunctionCheck(block_it, &inst_it, injection_data);
                 }
             }
         }

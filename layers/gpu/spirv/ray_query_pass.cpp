@@ -35,12 +35,7 @@ uint32_t RayQueryPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block) {
-    // Add any debug information to pass into the function call
-    const uint32_t stage_info_id = GetStageInfo(block.function_);
-    const uint32_t inst_position = target_instruction_->position_index_;
-    auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-
+uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
@@ -52,8 +47,9 @@ uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block) {
     const uint32_t ray_tmax_id = target_instruction_->Operand(7);
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, inst_position_constant.Id(), stage_info_id, ray_flags_id,
-                             ray_origin_id, ray_tmin_id, ray_direction_id, ray_tmax_id});
+                            {bool_type, function_result, function_def, injection_data.inst_position_id,
+                             injection_data.stage_info_id, ray_flags_id, ray_origin_id, ray_tmin_id, ray_direction_id, ray_tmax_id},
+                            inst_it);
 
     return function_result;
 }
