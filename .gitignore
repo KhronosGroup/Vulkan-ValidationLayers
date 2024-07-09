@@ -39,15 +39,17 @@ scripts/.vs
 
 # BUILD.gn artifacts
 .cipd/
-.gn
 .gclient
 .gclient_entries
 .gclient_previous_sync_commits
-out/
-third_party/
+.gcs_entries
+.gn
+build/
 buildtools/
 depot_tools/
+out/
 testing/
+third_party/
 tools/
 
 scripts/*.args.json

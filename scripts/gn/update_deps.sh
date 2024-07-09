@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2019-2023 LunarG, Inc.
+# Copyright (c) 2019-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ solutions = [
     "custom_vars": {},
   },
 ]
+target_os = ['android', 'linux']
 EOF
-gclient sync
+gclient sync -D
 

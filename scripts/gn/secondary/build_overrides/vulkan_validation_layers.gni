@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2023 LunarG, Inc.
+# Copyright (c) 2019-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,4 +25,4 @@ vulkan_data_subdir = ""
 vulkan_gen_subdir = ""
 
 # Build options
-ozone_platform_x11 = true
+ozone_platform_x11 = is_linux
