@@ -43,6 +43,12 @@ struct BasicBlock {
 
     uint32_t GetLabelId();
 
+    // "All OpVariable instructions in a function must be the first instructions in the first block"
+    // So need to get the first valid location in block.
+    InstructionIt GetFirstInjectableInstrution();
+    // Finds instruction before the Block Termination Instruction.
+    InstructionIt GetLastInjectableInstrution();
+
     // Creates instruction and inserts it before the Instruction, updates poistion after new instruciton.
     // If no InstructionIt is provided, it will add it to the end of the block.
     void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it = nullptr);
@@ -57,15 +63,13 @@ using BasicBlockList = std::vector<std::unique_ptr<BasicBlock>>;
 using BasicBlockIt = BasicBlockList::iterator;
 
 struct Function {
-    Function(Module& module, std::unique_ptr<Instruction> function_inst) : module_(module) {
-        // Used when loading initial SPIR-V
-        pre_block_inst_.push_back(std::move(function_inst));  // OpFunction
-    }
+    Function(Module& module, std::unique_ptr<Instruction> function_inst);
     Function(Module& module) : module_(module) {}
 
     void ToBinary(std::vector<uint32_t>& out);
 
     const Instruction& GetDef() { return *pre_block_inst_[0].get(); }
+    BasicBlock& GetFirstBlock() { return *blocks_[0]; }
 
     // Adds a new block after and returns reference to it
     BasicBlockIt InsertNewBlock(BasicBlockIt it);

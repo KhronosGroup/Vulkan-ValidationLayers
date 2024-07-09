@@ -50,6 +50,36 @@ BasicBlock::BasicBlock(Module& module, Function& function) : function_(function)
 
 uint32_t BasicBlock::GetLabelId() { return (*(instructions_[0])).ResultId(); }
 
+InstructionIt BasicBlock::GetFirstInjectableInstrution() {
+    InstructionIt inst_it;
+    for (inst_it = instructions_.begin(); inst_it != instructions_.end(); ++inst_it) {
+        if ((*inst_it)->Opcode() != spv::OpLabel && (*inst_it)->Opcode() != spv::OpVariable) {
+            break;
+        }
+    }
+    return inst_it;
+}
+
+InstructionIt BasicBlock::GetLastInjectableInstrution() {
+    for (auto inst_it = instructions_.rbegin(); inst_it != instructions_.rend(); ++inst_it) {
+        switch ((*inst_it)->Opcode()) {
+            case spv::OpBranch:
+            case spv::OpBranchConditional:
+            case spv::OpSwitch:
+            case spv::OpReturn:
+            case spv::OpReturnValue:
+            case spv::OpKill:
+            case spv::OpUnreachable:
+            case spv::OpTerminateInvocation:
+                break;
+            default:
+                // this works because we know we are not at rend() and there MUST be at least one termination instruction
+                return (inst_it).base();
+        }
+    }
+    return instructions_.end();
+}
+
 void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it) {
     const bool add_to_end = inst_it == nullptr;
     InstructionIt last_inst = instructions_.end();
@@ -72,6 +102,11 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
     if (!add_to_end) {
         *inst_it = ++it;
     }
+}
+
+Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) : module_(module) {
+    // Used when loading initial SPIR-V
+    pre_block_inst_.push_back(std::move(function_inst));  // OpFunction
 }
 
 BasicBlockIt Function::InsertNewBlock(BasicBlockIt it) {

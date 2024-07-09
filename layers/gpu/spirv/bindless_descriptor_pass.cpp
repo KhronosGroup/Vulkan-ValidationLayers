@@ -78,7 +78,7 @@ uint32_t BindlessDescriptorPass::FindTypeByteSize(uint32_t type_id, uint32_t mat
 // Find outermost buffer type and its access chain index.
 // Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
 // the indexing
-uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block) {
+uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* inst_it) {
     const Type* pointer_type = module_.type_manager_.FindTypeById(var_inst_->TypeId());
     const Type* descriptor_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
 
@@ -119,7 +119,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block) {
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block);
 
                 current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, arr_stride_id, ac_index_id_32});
+                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, arr_stride_id, ac_index_id_32}, inst_it);
 
                 // Get element type for next step
                 current_type_id = current_type->inst_.Operand(0);
@@ -142,7 +142,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block) {
 
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block);
                 current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, col_stride_id, ac_index_id_32});
+                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, col_stride_id, ac_index_id_32}, inst_it);
 
                 // Get element type for next step
                 current_type_id = vec_type_id;
@@ -155,13 +155,14 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block) {
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block);
                 if (in_matrix && !col_major) {
                     current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, matrix_stride_id, ac_index_id_32});
+                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, matrix_stride_id, ac_index_id_32},
+                                            inst_it);
                 } else {
                     const uint32_t component_type_size = FindTypeByteSize(component_type_id);
                     const uint32_t size_id = module_.type_manager_.GetConstantUInt32(component_type_size).Id();
 
                     current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, size_id, ac_index_id_32});
+                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, size_id, ac_index_id_32}, inst_it);
                 }
                 // Get element type for next step
                 current_type_id = component_type_id;
@@ -197,7 +198,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block) {
             sum_id = current_offset_id;
         } else {
             const uint32_t new_sum_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, current_offset_id});
+            block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, current_offset_id}, inst_it);
             sum_id = new_sum_id;
         }
         ac_word_index++;
@@ -210,16 +211,12 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block) {
     const uint32_t last_id = module_.type_manager_.GetConstantUInt32(last).Id();
 
     const uint32_t new_sum_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, last_id});
+    block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, last_id}, inst_it);
     return new_sum_id;
 }
 
-uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
-    // Add any debug information to pass into the function call
-    const uint32_t stage_info_id = GetStageInfo(block.function_);
-    const uint32_t inst_position = target_instruction_->position_index_;
-    auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-
+uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                    const InjectionData& injection_data) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block);  // might be int32
@@ -262,7 +259,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
                 auto copied = copy_object_map_.find(image_id);
                 if (copied != copy_object_map_.end()) {
                     image_id = copied->second;
-                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id});
+                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, inst_it);
                 } else {
                     copy_object_map_.emplace(image_id, copy_id);
                     // slower, but need to guarantee it is placed after a OpSampledImage
@@ -278,7 +275,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
         const Type* pointee_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
         if (pointee_type && pointee_type->spv_type_ != SpvType::kArray && pointee_type->spv_type_ != SpvType::kRuntimeArray &&
             pointee_type->spv_type_ != SpvType::kStruct) {
-            descriptor_offset_id_ = GetLastByte(block);  // Get Last Byte Index
+            descriptor_offset_id_ = GetLastByte(block, inst_it);  // Get Last Byte Index
         }
     }
 
@@ -290,9 +287,11 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, inst_position_constant.Id(), stage_info_id,
-                             set_constant.Id(), binding_constant.Id(), descriptor_index_id, descriptor_offset_id_});
+    block.CreateInstruction(
+        spv::OpFunctionCall,
+        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
+         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_},
+        inst_it);
 
     return function_result;
 }
