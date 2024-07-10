@@ -1207,6 +1207,26 @@
                                             },
                                             "settings": [
                                                 {
+                                                    "key": "gpuav_debug_disable_all",
+                                                    "label": "Disable all of GPU-AV",
+                                                    "description": "Acts as a VkValidationFeatureDisableEXT to override the VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT passed by the user",
+                                                    "type": "BOOL",
+                                                    "default": false,
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "validate_gpu_based",
+                                                                "value": "GPU_BASED_GPU_ASSISTED"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                {
                                                     "key": "gpuav_debug_validate_instrumented_shaders",
                                                     "label": "Validate instrumented shaders",
                                                     "description": "Run spirv-val after doing shader instrumentation",
