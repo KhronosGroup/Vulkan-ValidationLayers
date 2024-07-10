@@ -122,14 +122,15 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 
 vvl::PreSubmitResult Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     for (const auto &submission : submissions) {
+        auto loc = submission.loc.Get();
         for (auto &cb : submission.cbs) {
             auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb);
             auto guard = gpu_cb->ReadLock();
-            gpu_cb->PreProcess();
+            gpu_cb->PreProcess(loc);
             for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
                 auto *secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
-                secondary_gpu_cb->PreProcess();
+                secondary_gpu_cb->PreProcess(loc);
             }
         }
     }

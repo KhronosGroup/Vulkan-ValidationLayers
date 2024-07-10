@@ -374,7 +374,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState() {
     return next_state;
 }
 
-std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &gpuav) {
+std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
     Validator *gv_dev = static_cast<Validator *>(state_data_);
     uint32_t cur_version = current_version_.load();
@@ -412,10 +412,8 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     VkResult result =
         vmaCreateBuffer(next_state->allocator, &buffer_info, &alloc_info, &next_state->buffer, &next_state->allocation, nullptr);
-    assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, Location(vvl::Func::vkCreateBuffer),
-                            "Unable to allocate device memory for error output buffer. Aborting GPU-AV.", true);
+        gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for error output buffer. Aborting GPU-AV.", true);
         return nullptr;
     }
     uint32_t *data = nullptr;
@@ -438,10 +436,8 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
     result = vmaFlushAllocation(next_state->allocator, next_state->allocation, 0, VK_WHOLE_SIZE);
     // No good way to handle this error, we should still try to unmap.
-    assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, Location(vvl::Func::vkFlushMappedMemoryRanges),
-                            "Unable flush memory allocation. Aborting GPU-AV.", true);
+        gpuav.InternalError(gpuav.device, loc, "Unable flush memory allocation. Aborting GPU-AV.", true);
         vmaUnmapMemory(next_state->allocator, next_state->allocation);
         return nullptr;
     }

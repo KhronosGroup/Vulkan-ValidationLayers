@@ -145,7 +145,7 @@ class CommandPool : public StateObject {
 
     void Allocate(const VkCommandBufferAllocateInfo *create_info, const VkCommandBuffer *command_buffers);
     void Free(uint32_t count, const VkCommandBuffer *command_buffers);
-    void Reset();
+    void Reset(const Location &loc);
 
     void Destroy() override;
 };
@@ -564,7 +564,7 @@ class CommandBuffer : public RefcountedStateObject {
         RemoveChild(base);
     }
 
-    virtual void Reset();
+    virtual void Reset(const Location &loc);
 
     void IncrementResources();
 

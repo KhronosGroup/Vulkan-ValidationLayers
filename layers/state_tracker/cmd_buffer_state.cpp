@@ -144,10 +144,10 @@ void CommandPool::Free(uint32_t count, const VkCommandBuffer *command_buffers) {
     }
 }
 
-void CommandPool::Reset() {
+void CommandPool::Reset(const Location &loc) {
     for (auto &entry : commandBuffers) {
         auto guard = entry.second->WriteLock();
-        entry.second->Reset();
+        entry.second->Reset(loc);
     }
 }
 
@@ -310,7 +310,7 @@ void CommandBuffer::ResetCBState() {
     dev_data.debug_report->ResetCmdDebugUtilsLabel(VkHandle());
 }
 
-void CommandBuffer::Reset() {
+void CommandBuffer::Reset(const Location &loc) {
     ResetCBState();
     // Remove reverse command buffer links.
     Invalidate(true);
@@ -988,7 +988,8 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
 
 void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     if (CbState::Recorded == state || CbState::InvalidComplete == state) {
-        Reset();
+        Location loc(Func::vkBeginCommandBuffer);
+        Reset(loc);
     }
 
     // Set updated state here in case implicit reset occurs above

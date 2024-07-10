@@ -725,8 +725,8 @@ void CommandBuffer::Destroy() {
     vvl::CommandBuffer::Destroy();
 }
 
-void CommandBuffer::Reset() {
-    vvl::CommandBuffer::Reset();
+void CommandBuffer::Reset(const Location &loc) {
+    vvl::CommandBuffer::Reset(loc);
     ResetCBState();
 }
 

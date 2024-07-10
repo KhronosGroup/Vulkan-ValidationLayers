@@ -82,9 +82,9 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
                   const vvl::CommandPool *pool);
     ~CommandBuffer();
 
-    bool PreProcess() final;
+    bool PreProcess(const Location &loc) final;
     void PostProcess(VkQueue queue, const Location &loc) final;
-    [[nodiscard]] bool ValidateBindlessDescriptorSets();
+    [[nodiscard]] bool ValidateBindlessDescriptorSets(const Location &loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
@@ -118,10 +118,10 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 
     const gpu::DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
-    void ClearCmdErrorsCountsBuffer() const;
+    void ClearCmdErrorsCountsBuffer(const Location &loc) const;
 
     void Destroy() final;
-    void Reset() final;
+    void Reset(const Location &loc) final;
 
     gpu::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
@@ -130,12 +130,12 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
   private:
-    void AllocateResources();
+    void AllocateResources(const Location &loc);
     void ResetCBState();
     bool NeedsPostProcess();
 
     VkDeviceSize GetBdaRangesBufferByteSize() const;
-    [[nodiscard]] bool UpdateBdaRangesBuffer();
+    [[nodiscard]] bool UpdateBdaRangesBuffer(const Location &loc);
 
     Validator &state_;
 
