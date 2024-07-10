@@ -104,6 +104,8 @@ class Pass {
 
   private:
     InstructionIt FindTargetInstruction(BasicBlock& block) const;
+
+    uint32_t instrumented_count_ = 0;
 };
 
 }  // namespace spirv

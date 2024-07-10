@@ -1245,6 +1245,29 @@
                                                             }
                                                         ]
                                                     }
+                                                },
+                                                {
+                                                    "key": "gpuav_debug_max_instrumented_count",
+                                                    "label": "Limit how many time a pass can instrument the SPIR-V",
+                                                    "description": "Zero is same as unlimited",
+                                                    "type": "INT",
+                                                    "default": 0,
+                                                    "range": {
+                                                        "min": 0
+                                                    },
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "validate_gpu_based",
+                                                                "value": "GPU_BASED_GPU_ASSISTED"
+                                                            }
+                                                        ]
+                                                    }
                                                 }
                                             ]
                                         }
