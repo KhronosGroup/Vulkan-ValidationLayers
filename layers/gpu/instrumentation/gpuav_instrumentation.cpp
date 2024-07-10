@@ -94,6 +94,11 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, uint32_
         module.RunPassRayQuery();
     }
 
+    // If nothing was instrumented, leave early to save time
+    if (!module.IsInstrumented()) {
+        return false;
+    }
+
     for (const auto info : module.link_info_) {
         module.LinkFunction(info);
     }

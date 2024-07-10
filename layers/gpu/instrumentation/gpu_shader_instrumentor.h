@@ -180,6 +180,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                          const SafeCreateInfo &modified_create_infos, bool passed_in_shader_stage_ci);
 
     // GPU-AV and DebugPrint are going to have a different way to do the actual shader instrumentation logic
+    // Returns if shader was instrumented successfully or not
     virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, uint32_t unique_shader_id, const Location &loc,
                                   std::vector<uint32_t> &out_instrumented_spirv) = 0;
 

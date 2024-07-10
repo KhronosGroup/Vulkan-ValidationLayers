@@ -65,6 +65,7 @@ class Module {
     // Order of functions that will try to be linked in
     std::vector<LinkInfo> link_info_;
     void LinkFunction(const LinkInfo& info);
+    bool IsInstrumented() const { return !link_info_.empty(); }
 
     // The class is designed to be written out to a binary file.
     void ToBinary(std::vector<uint32_t>& out);
