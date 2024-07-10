@@ -51,7 +51,7 @@ class DescriptorSet : public vvl::DescriptorSet {
 
     VkDeviceAddress GetLayoutState();
     std::shared_ptr<State> GetCurrentState();
-    std::shared_ptr<State> GetOutputState(Validator &gpuav);
+    std::shared_ptr<State> GetOutputState(Validator &gpuav, const Location &loc);
 
   protected:
     bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }

@@ -48,7 +48,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkCommandBuffer handle,
                   const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
 
-    virtual bool PreProcess() = 0;
+    virtual bool PreProcess(const Location &loc) = 0;
     virtual void PostProcess(VkQueue queue, const Location &loc) = 0;
 };
 }  // namespace gpu_tracker

@@ -1259,8 +1259,8 @@ void syncval_state::CommandBuffer::Destroy() {
     vvl::CommandBuffer::Destroy();
 }
 
-void syncval_state::CommandBuffer::Reset() {
-    vvl::CommandBuffer::Reset();
+void syncval_state::CommandBuffer::Reset(const Location &loc) {
+    vvl::CommandBuffer::Reset(loc);
     access_context.Reset();
 }
 

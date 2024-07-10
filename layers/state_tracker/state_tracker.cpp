@@ -1838,7 +1838,7 @@ void ValidationStateTracker::PostCallRecordResetCommandPool(VkDevice device, VkC
     if (VK_SUCCESS != record_obj.result) return;
     // Reset all of the CBs allocated from this pool
     if (auto pool = Get<vvl::CommandPool>(commandPool)) {
-        pool->Reset();
+        pool->Reset(record_obj.location);
     }
 }
 
@@ -2227,7 +2227,7 @@ void ValidationStateTracker::PostCallRecordResetCommandBuffer(VkCommandBuffer co
     if (VK_SUCCESS == record_obj.result) {
         auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
         if (cb_state) {
-            cb_state->Reset();
+            cb_state->Reset(record_obj.location);
         }
     }
 }

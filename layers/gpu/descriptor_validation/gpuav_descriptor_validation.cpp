@@ -131,7 +131,7 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
             if (!desc_set_state.state->IsUpdateAfterBind()) {
                 desc_set_state.gpu_state = desc_set_state.state->GetCurrentState();
                 bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->device_addr;
-                desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav);
+                desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav, loc);
                 if (!desc_set_state.output_state) {
                     goto exit;
                 }
@@ -146,14 +146,14 @@ exit:
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-[[nodiscard]] bool UpdateBindlessStateBuffer(Validator &gpuav, CommandBuffer &cb_state, VmaAllocator vma_allocator) {
+[[nodiscard]] bool UpdateBindlessStateBuffer(Validator &gpuav, CommandBuffer &cb_state, VmaAllocator vma_allocator,
+                                             const Location &loc) {
     for (auto &cmd_info : cb_state.di_input_buffer_list) {
         glsl::BindlessStateBuffer *bindless_state{nullptr};
-        [[maybe_unused]] VkResult result;
-        result = vmaMapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
-        assert(result == VK_SUCCESS);
+        VkResult result =
+            vmaMapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, Location(vvl::Func::vkMapMemory),
+            gpuav.InternalError(gpuav.device, loc,
                                 "Unable to map device memory allocated for error output buffer. Aborting GPU-AV.", true);
             return false;
         }
@@ -165,7 +165,7 @@ exit:
                 bindless_state->desc_sets[i].in_data = set_buffer.gpu_state->device_addr;
             }
             if (!set_buffer.output_state) {
-                set_buffer.output_state = set_buffer.state->GetOutputState(gpuav);
+                set_buffer.output_state = set_buffer.state->GetOutputState(gpuav, loc);
                 if (!set_buffer.output_state) {
                     vmaUnmapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation);
                     return false;
@@ -178,7 +178,7 @@ exit:
     return true;
 }
 
-[[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets() {
+[[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets(const Location &loc) {
     // For each vkCmdBindDescriptorSets()...
     // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
     // checking them multiple times.
@@ -200,7 +200,7 @@ exit:
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, di_info[" << di_info_i << "].descriptor_set_buffers["
                       << i << "].output_state was null. This should not happen. GPU-AV is in a bad state, aborting.";
                 auto gpuav = static_cast<Validator *>(&dev_data);
-                gpuav->InternalError(gpuav->device, Location(vvl::Func::vkQueueSubmit), error.str().c_str());
+                gpuav->InternalError(gpuav->device, loc, error.str().c_str());
                 return false;
             }
 

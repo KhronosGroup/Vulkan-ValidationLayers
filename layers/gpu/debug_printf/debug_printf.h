@@ -63,11 +63,11 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
                   const vvl::CommandPool* pool);
     ~CommandBuffer();
 
-    bool PreProcess() final { return !buffer_infos.empty(); }
+    bool PreProcess(const Location& loc) final { return !buffer_infos.empty(); }
     void PostProcess(VkQueue queue, const Location& loc) final;
 
     void Destroy() final;
-    void Reset() final;
+    void Reset(const Location& loc) final;
 
   private:
     void ResetCBState();

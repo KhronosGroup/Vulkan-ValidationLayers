@@ -418,7 +418,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     void Destroy() override;
-    void Reset() override;
+    void Reset(const Location &loc) override;
 };
 }  // namespace syncval_state
 
