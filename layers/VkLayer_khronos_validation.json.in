@@ -351,10 +351,6 @@
                             "value": true
                         },
                         {
-                            "key": "sync_queue_submit",
-                            "value": true
-                        },
-                        {
                             "key": "validate_gpu_based",
                             "value": "GPU_BASED_NONE"
                         },
@@ -714,7 +710,7 @@
                         {
                             "key": "validate_sync",
                             "label": "Synchronization",
-                            "description": "Enable synchronization validation during command buffers recording. This feature reports resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.",
+                            "description": "Check for resource access conflicts caused by missing or incorrectly used synchronization operations.",
                             "url": "${LUNARG_SDK}/synchronization_usage.html",
                             "type": "BOOL",
                             "default": false,
@@ -728,9 +724,9 @@
                             ],
                             "settings": [
                                 {
-                                    "key": "sync_queue_submit",
-                                    "label": "QueueSubmit Synchronization Validation",
-                                    "description": "Enable synchronization validation between submitted command buffers when Synchronization Validation is enabled. This option will increase the synchronization performance cost.",
+                                    "key": "syncval_submit_time_validation",
+                                    "label": "Submit time validation",
+                                    "description": "Enable synchronization validation between submitted command buffers and also for presentation operations. This option can incur a significant performance cost.",
                                     "type": "BOOL",
                                     "default": true,
                                     "status": "STABLE",
@@ -1591,12 +1587,6 @@
                             "key": "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",
                             "label": "Object in Use",
                             "description": "Check that Vulkan objects are not in use by a command buffer when they are destroyed.",
-                            "view": "ADVANCED"
-                        },
-                        {
-                            "key": "VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
-                            "label": "QueueSubmit Synchronization Validation",
-                            "description": "Check synchronization validation between submitted command buffers when Synchronization Validation is enabled.",
                             "view": "ADVANCED"
                         },
                         {

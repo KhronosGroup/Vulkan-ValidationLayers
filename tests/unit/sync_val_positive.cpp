@@ -30,18 +30,19 @@ void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
         features_.disabledValidationFeatureCount = 0;
     }
 
-    static VkLayerSettingEXT settings[2];
+    static VkLayerSettingEXT settings[1];
     uint32_t setting_count = 0;
 
-    static const char *kDisableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
+    static const VkBool32 submit_time_validation = false;
     if (disable_queue_submit_validation) {
-        settings[setting_count++] = {OBJECT_LAYER_NAME, "disables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1,
-                                     kDisableQueuSubmitSyncValidation};
+        settings[setting_count++] = {OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                     &submit_time_validation};
     }
 
     // The pNext of syncval_setting is modified by InitFramework that's why it can't
     // be static (should be separate instance per stack frame). Also we show
     // explicitly that it's not const (InitFramework casts const pNext to non-const).
+    assert(setting_count <= std::size(settings));
     VkLayerSettingsCreateInfoEXT syncval_setting = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, setting_count,
                                                     settings};
 
