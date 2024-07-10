@@ -24,8 +24,12 @@
 namespace gpuav {
 namespace spirv {
 
-Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set)
-    : type_manager_(*this), shader_id_(shader_id), output_buffer_descriptor_set_(output_buffer_descriptor_set) {
+Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set,
+               uint32_t max_instrumented_count)
+    : type_manager_(*this),
+      max_instrumented_count_(max_instrumented_count),
+      shader_id_(shader_id),
+      output_buffer_descriptor_set_(output_buffer_descriptor_set) {
     uint32_t instruction_count = 0;
     std::vector<uint32_t>::const_iterator it = words.cbegin();
     header_.magic_number = *it++;

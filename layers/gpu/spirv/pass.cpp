@@ -384,6 +384,11 @@ void Pass::Run() {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
 
+                if (module_.max_instrumented_count_ != 0 && instrumented_count_ >= module_.max_instrumented_count_) {
+                    return;
+                }
+                instrumented_count_++;
+
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);

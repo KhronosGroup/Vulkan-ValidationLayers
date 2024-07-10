@@ -92,6 +92,7 @@ const char *VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
 
 const char *VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "gpuav_debug_validate_instrumented_shaders";
 const char *VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS = "gpuav_debug_dump_instrumented_shaders";
+const char *VK_LAYER_GPUAV_DEBUG_MAX_INSTRUMENTED_COUNT = "gpuav_debug_max_instrumented_count";
 
 // Message Formatting
 const char *VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_display_application_name";
@@ -557,6 +558,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (gpuav_settings.debug_validate_instrumented_shaders || gpuav_settings.debug_dump_instrumented_shaders) {
         // When debugging instrumented shaders, if it is cached, it will never get to the InstrumentShader() call
         gpuav_settings.cache_instrumented_shaders = false;
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_MAX_INSTRUMENTED_COUNT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_MAX_INSTRUMENTED_COUNT,
+                                gpuav_settings.debug_max_instrumented_count);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
