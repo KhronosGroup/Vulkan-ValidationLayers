@@ -17,4 +17,6 @@
 
 #pragma once
 
-struct SyncValSettings {};
+struct SyncValSettings {
+    bool submit_time_validation = true;
+};

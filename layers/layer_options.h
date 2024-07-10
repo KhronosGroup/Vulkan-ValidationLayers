@@ -34,7 +34,6 @@ enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
     VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
     VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
-    VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
 };
 
 enum ValidationCheckEnables {
@@ -60,7 +59,6 @@ enum DisableFlags {
     handle_wrapping,
     shader_validation,
     shader_validation_caching,
-    sync_validation_queue_submit,
     // Insert new disables above this line
     kMaxDisableFlags,
 };
@@ -127,8 +125,6 @@ static const vvl::unordered_map<std::string, ValidationCheckDisables> Validation
     {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
     {"VALIDATION_CHECK_DISABLE_QUERY_VALIDATION", VALIDATION_CHECK_DISABLE_QUERY_VALIDATION},
     {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
-    {"VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
-     VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT},
 };
 
 static const vvl::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
@@ -152,7 +148,6 @@ static const std::vector<std::string> DisableFlagNameHelper = {
     "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",                 // handle_wrapping,
     "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                        // shader_validation,
     "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT",      // shader_validation_caching
-    "VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"  // queuesubmit time sync_validation,
 };
 
 // This should mirror the 'EnableFlags' enumerated type
