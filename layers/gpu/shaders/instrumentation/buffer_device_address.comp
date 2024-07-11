@@ -45,6 +45,11 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddres
     Range bda_ranges[];
 };
 
+// It is common that an app only has a single BDA address and it is used to poke inside a struct.
+// This likely means there is only a single range being accessed, and for shader that do multiple checks,
+// we can hopefully speed up runtime perf by hitting this early and leaving fast
+uint index_cache;
+
 bool inst_buffer_device_address(
     const uint inst_num,
     const uvec4 stage_info,
@@ -52,6 +57,11 @@ bool inst_buffer_device_address(
     const uint access_byte_size,
     const uint access_instruction)
 {
+    const Range cache_range = bda_ranges[index_cache];
+    if (addr >= cache_range.begin && ((addr + access_byte_size) <= cache_range.end)) {
+        return true;
+    }
+
     // Find out if addr is valid
     // ---
     for (uint range_i = 0; range_i < uint(bda_ranges_count); ++range_i) {
@@ -68,6 +78,7 @@ bool inst_buffer_device_address(
         if ((addr + access_byte_size) <= range.end) {
             // addr >= range.begin && addr + access_byte_size <= range.end
             // ==> valid access
+            index_cache = range_i;
             return true;
         }
         // Address is above current range, proceed to next range.
