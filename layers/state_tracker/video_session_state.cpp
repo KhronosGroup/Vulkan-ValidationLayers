@@ -339,6 +339,11 @@ void VideoSessionDeviceState::Reset() {
 void VideoSessionDeviceState::Activate(int32_t slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res) {
     assert(!picture_id.IsBothFields());
 
+    if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+        // Out-of-bounds slot index
+        return;
+    }
+
     is_active_[slot_index] = true;
 
     if (picture_id.IsFrame()) {
@@ -359,6 +364,11 @@ void VideoSessionDeviceState::Activate(int32_t slot_index, const VideoPictureID 
 
 void VideoSessionDeviceState::Invalidate(int32_t slot_index, const VideoPictureID &picture_id) {
     assert(!picture_id.IsBothFields());
+
+    if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+        // Out-of-bounds slot index
+        return;
+    }
 
     bool previous_is_frame = pictures_per_id_[slot_index].find(VideoPictureID::Frame()) != pictures_per_id_[slot_index].end();
     if (picture_id.IsFrame() || previous_is_frame) {
@@ -389,6 +399,11 @@ void VideoSessionDeviceState::Invalidate(int32_t slot_index, const VideoPictureI
 }
 
 void VideoSessionDeviceState::Deactivate(int32_t slot_index) {
+    if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+        // Out-of-bounds slot index
+        return;
+    }
+
     is_active_[slot_index] = false;
     all_pictures_[slot_index].clear();
     pictures_per_id_[slot_index].clear();

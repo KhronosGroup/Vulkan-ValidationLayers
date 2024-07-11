@@ -72,6 +72,36 @@ TEST_F(PositiveVideo, MultipleCmdBufs) {
     m_device->Wait();
 }
 
+TEST_F(PositiveVideo, BeginCodingOutOfBoundsSlotIndex) {
+    TEST_DESCRIPTION("vkCmdBeginCodingKHR - referenced DPB slot index is invalid but it should not cause submit time crash");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigs(), 4));
+    if (!config) {
+        GTEST_SKIP() << "Test requires a video profile with support for 4 reference pictures";
+    }
+
+    config.SessionCreateInfo()->maxDpbSlots = 3;
+    config.SessionCreateInfo()->maxActiveReferencePictures = 3;
+
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.begin();
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoBeginCodingInfoKHR-slotIndex-04856");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239");
+    cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(3, 1).AddResource(-1, 2));
+    cb.EndVideoCoding(context.End());
+    cb.end();
+
+    context.Queue().Submit(cb);
+    m_device->Wait();
+}
+
 TEST_F(PositiveVideo, VideoDecodeProfileIndependentResources) {
     TEST_DESCRIPTION("Test video profile independent resources with decode");
 
