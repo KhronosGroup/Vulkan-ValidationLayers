@@ -726,7 +726,24 @@
                                 {
                                     "key": "syncval_submit_time_validation",
                                     "label": "Submit time validation",
-                                    "description": "Enable synchronization validation between submitted command buffers and also for presentation operations. This option can incur a significant performance cost.",
+                                    "description": "Enable synchronization validation on the boundary between submitted command buffers. This also validates accesses from presentation operations. This option can incur a significant performance cost.",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "status": "STABLE",
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_sync",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "syncval_shader_access_heuristic",
+                                    "label": "Shader access heuristic",
+                                    "description": "Takes into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses.",
                                     "type": "BOOL",
                                     "default": true,
                                     "status": "STABLE",
