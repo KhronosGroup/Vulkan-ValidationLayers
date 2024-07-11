@@ -64,6 +64,9 @@ struct Instruction {
 
     void ToBinary(std::vector<uint32_t>& out);
 
+    bool operator==(Instruction const& other) const { return words_ == other.words_; }
+    bool operator!=(Instruction const& other) const { return words_ != other.words_; }
+
     // Store minimal extra data
     uint32_t result_id_index_ = 0;
     uint32_t type_id_index_ = 0;
