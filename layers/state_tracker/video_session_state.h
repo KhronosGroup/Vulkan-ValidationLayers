@@ -427,13 +427,27 @@ class VideoSessionDeviceState {
           encode_() {}
 
     bool IsInitialized() const { return initialized_; }
-    bool IsSlotActive(int32_t slot_index) const { return is_active_[slot_index]; }
+    bool IsSlotActive(int32_t slot_index) const {
+        if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+            // Out-of-bounds slot index
+            return false;
+        }
+        return is_active_[slot_index];
+    }
 
     bool IsSlotPicture(int32_t slot_index, const VideoPictureResource &res) const {
+        if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= all_pictures_.size()) {
+            // Out-of-bounds slot index
+            return false;
+        }
         return all_pictures_[slot_index].find(res) != all_pictures_[slot_index].end();
     }
 
     bool IsSlotPicture(int32_t slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res) const {
+        if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= pictures_per_id_.size()) {
+            // Out-of-bounds slot index
+            return false;
+        }
         auto it = pictures_per_id_[slot_index].find(picture_id);
         return it != pictures_per_id_[slot_index].end() && it->second == res;
     }
