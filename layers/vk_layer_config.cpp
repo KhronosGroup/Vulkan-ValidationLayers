@@ -468,8 +468,8 @@ void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-// Require at least NDK 20 to build Validation Layers. Makes everything simpler to just have people building the layers to use a
-// recent (over 2 years old) version of the NDK.
+// Require at least NDK 25 to build Validation Layers. Makes everything simpler to just have people building the layers to use a
+// recent version of the NDK.
 //
 // This avoids issues with older NDKs which complicate correct CMake builds:
 // Example:
@@ -477,7 +477,7 @@ void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
 // The NDK toolchain file in r23 contains a bug which means CMAKE_ANDROID_EXCEPTIONS might not be set correctly in some
 // circumstances, if not set directly by the developer.
 #if __NDK_MAJOR__ < 25
-#error "Validation Layers require at least NDK r20 or greater to build"
+#error "Validation Layers require at least NDK r25 or greater to build"
 #endif
 
 // This catches before dlopen fails if the default Android-26 layers are being used and attempted to be ran on Android 25 or below
