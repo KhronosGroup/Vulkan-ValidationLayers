@@ -364,8 +364,12 @@ void Pass::InjectFunctionCheck(BasicBlockIt block_it, InstructionIt* inst_it, co
 InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
     const uint32_t target_id = target_instruction_->ResultId();
     for (auto inst_it = block.instructions_.begin(); inst_it != block.instructions_.end(); ++inst_it) {
+        // This has to re-loop the entire block to find the instruction, using the ResultID, we can quickly compare
         if ((*inst_it)->ResultId() == target_id) {
-            return inst_it;
+            // Things like OpStore will have a result id of zero, so need to do deep instruction comparison
+            if (*(*inst_it) == *target_instruction_) {
+                return inst_it;
+            }
         }
     }
     assert(false);
