@@ -745,7 +745,7 @@
                                     "label": "Shader access heuristic",
                                     "description": "Takes into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses.",
                                     "type": "BOOL",
-                                    "default": true,
+                                    "default": false,
                                     "status": "STABLE",
                                     "dependence": {
                                         "mode": "ALL",

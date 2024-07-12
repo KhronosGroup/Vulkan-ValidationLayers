@@ -17,6 +17,7 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/thread_helper.h"
 #include "../framework/queue_submit_context.h"
+#include "../layers/sync/sync_settings.h"
 
 class PositiveSyncVal : public VkSyncValTest {};
 
@@ -27,8 +28,19 @@ static const std::array syncval_disables = {
     VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
 
-void VkSyncValTest::InitSyncValFramework(const SyncValSettings &sync_settings) {
+void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings) {
     std::vector<VkLayerSettingEXT> settings;
+
+    static const SyncValSettings test_default_sync_settings = [] {
+        // That's a separate set of defaults for testing purposes.
+        // The main layer configuration can have some options turned off by default,
+        // but we might still want that functionality to be available for testing.
+        SyncValSettings settings;
+        settings.submit_time_validation = true;
+        settings.shader_access_heuristic = true;
+        return settings;
+    }();
+    const SyncValSettings &sync_settings = p_sync_settings ? *p_sync_settings : test_default_sync_settings;
 
     const auto submit_time_validation = static_cast<VkBool32>(sync_settings.submit_time_validation);
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
@@ -54,8 +66,8 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings &sync_settings) {
     InitFramework(&validation_features);
 }
 
-void VkSyncValTest::InitSyncVal() {
-    RETURN_IF_SKIP(InitSyncValFramework());
+void VkSyncValTest::InitSyncVal(const SyncValSettings *p_sync_settings) {
+    RETURN_IF_SKIP(InitSyncValFramework(p_sync_settings));
     RETURN_IF_SKIP(InitState());
 }
 
@@ -725,7 +737,7 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
 TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
     SyncValSettings settings;
     settings.submit_time_validation = false;
-    RETURN_IF_SKIP(InitSyncValFramework(settings));
+    RETURN_IF_SKIP(InitSyncValFramework(&settings));
     RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);

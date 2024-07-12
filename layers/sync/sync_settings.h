@@ -19,5 +19,5 @@
 
 struct SyncValSettings {
     bool submit_time_validation = true;
-    bool shader_access_heuristic = true;
+    bool shader_access_heuristic = false;
 };

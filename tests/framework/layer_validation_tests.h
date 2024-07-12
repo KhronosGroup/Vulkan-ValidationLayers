@@ -16,7 +16,6 @@
 #include <vulkan/vulkan.h>
 
 #include "../layers/vk_lunarg_device_profile_api_layer.h"
-#include "../layers/sync/sync_settings.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
@@ -267,10 +266,11 @@ class DebugPrintfTests : public VkLayerTest {
     void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false);
 };
 
+struct SyncValSettings;
 class VkSyncValTest : public VkLayerTest {
   public:
-    void InitSyncValFramework(const SyncValSettings &sync_settings = SyncValSettings{});
-    void InitSyncVal();
+    void InitSyncValFramework(const SyncValSettings *p_sync_settings = nullptr);
+    void InitSyncVal(const SyncValSettings *p_sync_settings = nullptr);
     void InitTimelineSemaphore();
 };
 
