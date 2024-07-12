@@ -16,6 +16,7 @@
 #include <vulkan/vulkan.h>
 
 #include "../layers/vk_lunarg_device_profile_api_layer.h"
+#include "../layers/sync/sync_settings.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
@@ -268,16 +269,9 @@ class DebugPrintfTests : public VkLayerTest {
 
 class VkSyncValTest : public VkLayerTest {
   public:
-    void InitSyncValFramework(bool disable_queue_submit_validation = false);
+    void InitSyncValFramework(const SyncValSettings &sync_settings = SyncValSettings{});
     void InitSyncVal();
     void InitTimelineSemaphore();
-
-  protected:
-    const VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
-    const VkValidationFeatureDisableEXT disables_[4] = {
-        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
-        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
-    VkValidationFeaturesEXT features_ = {};
 };
 
 class AndroidExternalResolveTest : public VkLayerTest {

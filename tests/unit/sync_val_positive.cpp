@@ -20,36 +20,38 @@
 
 class PositiveSyncVal : public VkSyncValTest {};
 
-// TODO: refactor this and use p_next as in gpuav instead of passing parameters about all possible options.
-void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
-    // Enable synchronization validation
-    features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
+static const std::array syncval_enables = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
 
-    // Optionally enable core validation (by disabling nothing)
-    if (!m_syncval_disable_core) {
-        features_.disabledValidationFeatureCount = 0;
+static const std::array syncval_disables = {
+    VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+    VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+
+
+void VkSyncValTest::InitSyncValFramework(const SyncValSettings &sync_settings) {
+    std::vector<VkLayerSettingEXT> settings;
+
+    const auto submit_time_validation = static_cast<VkBool32>(sync_settings.submit_time_validation);
+    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
+                                            1, &submit_time_validation});
+
+    const auto shader_access_heuristic = static_cast<VkBool32>(sync_settings.shader_access_heuristic);
+    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_shader_access_heuristic", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
+                                            1, &shader_access_heuristic});
+
+    VkLayerSettingsCreateInfoEXT settings_create_info = vku::InitStructHelper();
+    settings_create_info.settingCount = size32(settings);
+    settings_create_info.pSettings = settings.data();
+
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
+    validation_features.enabledValidationFeatureCount = size32(syncval_enables);
+    validation_features.pEnabledValidationFeatures = syncval_enables.data();
+    if (m_syncval_disable_core) {
+        validation_features.disabledValidationFeatureCount = size32(syncval_disables);
+        validation_features.pDisabledValidationFeatures = syncval_disables.data();
     }
+    validation_features.pNext = &settings_create_info;
 
-    static VkLayerSettingEXT settings[1];
-    uint32_t setting_count = 0;
-
-    static const VkBool32 submit_time_validation = false;
-    if (disable_queue_submit_validation) {
-        settings[setting_count++] = {OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                     &submit_time_validation};
-    }
-
-    // The pNext of syncval_setting is modified by InitFramework that's why it can't
-    // be static (should be separate instance per stack frame). Also we show
-    // explicitly that it's not const (InitFramework casts const pNext to non-const).
-    assert(setting_count <= std::size(settings));
-    VkLayerSettingsCreateInfoEXT syncval_setting = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, setting_count,
-                                                    settings};
-
-    if (setting_count) {
-        features_.pNext = &syncval_setting;
-    }
-    InitFramework(&features_);
+    InitFramework(&validation_features);
 }
 
 void VkSyncValTest::InitSyncVal() {
@@ -721,7 +723,9 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
 }
 
 TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Disable QueueSubmit validation
+    SyncValSettings settings;
+    settings.submit_time_validation = false;
+    RETURN_IF_SKIP(InitSyncValFramework(settings));
     RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
