@@ -213,7 +213,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                 const auto &vuid = GetQueueSubmitVUID(signal_semaphore_loc, SubmitError::kTimelineSemSmallValue);
                 skip |= core.LogError(
                     vuid, objlist, signal_semaphore_loc,
-                    "signal value (0x%" PRIx64 ") in %s must be greater than %s timeline semaphore %s value (0x%" PRIx64 ")", value,
+                    "signal value (%" PRIu64 ") in %s must be greater than %s timeline semaphore %s value (%" PRIu64 ")", value,
                     core.FormatHandle(queue).c_str(), where.c_str(), core.FormatHandle(handle).c_str(), bad_value);
                 break;
             }
