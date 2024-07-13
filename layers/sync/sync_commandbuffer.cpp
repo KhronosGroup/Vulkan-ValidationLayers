@@ -299,7 +299,7 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
 bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                    const Location &loc) const {
     bool skip = false;
-    if (!sync_state_->syncval_settings.shader_access_heuristic) {
+    if (!sync_state_->syncval_settings.shader_accesses_heuristic) {
         return skip;
     }
     const vvl::Pipeline *pipe = nullptr;
@@ -457,7 +457,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 // TODO: Record structure repeats Validate. Unify this code, it was the source of bugs few times already.
 void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                  const ResourceUsageTag tag) {
-    if (!sync_state_->syncval_settings.shader_access_heuristic) {
+    if (!sync_state_->syncval_settings.shader_accesses_heuristic) {
         return;
     }
     const vvl::Pipeline *pipe = nullptr;
