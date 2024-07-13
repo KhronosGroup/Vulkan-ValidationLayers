@@ -741,8 +741,8 @@
                                     }
                                 },
                                 {
-                                    "key": "syncval_shader_access_heuristic",
-                                    "label": "Shader access heuristic",
+                                    "key": "syncval_shader_accesses_heuristic",
+                                    "label": "Shader accesses heuristic",
                                     "description": "Takes into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses.",
                                     "type": "BOOL",
                                     "default": false,

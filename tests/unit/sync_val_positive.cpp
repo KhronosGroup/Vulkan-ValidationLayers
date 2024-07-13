@@ -37,7 +37,7 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings)
         // but we might still want that functionality to be available for testing.
         SyncValSettings settings;
         settings.submit_time_validation = true;
-        settings.shader_access_heuristic = true;
+        settings.shader_accesses_heuristic = true;
         return settings;
     }();
     const SyncValSettings &sync_settings = p_sync_settings ? *p_sync_settings : test_default_sync_settings;
@@ -46,9 +46,9 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings)
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
                                             1, &submit_time_validation});
 
-    const auto shader_access_heuristic = static_cast<VkBool32>(sync_settings.shader_access_heuristic);
-    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_shader_access_heuristic", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
-                                            1, &shader_access_heuristic});
+    const auto shader_accesses_heuristic = static_cast<VkBool32>(sync_settings.shader_accesses_heuristic);
+    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_shader_accesses_heuristic",
+                                            VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &shader_accesses_heuristic});
 
     VkLayerSettingsCreateInfoEXT settings_create_info = vku::InitStructHelper();
     settings_create_info.settingCount = size32(settings);

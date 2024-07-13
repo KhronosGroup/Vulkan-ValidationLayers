@@ -97,7 +97,7 @@ const char *VK_LAYER_GPUAV_DEBUG_MAX_INSTRUMENTED_COUNT = "gpuav_debug_max_instr
 // SyncVal
 // ---
 const char *VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION = "syncval_submit_time_validation";
-const char *VK_LAYER_SYNCVAL_SHADER_ACCESS_HEURISTIC = "syncval_shader_access_heuristic";
+const char *VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC = "syncval_shader_accesses_heuristic";
 
 // Message Formatting
 const char *VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_display_application_name";
@@ -581,9 +581,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESS_HEURISTIC)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESS_HEURISTIC,
-                                syncval_settings.shader_access_heuristic);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC,
+                                syncval_settings.shader_accesses_heuristic);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
