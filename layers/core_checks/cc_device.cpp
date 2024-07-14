@@ -546,7 +546,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
         }
 
         if (device_queue_info.queue_count <= queueIndex) {
-            skip |= LogError("VUID-vkGetDeviceQueue-queueIndex-00385", device, error_obj.location.dot(Field::queueFamilyIndex),
+            skip |= LogError("VUID-vkGetDeviceQueue-queueIndex-00385", device, error_obj.location.dot(Field::queueIndex),
                              "(%" PRIu32 ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
                              ") when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
                              "] (i.e. is not less than %" PRIu32 ").",
