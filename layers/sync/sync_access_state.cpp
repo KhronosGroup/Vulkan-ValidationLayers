@@ -541,11 +541,6 @@ void ResourceAccessState::ClearRead() {
     input_attachment_read = false;  // Denotes no outstanding input attachment read after the last write.
 }
 
-void ResourceAccessState::ClearPending() {
-    pending_layout_transition = false;
-    if (last_write.has_value()) last_write->ClearPending();
-}
-
 void ResourceAccessState::ClearFirstUse() {
     first_accesses_.clear();
     first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
@@ -562,7 +557,6 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
         TouchupFirstForLayoutTransition(tag, last_write->GetPendingLayoutOrdering());
 
         last_write->ApplyPendingBarriers();
-        last_write->ClearPending();
         pending_layout_transition = false;
     } else {
         // Apply the accumulate execution barriers (and thus update chaining information)
@@ -574,7 +568,6 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
         // We OR in the accumulated write chain and barriers even in the case of a layout transition as SetWrite zeros them.
         if (last_write.has_value()) {
             last_write->ApplyPendingBarriers();
-            last_write->ClearPending();
         }
     }
 }
@@ -909,16 +902,15 @@ void ResourceAccessWriteState::UpdatePendingBarriers(const SyncBarrier &barrier)
 void ResourceAccessWriteState::ApplyPendingBarriers() {
     dependency_chain_ |= pending_dep_chain_;
     barriers_ |= pending_barriers_;
+
+    // Reset pending state
+    pending_dep_chain_ = VK_PIPELINE_STAGE_2_NONE;
+    pending_barriers_.reset();
+    pending_layout_ordering_ = OrderingBarrier();
 }
 
 void ResourceAccessWriteState::UpdatePendingLayoutOrdering(const SyncBarrier &barrier) {
     pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
-}
-
-void ResourceAccessWriteState::ClearPending() {
-    pending_dep_chain_ = VK_PIPELINE_STAGE_2_NONE;
-    pending_barriers_.reset();
-    pending_layout_ordering_ = OrderingBarrier();
 }
 
 void ResourceAccessWriteState::SetQueueId(QueueId id) {

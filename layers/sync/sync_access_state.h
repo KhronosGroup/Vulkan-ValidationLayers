@@ -241,7 +241,6 @@ class ResourceAccessWriteState {
     void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
 
     bool HasPendingState() const { return pending_barriers_.any() || (0 != pending_dep_chain_); }
-    void ClearPending();
     void UpdatePendingBarriers(const SyncBarrier &barrier);
     void ApplyPendingBarriers();
     void UpdatePendingLayoutOrdering(const SyncBarrier &barrier);
@@ -362,7 +361,6 @@ class ResourceAccessState : public SyncStageAccess {
     void SetWrite(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex);
     void ClearWrite();
     void ClearRead();
-    void ClearPending();
     void ClearFirstUse();
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
