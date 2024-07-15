@@ -900,7 +900,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
     ;
-    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-08921");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04587");
     vkt::Framebuffer fb(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
 }
