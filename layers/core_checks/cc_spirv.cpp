@@ -602,27 +602,27 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                 const uint32_t flags = insn.Length() > 6 ? insn.Word(6) : 0u;
                 if (a.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask) == 0)) {
                     skip |= LogError(
-                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08976", module_state.handle(), loc,
+                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                         "SPIR-V (%s) Component type of matrix A is signed integer type, but MatrixASignedComponents flag is not "
                         "present in flags (%s).",
                         string_VkShaderStageFlagBits(entrypoint.stage), string_SpvCooperativeMatrixOperands(flags).c_str());
                 }
                 if (b.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(
-                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08978", module_state.handle(), loc,
+                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                         "SPIR-V (%s) Component type of matrix B is signed integer type, but MatrixBSignedComponents flag is not "
                         "present in flags (%s).",
                         string_VkShaderStageFlagBits(entrypoint.stage), string_SpvCooperativeMatrixOperands(flags).c_str());
                 }
                 if (c.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(
-                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08980", module_state.handle(), loc,
+                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                         "SPIR-V (%s) Component type of matrix C is signed integer type, but MatrixCSignedComponents flag is not "
                         "present in flags (%s).",
                         string_VkShaderStageFlagBits(entrypoint.stage), string_SpvCooperativeMatrixOperands(flags).c_str());
                 }
                 if (r.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask) == 0)) {
-                    skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08982", module_state.handle(), loc,
+                    skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                                      "SPIR-V (%s) Component type of matrix Result is signed integer type, but "
                                      "MatrixResultSignedComponents flag is not "
                                      "present in flags (%s).",
@@ -638,9 +638,11 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     }
                 }
                 if (a.all_constant && b.all_constant && c.all_constant && r.all_constant) {
-                    if (r.scope != a.scope || r.scope != b.scope || r.scope != c.scope) {
-                        skip |= LogError("VUID-RuntimeSpirv-scope-08984", module_state.handle(), loc,
-                                         "SPIR-V (%s) has a scopes mismatch for OpCooperativeMatrixMulAddKHR\n"
+                    if (r.scope != VK_SCOPE_SUBGROUP_KHR || a.scope != VK_SCOPE_SUBGROUP_KHR || b.scope != VK_SCOPE_SUBGROUP_KHR ||
+                        c.scope != VK_SCOPE_SUBGROUP_KHR) {
+                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
+                                         "SPIR-V (%s) has a scopes mismatch for OpCooperativeMatrixMulAddKHR (all need to be "
+                                         "VK_SCOPE_SUBGROUP_KHR)\n"
                                          "A: %s\n"
                                          "B: %s\n"
                                          "C: %s\n"
@@ -669,35 +671,42 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                             break;
                         }
                     }
-                    if (i < cooperative_matrix_properties_khr.size() &&
-                        (flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) != 0 &&
-                        !cooperative_matrix_properties_khr[i].saturatingAccumulation) {
-                        skip |=
-                            LogError("VUID-RuntimeSpirv-saturatingAccumulation-08983", module_state.handle(), loc,
-                                     "SPIR-V (%s) SaturatingAccumulation cooperative matrix operand must be present if and only if "
-                                     "VkCooperativeMatrixPropertiesKHR::saturatingAccumulation is VK_TRUE.",
-                                     string_VkShaderStageFlagBits(entrypoint.stage));
+                    if (i < cooperative_matrix_properties_khr.size()) {
+                        const bool spirv_saturating_accumulation =
+                            (flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) != 0;
+                        const bool props_saturating_accumulation = cooperative_matrix_properties_khr[i].saturatingAccumulation;
+                        if (spirv_saturating_accumulation && !props_saturating_accumulation) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
+                                             "SPIR-V (%s) SaturatingAccumulation cooperative matrix operand is present but "
+                                             "VkCooperativeMatrixPropertiesKHR[%" PRIu32 "].saturatingAccumulation is VK_FALSE.",
+                                             string_VkShaderStageFlagBits(entrypoint.stage), i);
+                        } else if (!spirv_saturating_accumulation && props_saturating_accumulation) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
+                                             "SPIR-V (%s) SaturatingAccumulation cooperative matrix operand is not present but "
+                                             "VkCooperativeMatrixPropertiesKHR[%" PRIu32 "].saturatingAccumulation is VK_TRUE.",
+                                             string_VkShaderStageFlagBits(entrypoint.stage), i);
+                        }
                     }
                     if (!valid_a) {
-                        skip |= LogError("VUID-RuntimeSpirv-MSize-08975", module_state.handle(), loc,
+                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                                          "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesKHR for A type\n%s",
                                          string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
                                          a.Describe().c_str(), print_properties().c_str());
                     } else if (!valid_b) {
-                        skip |= LogError("VUID-RuntimeSpirv-KSize-08977", module_state.handle(), loc,
+                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                                          "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesKHR for B type\n%s",
                                          string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
                                          b.Describe().c_str(), print_properties().c_str());
                     } else if (!valid_c) {
-                        skip |= LogError("VUID-RuntimeSpirv-MSize-08979", module_state.handle(), loc,
+                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                                          "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesKHR for C type\n%s",
                                          string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
                                          c.Describe().c_str(), print_properties().c_str());
                     } else if (!valid_r) {
-                        skip |= LogError("VUID-RuntimeSpirv-MSize-08981", module_state.handle(), loc,
+                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                                          "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesKHR for Result type\n%s",
                                          string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
@@ -775,25 +784,25 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     }
                     if (!valid_a) {
                         skip |= LogError(
-                            "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06317", module_state.handle(), loc,
+                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
                             "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
                             "VkCooperativeMatrixPropertiesNV for A type (%s).",
                             string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), a.Describe().c_str());
                     } else if (!valid_b) {
                         skip |= LogError(
-                            "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06318", module_state.handle(), loc,
+                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
                             "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
                             "VkCooperativeMatrixPropertiesNV for B type (%s).",
                             string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), b.Describe().c_str());
                     } else if (!valid_c) {
                         skip |= LogError(
-                            "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06319", module_state.handle(), loc,
+                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
                             "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
                             "VkCooperativeMatrixPropertiesNV for C type (%s).",
                             string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), c.Describe().c_str());
                     } else if (!valid_d) {
                         skip |= LogError(
-                            "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06320", module_state.handle(), loc,
+                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
                             "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
                             "VkCooperativeMatrixPropertiesNV for D type (%s).",
                             string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), d.Describe().c_str());
