@@ -4746,7 +4746,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                         fsr_non_zero_viewmasks = true;
                     }
                     if (aii.layerCount != 1 && static_cast<int32_t>(aii.layerCount) <= highest_view_bit) {
-                        skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-08921", create_info.renderPass, attachment_loc,
+                        skip |= LogError("VUID-VkFramebufferCreateInfo-flags-04587", create_info.renderPass, attachment_loc,
                                          "has a layer count (%" PRIu32
                                          ") "
                                          "less than or equal to the highest bit in the view mask (%i) of subpass %" PRIu32 ".",
