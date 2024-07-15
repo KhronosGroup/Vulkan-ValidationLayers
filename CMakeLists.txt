@@ -128,6 +128,11 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
             -Wimplicit-fallthrough
             -Wstring-conversion
         )
+
+        if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+            # When using tools such as lldb, strings will produce "error: summary string parsing error"
+            add_compile_options(-fstandalone-debug)
+        endif()
     endif()
 elseif(MSVC)
     add_compile_options(
