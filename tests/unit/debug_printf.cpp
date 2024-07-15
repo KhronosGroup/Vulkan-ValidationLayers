@@ -531,6 +531,173 @@ TEST_F(NegativeDebugPrintf, Empty) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugPrintf, MultipleFunctions) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        int data = 0;
+
+        void fn2(bool x) {
+            if (x) {
+                debugPrintfEXT("fn2 x [%d]", data++);
+            } else {
+                debugPrintfEXT("fn2 !x [%d]", data++);
+            }
+        }
+
+        void fn1() {
+            debugPrintfEXT("fn1 [%d]", data++);
+            fn2(true);
+            fn2(false);
+        }
+
+        void main() {
+            debugPrintfEXT("START");
+            fn1();
+            debugPrintfEXT("END");
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "START");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "fn1 [0]");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "fn2 x [1]");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "fn2 !x [2]");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "END");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, Fragment) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(location = 0) out vec4 outColor;
+
+        void main() {
+            if (gl_FragCoord.x > 10 && gl_FragCoord.x < 11) {
+                if (gl_FragCoord.y > 10 && gl_FragCoord.y < 12) {
+                    debugPrintfEXT("gl_FragCoord.xy %1.2f, %1.2f\n", gl_FragCoord.x, gl_FragCoord.y);
+                }
+            }
+            outColor = gl_FragCoord;
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "gl_FragCoord.xy 10.50, 10.50");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "gl_FragCoord.xy 10.50, 11.50");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, HLSL) {
+    TEST_DESCRIPTION("Make sure HLSL input works");
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // [numthreads(64, 1, 1)]
+    // void main(uint2 launchIndex: SV_DispatchThreadID) {
+    //     if (launchIndex.x > 1 && launchIndex.x < 4) {
+    //         printf("launchIndex %v2d", launchIndex);
+    //    }
+    // }
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+         %29 = OpExtInstImport "NonSemantic.DebugPrintf"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %launchIndex
+               OpExecutionMode %main LocalSize 64 1 1
+         %27 = OpString "launchIndex %v2d"
+               OpSource HLSL 500
+               OpName %main "main"
+               OpName %launchIndex "launchIndex"
+               OpDecorate %launchIndex BuiltIn GlobalInvocationId
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v2uint = OpTypeVector %uint 2
+%_ptr_Function_v2uint = OpTypePointer Function %v2uint
+     %uint_0 = OpConstant %uint 0
+%_ptr_Function_uint = OpTypePointer Function %uint
+     %uint_1 = OpConstant %uint 1
+       %bool = OpTypeBool
+     %uint_4 = OpConstant %uint 4
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%launchIndex = OpVariable %_ptr_Input_v3uint Input
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+      %param = OpVariable %_ptr_Function_v2uint Function
+         %35 = OpLoad %v3uint %launchIndex
+         %36 = OpCompositeExtract %uint %35 0
+         %37 = OpCompositeExtract %uint %35 1
+         %38 = OpCompositeConstruct %v2uint %36 %37
+               OpStore %param %38
+         %43 = OpAccessChain %_ptr_Function_uint %param %uint_0
+         %44 = OpLoad %uint %43
+         %45 = OpUGreaterThan %bool %44 %uint_1
+         %46 = OpAccessChain %_ptr_Function_uint %param %uint_0
+         %47 = OpLoad %uint %46
+         %48 = OpULessThan %bool %47 %uint_4
+         %49 = OpLogicalAnd %bool %45 %48
+               OpSelectionMerge %53 None
+               OpBranchConditional %49 %50 %53
+         %50 = OpLabel
+         %51 = OpLoad %v2uint %param
+         %52 = OpExtInst %void %29 1 %27 %51
+               OpBranch %53
+         %53 = OpLabel
+               OpReturn
+               OpFunctionEnd
+
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "launchIndex 2, 0");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "launchIndex 3, 0");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDebugPrintf, MultiDraw) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
@@ -1418,6 +1585,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
 
     // Create a device that enables mesh_shader
@@ -2218,4 +2386,34 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     for (uint32_t i = 0; i < 2; ++i) {
         vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
     }
+}
+
+TEST_F(NegativeDebugPrintf, OverflowBuffer) {
+    TEST_DESCRIPTION("go over the default VK_LAYER_PRINTF_BUFFER_SIZE limit");
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+        void main() {
+            debugPrintfEXT("WorkGroup %v3u | Invocation %v3u\n", gl_WorkGroupID, gl_LocalInvocationID);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 4, 4, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredWarning(
+        "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
 }
