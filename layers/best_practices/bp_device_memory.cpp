@@ -291,7 +291,8 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
 
     if (VendorCheckEnabled(kBPVendorNVIDIA) && IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) {
         auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<vvl::DeviceMemory>(memory));
-        if (!mem_info->dynamic_priority) {
+        bool has_static_priority = vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(mem_info->allocate_info.pNext);
+        if (!mem_info->dynamic_priority && !has_static_priority) {
             skip |=
                 LogPerformanceWarning("BestPractices-NVIDIA-BindMemory-NoPriority", device, loc,
                                       "%s Use vkSetDeviceMemoryPriorityEXT to provide the OS with information on which allocations "
