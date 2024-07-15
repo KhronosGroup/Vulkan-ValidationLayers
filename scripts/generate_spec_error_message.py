@@ -231,6 +231,7 @@ oversized_vus = {
     'VUID-VkColorBlendEquationEXT-colorBlendOp-07361' : 'colorBlendOp and alphaBlendOp must not be a VkBlendOp from VK_EXT_blend_operation_advanced',
     'VUID-VkDeviceCreateInfo-pNext-pNext' : 'Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid struct for extending VkDeviceCreateInfo',
     'VUID-VkPhysicalDeviceProperties2-pNext-pNext' : 'Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid struct for extending VkPhysicalDeviceProperties2',
+    'VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060' : 'For OpCooperativeMatrixMulAddKHR, the operands must match a supported VkCooperativeMatrixPropertiesKHR'
 }
 
 def GenerateSpecErrorMessage(api : str, valid_usage_json : str, out_file : str):
