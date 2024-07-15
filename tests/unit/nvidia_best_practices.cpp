@@ -411,6 +411,66 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     }
 }
 
+TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
+
+    RETURN_IF_SKIP(InitState());
+
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = &defaultQueuePriority;
+
+    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_features = vku::InitStructHelper();
+    pageable_features.pNext = nullptr;
+    pageable_features.pageableDeviceLocalMemory = VK_TRUE;
+
+    VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
+    maintenance4_features.pNext = &pageable_features;
+    maintenance4_features.maintenance4 = VK_TRUE;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.pNext = &maintenance4_features;
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vkt::Device test_device(gpu(), device_ci);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 0x100000;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(test_device, buffer_ci, vkt::no_mem);
+    vkt::Buffer buffer_b(test_device, buffer_ci, vkt::no_mem);
+
+    const VkMemoryRequirements memory_requirements = buffer_a.memory_requirements();
+    ASSERT_NE(memory_requirements.memoryTypeBits, 0);
+
+    // Find first valid bit, whatever it is
+    uint32_t memory_type_index = 0;
+    while (((memory_requirements.memoryTypeBits >> memory_type_index) & 1) == 0) {
+        ++memory_type_index;
+    }
+
+    VkMemoryPriorityAllocateInfoEXT priority = vku::InitStructHelper();
+    priority.priority = 0.5f;
+
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
+    memory_ai.pNext = &priority;
+    memory_ai.allocationSize = memory_requirements.size;
+    memory_ai.memoryTypeIndex = memory_type_index;
+
+    vkt::DeviceMemory memory(test_device, memory_ai);
+
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-BindMemory-NoPriority");
+    vk::BindBufferMemory(test_device.handle(), buffer_b.handle(), memory.handle(), 0);
+    m_errorMonitor->Finish();
+}
+
 static VkDescriptorSetLayoutBinding CreateSingleDescriptorBinding(VkDescriptorType type, uint32_t binding) {
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = binding;
