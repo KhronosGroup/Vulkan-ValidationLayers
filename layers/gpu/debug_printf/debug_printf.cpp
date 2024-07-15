@@ -397,8 +397,10 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         index += debug_record->size;
     }
     if ((index - spvtools::kDebugOutputDataOffset) != expect) {
-        InternalWarning(queue, loc,
-                        "Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
+        std::stringstream message;
+        message << "Debug Printf message was truncated due to a buffer size (" << printf_settings.buffer_size
+                << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";
+        InternalWarning(queue, loc, message.str().c_str());
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[spvtools::kDebugOutputSizeOffset] + spvtools::kDebugOutputDataOffset));
 }
