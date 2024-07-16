@@ -187,7 +187,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     auto& scope = cmd_state.nv.zcull_scope;
 
     auto image = Get<vvl::Image>(scope.image);
-    ASSERT_AND_RETURN(image);
+    if (!image) return;
 
     ForEachSubresource(*image, scope.range, [&scope](uint32_t layer, uint32_t level) {
         auto& subresource = scope.tree->GetState(layer, level);
