@@ -463,7 +463,8 @@ TEST_F(NegativeDebugPrintf, DISABLED_Float64) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         void main() {
             float64_t foo = 1.23456789;
-            debugPrintfEXT("float64 == %lf", foo);
+            float bar = 1.23456789;
+            debugPrintfEXT("floats and doubles %f %f %f", foo, bar, foo);
         }
     )glsl";
     BasicComputeTest(shader_source, "float64 == 1.23456789");

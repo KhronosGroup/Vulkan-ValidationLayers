@@ -157,11 +157,11 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
     }
 }
 
-static vartype vartype_lookup(char intype) {
-    switch (intype) {
+static NumericType NumericTypeLookup(char specifier) {
+    switch (specifier) {
         case 'd':
         case 'i':
-            return varsigned;
+            return NumericTypeSint;
             break;
 
         case 'f':
@@ -172,14 +172,14 @@ static vartype vartype_lookup(char intype) {
         case 'E':
         case 'g':
         case 'G':
-            return varfloat;
+            return NumericTypeFloat;
             break;
 
         case 'u':
         case 'x':
         case 'o':
         default:
-            return varunsigned;
+            return NumericTypeUint;
             break;
     }
 }
@@ -199,7 +199,6 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
         if (pos == std::string::npos) {
             // End of the format string   Push the rest of the characters
             substring.string = format_string.substr(begin, format_string.length());
-            substring.needs_value = false;
             parsed_strings.push_back(substring);
             break;
         }
@@ -214,20 +213,20 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
             // This really shouldn't happen with a legal value string
             pos = format_string.length();
         } else {
-            char tempstring[32];
-            int count = 0;
-            std::string specifier = {};
+            substring.needs_value = true;
 
+            // We are just taking vector and creating a list of scalar that snprintf can handle
             if (format_string[pos] == 'v') {
                 // Vector must be of size 2, 3, or 4
                 // and format %v<size><type>
-                specifier = format_string.substr(percent, pos - percent);
-                count = atoi(&format_string[pos + 1]);
+                std::string specifier = format_string.substr(percent, pos - percent);
+                const int vec_size = atoi(&format_string[pos + 1]);
                 pos += 2;
 
                 // skip v<count>, handle long
                 specifier.push_back(format_string[pos]);
                 if (format_string[pos + 1] == 'l') {
+                    substring.is_64_bit = true;
                     specifier.push_back('l');
                     pos++;
                 }
@@ -235,22 +234,26 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
                 // Take the preceding characters, and the percent through the type
                 substring.string = format_string.substr(begin, percent - begin);
                 substring.string += specifier;
-                substring.needs_value = true;
-                substring.type = vartype_lookup(specifier.back());
+                substring.type = NumericTypeLookup(specifier.back());
                 parsed_strings.push_back(substring);
 
                 // Continue with a comma separated list
-                snprintf(tempstring, sizeof(tempstring), ", %s", specifier.c_str());
-                substring.string = tempstring;
-                for (int i = 0; i < (count - 1); i++) {
+                char temp_string[32];
+                snprintf(temp_string, sizeof(temp_string), ", %s", specifier.c_str());
+                substring.string = temp_string;
+                for (int i = 0; i < (vec_size - 1); i++) {
                     parsed_strings.push_back(substring);
                 }
             } else {
                 // Single non-vector value
-                if (format_string[pos + 1] == 'l') pos++;  // Save long size
+                if (format_string[pos - 1] == 'l') {
+                    substring.is_64_bit = true;  // finds %lu since we skipped the 'l' to find the 'u'
+                } else if (format_string[pos + 1] == 'l') {
+                    substring.is_64_bit = true;
+                    pos++;  // Save long size
+                }
                 substring.string = format_string.substr(begin, pos - begin + 1);
-                substring.needs_value = true;
-                substring.type = vartype_lookup(format_string[pos]);
+                substring.type = NumericTypeLookup(format_string[pos]);
                 parsed_strings.push_back(substring);
             }
             begin = pos + 1;
@@ -266,6 +269,8 @@ std::string Validator::FindFormatString(const std::vector<spirv::Instruction> &i
             format_string = insn.GetAsString(2);
             break;
         }
+        // if here, seen all OpString and can return early
+        if (insn.Opcode() == spv::OpFunction) break;
     }
     return format_string;
 }
@@ -321,58 +326,62 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         for (auto &substring : format_substrings) {
             std::string temp_string;
             size_t needed = 0;
-            std::vector<std::string> format_strings = {"%ul", "%lu", "%lx"};
-            size_t ul_pos = 0;
-            bool print_hex = true;
-            for (const auto &ul_string : format_strings) {
-                ul_pos = substring.string.find(ul_string);
-                if (ul_pos != std::string::npos) {
-                    if (ul_string == "%lu") print_hex = false;
-                    break;
-                }
-            }
-            if (ul_pos != std::string::npos) {
-                // Unsigned 64 bit value
-                substring.longval = *static_cast<uint64_t *>(values);
-                values = static_cast<uint64_t *>(values) + 1;
-                if (print_hex) {
-                    substring.string.replace(ul_pos + 1, 2, PRIx64);
-                } else {
-                    substring.string.replace(ul_pos + 1, 2, PRIu64);
-                }
-                // +1 for null terminator
-                needed = std::snprintf(nullptr, 0, substring.string.c_str(), substring.longval) + 1;
-                temp_string.resize(needed);
-                std::snprintf(&temp_string[0], needed, substring.string.c_str(), substring.longval);
-            } else {
-                if (substring.needs_value) {
-                    switch (substring.type) {
-                        case varunsigned:
-                            // +1 for null terminator
-                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<uint32_t *>(values)) + 1;
-                            temp_string.resize(needed);
-                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<uint32_t *>(values));
-                            break;
 
-                        case varsigned:
-                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<int32_t *>(values)) + 1;
-                            temp_string.resize(needed);
-                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<int32_t *>(values));
-                            break;
+            if (substring.needs_value) {
+                if (substring.is_64_bit) {
+                    assert(substring.type != NumericTypeSint);  // not supported
 
-                        case varfloat:
-                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<float *>(values)) + 1;
-                            temp_string.resize(needed);
-                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<float *>(values));
+                    if (substring.type == NumericTypeUint) {
+                        std::vector<std::string> format_strings = {"%ul", "%lu", "%lx"};
+                        for (const auto &ul_string : format_strings) {
+                            size_t ul_pos = substring.string.find(ul_string);
+                            if (ul_pos == std::string::npos) continue;
+                            if (ul_string != "%lu") {
+                                substring.string.replace(ul_pos + 1, 2, PRIx64);
+                            } else {
+                                substring.string.replace(ul_pos + 1, 2, PRIu64);
+                            }
                             break;
+                        }
+
+                        uint64_t longval = *static_cast<uint64_t *>(values);
+                        // +1 for null terminator
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), longval) + 1;
+                        temp_string.resize(needed);
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), longval);
+
+                    } else if (substring.type == NumericTypeFloat) {
+                        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
                     }
-                    values = static_cast<uint32_t *>(values) + 1;
                 } else {
-                    needed = std::snprintf(nullptr, 0, substring.string.c_str()) + 1;
-                    temp_string.resize(needed);
-                    std::snprintf(&temp_string[0], needed, substring.string.c_str());
+                    if (substring.type == NumericTypeUint) {
+                        // +1 for null terminator
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<uint32_t *>(values)) + 1;
+                        temp_string.resize(needed);
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<uint32_t *>(values));
+
+                    } else if (substring.type == NumericTypeSint) {
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<int32_t *>(values)) + 1;
+                        temp_string.resize(needed);
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<int32_t *>(values));
+
+                    } else if (substring.type == NumericTypeFloat) {
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<float *>(values)) + 1;
+                        temp_string.resize(needed);
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<float *>(values));
+                    }
                 }
+
+                const uint32_t offset = substring.is_64_bit ? 2 : 1;
+                values = static_cast<uint32_t *>(values) + offset;
+
+            } else {
+                // incase where someone just printing a string with no arguments to it
+                needed = std::snprintf(nullptr, 0, substring.string.c_str()) + 1;
+                temp_string.resize(needed);
+                std::snprintf(&temp_string[0], needed, substring.string.c_str());
             }
+
             shader_message << temp_string.c_str();
         }
 

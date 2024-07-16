@@ -39,12 +39,18 @@ struct BufferInfo {
         : output_mem_block(output_mem_block), desc_set(desc_set), desc_pool(desc_pool), pipeline_bind_point(pipeline_bind_point){};
 };
 
-enum vartype { varsigned, varunsigned, varfloat };
+enum NumericType {
+    NumericTypeUnknown = 0,
+    NumericTypeFloat = 1,
+    NumericTypeSint = 2,
+    NumericTypeUint = 4,
+};
+
 struct Substring {
     std::string string;
-    bool needs_value;
-    vartype type;
-    uint64_t longval = 0;
+    bool needs_value = false;  // if value from buffer needed to print arguments
+    NumericType type = NumericTypeUnknown;
+    bool is_64_bit = false;
 };
 
 struct OutputRecord {
