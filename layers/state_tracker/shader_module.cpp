@@ -1072,6 +1072,30 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 if (insn.Word(4) == GLSLstd450InterpolateAtSample) {
                     uses_interpolate_at_sample = true;
                 }
+                if (stateless_data) {
+                    // From NonSemantic.DebugPrintf.html
+                    const uint32_t debug_printf_insn_number = 1;
+                    if (insn.Word(3) == stateless_data->debug_printf_import_id && insn.Word(4) == debug_printf_insn_number) {
+                        stateless_data->debug_printf_inst.push_back(&insn);
+                    }
+                }
+                break;
+            }
+
+            case spv::OpExtInstImport: {
+                if (stateless_data) {
+                    const char* name = insn.GetAsString(2);
+                    if (strcmp(name, "NonSemantic.DebugPrintf") == 0) {
+                        stateless_data->debug_printf_import_id = insn.ResultId();
+                    }
+                }
+                break;
+            }
+
+            case spv::OpString: {
+                if (stateless_data) {
+                    stateless_data->string_inst.push_back(&insn);
+                }
                 break;
             }
 
