@@ -20,15 +20,11 @@
 void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot) {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
-    VkValidationFeatureDisableEXT disables[] = {
-        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
-        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
     VkValidationFeaturesEXT features = vku::InitStructHelper(p_next);
     // Most tests don't need to reserve the slot, so keep it as an option for now
     features.enabledValidationFeatureCount = reserve_slot ? 2 : 1;
-    features.disabledValidationFeatureCount = 4;
+    features.disabledValidationFeatureCount = 0;
     features.pEnabledValidationFeatures = enables;
-    features.pDisabledValidationFeatures = disables;
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
@@ -45,6 +41,7 @@ void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot)
 class NegativeDebugPrintf : public DebugPrintfTests {
   public:
     void BasicComputeTest(const char *shader, const char *message);
+    void BasicFormattingTest(const char *shader);
 };
 
 void NegativeDebugPrintf::BasicComputeTest(const char *shader, const char *message) {
@@ -500,6 +497,19 @@ TEST_F(NegativeDebugPrintf, DISABLED_Float64VectorPrecision) {
         }
     )glsl";
     BasicComputeTest(shader_source, "vector of float64 1.23 1.23");
+}
+
+TEST_F(NegativeDebugPrintf, BoolAsHex) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            bool foo = true;
+            bool bar = false;
+            debugPrintfEXT("bool fun 0x%x%x%x%x", foo, bar, foo, bar);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "bool fun 0x1010");
 }
 
 TEST_F(NegativeDebugPrintf, Empty) {
@@ -2417,4 +2427,334 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
+}
+
+void NegativeDebugPrintf::BasicFormattingTest(const char *shader) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    m_errorMonitor->SetDesiredWarning("DEBUG-PRINTF-FORMATTING");
+    VkShaderObj cs(this, shader, VK_SHADER_STAGE_COMPUTE_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNoVectorSize) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("vector of %v");
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedLargeVectorSize) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            vec4 myVec = vec4(0.0);
+            debugPrintfEXT("vector of %v5f", myVec);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedSmallVectorSize) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            vec4 myVec = vec4(0.0);
+            debugPrintfEXT("vector of %v1f", myVec);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNoSpecifier1) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("vector of %v3 f", vec3(0));
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNoSpecifier2) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("vector of %1.2l", 0);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedUnknown1) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("vector of %q");
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedUnknown2) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("vector of %U", 3);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedUnknown3) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("vector of %1,2f", 4.0f);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedExtraArguments) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("%d %d", 0, 1, 2, 3);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNoModifiers) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("test", 3);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedIsloatedPercent) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("test % this");
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNotEnoughArguments) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("test %d %d %d", 3);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNoArguments) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("%d %d");
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNotVectorArg) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            vec3 foo = vec3(1);
+            debugPrintfEXT("%v3f %v3f %v3f", vec3(0), foo, foo.x);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNotVectorParam) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            vec3 foo = vec3(1);
+            debugPrintfEXT("%v3f %v3f %f", vec3(0), foo, foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedVectorSmall) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("%v3f", vec2(0));
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedVectorLarge) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("%v3f", vec4(0));
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedFloat1) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float foo = 1.0f;
+            debugPrintfEXT("%d", foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedFloat2) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            int foo = 4;
+            debugPrintfEXT("%f", foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedFloatVector1) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            vec3 foo = vec3(1);
+            debugPrintfEXT("%v3d", foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedFloatVector2) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            uvec3 foo = uvec3(1);
+            debugPrintfEXT("%v3f", foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, Misformatted64Int1) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            uint64_t foo = 0x2000000000000001ul;
+            debugPrintfEXT("%u", foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, Misformatted64Int2) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            int foo = 4;
+            debugPrintfEXT("%lu", 4);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, Misformatted64IntVector1) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            uint64_t bigvar = 0x2000000000000001ul;
+            u64vec2 vecul = u64vec2(bigvar, bigvar);
+            debugPrintfEXT("0x%v2x", vecul);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, Misformatted64IntVector2) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            uvec2 foo = uvec2(1);
+            debugPrintfEXT("0x%v2lx", foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, Misformatted64Bool) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            bool foo = true;
+            debugPrintfEXT("%lu", foo);
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedEmptyString) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("");
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
 }

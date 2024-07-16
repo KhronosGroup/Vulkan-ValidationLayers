@@ -722,6 +722,8 @@ class CoreChecks : public ValidationStateTracker {
                                  const vvl::Pipeline* pipeline, const VkShaderStageFlagBits stage, const Location& loc) const;
     bool ValidateAtomicsTypes(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
                               const Location& loc) const;
+    bool ValidateDebugPrint(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                            const Location& loc) const;
     bool ValidateShaderFloatControl(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                     const spirv::StatelessData& stateless_data, const Location& loc) const;
     bool ValidateExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
