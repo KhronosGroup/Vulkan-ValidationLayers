@@ -3563,7 +3563,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
     const Location rendering_info_loc = error_obj.location.dot(Field::pRenderingInfo);
 
-    if (cb_state->IsSeconary() && ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0) &&
+    if (cb_state->IsSecondary() && ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0) &&
         !enabled_features.nestedCommandBuffer) {
         skip |= LogError("VUID-vkCmdBeginRendering-commandBuffer-06068", commandBuffer, rendering_info_loc.dot(Field::flags),
                          "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR in a secondary command buffer.");
@@ -4015,7 +4015,7 @@ bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Loca
 bool CoreChecks::OutsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool outside = false;
     if ((cb_state.IsPrimary() && (!cb_state.activeRenderPass)) ||
-        (cb_state.IsSeconary() && (!cb_state.activeRenderPass) &&
+        (cb_state.IsSecondary() && (!cb_state.activeRenderPass) &&
          !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))) {
         outside = LogError(vuid, cb_state.Handle(), loc, "This call must be issued inside an active render pass.");
     }

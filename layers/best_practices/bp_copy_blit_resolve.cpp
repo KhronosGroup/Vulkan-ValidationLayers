@@ -35,7 +35,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
         return;
     }
 
-    if (!cb_state->IsSeconary() && !fb_state && !rp_state->use_dynamic_rendering && !rp_state->use_dynamic_rendering_inherited) {
+    if (!cb_state->IsSecondary() && !fb_state && !rp_state->use_dynamic_rendering && !rp_state->use_dynamic_rendering_inherited) {
         return;
     }
 
@@ -104,7 +104,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
 
 bool BestPractices::ClearAttachmentsIsFullClear(const bp_state::CommandBuffer& cb_state, uint32_t rectCount,
                                                 const VkClearRect* pRects) const {
-    if (cb_state.IsSeconary()) {
+    if (cb_state.IsSecondary()) {
         // We don't know the accurate render area in a secondary,
         // so assume we clear the entire frame buffer.
         // This is resolved in CmdExecuteCommands where we can check if the clear is a full clear.
@@ -199,7 +199,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
     bool skip = false;
     const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
 
-    if (cb_state->IsSeconary()) {
+    if (cb_state->IsSecondary()) {
         // Defer checks to ExecuteCommands.
         return skip;
     }

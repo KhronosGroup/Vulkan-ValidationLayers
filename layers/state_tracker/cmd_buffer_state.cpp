@@ -996,7 +996,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     state = CbState::Recording;
     ASSERT_AND_RETURN(pBeginInfo);
     beginInfo = *pBeginInfo;
-    if (beginInfo.pInheritanceInfo && IsSeconary()) {
+    if (beginInfo.pInheritanceInfo && IsSecondary()) {
         inheritanceInfo = *(beginInfo.pInheritanceInfo);
         beginInfo.pInheritanceInfo = &inheritanceInfo;
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
@@ -1133,7 +1133,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             hasRenderPassInstance |= sub_cb_state->hasRenderPassInstance;
         }
 
-        if (sub_cb_state->IsSeconary()) {
+        if (sub_cb_state->IsSecondary()) {
             nesting_level = std::max(nesting_level, sub_cb_state->nesting_level + 1);
         }
 
