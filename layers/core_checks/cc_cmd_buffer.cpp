@@ -879,6 +879,43 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00088", objlist, cb_loc,
                              "(%s) is not VK_COMMAND_BUFFER_LEVEL_SECONDARY.", FormatHandle(pCommandBuffers[i]).c_str());
         } else {
+            if (cb_state.activeRenderPass) {
+                if (cb_state.hasRenderPassInstance && cb_state.activeRenderPass->UsesDynamicRendering() &&
+                    sub_cb_state.activeRenderPass->UsesDynamicRendering()) {
+                    const auto *location_info = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(
+                        sub_cb_state.activeRenderPass->inheritance_rendering_info.pNext);
+
+                    if (location_info) {
+                        const std::string vuid_090504 = "VUID-vkCmdExecuteCommands-pCommandBuffers-09504";
+                        const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
+                        skip |= ValidateRenderingAttachmentLocationsKHR(*location_info, objlist, cb_loc.dot(Field::pNext));
+
+                        if (location_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
+                            skip |=
+                                LogError(vuid_090504, objlist, cb_loc.dot(Field::pNext),
+                                         "VkRenderingAttachmentLocationInfoKHR::colorAttachmentCount = %" PRIu32
+                                         " does not match the implicit or explicit state in the primary command buffer, "
+                                         "colorAttachmentCount = %" PRIu64 ".",
+                                         location_info->colorAttachmentCount, cb_state.rendering_attachments.color_indexes.size());
+                        } else {
+                            for (uint32_t idx = 0; idx < location_info->colorAttachmentCount; idx++) {
+                                if (location_info->pColorAttachmentLocations &&
+                                    location_info->pColorAttachmentLocations[idx] !=
+                                        cb_state.rendering_attachments.color_locations[idx]) {
+                                    skip |= LogError(vuid_090504, objlist, cb_loc.dot(Field::pNext),
+                                                     "VkRenderingAttachmentLocationInfoKHR::pColorAttachmentsLocations[%" PRIu32
+                                                     "] = %" PRIu32
+                                                     " does not match the implicit or explicit state in the primary command "
+                                                     "buffer, pColorAttachmentsLocations[%" PRIu32 "] = %" PRIu32 ".",
+                                                     idx, location_info->pColorAttachmentLocations[idx], idx,
+                                                     cb_state.rendering_attachments.color_locations[idx]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (!cb_state.activeRenderPass) {
                 if (sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
