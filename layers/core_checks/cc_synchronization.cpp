@@ -1833,7 +1833,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
 void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location &loc, vvl::CommandBuffer &cb_state,
                                                                  const ImageBarrier &barrier) {
     // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
-    if ((cb_state.activeRenderPass) && (VK_NULL_HANDLE == cb_state.activeFramebuffer) && cb_state.IsSeconary()) {
+    if ((cb_state.activeRenderPass) && (VK_NULL_HANDLE == cb_state.activeFramebuffer) && cb_state.IsSecondary()) {
         const auto active_subpass = cb_state.GetActiveSubpass();
         const auto rp_state = cb_state.activeRenderPass;
         if (active_subpass < rp_state->create_info.subpassCount) {

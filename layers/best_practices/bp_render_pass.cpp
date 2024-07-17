@@ -894,7 +894,7 @@ void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cm
         return;
     }
 
-    if (cmd_state.IsSeconary()) {
+    if (cmd_state.IsSecondary()) {
         // The first command might be a clear, but might not be the first in the render pass, defer any checks until
         // CmdExecuteCommands.
         rp_state.earlyClearAttachments.push_back(
