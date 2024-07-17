@@ -913,9 +913,57 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             }
                         }
                     }
+
+                    const auto *index_info = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(
+                        sub_cb_state.activeRenderPass->inheritance_rendering_info.pNext);
+
+                    if (index_info) {
+                        const std::string vuid_090505 = "VUID-vkCmdExecuteCommands-pCommandBuffers-09505";
+                        const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
+                        skip |= ValidateRenderingInputAttachmentIndicesKHR(*index_info, objlist, cb_loc.dot(Field::pNext));
+
+                        if (index_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
+                            skip |= LogError(vuid_090505, objlist, cb_loc.dot(Field::pNext),
+                                             "VkRenderingInputAttachmentIndexInfoKHR::colorAttachmentCount = %" PRIu32
+                                             " does not match the implicit or explicit state in the primary command buffer, "
+                                             "colorAttachmentCount = %" PRIu64 ".",
+                                             index_info->colorAttachmentCount, cb_state.rendering_attachments.color_indexes.size());
+                        } else {
+                            for (uint32_t idx = 0; idx < index_info->colorAttachmentCount; idx++) {
+                                if (index_info->pColorAttachmentInputIndices && cb_state.rendering_attachments.color_indexes[idx] !=
+                                                                                    index_info->pColorAttachmentInputIndices[idx]) {
+                                    skip |= LogError(vuid_090505, objlist, cb_loc.dot(Field::pNext),
+                                                     "VkRenderingInputAttachmentIndexInfoKHR::pColorAttachmentInputIndices[%" PRIu32
+                                                     "] = %" PRIu32
+                                                     " does not match the implicit or explicit state in the primary command "
+                                                     "buffer, pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32 ".",
+                                                     idx, index_info->pColorAttachmentInputIndices[idx], idx,
+                                                     cb_state.rendering_attachments.color_indexes[idx]);
+                                }
+                            }
+                        }
+
+                        if (cb_state.rendering_attachments.depth_index && index_info->pDepthInputAttachmentIndex &&
+                            *cb_state.rendering_attachments.depth_index != *index_info->pDepthInputAttachmentIndex) {
+                            skip |= LogError(vuid_090505, objlist, cb_loc.dot(Field::pNext),
+                                             "VkRenderingInputAttachmentIndexInfoKHR::pDepthAttachmentIndex = %" PRIu32
+                                             " does not match the implicit or explicit state in the primary command buffer, "
+                                             "pDepthAttachmentIndex = %" PRIu32 ".",
+                                             *index_info->pDepthInputAttachmentIndex, *cb_state.rendering_attachments.depth_index);
+                        }
+
+                        if (cb_state.rendering_attachments.stencil_index && index_info->pStencilInputAttachmentIndex &&
+                            *cb_state.rendering_attachments.stencil_index != *index_info->pStencilInputAttachmentIndex) {
+                            skip |=
+                                LogError(vuid_090505, objlist, cb_loc.dot(Field::pNext),
+                                         "VkRenderingInputAttachmentIndexInfoKHR::pStencilAttachmentIndex = %" PRIu32
+                                         " does not match the implicit or explicit state in the primary command buffer, "
+                                         "pStencilAttachmentIndex = %" PRIu32 ".",
+                                         *index_info->pStencilInputAttachmentIndex, *cb_state.rendering_attachments.stencil_index);
+                        }
+                    }
                 }
             }
-
             if (!cb_state.activeRenderPass) {
                 if (sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
