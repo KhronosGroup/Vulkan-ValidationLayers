@@ -15,19 +15,15 @@
 #pragma once
 
 #include <stdint.h>
-#include "pass.h"
+#include "inject_function_pass.h"
 
 namespace gpuav {
 namespace spirv {
 
-class Module;
-struct Function;
-struct BasicBlock;
-
 // Create a pass to instrument SPV_KHR_ray_query instructions
-class RayQueryPass : public Pass {
+class RayQueryPass : public InjectFunctionPass {
   public:
-    RayQueryPass(Module& module) : Pass(module, true) {}
+    RayQueryPass(Module& module) : InjectFunctionPass(module, true) {}
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
