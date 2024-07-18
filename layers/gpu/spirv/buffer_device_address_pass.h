@@ -15,21 +15,17 @@
 #pragma once
 
 #include <stdint.h>
-#include "pass.h"
+#include "inject_function_pass.h"
 
 namespace gpuav {
 namespace spirv {
 
-class Module;
-struct Function;
-struct BasicBlock;
-
 // Create a pass to instrument physical buffer address checking
 // This pass instruments all physical buffer address references to check that
 // all referenced bytes fall in a valid buffer.
-class BufferDeviceAddressPass : public Pass {
+class BufferDeviceAddressPass : public InjectFunctionPass {
   public:
-    BufferDeviceAddressPass(Module& module) : Pass(module, true) {}
+    BufferDeviceAddressPass(Module& module) : InjectFunctionPass(module, true) {}
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
