@@ -42,7 +42,8 @@ bool ImmutableSamplersAreEqual(const DSLayoutBindingA &b1, const DSLayoutBinding
         return true;
     } else if (b1.pImmutableSamplers && b2.pImmutableSamplers) {
         if ((b1.descriptorType == b2.descriptorType) &&
-            ((b1.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) || (b1.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) &&
+            ((b1.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
+             (b1.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) &&
             (b1.descriptorCount == b2.descriptorCount)) {
             for (uint32_t i = 0; i < b1.descriptorCount; ++i) {
                 if (b1.pImmutableSamplers[i] != b2.pImmutableSamplers[i]) {
