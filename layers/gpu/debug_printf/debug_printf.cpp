@@ -226,8 +226,14 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
                 // skip v<count>, handle long
                 specifier.push_back(format_string[pos]);
                 if (format_string[pos + 1] == 'l') {
+                    // catches %ul
                     substring.is_64_bit = true;
                     specifier.push_back('l');
+                    pos++;
+                } else if (format_string[pos] == 'l') {
+                    // catches %lu and lx
+                    substring.is_64_bit = true;
+                    specifier.push_back(format_string[pos + 1]);
                     pos++;
                 }
 

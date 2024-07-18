@@ -419,8 +419,7 @@ TEST_F(NegativeDebugPrintf, Int64Hex) {
     BasicComputeTest(shader_source, "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
 }
 
-// TODO - Currently not supported
-TEST_F(NegativeDebugPrintf, DISABLED_Int64VectorHex) {
+TEST_F(NegativeDebugPrintf, Int64VectorHex) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
     char const *shader_source = R"glsl(
         #version 450
@@ -432,11 +431,26 @@ TEST_F(NegativeDebugPrintf, DISABLED_Int64VectorHex) {
             debugPrintfEXT("vector of lx 0x%v2lx", vecul);
         }
     )glsl";
-    BasicComputeTest(shader_source, "vector of lx 0x2000000000000001 0x2000000000000001");
+    BasicComputeTest(shader_source, "vector of lx 0x2000000000000001, 2000000000000001");
 }
 
-// TODO - Currently not supported
-TEST_F(NegativeDebugPrintf, DISABLED_Int64VectorDecimal) {
+// TODO - Windows trims the leading values and will print 0x001 (Linux ignores the Precision)
+TEST_F(NegativeDebugPrintf, DISABLED_Int64VectorHexPrecision) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            uint64_t bigvar = 0x2000000000000001ul;
+            u64vec2 vecul = u64vec2(bigvar, bigvar);
+            debugPrintfEXT("vector of lx 0x%1.3v2lx", vecul);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "vector of lx 0x2000000000000001, 2000000000000001");
+}
+
+TEST_F(NegativeDebugPrintf, Int64VectorDecimal) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
     char const *shader_source = R"glsl(
         #version 450
@@ -448,7 +462,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_Int64VectorDecimal) {
             debugPrintfEXT("vector of lu %v2lu", vecul);
         }
     )glsl";
-    BasicComputeTest(shader_source, "vector of lu 2305843009213693953 2305843009213693953");
+    BasicComputeTest(shader_source, "vector of lu 2305843009213693953, 2305843009213693953");
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
@@ -1719,8 +1733,7 @@ TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Add multi-entry support for Debug PrintF
-TEST_F(NegativeDebugPrintf, DISABLED_VertexFragmentMultiEntrypoint) {
+TEST_F(NegativeDebugPrintf, VertexFragmentMultiEntrypoint) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -1742,7 +1755,8 @@ TEST_F(NegativeDebugPrintf, DISABLED_VertexFragmentMultiEntrypoint) {
                OpEntryPoint Fragment %frag_main "frag_main" %c_out
                OpEntryPoint Vertex %vert_main "vert_main" %_ %gl_VertexIndex
                OpExecutionMode %frag_main OriginUpperLeft
-          %6 = OpString "Vertex value is %i"
+   %vert_str = OpString "Vertex value is %i"
+   %frag_str = OpString "Fragment value is %i"
                OpDecorate %c_out Location 0
                OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
                OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
@@ -1785,7 +1799,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_VertexFragmentMultiEntrypoint) {
        %vert_main = OpFunction %void None %3
           %5 = OpLabel
   %indexable = OpVariable %_ptr_Function__arr_v2float_uint_3 Function
-         %10 = OpExtInst %void %9 1 %6 %int_4
+         %10 = OpExtInst %void %9 1 %vert_str %int_4
          %32 = OpLoad %int %gl_VertexIndex
          %34 = OpSMod %int %32 %int_3
                OpStore %indexable %29
@@ -1800,7 +1814,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_VertexFragmentMultiEntrypoint) {
                OpFunctionEnd
        %frag_main = OpFunction %void None %3
           %f5 = OpLabel
-         %f10 = OpExtInst %void %9 1 %6 %int_8
+         %f10 = OpExtInst %void %9 1 %frag_str %int_8
                OpStore %c_out %16
                OpReturn
                OpFunctionEnd
