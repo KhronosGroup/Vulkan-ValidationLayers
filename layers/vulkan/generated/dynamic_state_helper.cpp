@@ -584,6 +584,9 @@ std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
         case CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
             func = vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR;
             break;
+        case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
+            func = vvl::Func::vkCmdSetDepthClampRangeEXT;
+            break;
         default:
             ss << "(Unknown Dynamic State) ";
     }
@@ -893,6 +896,13 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
             } else {
                 ss << "VkPipelineMultisampleStateCreateInfo::pNext->VkPipelineCoverageModulationStateCreateInfoNV::"
                       "coverageModulationTableEnable was VK_TRUE in the last bound graphics pipeline.\n";
+            }
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
+                ss << "vkCmdSetDepthClampEnableEXT last set depthClampEnable to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineRasterizationStateCreateInfo::depthClampEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
         default:

@@ -25955,6 +25955,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffe
         [[maybe_unused]] const Location pDepthClampRange_loc = loc.dot(Field::pDepthClampRange);
         // No xml-driven validation
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetDepthClampRangeEXT(commandBuffer, depthClampMode, pDepthClampRange, error_obj);
     return skip;
 }
 

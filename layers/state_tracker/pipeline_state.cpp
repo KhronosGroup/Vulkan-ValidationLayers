@@ -899,6 +899,19 @@ bool LastBound::IsDepthBiasEnable() const {
     return false;
 }
 
+bool LastBound::IsDepthClampEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.depth_clamp_enable;
+        }
+    } else {
+        if (pipeline_state->RasterizationState()) {
+            return pipeline_state->RasterizationState()->depthClampEnable;
+        }
+    }
+    return false;
+}
+
 bool LastBound::IsStencilTestEnable() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {

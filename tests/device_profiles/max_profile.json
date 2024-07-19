@@ -791,6 +791,9 @@
                 "VkPhysicalDeviceDepthClampZeroOneFeaturesEXT": {
                     "depthClampZeroOne": true
                 },
+                "VkPhysicalDeviceDepthClampControlFeaturesEXT": {
+                    "depthClampControl": true
+                },
                 "VkPhysicalDeviceAddressBindingReportFeaturesEXT": {
                     "reportAddressBinding": true
                 },
@@ -1883,6 +1886,7 @@
                 "VK_EXT_debug_report": 1,
                 "VK_EXT_debug_utils": 1,
                 "VK_EXT_depth_bias_control": 1,
+                "VK_EXT_depth_clamp_control": 1,
                 "VK_EXT_depth_clamp_zero_one": 1,
                 "VK_EXT_depth_clip_control": 1,
                 "VK_EXT_depth_clip_enable": 1,

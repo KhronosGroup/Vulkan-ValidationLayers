@@ -122,6 +122,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT:
                 vuid_str = vuid.dynamic_depth_clip_negative_one_to_one_07639;
                 break;
+            case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
+                vuid_str = vuid.dynamic_depth_clamp_control_09650;
+                break;
             case CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT:
                 vuid_str = vuid.dynamic_depth_clip_enable_07633;
                 break;
@@ -278,6 +281,11 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         if (enabled_features.depthClipControl) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
                                               CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT, vuid);
+        }
+        if (enabled_features.depthClampControl) {
+            if (last_bound_state.IsDepthClampEnable()) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT, vuid);
+            }
         }
         if (enabled_features.depthClamp) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, vuid);
@@ -2265,6 +2273,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer comman
                          error_obj.location.dot(Field::depthClampEnable), "is VK_TRUE but the depthClamp feature was not enabled.");
     }
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                                         const VkDepthClampRangeEXT* pDepthClampRange,
+                                                         const ErrorObject& error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,

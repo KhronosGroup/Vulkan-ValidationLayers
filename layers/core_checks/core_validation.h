@@ -2283,6 +2283,9 @@ class CoreChecks : public ValidationStateTracker {
                                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                   const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                                 const VkDepthClampRangeEXT* pDepthClampRange,
+                                                 const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples,

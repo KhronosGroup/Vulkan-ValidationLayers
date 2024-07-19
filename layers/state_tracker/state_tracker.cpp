@@ -5335,6 +5335,15 @@ void ValidationStateTracker::PostCallRecordCmdSetDepthClampEnableEXT(VkCommandBu
                                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
+    cb_state->dynamic_state_value.depth_clamp_enable = depthClampEnable;
+}
+
+void ValidationStateTracker::PostCallRecordCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer,
+                                                                    VkDepthClampModeEXT depthClampMode,
+                                                                    const VkDepthClampRangeEXT *pDepthClampRange,
+                                                                    const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,

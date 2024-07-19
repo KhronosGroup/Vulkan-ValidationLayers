@@ -694,6 +694,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     vku::FindStructInPNextChain<VkPipelineViewportWScalingStateCreateInfoNV>(viewport_state.pNext);
                 const auto *depth_clip_control_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
+                const auto *depth_clamp_control_struct =
+                    vku::FindStructInPNextChain<VkPipelineViewportDepthClampControlCreateInfoEXT>(viewport_state.pNext);
 
                 if (!enabled_features.multiViewport) {
                     if (exclusive_scissor_struct && (exclusive_scissor_struct->exclusiveScissorCount != 0 &&
@@ -930,6 +932,21 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715", device,
                             viewport_loc.pNext(Struct::VkPipelineViewportWScalingStateCreateInfoNV, Field::pViewportWScalings),
                             "is NULL.");
+                    }
+                }
+
+                const bool has_dynamic_depth_clamp_range = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT);
+                if (!has_dynamic_depth_clamp_range && depth_clamp_control_struct &&
+                    depth_clamp_control_struct->depthClampMode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
+                    if (!depth_clamp_control_struct->pDepthClampRange) {
+                        skip |= LogError(
+                            "VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-pDepthClampRange-09646", device,
+                            viewport_loc.pNext(Struct::VkPipelineViewportDepthClampControlCreateInfoEXT, Field::pDepthClampRange),
+                            "is NULL.");
+                    } else {
+                        skip |= ValidateDepthClampRange(
+                            *depth_clamp_control_struct->pDepthClampRange,
+                            viewport_loc.pNext(Struct::VkPipelineViewportDepthClampControlCreateInfoEXT, Field::pDepthClampRange));
                     }
                 }
 
@@ -1311,6 +1328,29 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.stage, create_info_loc.dot(Field::stage));
 
         skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
+    }
+    return skip;
+}
+
+bool StatelessValidation::ValidateDepthClampRange(const VkDepthClampRangeEXT &depth_clamp_range, const Location &loc) const {
+    bool skip = false;
+    if (depth_clamp_range.minDepthClamp > depth_clamp_range.maxDepthClamp) {
+        skip |=
+            LogError("VUID-VkDepthClampRangeEXT-pDepthClampRange-00999", device, loc.dot(Field::minDepthClamp),
+                     "(%f) is greater than maxDepthClamp (%f).", depth_clamp_range.minDepthClamp, depth_clamp_range.maxDepthClamp);
+    }
+
+    if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
+        if (depth_clamp_range.minDepthClamp < 0.0) {
+            skip |= LogError("VUID-VkDepthClampRangeEXT-pDepthClampRange-09648", device, loc.dot(Field::minDepth),
+                             "(%f) is below 0.0 (and VK_EXT_depth_range_unrestricted is not enabled).",
+                             depth_clamp_range.minDepthClamp);
+        }
+        if (depth_clamp_range.maxDepthClamp > 1.0) {
+            skip |= LogError("VUID-VkDepthClampRangeEXT-pDepthClampRange-09649", device, loc.dot(Field::maxDepthClamp),
+                             "(%f)  is above 1.0 (and VK_EXT_depth_range_unrestricted is not enabled).",
+                             depth_clamp_range.maxDepthClamp);
+        }
     }
     return skip;
 }

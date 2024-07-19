@@ -1301,6 +1301,9 @@ class ValidationStateTracker : public ValidationObject {
                                                          const RecordObject& record_obj) override;
     void PostCallRecordCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                  const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                                const VkDepthClampRangeEXT* pDepthClampRange,
+                                                const RecordObject& record_obj) override;
     void PostCallRecordCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,
                                             const RecordObject& record_obj) override;
     void PostCallRecordCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples,
