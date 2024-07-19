@@ -1199,11 +1199,17 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         out << ", reset_no: " << std::to_string(record.reset_count);
 
         // Associated resource
+        // TODO: Fix issue in submit-time validation resource reporting.
+        // Some cases of false-positives lead to stale resource indices.
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8291
+        // This can be related to command buffer Reset.
+        /*
         if (formatter.handle_index != vvl::kNoIndex32) {
             auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
             const HandleRecord &handle_record = cb_context->access_context.GetHandleRecord(formatter.handle_index);
             out << ", resource: " << handle_record.Formatter(formatter.sync_state);
         }
+        */
         // Report debug region name. Empty name means that we are not inside any debug region.
         if (formatter.debug_name_provider) {
             const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
