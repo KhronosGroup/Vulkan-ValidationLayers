@@ -24,6 +24,7 @@ namespace spirv {
 class RayQueryPass : public InjectFunctionPass {
   public:
     RayQueryPass(Module& module) : InjectFunctionPass(module, true) {}
+    void PrintDebugInfo() final;
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;

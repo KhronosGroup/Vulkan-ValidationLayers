@@ -202,6 +202,8 @@ vvl_sources = [
   "layers/gpu/spirv/pass.h",
   "layers/gpu/spirv/ray_query_pass.cpp",
   "layers/gpu/spirv/ray_query_pass.h",
+  "layers/gpu/spirv/debug_printf_pass.cpp",
+  "layers/gpu/spirv/debug_printf_pass.h",
   "layers/gpu/spirv/type_manager.cpp",
   "layers/gpu/spirv/type_manager.h",
   "layers/layer_options.cpp",

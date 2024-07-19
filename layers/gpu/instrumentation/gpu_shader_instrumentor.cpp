@@ -860,7 +860,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
                 chassis_state.shader_unique_id_maps[pipeline][stage] = unique_shader_id;
             }
         }
-        new_pipeline_create_infos->push_back(std::move(new_pipeline_ci));
+        new_pipeline_create_infos->emplace_back(std::move(new_pipeline_ci));
     }
 }
 // For every pipeline:

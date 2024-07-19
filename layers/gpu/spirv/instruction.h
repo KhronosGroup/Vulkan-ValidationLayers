@@ -62,6 +62,12 @@ struct Instruction {
 
     bool IsArray() const { return (Opcode() == spv::OpTypeArray || Opcode() == spv::OpTypeRuntimeArray); }
 
+    // SPIR-V spec: "A string is interpreted as a nul-terminated stream of characters"
+    char const* GetAsString(uint32_t index) const {
+        assert(index < Length());
+        return (char const*)&words_[index];
+    }
+
     void ToBinary(std::vector<uint32_t>& out);
 
     bool operator==(Instruction const& other) const { return words_ == other.words_; }

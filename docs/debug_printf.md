@@ -98,8 +98,7 @@ where:
 * `N2`, `N3`, ... are result ids of scalar and vector values to be printed
 * `NN` is the result id of the debug printf operation. This value is undefined.
 
-Note that the `VK_KHR_shader_non_semantic_info` device extension must also be enabled in
-the Vulkan application using this shader.
+> `OpExtInstImport` of any `NonSemantic*` is properly supported with the `VK_KHR_shader_non_semantic_info` device extension. Some older compiler stacks might not handle these unknown instructions well, some will ignore it as desired.
 
 ## Debug Printf Output
 The strings resulting from a Debug Printf will, by default, be sent to the debug callback
@@ -197,6 +196,7 @@ buffer size.
 * VkPhysicalDevice features: `fragmentStoresAndAtomics` and `vertexPipelineStoresAndAtomics`
 are required
 * The `VK_KHR_shader_non_semantic_info` extension must be supported and enabled
+  * If using the Validation Layers, we attempt to strip it out to allow wider range of users to still use Debug Printf
 * RenderDoc release 1.14 or later
 * When using Debug Printf with a debug callback, it is recommended to disable validation,
 as the debug level of INFO or DEBUG causes the validation layers to produce many messages

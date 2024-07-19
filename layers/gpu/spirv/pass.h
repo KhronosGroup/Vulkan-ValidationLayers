@@ -28,7 +28,10 @@ struct BasicBlock;
 // Common helpers for all passes
 class Pass {
   public:
-    virtual void Run() {}
+    // Return false if nothing was changed
+    virtual bool Run() { return false; }
+
+    virtual void PrintDebugInfo() {}
 
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
     const Variable& GetBuiltinVariable(uint32_t built_in);
@@ -44,15 +47,19 @@ class Pass {
     uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it = nullptr);
     uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it = nullptr);
 
-    uint32_t GetInstrumentedCount() { return instrumented_count_; }
-
   protected:
     Pass(Module& module) : module_(module) {}
     Module& module_;
 
+    // clear values between instrumented instructions
+    virtual void Reset() = 0;
+
     // As various things are modifiying the instruction streams, we need to get back to where we were.
+    // (normally set in the AnalyzeInstruction call)
     const Instruction* target_instruction_ = nullptr;
     InstructionIt FindTargetInstruction(BasicBlock& block) const;
+
+    uint32_t instrumented_count_ = 0;
 };
 
 }  // namespace spirv

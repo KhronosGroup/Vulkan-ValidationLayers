@@ -181,6 +181,14 @@ const int kErrorBufferByteSize = 4 * kErrorRecordSize * kErrorRecordCounts + 2 *
 
 #ifdef __cplusplus
 }  // namespace glsl
+#endif
+
+// DebugPrintf
+// ---
+const int kDebugPrintfOutputBufferSize = 0;
+const int kDebugPrintfOutputBufferData = 1;
+
+#ifdef __cplusplus
 }  // namespace gpuav
 #endif
 #endif

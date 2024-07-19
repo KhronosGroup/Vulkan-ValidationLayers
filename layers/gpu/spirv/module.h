@@ -37,7 +37,7 @@ struct ModuleHeader {
 // There are other helper classes that are charge of handling the various parts of the module.
 class Module {
   public:
-    Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_info,
+    Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
            uint32_t max_instrumented_count = 0);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
@@ -67,23 +67,30 @@ class Module {
     std::vector<LinkInfo> link_info_;
     void LinkFunction(const LinkInfo& info);
     bool IsInstrumented() const { return !link_info_.empty(); }
+    void PostProcess();
 
     // The class is designed to be written out to a binary file.
     void ToBinary(std::vector<uint32_t>& out);
 
     // Passes that can be ran
-    void RunPassBindlessDescriptor();
-    void RunPassBufferDeviceAddress();
-    void RunPassRayQuery();
+    // Return true if code was instrumented
+    bool RunPassBindlessDescriptor();
+    bool RunPassBufferDeviceAddress();
+    bool RunPassRayQuery();
+    bool RunPassDebugPrintf(uint32_t binding_slot = 0);
+
+    void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
 
     // Helpers
     bool HasCapability(spv::Capability capability);
     void AddCapability(spv::Capability capability);
     void AddExtension(const char* extension);
+    void AddDebugName(const char* name, uint32_t id);
+    void AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands);
+    void AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration, const std::vector<uint32_t>& operands);
 
     const uint32_t max_instrumented_count_ = 0;  // zero is same as "unlimited"
-
-  private:
+    bool use_bda_ = false;
     // provides a way to map back and know which original SPIR-V this was from
     const uint32_t shader_id_;
     // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
@@ -91,7 +98,7 @@ class Module {
     const uint32_t output_buffer_descriptor_set_;
 
     // Used to help debug
-    bool print_info_;
+    const bool print_debug_info_;
 };
 
 }  // namespace spirv

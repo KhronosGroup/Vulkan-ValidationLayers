@@ -190,5 +190,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
   private:
     bool verbose = false;
     bool use_stdout = false;
+    uint32_t binding_slot_ = 0;
 };
 }  // namespace debug_printf

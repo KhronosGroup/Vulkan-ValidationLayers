@@ -73,6 +73,7 @@ struct Function {
 
     // Adds a new block after and returns reference to it
     BasicBlockIt InsertNewBlock(BasicBlockIt it);
+    void InitBlocks(uint32_t count);
 
     void ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word);
 

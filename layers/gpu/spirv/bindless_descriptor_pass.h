@@ -27,6 +27,7 @@ namespace spirv {
 class BindlessDescriptorPass : public InjectFunctionPass {
   public:
     BindlessDescriptorPass(Module& module) : InjectFunctionPass(module, true) {}
+    void PrintDebugInfo() final;
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;

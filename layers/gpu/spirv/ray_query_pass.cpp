@@ -16,6 +16,7 @@
 #include "ray_query_pass.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
+#include <iostream>
 
 #include "generated/instrumentation_ray_query_comp.h"
 
@@ -64,6 +65,10 @@ bool RayQueryPass::AnalyzeInstruction(const Function& function, const Instructio
     }
     target_instruction_ = &inst;
     return true;
+}
+
+void RayQueryPass::PrintDebugInfo() {
+    std::cout << "RayQueryPass\n\tinstrumentation count: " << instrumented_count_ << "\n";
 }
 
 }  // namespace spirv

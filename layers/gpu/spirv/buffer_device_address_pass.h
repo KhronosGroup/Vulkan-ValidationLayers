@@ -26,6 +26,7 @@ namespace spirv {
 class BufferDeviceAddressPass : public InjectFunctionPass {
   public:
     BufferDeviceAddressPass(Module& module) : InjectFunctionPass(module, true) {}
+    void PrintDebugInfo() final;
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;

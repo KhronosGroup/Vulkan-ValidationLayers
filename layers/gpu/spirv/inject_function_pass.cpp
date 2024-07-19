@@ -19,6 +19,11 @@
 namespace gpuav {
 namespace spirv {
 
+InjectFunctionPass::InjectFunctionPass(Module& module, bool conditional_function_check)
+    : Pass(module), conditional_function_check_(conditional_function_check) {
+    module.use_bda_ = true;
+}
+
 BasicBlockIt InjectFunctionPass::InjectConditionalFunctionCheck(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
                                                                 const InjectionData& injection_data) {
     // We turn the block into 4 separate blocks
@@ -117,7 +122,7 @@ void InjectFunctionPass::InjectFunctionCheck(BasicBlockIt block_it, InstructionI
     Reset();
 }
 
-void InjectFunctionPass::Run() {
+bool InjectFunctionPass::Run() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
@@ -130,7 +135,7 @@ void InjectFunctionPass::Run() {
                 if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
 
                 if (module_.max_instrumented_count_ != 0 && instrumented_count_ >= module_.max_instrumented_count_) {
-                    return;
+                    return true;  // hit limit
                 }
                 instrumented_count_++;
 
@@ -153,6 +158,8 @@ void InjectFunctionPass::Run() {
             }
         }
     }
+
+    return instrumented_count_ != 0;
 }
 
 }  // namespace spirv

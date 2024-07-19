@@ -28,11 +28,10 @@ struct InjectionData {
 // A type of common pass that will inject a function call and link it up later
 class InjectFunctionPass : public Pass {
   public:
-    void Run() override;
+    bool Run() final;
 
   protected:
-    InjectFunctionPass(Module& module, bool conditional_function_check)
-        : Pass(module), conditional_function_check_(conditional_function_check) {}
+    InjectFunctionPass(Module& module, bool conditional_function_check);
 
     BasicBlockIt InjectConditionalFunctionCheck(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
                                                 const InjectionData& injection_data);
@@ -44,8 +43,6 @@ class InjectFunctionPass : public Pass {
     // Each pass creates a OpFunctionCall and returns its result id.
     // If |inst_it| is not null, it will update it to instruction post OpFunctionCall
     virtual uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
-    // clear values incase multiple injections are made
-    virtual void Reset() = 0;
 
     // If this is false, we assume through other means (such as robustness) we won't crash on bad values and go
     //     PassFunction(original_value)
@@ -76,8 +73,6 @@ class InjectFunctionPass : public Pass {
     //         int Y = 0;
     //    }
     const bool conditional_function_check_;
-
-    uint32_t instrumented_count_ = 0;
 };
 
 }  // namespace spirv
