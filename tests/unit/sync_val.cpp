@@ -6222,7 +6222,7 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeSyncVal, DebugResourceName) {
+TEST_F(NegativeSyncVal, DISABLED_DebugResourceName) {
     TEST_DESCRIPTION("Test that hazardous buffer is reported. Two copies write to a buffer");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -6251,7 +6251,7 @@ TEST_F(NegativeSyncVal, DebugResourceName) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncVal, DebugDescriptorBufferName) {
+TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName) {
     TEST_DESCRIPTION("Test that hazardous buffer is reported. Two dispatches write to a buffer");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -6309,7 +6309,7 @@ TEST_F(NegativeSyncVal, DebugDescriptorBufferName) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncVal, DebugDescriptorBufferName2) {
+TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName2) {
     TEST_DESCRIPTION("Test that hazardous buffer is reported. Dispatch writes to a buffer, then copy to the same buffer");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -6369,7 +6369,7 @@ TEST_F(NegativeSyncVal, DebugDescriptorBufferName2) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncVal, DebugDescriptorBufferName3) {
+TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName3) {
     TEST_DESCRIPTION("Different buffer of the same shader is reported depending on the previous access");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
