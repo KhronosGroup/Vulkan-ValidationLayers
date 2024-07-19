@@ -31,7 +31,7 @@
 
 namespace gpuav {
 
-static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout,
+static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalarBlockLayout,
                               spv_target_env target_env, std::string &error) {
     // Use SPIRV-Tools validator to try and catch any issues with the module
     spv_context ctx = spvContextCreate(target_env);
@@ -39,7 +39,7 @@ static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxB
     spv_diagnostic diag = nullptr;
     spv_validator_options options = spvValidatorOptionsCreate();
     spvValidatorOptionsSetRelaxBlockLayout(options, SetRelaxBlockLayout);
-    spvValidatorOptionsSetScalarBlockLayout(options, SetScalerBlockLayout);
+    spvValidatorOptionsSetScalarBlockLayout(options, SetScalarBlockLayout);
     spv_result_t result = spvValidateWithOptions(ctx, options, &binary, &diag);
     if (result != SPV_SUCCESS && diag) error = diag->error;
     return (result == SPV_SUCCESS);
@@ -100,10 +100,11 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input, uint32_
         return false;
     }
 
-    for (const auto info : module.link_info_) {
+    for (const auto &info : module.link_info_) {
         module.LinkFunction(info);
     }
 
+    module.PostProcess();
     module.ToBinary(out_instrumented_spirv);
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {

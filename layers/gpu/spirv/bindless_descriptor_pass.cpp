@@ -16,6 +16,7 @@
 #include "bindless_descriptor_pass.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
+#include <iostream>
 
 #include "generated/instrumentation_bindless_descriptor_comp.h"
 
@@ -422,6 +423,10 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
     target_instruction_ = &inst;
 
     return true;
+}
+
+void BindlessDescriptorPass::PrintDebugInfo() {
+    std::cout << "BindlessDescriptorPass\n\tinstrumentation count: " << instrumented_count_ << "\n";
 }
 
 }  // namespace spirv

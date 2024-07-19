@@ -45,10 +45,7 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
         auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
         new_inst->Fill({pointer_type.Id(), variable_id, spv::StorageClassInput});
         built_in_variable = &module_.type_manager_.AddVariable(std::move(new_inst), pointer_type);
-
-        for (auto& entry_point : module_.entry_points_) {
-            entry_point->AppendWord(built_in_variable->Id());
-        }
+        module_.AddInterfaceVariables(built_in_variable->Id(), spv::StorageClassInput);
     }
 
     return *built_in_variable;

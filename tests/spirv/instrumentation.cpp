@@ -26,6 +26,7 @@ static bool all_passes = false;
 static bool bindless_descriptor_pass = false;
 static bool buffer_device_address_pass = false;
 static bool ray_query_pass = false;
+static bool debug_printf_pass = false;
 
 void PrintUsage(const char* program) {
     printf(R"(
@@ -44,6 +45,8 @@ USAGE: %s <input> -o <output> <passes>
                Runs BufferDeviceAddressPass
   --ray-query
                Runs RayQueryPass
+  --debug-printf
+               Runs DebugPrintfPass
   --timer
                Prints time it takes to instrument entire module
   -h, --help
@@ -75,6 +78,8 @@ bool ParseFlags(int argc, char** argv, const char** out_file) {
             buffer_device_address_pass = true;
         } else if (0 == strcmp(cur_arg, "--ray-query")) {
             ray_query_pass = true;
+        } else if (0 == strcmp(cur_arg, "--debug-printf")) {
+            debug_printf_pass = true;
         } else if (0 == strncmp(cur_arg, "--", 2)) {
             printf("Unknown pass %s\n", cur_arg);
             PrintUsage(argv[0]);
@@ -134,10 +139,15 @@ int main(int argc, char** argv) {
     if (all_passes || ray_query_pass) {
         module.RunPassRayQuery();
     }
+    if (all_passes || debug_printf_pass) {
+        module.RunPassDebugPrintf();
+    }
 
-    for (const auto info : module.link_info_) {
+    for (const auto& info : module.link_info_) {
         module.LinkFunction(info);
     }
+
+    module.PostProcess();
     module.ToBinary(spirv_data);
 
     if (timer) {

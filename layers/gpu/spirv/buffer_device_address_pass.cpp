@@ -16,6 +16,7 @@
 #include "buffer_device_address_pass.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
+#include <iostream>
 
 #include "generated/instrumentation_buffer_device_address_comp.h"
 
@@ -108,6 +109,10 @@ bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const
     target_instruction_ = &inst;
     type_length_ = module_.type_manager_.TypeLength(*accessed_type);
     return true;
+}
+
+void BufferDeviceAddressPass::PrintDebugInfo() {
+    std::cout << "BufferDeviceAddressPass\n\tinstrumentation count: " << instrumented_count_ << "\n";
 }
 
 }  // namespace spirv

@@ -40,7 +40,7 @@ void Function::ToBinary(std::vector<uint32_t>& out) {
 
 BasicBlock::BasicBlock(std::unique_ptr<Instruction> label, Function& function) : function_(function) {
     // Used when loading initial SPIR-V
-    instructions_.push_back(std::move(label));  // OpLabel
+    instructions_.emplace_back(std::move(label));  // OpLabel
 }
 
 BasicBlock::BasicBlock(Module& module, Function& function) : function_(function) {
@@ -106,7 +106,7 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
 
 Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) : module_(module) {
     // Used when loading initial SPIR-V
-    pre_block_inst_.push_back(std::move(function_inst));  // OpFunction
+    pre_block_inst_.emplace_back(std::move(function_inst));  // OpFunction
 }
 
 BasicBlockIt Function::InsertNewBlock(BasicBlockIt it) {
@@ -115,6 +115,14 @@ BasicBlockIt Function::InsertNewBlock(BasicBlockIt it) {
     BasicBlockIt new_block_it = blocks_.insert(it, std::move(new_block));
 
     return new_block_it;
+}
+
+void Function::InitBlocks(uint32_t count) {
+    blocks_.reserve(blocks_.size() + count);
+    for (uint32_t i = 0; i < count; i++) {
+        auto new_block = std::make_unique<BasicBlock>(module_, *this);
+        blocks_.emplace_back(std::move(new_block));
+    }
 }
 
 const Instruction* Function::FindInstruction(uint32_t id) const {

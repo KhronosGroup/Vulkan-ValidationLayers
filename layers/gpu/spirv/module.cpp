@@ -20,19 +20,18 @@
 #include "buffer_device_address_pass.h"
 #include "bindless_descriptor_pass.h"
 #include "ray_query_pass.h"
-
-#include <iostream>
+#include "debug_printf_pass.h"
 
 namespace gpuav {
 namespace spirv {
 
-Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_info,
+Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
                uint32_t max_instrumented_count)
     : type_manager_(*this),
       max_instrumented_count_(max_instrumented_count),
       shader_id_(shader_id),
       output_buffer_descriptor_set_(output_buffer_descriptor_set),
-      print_info_(print_info) {
+      print_debug_info_(print_debug_info) {
     uint32_t instruction_count = 0;
     std::vector<uint32_t>::const_iterator it = words.cbegin();
     header_.magic_number = *it++;
@@ -224,31 +223,71 @@ void Module::AddExtension(const char* extension) {
     StringToSpirv(extension, words);
     auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), spv::OpExtension);
     new_inst->Fill(words);
-    extensions_.push_back(std::move(new_inst));
+    extensions_.emplace_back(std::move(new_inst));
 }
 
-void Module::RunPassBindlessDescriptor() {
+void Module::AddDebugName(const char* name, uint32_t id) {
+    std::vector<uint32_t> words = {id};
+    StringToSpirv(name, words);
+    auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), spv::OpName);
+    new_inst->Fill(words);
+    debug_name_.emplace_back(std::move(new_inst));
+}
+
+void Module::AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands) {
+    auto new_inst = std::make_unique<Instruction>((uint32_t)(operands.size() + 3), spv::OpDecorate);
+    new_inst->Fill({target_id, (uint32_t)decoration});
+    if (!operands.empty()) {
+        new_inst->Fill(operands);
+    }
+    annotations_.emplace_back(std::move(new_inst));
+}
+
+void Module::AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration,
+                                 const std::vector<uint32_t>& operands) {
+    auto new_inst = std::make_unique<Instruction>((uint32_t)(operands.size() + 4), spv::OpMemberDecorate);
+    new_inst->Fill({target_id, index, (uint32_t)decoration});
+    if (!operands.empty()) {
+        new_inst->Fill(operands);
+    }
+    annotations_.emplace_back(std::move(new_inst));
+}
+
+bool Module::RunPassBindlessDescriptor() {
     BindlessDescriptorPass pass(*this);
-    pass.Run();
-    if (print_info_) {
-        std::cout << "BindlessDescriptorPass\n\tinstrumentation count: " << pass.GetInstrumentedCount() << "\n";
+    const bool changed = pass.Run();
+    if (print_debug_info_) {
+        pass.PrintDebugInfo();
     }
+    return changed;
 }
 
-void Module::RunPassBufferDeviceAddress() {
+bool Module::RunPassBufferDeviceAddress() {
     BufferDeviceAddressPass pass(*this);
-    pass.Run();
-    if (print_info_) {
-        std::cout << "BufferDeviceAddressPass\n\tinstrumentation count: " << pass.GetInstrumentedCount() << "\n";
+    const bool changed = pass.Run();
+    if (print_debug_info_) {
+        pass.PrintDebugInfo();
     }
+    return changed;
 }
 
-void Module::RunPassRayQuery() {
+bool Module::RunPassRayQuery() {
     RayQueryPass pass(*this);
-    pass.Run();
-    if (print_info_) {
-        std::cout << "RayQueryPass\n\tinstrumentation count: " << pass.GetInstrumentedCount() << "\n";
+    const bool changed = pass.Run();
+    if (print_debug_info_) {
+        pass.PrintDebugInfo();
     }
+    return changed;
+}
+
+// binding slot allows debug printf to be slotted in the same set as GPU-AV if needed
+bool Module::RunPassDebugPrintf(uint32_t binding_slot) {
+    DebugPrintfPass pass(*this, binding_slot);
+    const bool changed = pass.Run();
+    if (print_debug_info_) {
+        pass.PrintDebugInfo();
+    }
+    return changed;
 }
 
 uint32_t Module::TakeNextId() {
@@ -304,6 +343,19 @@ void Module::ToBinary(std::vector<uint32_t>& out) {
     }
 }
 
+// We need to apply variable to the Entry Point interface if using SPIR-V 1.4+ (or input/output)
+void Module::AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class) {
+    const uint32_t spirv_version_1_4 = 0x00010400;
+    if (header_.version >= spirv_version_1_4 || storage_class == spv::StorageClassInput ||
+        storage_class == spv::StorageClassOutput) {
+        // Currently just apply to all Entrypoint as it should be ok to have a global variable in there even if it can't dynamically
+        // touch the new function
+        for (auto& entry_point : entry_points_) {
+            entry_point->AppendWord(id);
+        }
+    }
+}
+
 // Takes the current module and injects the function into it
 // This is done by first apply any new Types/Constants/Variables and then copying in the instructions of the Function
 void Module::LinkFunction(const LinkInfo& info) {
@@ -314,17 +366,6 @@ void Module::LinkFunction(const LinkInfo& info) {
 
     // Track all decorations and add after when have full id_swap_map
     InstructionList decorations;
-
-    // We need to apply variable to the Entry Point interface if using SPIR-V 1.4+
-    std::vector<uint32_t> interface_variable_ids;
-
-    // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
-    // A module can only have one OpMemoryModel
-    memory_model_[0]->words_[1] = spv::AddressingModelPhysicalStorageBuffer64;
-    if (!HasCapability(spv::CapabilityPhysicalStorageBufferAddresses)) {
-        AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
-        AddExtension("SPV_KHR_physical_storage_buffer");
-    }
 
     // find all constant and types, add any the module doesn't have
     uint32_t offset = 5;  // skip header
@@ -468,7 +509,7 @@ void Module::LinkFunction(const LinkInfo& info) {
         } else if (opcode == spv::OpVariable) {
             // Add in all variables outside of functions
             const uint32_t new_result_id = TakeNextId();
-            interface_variable_ids.push_back(new_result_id);
+            AddInterfaceVariables(new_result_id, (spv::StorageClass)new_inst->Word(3));
             id_swap_map[old_result_id] = new_result_id;
             new_inst->ReplaceResultId(new_result_id);
             new_inst->ReplaceLinkedId(id_swap_map);
@@ -476,16 +517,16 @@ void Module::LinkFunction(const LinkInfo& info) {
             const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
             type_manager_.AddVariable(std::move(new_inst), *type);
         } else if (opcode == spv::OpDecorate || opcode == spv::OpMemberDecorate) {
-            decorations.push_back(std::move(new_inst));
+            decorations.emplace_back(std::move(new_inst));
         } else if (opcode == spv::OpCapability) {
             spv::Capability capability = spv::Capability(new_inst->Word(1));
             // Shader is required and we want to remove Linkage from final shader
             if (capability != spv::CapabilityShader && capability != spv::CapabilityLinkage) {
                 // It is valid to have duplicated Capabilities
-                capabilities_.push_back(std::move(new_inst));
+                capabilities_.emplace_back(std::move(new_inst));
             }
         } else if (opcode == spv::OpExtension) {
-            extensions_.push_back(std::move(new_inst));
+            extensions_.emplace_back(std::move(new_inst));
         }
 
         offset += length;
@@ -506,13 +547,7 @@ void Module::LinkFunction(const LinkInfo& info) {
         offset_copy += length;
     }
 
-    {
-        std::vector<uint32_t> words = {info.function_id};
-        StringToSpirv(info.opname, words);
-        auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), spv::OpName);
-        new_inst->Fill(words);
-        debug_name_.emplace_back(std::move(new_inst));
-    }
+    AddDebugName(info.opname, info.function_id);
 
     // Add function and copy all instructions to it, while adjusting any IDs
     auto& new_function = functions_.emplace_back(std::make_unique<Function>(*this));
@@ -569,7 +604,20 @@ void Module::LinkFunction(const LinkInfo& info) {
             }
         }
 
-        annotations_.push_back(std::move(decoration));
+        annotations_.emplace_back(std::move(decoration));
+    }
+}
+
+// Things that need to be done once if there is any instrumentation.
+void Module::PostProcess() {
+    if (use_bda_) {
+        // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
+        // A module can only have one OpMemoryModel
+        memory_model_[0]->words_[1] = spv::AddressingModelPhysicalStorageBuffer64;
+        if (!HasCapability(spv::CapabilityPhysicalStorageBufferAddresses)) {
+            AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
+            AddExtension("SPV_KHR_physical_storage_buffer");
+        }
     }
 
     // The instrumentation code has atomicAdd() to update the output buffer
@@ -577,18 +625,6 @@ void Module::LinkFunction(const LinkInfo& info) {
     if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
         // TODO - Add warning if device doesn't support feature
         AddCapability(spv::CapabilityVulkanMemoryModelDeviceScope);
-    }
-
-    // Update entrypoint interface if 1.4+
-    const uint32_t spirv_version_1_4 = 0x00010400;
-    if (header_.version >= spirv_version_1_4) {
-        // Currently just apply to all Entrypoint as it should be ok to have a global variable in there even if it can't dynamically
-        // touch the new function
-        for (auto& entry_point : entry_points_) {
-            for (uint32_t id : interface_variable_ids) {
-                entry_point->AppendWord(id);
-            }
-        }
     }
 
     // Vulkan 1.1 is required, so if incoming SPIR-V is 1.0, might need to adjust it
