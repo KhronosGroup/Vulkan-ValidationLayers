@@ -268,6 +268,10 @@ dynamic_state_map = {
     "VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR" : {
         "command" : ["vkCmdSetRayTracingPipelineStackSizeKHR"],
     },
+    "VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT" : {
+        "command" : ["vkCmdSetDepthClampRangeEXT"],
+        "dependency" : ["depthClampEnable"]
+    },
 }
 
 #
@@ -493,6 +497,13 @@ class DynamicStateOutputGenerator(BaseGenerator):
                     ss << "vkCmdSetDepthBiasEnable last set depthTestEnable to VK_TRUE.\\n";
                 } else {
                     ss << "VkPipelineRasterizationStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'depthClampEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
+                    ss << "vkCmdSetDepthClampEnableEXT last set depthClampEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineRasterizationStateCreateInfo::depthClampEnable was VK_TRUE in the last bound graphics pipeline.\\n";
                 }''')
             if 'logicOpEnable' in dependency:
                 out.append('''

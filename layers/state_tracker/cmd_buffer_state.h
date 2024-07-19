@@ -262,6 +262,8 @@ class CommandBuffer : public RefcountedStateObject {
         bool rasterizer_discard_enable;
         // VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE
         bool depth_bias_enable = false;
+        // VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT
+        bool depth_clamp_enable = false;
         // VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT
         bool alpha_to_coverage_enable;
         // VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT

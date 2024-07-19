@@ -118,6 +118,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
             'vkCmdSetViewportWScalingNV',
+            'vkCmdSetDepthClampRangeEXT',
             'vkAcquireNextImageKHR',
             'vkAcquireNextImage2KHR',
             'vkCmdBindTransformFeedbackBuffersEXT',

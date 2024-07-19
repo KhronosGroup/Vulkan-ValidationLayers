@@ -826,6 +826,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                         uint32_t viewportCount, const VkViewportWScalingNV *pViewportWScalings,
                                                         const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                                        const VkDepthClampRangeEXT *pDepthClampRange,
+                                                        const ErrorObject &error_obj) const;
 
     bool manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
@@ -1085,6 +1088,7 @@ class StatelessValidation : public ValidationObject {
                                                         VkBaseOutStructure *pPipelineProperties,
                                                         const ErrorObject &error_obj) const;
 
+    bool ValidateDepthClampRange(const VkDepthClampRangeEXT &depth_clamp_range, const Location &loc) const;
     bool manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
                                                   const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const;

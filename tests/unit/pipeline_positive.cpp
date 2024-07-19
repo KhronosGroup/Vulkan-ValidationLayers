@@ -1890,3 +1890,49 @@ TEST_F(PositivePipeline, PipelineMissingFeaturesDynamic) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, DepthClampControl) {
+    AddRequiredExtensions(VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthClampControl);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDepthClampRangeEXT clamp_range = {0.0f, 1.0f};
+    VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
+    clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT;
+    clamp_control.pDepthClampRange = &clamp_range;
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &clamp_control;
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositivePipeline, DepthClampControlUnrestricted) {
+    AddRequiredExtensions(VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthClampControl);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDepthClampRangeEXT clamp_range = {-0.5f, 1.5f};
+    VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
+    clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT;
+    clamp_control.pDepthClampRange = &clamp_range;
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &clamp_control;
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(PositivePipeline, DepthClampControlNullRange) {
+    AddRequiredExtensions(VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthClampControl);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
+    clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_VIEWPORT_RANGE_EXT;
+    clamp_control.pDepthClampRange = nullptr;
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &clamp_control;
+    pipe.CreateGraphicsPipeline();
+}

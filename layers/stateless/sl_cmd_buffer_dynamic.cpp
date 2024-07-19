@@ -498,6 +498,22 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer c
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer,
+                                                                         VkDepthClampModeEXT depthClampMode,
+                                                                         const VkDepthClampRangeEXT *pDepthClampRange,
+                                                                         const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (depthClampMode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
+        if (!pDepthClampRange) {
+            skip |= LogError("VUID-vkCmdSetDepthClampRangeEXT-pDepthClampRange-09647", device,
+                             error_obj.location.dot(Field::pDepthClampRange), "is NULL.");
+        } else {
+            skip |= ValidateDepthClampRange(*pDepthClampRange, error_obj.location.dot(Field::pDepthClampRange));
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor,
                                                               uint32_t scissorCount, const VkRect2D *pScissors,
                                                               const ErrorObject &error_obj) const {

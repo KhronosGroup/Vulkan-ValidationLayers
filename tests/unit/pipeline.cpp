@@ -3649,3 +3649,54 @@ TEST_F(NegativePipeline, NoRasterizationStateDynamicRendering) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, DepthClampControlMinMax) {
+    AddRequiredExtensions(VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthClampControl);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDepthClampRangeEXT clamp_range = {0.5f, 0.4f};
+    VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
+    clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT;
+    clamp_control.pDepthClampRange = &clamp_range;
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &clamp_control;
+    m_errorMonitor->SetDesiredError("VUID-VkDepthClampRangeEXT-pDepthClampRange-00999");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, DepthClampControlUnrestricted) {
+    AddRequiredExtensions(VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthClampControl);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDepthClampRangeEXT clamp_range = {-0.5f, 1.5f};
+    VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
+    clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT;
+    clamp_control.pDepthClampRange = &clamp_range;
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &clamp_control;
+    m_errorMonitor->SetDesiredError("VUID-VkDepthClampRangeEXT-pDepthClampRange-09648");
+    m_errorMonitor->SetDesiredError("VUID-VkDepthClampRangeEXT-pDepthClampRange-09649");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, DepthClampControlUserDefined) {
+    AddRequiredExtensions(VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthClampControl);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
+    clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT;
+    clamp_control.pDepthClampRange = nullptr;
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &clamp_control;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-pDepthClampRange-09646");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
