@@ -513,6 +513,171 @@ TEST_F(NegativeDebugPrintf, DISABLED_Float64VectorPrecision) {
     BasicComputeTest(shader_source, "vector of float64 1.23 1.23");
 }
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
+TEST_F(NegativeDebugPrintf, DISABLED_FloatMix) {
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        void main() {
+            float16_t a = float16_t(3.33);
+            float b = 3.33;
+            float64_t c = float64_t(3.33);
+            debugPrintfEXT("%f %f %f %f", a, b, c, 3.33f);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "32, 16, 32 | 3.300000 3.298828 3.300000");
+}
+
+TEST_F(NegativeDebugPrintf, Float16) {
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        void main() {
+            float16_t foo = float16_t(3.3);
+            float bar = 3.3;
+            debugPrintfEXT("32, 16, 32 | %f %f %f", bar, foo, bar);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "32, 16, 32 | 3.300000 3.298828 3.300000");
+}
+
+TEST_F(NegativeDebugPrintf, Float16Vector) {
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        void main() {
+            float16_t foo = float16_t(3.3);
+            f16vec2 vecfloat = f16vec2(foo, foo);
+            debugPrintfEXT("vector of float16 %v2f", vecfloat);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "vector of float16 3.298828, 3.298828");
+}
+
+TEST_F(NegativeDebugPrintf, Float16Precision) {
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        void main() {
+            float16_t foo = float16_t(3.3);
+            debugPrintfEXT("float16 %1.3f", foo);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "float16 3.299");
+}
+
+// TODO casting is wrong
+TEST_F(NegativeDebugPrintf, DISABLED_Int16) {
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+        void main() {
+            uint16_t foo = uint16_t(123);
+            int16_t bar = int16_t(-123);
+            debugPrintfEXT("unsigned and signed %d %d", foo, bar);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "unsigned and signed 123 -123");
+}
+
+TEST_F(NegativeDebugPrintf, DISABLED_Int16Vector) {
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+        void main() {
+            uint16_t foo = uint16_t(123);
+            u16vec2 fooVec = u16vec2(foo, foo);
+            int16_t bar = int16_t(-123);
+            i16vec2 barVec = i16vec2(bar, bar);
+            debugPrintfEXT("unsigned and signed %v2d %v2d", fooVec, barVec);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "unsigned and signed 123, 123 | -123, -123");
+}
+
+TEST_F(NegativeDebugPrintf, DISABLED_Int16Hex) {
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+        void main() {
+            uint16_t foo = uint16_t(123);
+            int16_t bar = int16_t(-123);
+            debugPrintfEXT("unsigned and signed 0x%x 0x%x", foo, bar);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "unsigned and signed 0x7b 0x85");
+}
+
+TEST_F(NegativeDebugPrintf, DISABLED_Int8) {
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+        void main() {
+            uint8_t foo = uint8_t(123);
+            int8_t bar = int8_t(-123);
+            debugPrintfEXT("unsigned and signed %d %d", foo, bar);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "unsigned and signed 123 -123");
+}
+
+TEST_F(NegativeDebugPrintf, DISABLED_Int8Vector) {
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+        void main() {
+            uint8_t foo = uint8_t(123);
+            u8vec2 fooVec = u8vec2(foo, foo);
+            int8_t bar = int8_t(-123);
+            i8vec2 barVec = i8vec2(bar, bar);
+            debugPrintfEXT("unsigned and signed %v2d | %v2d", fooVec, barVec);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "unsigned and signed 123, 123 | -123, -123");
+}
+
+TEST_F(NegativeDebugPrintf, Int8Hex) {
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+        void main() {
+            uint8_t foo = uint8_t(123);
+            int8_t bar = int8_t(-123);
+            debugPrintfEXT("unsigned and signed 0x%x 0x%x", foo, bar);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "unsigned and signed 0x7b 0x85");
+}
+
 TEST_F(NegativeDebugPrintf, BoolAsHex) {
     char const *shader_source = R"glsl(
         #version 450
@@ -524,6 +689,41 @@ TEST_F(NegativeDebugPrintf, BoolAsHex) {
         }
     )glsl";
     BasicComputeTest(shader_source, "bool fun 0x1010");
+}
+
+TEST_F(NegativeDebugPrintf, BoolVector) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+
+        bool foo(int x) {
+            return x == 1;
+        }
+
+        void main() {
+            bool a = foo(1);
+            bool b = !a;
+            bvec2 c = bvec2(a, b);
+            debugPrintfEXT("bvec2 %v2u", c);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "bvec2 1, 0");
+}
+
+TEST_F(NegativeDebugPrintf, BoolNonConstant) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+
+        bool foo(int x) {
+            return x == 1;
+        }
+
+        void main() {
+            debugPrintfEXT("bool %u", foo(1));
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "bool 1");
 }
 
 TEST_F(NegativeDebugPrintf, Empty) {
