@@ -341,7 +341,8 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
     if (format_list_info) {
         const uint32_t viewFormatCount = format_list_info->viewFormatCount;
-        if (((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) == 0) && (viewFormatCount > 1)) {
+        const bool mutable_image = (image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) != 0;
+        if (!mutable_image && viewFormatCount > 1) {
             skip |= LogError("VUID-VkImageCreateInfo-flags-04738", device,
                              create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
                              "is %" PRIu32 " but flag (%s) does not include VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.", viewFormatCount,
@@ -356,7 +357,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             if (view_format == VK_FORMAT_UNDEFINED) {
                 skip |= LogError("VUID-VkImageFormatListCreateInfo-viewFormatCount-09540", device, format_loc,
                                  "is VK_FORMAT_UNDEFINED.");
-            } else if (!class_compatible) {
+            } else if (!class_compatible && !vkuFormatIsMultiplane(image_format)) {
                 if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
                     const bool size_compatible = !vkuFormatIsCompressed(view_format) &&
                                                  vkuFormatElementSize(view_format) == vkuFormatElementSize(image_format);
