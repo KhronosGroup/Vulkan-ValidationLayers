@@ -160,9 +160,9 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                      const RecordObject& record_obj) {
-    StateTracker::PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
+void BestPractices::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
+                                                       const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
@@ -171,14 +171,14 @@ void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuf
     }
 }
 
-void BestPractices::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                         const RecordObject& record_obj) {
-    PreCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
+void BestPractices::PostCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
+                                                          const RecordObject& record_obj) {
+    PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
 }
 
-void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                       const RecordObject& record_obj) {
-    StateTracker::PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
+void BestPractices::PostCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
+                                                        const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
@@ -187,9 +187,9 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBu
     }
 }
 
-void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                          const RecordObject& record_obj) {
-    PreCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
+void BestPractices::PostCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
+                                                           const RecordObject& record_obj) {
+    PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 }
 
 namespace {

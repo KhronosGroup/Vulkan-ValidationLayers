@@ -280,8 +280,8 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
     return PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, error_obj);
 }
 
-void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
-                                                            const RecordObject& record_obj) {
+void BestPractices::PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
+                                                             const RecordObject& record_obj) {
     auto mem_info = std::static_pointer_cast<bp_state::DeviceMemory>(Get<vvl::DeviceMemory>(memory));
     mem_info->dynamic_priority.emplace(priority);
 }

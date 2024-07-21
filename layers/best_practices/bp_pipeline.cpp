@@ -418,54 +418,6 @@ bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCrea
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                 VkPipeline pipeline, const RecordObject& record_obj) {
-    StateTracker::PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
-
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-
-    if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto pipeline_info = Get<vvl::Pipeline>(pipeline);
-        ASSERT_AND_RETURN(pipeline_info);
-        using TessGeometryMeshState = bp_state::CommandBufferStateNV::TessGeometryMesh::State;
-        auto& tgm = cb_state->nv.tess_geometry_mesh;
-
-        // Make sure the message is only signaled once per command buffer
-        tgm.threshold_signaled = tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA;
-
-        // Track pipeline switches with tessellation, geometry, and/or mesh shaders enabled, and disabled
-        auto tgm_stages = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-                          VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
-        auto new_tgm_state =
-            (pipeline_info->active_shaders & tgm_stages) != 0 ? TessGeometryMeshState::Enabled : TessGeometryMeshState::Disabled;
-        if (tgm.state != new_tgm_state && tgm.state != TessGeometryMeshState::Unknown) {
-            tgm.num_switches++;
-        }
-        tgm.state = new_tgm_state;
-
-        // Track depthTestEnable and depthCompareOp
-        auto& pipeline_create_info = pipeline_info->GraphicsCreateInfo();
-        auto depth_stencil_state = pipeline_create_info.pDepthStencilState;
-        auto dynamic_state = pipeline_create_info.pDynamicState;
-        if (depth_stencil_state && dynamic_state) {
-            auto dynamic_state_begin = dynamic_state->pDynamicStates;
-            auto dynamic_state_end = dynamic_state->pDynamicStates + dynamic_state->dynamicStateCount;
-
-            const bool dynamic_depth_test_enable =
-                std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) != dynamic_state_end;
-            const bool dynamic_depth_func =
-                std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) != dynamic_state_end;
-
-            if (!dynamic_depth_test_enable) {
-                RecordSetDepthTestState(*cb_state, cb_state->nv.depth_compare_op, depth_stencil_state->depthTestEnable != VK_FALSE);
-            }
-            if (!dynamic_depth_func) {
-                RecordSetDepthTestState(*cb_state, depth_stencil_state->depthCompareOp, cb_state->nv.depth_test_enable);
-            }
-        }
-    }
-}
-
 void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                   VkPipeline pipeline, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
@@ -507,6 +459,46 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
                         break;
                     default:
                         break;
+                }
+            }
+
+            if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+                using TessGeometryMeshState = bp_state::CommandBufferStateNV::TessGeometryMesh::State;
+                auto& tgm = cb_state->nv.tess_geometry_mesh;
+
+                // Make sure the message is only signaled once per command buffer
+                tgm.threshold_signaled = tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA;
+
+                // Track pipeline switches with tessellation, geometry, and/or mesh shaders enabled, and disabled
+                auto tgm_stages = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+                                  VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
+                auto new_tgm_state = (pipeline_state->active_shaders & tgm_stages) != 0 ? TessGeometryMeshState::Enabled
+                                                                                        : TessGeometryMeshState::Disabled;
+                if (tgm.state != new_tgm_state && tgm.state != TessGeometryMeshState::Unknown) {
+                    tgm.num_switches++;
+                }
+                tgm.state = new_tgm_state;
+
+                // Track depthTestEnable and depthCompareOp
+                auto& pipeline_create_info = pipeline_state->GraphicsCreateInfo();
+                auto depth_stencil_state = pipeline_create_info.pDepthStencilState;
+                auto dynamic_state = pipeline_create_info.pDynamicState;
+                if (depth_stencil_state && dynamic_state) {
+                    auto dynamic_state_begin = dynamic_state->pDynamicStates;
+                    auto dynamic_state_end = dynamic_state->pDynamicStates + dynamic_state->dynamicStateCount;
+
+                    const bool dynamic_depth_test_enable =
+                        std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) != dynamic_state_end;
+                    const bool dynamic_depth_func =
+                        std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) != dynamic_state_end;
+
+                    if (!dynamic_depth_test_enable) {
+                        RecordSetDepthTestState(*cb_state, cb_state->nv.depth_compare_op,
+                                                depth_stencil_state->depthTestEnable != VK_FALSE);
+                    }
+                    if (!dynamic_depth_func) {
+                        RecordSetDepthTestState(*cb_state, depth_stencil_state->depthCompareOp, cb_state->nv.depth_test_enable);
+                    }
                 }
             }
         }
