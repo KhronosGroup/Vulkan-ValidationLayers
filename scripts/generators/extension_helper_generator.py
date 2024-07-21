@@ -83,6 +83,8 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             if extension.depends is not None:
                 # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
                 temp = re.sub(r',VK_VERSION_1_\d+', '', extension.depends)
+                # It can look like (VK_KHR_timeline_semaphore,VK_VERSION_1_2) or (VK_VERSION_1_2,VK_KHR_timeline_semaphore)
+                temp = re.sub(r'VK_VERSION_1_\d+,', '', temp)
                 for reqs in exprValues(parseExpr(temp)):
                     feature = self.vk.extensions[reqs] if reqs in self.vk.extensions else self.vk.versions[reqs]
                     self.requiredExpression[extension.name].append(feature)

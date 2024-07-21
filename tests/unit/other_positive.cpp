@@ -635,3 +635,11 @@ TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct1) {
     // Instance extension promoted to VK_VERSION_1_1
     vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &externalBufferInfo, &externalBufferProperties);
 }
+
+TEST_F(VkPositiveLayerTest, TimelineSemaphoreWithVulkan11) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8308");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_NV_LOW_LATENCY_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+}
