@@ -868,6 +868,7 @@ void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const Q
     });
 }
 
+// Need to enqueue work prior to PostCallRecord
 void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                             VkQueryControlFlags flags, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
@@ -928,7 +929,7 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
             is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-02344" : "VUID-vkCmdEndQuery-commandBuffer-01886";
         skip |= LogError(vuid, cb_state.Handle(), loc, "command can't be used in protected command buffers.");
     }
-    if (cb_state.activeRenderPass) {
+    if (cb_state.activeRenderPass && (query_payload != cb_state.activeQueries.end())) {
         if (!query_payload->inside_render_pass) {
             const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-None-07007" : "VUID-vkCmdEndQuery-None-07007";
             const LogObjectList objlist(cb_state.Handle(), queryPool, cb_state.activeRenderPass->Handle());
@@ -985,6 +986,7 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
     return skip;
 }
 
+// Use PreCallRecord to view query object before ending it
 void CoreChecks::PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                           const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
@@ -1049,6 +1051,7 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
     return skip;
 }
 
+// Use PreCallRecord to view query object before resetting it
 void CoreChecks::PreCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                 uint32_t queryCount, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
@@ -1331,8 +1334,7 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
                                                     VkQueryPool queryPool, uint32_t slot, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    return RecordCmdWriteTimestamp2(*cb_state, queryPool, slot, record_obj.location.function);
+    return PostCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, slot, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
@@ -1400,6 +1402,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     return skip;
 }
 
+// Need to enqueue work prior to PostCallRecord
 void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                       VkQueryControlFlags flags, uint32_t index, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
@@ -1407,6 +1410,7 @@ void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuf
     EnqueueVerifyBeginQuery(commandBuffer, query_obj, record_obj.location.function);
 }
 
+// Use PreCallRecord to view query object before ending it
 void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                     uint32_t index, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;

@@ -1366,11 +1366,9 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
-                                                                          uint32_t accelerationStructureCount,
-                                                                          const VkAccelerationStructureKHR *pAccelerationStructures,
-                                                                          VkQueryType queryType, VkQueryPool queryPool,
-                                                                          uint32_t firstQuery, const RecordObject &record_obj) {
+void CoreChecks::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
+    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);

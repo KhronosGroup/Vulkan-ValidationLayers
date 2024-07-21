@@ -928,10 +928,10 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                 const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                 const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
+void CoreChecks::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                  const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                  const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
 
     auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto image_state = Get<vvl::Image>(image);
@@ -1048,11 +1048,11 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                        const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                        const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
-                                                         record_obj);
+void CoreChecks::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                         const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                         const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
+                                                          record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto image_state = Get<vvl::Image>(image);
@@ -1317,13 +1317,13 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                  const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                  const VkClearRect *pRects, const RecordObject &record_obj) {
+void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                   const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                                   const VkClearRect *pRects, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects, record_obj);
+
     auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state_ptr) {
-        return;
-    }
+    ASSERT_AND_RETURN(cb_state_ptr);
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     if (!cb_state.activeRenderPass || cb_state.IsPrimary()) {
         return;
