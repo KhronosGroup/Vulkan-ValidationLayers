@@ -180,6 +180,26 @@ TEST_F(NegativeParent, BindPipeline) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeParent, PipelineShaderStageCreateInfo) {
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 0;
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+
+    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    cs.InitFromGLSLTry(m_second_device);
+
+    VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
+    pipeline_ci.layout = pipeline_layout.handle();
+    pipeline_ci.stage = cs.GetStageCreateInfo();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkPipelineShaderStageCreateInfo-module-parent");
+    vkt::Pipeline pipeline(*m_device, pipeline_ci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeParent, RenderPassFramebuffer) {
     TEST_DESCRIPTION("Test RenderPass and Framebuffer");
 
@@ -264,6 +284,26 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
     vk::CmdBeginRenderPass2(command_buffer.handle(), &m_renderPassBeginInfo, &subpass_begin_info);
     m_errorMonitor->VerifyFound();
     command_buffer.end();
+}
+
+TEST_F(NegativeParent, FreeCommandBuffer) {
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::CommandPool command_pool_1(*m_device, m_device->graphics_queue_node_index_, 0);
+    vkt::CommandPool command_pool_2(*m_second_device, m_device->graphics_queue_node_index_, 0);
+
+    VkCommandBufferAllocateInfo cb_alloc_info = vku::InitStructHelper();
+    cb_alloc_info.commandPool = command_pool_1;
+    cb_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cb_alloc_info.commandBufferCount = 1;
+    VkCommandBuffer command_buffer;
+    vk::AllocateCommandBuffers(device(), &cb_alloc_info, &command_buffer);
+    m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-pCommandBuffers-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-commandPool-parent");
+    vk::FreeCommandBuffers(device(), command_pool_2, 1, &command_buffer);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
@@ -719,11 +759,11 @@ TEST_F(NegativeParent, FlushInvalidateMemory) {
     void *pData;
     vk::MapMemory(device(), device_memory, 0, VK_WHOLE_SIZE, 0, &pData);
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkFlushMappedMemoryRanges-memory-device");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMappedMemoryRange-memory-device");
     vk::FlushMappedMemoryRanges(m_second_device->handle(), 1, &memory_range);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkInvalidateMappedMemoryRanges-memory-device");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMappedMemoryRange-memory-device");
     vk::InvalidateMappedMemoryRanges(m_second_device->handle(), 1, &memory_range);
     m_errorMonitor->VerifyFound();
 
@@ -809,4 +849,42 @@ TEST_F(NegativeParent, CmdPipelineBarrier2) {
     vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &buffer_dependency);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeParent, ShaderObjectDescriptorSetLayout) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    OneOffDescriptorSet descriptor_set(m_second_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    VkDescriptorSetLayout dsl_handle = descriptor_set.layout_.handle();
+
+    VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent");
+    const vkt::Shader vertShader(*m_device, stage, GLSLToSPV(stage, kVertexMinimalGlsl), &dsl_handle);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, MapMemory2) {
+    AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
+    memory_info.allocationSize = 64;
+    m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    vkt::DeviceMemory memory(*m_second_device, memory_info);
+
+    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    map_info.memory = memory;
+    map_info.offset = 0;
+    map_info.size = memory_info.allocationSize;
+
+    uint32_t *pData = nullptr;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryMapInfoKHR-memory-parent");
+    vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
+    m_errorMonitor->VerifyFound();
 }
