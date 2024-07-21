@@ -209,86 +209,8 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
         # Structures that do not define parent/commonparent VUIDs for vulkan handles.
         # This overlaps with https://gitlab.khronos.org/vulkan/vulkan/-/issues/3553#note_424431
         self.structs_that_forgot_about_parent_vuids = [
-            'VkSparseMemoryBind',
-            'VkSparseImageMemoryBind',
-            'VkPipelineShaderStageCreateInfo',
-            'VkImageMemoryRequirementsInfo2',
-            'VkBufferMemoryRequirementsInfo2',
-            'VkImageSparseMemoryRequirementsInfo2',
-            'VkSemaphoreWaitInfo',
-            'VkSemaphoreSignalInfo',
-            'VkSemaphoreSubmitInfo',
-            'VkCommandBufferSubmitInfo',
-            'VkBindVideoSessionMemoryInfoKHR',
-            'VkVideoPictureResourceInfoKHR',
-            'VkVideoDecodeInfoKHR',
-            'VkMemoryGetWin32HandleInfoKHR',
-            'VkMemoryGetFdInfoKHR',
-            'VkImportSemaphoreWin32HandleInfoKHR',
-            'VkSemaphoreGetWin32HandleInfoKHR',
-            'VkImportSemaphoreFdInfoKHR',
-            'VkSemaphoreGetFdInfoKHR',
-            'VkImportFenceWin32HandleInfoKHR',
-            'VkFenceGetWin32HandleInfoKHR',
-            'VkImportFenceFdInfoKHR',
-            'VkFenceGetFdInfoKHR',
             'VkPhysicalDeviceSurfaceInfo2KHR',
-            'VkMemoryMapInfoKHR',
-            'VkMemoryUnmapInfoKHR',
-            'VkVideoEncodeSessionParametersGetInfoKHR',
-            'VkVideoEncodeInfoKHR',
-            'VkCuFunctionCreateInfoNVX',
-            'VkCuLaunchInfoNVX',
-            'VkConditionalRenderingBeginInfoEXT',
-            'VkMemoryGetAndroidHardwareBufferInfoANDROID',
-            'VkPipelineLibraryCreateInfoKHR',
-            'VkGeometryAABBNV',
-            'VkAccelerationStructureMemoryRequirementsInfoNV',
-            'VkCopyMemoryToImageInfoEXT',
-            'VkCopyImageToMemoryInfoEXT',
-            'VkHostImageLayoutTransitionInfoEXT',
-            'VkReleaseSwapchainImagesInfoEXT',
-            'VkIndirectCommandsLayoutTokenNV',
-            'VkBufferCaptureDescriptorDataInfoEXT',
-            'VkImageCaptureDescriptorDataInfoEXT',
-            'VkImageViewCaptureDescriptorDataInfoEXT',
-            'VkSamplerCaptureDescriptorDataInfoEXT',
-            'VkMemoryGetZirconHandleInfoFUCHSIA',
-            'VkImportSemaphoreZirconHandleInfoFUCHSIA',
-            'VkSemaphoreGetZirconHandleInfoFUCHSIA',
-            'VkMemoryGetRemoteAddressInfoNV',
-            'VkMicromapCreateInfoEXT',
             'VkMicromapBuildInfoEXT',
-            'VkCopyMicromapToMemoryInfoEXT',
-            'VkCopyMemoryToMicromapInfoEXT',
-            'VkDescriptorSetBindingReferenceVALVE',
-            'VkShaderCreateInfoEXT',
-            'VkAccelerationStructureCreateInfoKHR',
-            'VkCopyAccelerationStructureToMemoryInfoKHR',
-            'VkCopyMemoryToAccelerationStructureInfoKHR',
-            'VkDisplaySurfaceCreateInfoKHR',
-            'VkDisplayPlaneInfo2KHR',
-            'VkSparseBufferMemoryBindInfo',
-            'VkSparseImageOpaqueMemoryBindInfo',
-            'VkSparseImageMemoryBindInfo',
-            'VkImportMemoryBufferCollectionFUCHSIA',
-            'VkBufferCollectionBufferCreateInfoFUCHSIA',
-            'VkBufferCollectionImageCreateInfoFUCHSIA',
-            'VkImageSwapchainCreateInfoKHR',
-            'VkSamplerYcbcrConversionInfo',
-            'VkShaderModuleValidationCacheCreateInfoEXT',
-            'VkGraphicsPipelineShaderGroupsCreateInfoNV',
-            'VkSubpassShadingPipelineCreateInfoHUAWEI',
-            'VkBindImageMemorySwapchainInfoKHR',
-            'VkRenderingFragmentDensityMapAttachmentInfoEXT',
-            'VkRenderingFragmentShadingRateAttachmentInfoKHR',
-            'VkSwapchainPresentFenceInfoEXT',
-            'VkIndirectCommandsStreamNV',
-            'VkDescriptorBufferBindingPushDescriptorBufferHandleEXT',
-            'VkBufferDeviceAddressInfo',
-            'VkDeviceMemoryOpaqueCaptureAddressInfo',
-            'VkPipelineIndirectDeviceAddressInfoNV',
-            'VkAccelerationStructureDeviceAddressInfoKHR',
 
             # Handled in manual check
             'VkDescriptorSetLayoutBinding',
@@ -623,6 +545,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
     # It is very complex for the spec handle walking through structs and finding Handles and generating implicit VUs,
     # We instead just have to do it manually for now.
     # (details at https://gitlab.khronos.org/vulkan/vulkan/-/issues/3553#note_424431)
+    #
+    # This was attempted to be solved in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6711
+    # but we need a more automatic way, but having this here helps as a working reference in the future
     def getManualParentVUID(self, memberName: str, structName: str, commandName: str):
         # These are cases where there is only a single caller of the struct
         # We check by command name incase a new command would use the struct
@@ -644,6 +569,122 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             return '"UNASSIGNED-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-layout-parent"'
         if commandName == 'vkCreateBufferView' and memberName == 'buffer':
             return '"UNASSIGNED-VkBufferViewCreateInfo-buffer-parent"'
+        if commandName == 'vkCreateShadersEXT' and memberName == 'pSetLayouts':
+            return '"UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent"'
+        if commandName == 'vkGetMemoryWin32HandleKHR' and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryGetWin32HandleInfoKHR-memory-parent"'
+        if commandName == 'vkImportSemaphoreWin32HandleKHR' and memberName == 'semaphore':
+            return '"UNASSIGNED-VkImportSemaphoreWin32HandleInfoKHR-semaphore-parent"'
+        if commandName == 'vkGetSemaphoreWin32HandleKHR' and memberName == 'semaphore':
+            return '"UNASSIGNED-VkSemaphoreGetWin32HandleInfoKHR-semaphore-parent"'
+        if commandName == 'vkImportFenceWin32HandleKHR' and memberName == 'fence':
+            return '"UNASSIGNED-VkImportFenceWin32HandleInfoKHR-fence-parent"'
+        if commandName == 'vkGetFenceWin32HandleKHR' and memberName == 'fence':
+            return '"UNASSIGNED-VkFenceGetWin32HandleInfoKHR-fence-parent"'
+        if commandName == 'vkGetMemoryFdKHR' and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryGetFdInfoKHR-memory-parent"'
+        if commandName == 'vkImportSemaphoreFdKHR' and memberName == 'semaphore':
+            return '"UNASSIGNED-VkImportSemaphoreFdInfoKHR-semaphore-parent"'
+        if commandName == 'vkGetSemaphoreFdKHR' and memberName == 'semaphore':
+            return '"UNASSIGNED-VkSemaphoreGetFdInfoKHR-semaphore-parent"'
+        if commandName == 'vkImportFenceFdKHR' and memberName == 'fence':
+            return '"UNASSIGNED-VkImportFenceFdInfoKHR-fence-parent"'
+        if commandName == 'vkGetFenceFdKHR' and memberName == 'fence':
+            return '"UNASSIGNED-VkFenceGetFdInfoKHR-fence-parent"'
+        if commandName == 'vkGetMemoryAndroidHardwareBufferANDROID' and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryGetAndroidHardwareBufferInfoANDROID-memory-parent"'
+        if commandName == 'vkGetMemoryZirconHandleFUCHSIA' and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryGetZirconHandleInfoFUCHSIA-memory-parent"'
+        if commandName == 'vkImportSemaphoreZirconHandleFUCHSIA' and memberName == 'semaphore':
+            return '"UNASSIGNED-VkImportSemaphoreZirconHandleInfoFUCHSIA-semaphore-parent"'
+        if commandName == 'vkGetSemaphoreZirconHandleFUCHSIA' and memberName == 'semaphore':
+            return '"UNASSIGNED-VkSemaphoreGetZirconHandleInfoFUCHSIA-semaphore-parent"'
+        if commandName == 'vkGetMemoryRemoteAddressNV' and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryGetRemoteAddressInfoNV-memory-parent"'
+        if commandName == 'vkAllocateMemory' and memberName == 'collection':
+            return '"UNASSIGNED-VkImportMemoryBufferCollectionFUCHSIA-collection-parent"'
+        if commandName == 'vkCreateBuffer' and memberName == 'collection':
+            return '"UNASSIGNED-VkBufferCollectionBufferCreateInfoFUCHSIA-collection-parent"'
+        if commandName == 'vkCreateImage' and memberName == 'collection':
+            return '"UNASSIGNED-VkBufferCollectionImageCreateInfoFUCHSIA-collection-parent"'
+        if commandName == 'vkGetDescriptorSetLayoutHostMappingInfoVALVE' and memberName == 'descriptorSetLayout':
+            return '"UNASSIGNED-VkDescriptorSetBindingReferenceVALVE-descriptorSetLayout-parent"'
+        if commandName == 'vkGetAccelerationStructureMemoryRequirementsNV' and memberName == 'accelerationStructure':
+            return '"UNASSIGNED-VkAccelerationStructureMemoryRequirementsInfoNV-accelerationStructure-parent"'
+        if commandName == 'vkGetPipelineIndirectDeviceAddressNV' and memberName == 'pipeline':
+            return '"UNASSIGNED-VkPipelineIndirectDeviceAddressInfoNV-pipeline-parent"'
+        if commandName == 'vkCreateCuFunctionNVX' and memberName == 'module':
+            return '"UNASSIGNED-VkCuFunctionCreateInfoNVX-module-parent"'
+        if commandName == 'vkCmdCuLaunchKernelNVX' and memberName == 'function':
+            return '"UNASSIGNED-VkCuLaunchInfoNVX-function-parent"'
+        if commandName == 'vkCreateIndirectCommandsLayoutNV' and memberName == 'pushconstantPipelineLayout':
+            return '"UNASSIGNED-VkIndirectCommandsLayoutTokenNV-pushconstantPipelineLayout-parent"'
+        if commandName == 'vkGetBufferOpaqueCaptureDescriptorDataEXT' and memberName == 'buffer':
+            return '"UNASSIGNED-VkBufferCaptureDescriptorDataInfoEXT-buffer-parent"'
+        if commandName == 'vkGetImageOpaqueCaptureDescriptorDataEXT' and memberName == 'image':
+            return '"UNASSIGNED-VkImageCaptureDescriptorDataInfoEXT-image-parent"'
+        if commandName == 'vkGetImageViewOpaqueCaptureDescriptorDataEXT' and memberName == 'imageView':
+            return '"UNASSIGNED-VkImageViewCaptureDescriptorDataInfoEXT-imageView-parent"'
+        if commandName == 'vkGetSamplerOpaqueCaptureDescriptorDataEXT' and memberName == 'sampler':
+            return '"UNASSIGNED-VkSamplerCaptureDescriptorDataInfoEXT-sampler-parent"'
+        if commandName == 'vkBindVideoSessionMemoryKHR' and memberName == 'memory':
+            return '"UNASSIGNED-VkBindVideoSessionMemoryInfoKHR-memory-parent"'
+        if commandName == 'vkCmdDecodeVideoKHR' and memberName == 'srcBuffer':
+            return '"UNASSIGNED-VkVideoDecodeInfoKHR-srcBuffer-parent"'
+        if commandName == 'vkGetEncodedVideoSessionParametersKHR' and memberName == 'videoSessionParameters':
+            return '"UNASSIGNED-VkVideoEncodeSessionParametersGetInfoKHR-videoSessionParameters-parent"'
+        if commandName == 'vkCmdEncodeVideoKHR' and memberName == 'dstBuffer':
+            return '"UNASSIGNED-VkVideoEncodeInfoKHR-dstBuffer-parent"'
+        if commandName == 'vkCreateDisplayPlaneSurfaceKHR' and memberName == 'displayMode':
+            return '"UNASSIGNED-VkDisplaySurfaceCreateInfoKHR-displayMode-parent"'
+        if commandName == 'vkGetDisplayPlaneCapabilities2KHR' and memberName == 'mode':
+            return '"UNASSIGNED-VkDisplayPlaneInfo2KHR-mode-parent"'
+        if commandName == 'vkCmdBindDescriptorBuffersEXT' and memberName == 'buffer':
+            return '"UNASSIGNED-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-buffer-parent"'
+        if commandName == 'vkReleaseSwapchainImagesEXT' and memberName == 'swapchain':
+            return '"VUID-VkReleaseSwapchainImagesInfoEXT-swapchain-parent"'
+        if commandName == 'vkCmdBeginConditionalRenderingEXT' and memberName == 'buffer':
+            return '"UNASSIGNED-VkConditionalRenderingBeginInfoEXT-buffer-parent"'
+        if commandName == 'vkMapMemory2KHR' and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryMapInfoKHR-memory-parent"'
+        if commandName == 'vkUnmapMemory2KHR' and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryUnmapInfoKHR-memory-parent"'
+        if commandName == 'vkCopyMemoryToImageEXT' and memberName == 'dstImage':
+            return '"UNASSIGNED-VkCopyMemoryToImageInfoEXT-dstImage-parent"'
+        if commandName == 'vkCopyImageToMemoryEXT' and memberName == 'srcImage':
+            return '"UNASSIGNED-VkCopyImageToMemoryInfoEXT-srcImage-parent"'
+        if commandName == 'vkTransitionImageLayoutEXT' and memberName == 'image':
+            return '"UNASSIGNED-VkHostImageLayoutTransitionInfoEXT-image-parent"'
+        if commandName == 'vkCreateMicromapEXT' and memberName == 'buffer':
+            return '"UNASSIGNED-VkMicromapCreateInfoEXT-buffer-parent"'
+        if commandName == 'vkCreateAccelerationStructureKHR' and memberName == 'buffer':
+            return '"UNASSIGNED-VkAccelerationStructureCreateInfoKHR-buffer-parent"'
+        if commandName == 'vkCreateImage' and memberName == 'swapchain':
+            return '"UNASSIGNED-VkImageSwapchainCreateInfoKHR-swapchain-parent"'
+        if commandName == 'vkQueuePresentKHR' and memberName == 'pFences':
+            return '"UNASSIGNED-VkSwapchainPresentFenceInfoEXT-pFences-parent"'
+        if commandName == 'vkGetAccelerationStructureDeviceAddressKHR' and memberName == 'accelerationStructure':
+            return '"UNASSIGNED-VkAccelerationStructureDeviceAddressInfoKHR-accelerationStructure-parent"'
+        if commandName.startswith('vkWaitSemaphores') and memberName == 'pSemaphores':
+            return '"UNASSIGNED-VkSemaphoreWaitInfo-pSemaphores-parent"'
+        if commandName.startswith('vkSignalSemaphore') and memberName == 'semaphore':
+            return '"UNASSIGNED-VkSemaphoreSignalInfo-semaphore-parent"'
+        if commandName.startswith('vkGetImageMemoryRequirements2') and memberName == 'image':
+            return '"UNASSIGNED-VkSemaphoreSignalInfo-image-parent"'
+        if commandName.startswith('vkGetBufferMemoryRequirements2') and memberName == 'buffer':
+            return '"UNASSIGNED-VkSemaphoreSignalInfo-buffer-parent"'
+        if commandName.startswith('vkGetImageSparseMemoryRequirements2') and memberName == 'image':
+            return '"UNASSIGNED-VkSemaphoreSignalInfo-image-parent"'
+        if commandName.startswith('vkQueueSubmit2') and memberName == 'commandBuffer':
+            return '"UNASSIGNED-VkCommandBufferSubmitInfo-commandBuffer-parent"'
+        if commandName.startswith('vkBindImageMemory2') and memberName == 'swapchain':
+            return '"UNASSIGNED-VkBindImageMemorySwapchainInfoKHR-swapchain-parent"'
+        if commandName.startswith('vkGetDeviceMemoryOpaqueCaptureAddress') and memberName == 'memory':
+            return '"UNASSIGNED-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-parent"'
+
+        # Same as above, but memberName has naming collision so need to use struct name as well
+        if commandName == 'vkCreateGraphicsPipelines' and structName == 'VkGraphicsPipelineShaderGroupsCreateInfoNV' and memberName == 'pPipelines':
+            return '"VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent"'
 
         # These are cases where multiple commands call the struct
         if structName == 'VkPipelineExecutableInfoKHR' and memberName == 'pipeline':
@@ -651,15 +692,46 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 return '"VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273"'
             elif commandName == 'vkGetPipelineExecutableInternalRepresentationsKHR':
                 return '"VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277"'
+
+        # These are cases are also where multiple commands call the struct,
+        # but for simplicity, use same VUID because the Location will provide the name of the caller.
+        # The only reason these have seperate VUs is because they were listed in the command, not the struct
+        if structName == 'VkRenderingFragmentDensityMapAttachmentInfoEXT' and memberName == 'imageView':
+            return '"UNASSIGNED-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-commonparent"'
+        if structName == 'VkRenderingFragmentShadingRateAttachmentInfoKHR' and memberName == 'imageView':
+            return '"UNASSIGNED-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-commonparent"'
+        if structName == 'VkSubpassShadingPipelineCreateInfoHUAWEI' and memberName == 'renderPass':
+            return '"UNASSIGNED-VkSubpassShadingPipelineCreateInfoHUAWEI-renderPass-parent"'
+        if structName == 'VkIndirectCommandsStreamNV' and memberName == 'buffer':
+            return '"UNASSIGNED-VkIndirectCommandsStreamNV-buffer-parent"'
         if structName == 'VkPipelineLayoutCreateInfo' and memberName == 'pSetLayouts':
             return '"UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent"'
         if structName == 'VkVideoInlineQueryInfoKHR' and memberName == 'queryPool':
             return '"UNASSIGNED-VkVideoInlineQueryInfoKHR-queryPool-parent"'
-        if structName == 'VkMappedMemoryRange':
-            if commandName == 'vkInvalidateMappedMemoryRanges':
-                return '"UNASSIGNED-vkInvalidateMappedMemoryRanges-memory-device"'
-            elif commandName == 'vkFlushMappedMemoryRanges':
-                return '"UNASSIGNED-vkFlushMappedMemoryRanges-memory-device"'
+        if structName == 'VkMappedMemoryRange' and memberName == 'memory':
+            return '"UNASSIGNED-VkMappedMemoryRange-memory-device"'
+        if structName == 'VkPipelineShaderStageCreateInfo' and memberName == 'module':
+            return '"UNASSIGNED-VkPipelineShaderStageCreateInfo-module-parent"'
+        if structName == 'VkVideoPictureResourceInfoKHR' and memberName == 'imageViewBinding':
+            return '"UNASSIGNED-VkVideoPictureResourceInfoKHR-imageViewBinding-parent"'
+        if structName == 'VkGeometryAABBNV' and memberName == 'aabbData':
+            return '"UNASSIGNED-VkGeometryAABBNV-aabbData-parent"'
+        if structName == 'VkPipelineLibraryCreateInfoKHR' and memberName == 'pLibraries':
+            return '"VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parent"'
+        if structName == 'VkCopyMicromapToMemoryInfoEXT' and memberName == 'src':
+            return '"VUID-VkCopyMicromapToMemoryInfoEXT-src-parent"'
+        if structName == 'VkCopyMemoryToMicromapInfoEXT' and memberName == 'dst':
+            return '"VUID-VkCopyMemoryToMicromapInfoEXT-dst-parent"'
+        if structName == 'VkCopyAccelerationStructureToMemoryInfoKHR' and memberName == 'src':
+            return '"VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-parent"'
+        if structName == 'VkCopyMemoryToAccelerationStructureInfoKHR' and memberName == 'dst':
+            return '"VUID-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parent"'
+        if structName == 'VkSamplerYcbcrConversionInfo' and memberName == 'conversion':
+            return '"UNASSIGNED-VkSamplerYcbcrConversionInfo-conversion-parent"'
+        if structName == 'VkShaderModuleValidationCacheCreateInfoEXT' and memberName == 'validationCache':
+            return '"UNASSIGNED-VkShaderModuleValidationCacheCreateInfoEXT-validationCache-parent"'
+        if structName == 'VkBufferDeviceAddressInfo' and memberName == 'buffer':
+            return '"UNASSIGNED-VkBufferDeviceAddressInfo-buffer-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
@@ -674,6 +746,22 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 return '"UNASSIGNED-vkCmdWaitEvents2-commandBuffer-commonparent"'
             elif commandName.startswith('vkCmdSetEvent2'):
                 return '"UNASSIGNED-vkCmdSetEvent2-commandBuffer-commonparent"'
+
+        # Single command calls same struct through 2 different structs
+        if commandName == 'vkQueueBindSparse':
+            if structName == 'VkSparseMemoryBind' and memberName == 'memory':
+                return '"UNASSIGNED-VkSparseMemoryBind-memory-parent"'
+            if structName == 'VkSparseImageMemoryBind' and memberName == 'memory':
+                return '"UNASSIGNED-VkSparseImageMemoryBind-memory-parent"'
+            if structName == 'VkSparseBufferMemoryBindInfo' and memberName == 'buffer':
+                return '"UNASSIGNED-VkSparseBufferMemoryBindInfo-buffer-parent"'
+            if structName == 'VkSparseImageOpaqueMemoryBindInfo' and memberName == 'image':
+                return '"UNASSIGNED-VkSparseImageOpaqueMemoryBindInfo-image-parent"'
+            if structName == 'VkSparseImageMemoryBindInfo' and memberName == 'image':
+                return '"UNASSIGNED-VkSparseImageMemoryBindInfo-image-parent"'
+        if commandName.startswith('vkQueueSubmit2'):
+            if structName == 'VkSemaphoreSubmitInfo' and memberName == 'semaphore':
+                return '"UNASSIGNED-VkSemaphoreSubmitInfo-semaphore-parent"'
 
         # Common parents
         if structName =='VkRenderPassAttachmentBeginInfo' and memberName == 'pAttachments':
