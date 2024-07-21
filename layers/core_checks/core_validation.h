@@ -878,9 +878,9 @@ class CoreChecks : public ValidationStateTracker {
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
                                            const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const override;
 
-    void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                         const VkClearColorValue* pColor, uint32_t rangeCount,
-                                         const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
+    void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                          const VkClearColorValue* pColor, uint32_t rangeCount,
+                                          const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
 
     bool ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, VkClearDepthStencilValue clearValue,
                                         const Location& loc) const;
@@ -890,9 +890,9 @@ class CoreChecks : public ValidationStateTracker {
                                                   const VkImageSubresourceRange* pRanges,
                                                   const ErrorObject& error_obj) const override;
 
-    void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                                const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
+    void PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                 const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
 
     bool FindLayouts(const vvl::Image& image_state, std::vector<VkImageLayout>& layouts) const;
 
@@ -954,9 +954,9 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects,
                                             const ErrorObject& error_obj) const override;
-    void PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                          const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects,
-                                          const RecordObject& record_obj) override;
+    void PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                           const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects,
+                                           const RecordObject& record_obj) override;
 
     template <typename RegionType>
     bool ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
@@ -992,15 +992,15 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                             VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions, VkFilter filter);
 
-    void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter,
-                                   const RecordObject& record_obj) override;
+    void PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
+                                    VkFilter filter, const RecordObject& record_obj) override;
 
-    void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                       const RecordObject& record_obj) override;
+    void PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
+                                        const RecordObject& record_obj) override;
 
-    void PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                    const RecordObject& record_obj) override;
+    void PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
+                                     const RecordObject& record_obj) override;
 
     bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBuffer& cb_state,
                                     GlobalImageLayoutMap& overlayLayoutMap) const;
@@ -1085,15 +1085,15 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageArrayLayerRange(const HandleT handle, const vvl::Image& image_state, const uint32_t base_layer,
                                       const uint32_t layer_count, const Location& subresource_loc) const;
 
-    void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
-                                   const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
+                                    const RecordObject& record_obj) override;
 
     void RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo);
-    void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInf,
-                                       const RecordObject& record_objo) override;
-    void PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
-                                    const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInf,
+                                        const RecordObject& record_objo) override;
+    void PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
+                                     const RecordObject& record_obj) override;
 
     template <typename RegionType>
     bool ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
@@ -1111,12 +1111,12 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RegionType>
     void RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                              const RegionType* pRegions, const Location& loc);
-    void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                    const VkBufferCopy* pRegions, const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
-                                        const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
-                                     const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                     const VkBufferCopy* pRegions, const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
+                                         const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
+                                      const RecordObject& record_obj) override;
 
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator,
                                          const ErrorObject& error_obj) const override;
@@ -1139,9 +1139,9 @@ class CoreChecks : public ValidationStateTracker {
                                              VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                              const ErrorObject& error_obj) const override;
 
-    void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                           VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                           const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                            const RecordObject& record_obj) override;
 
     bool PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                  const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
@@ -1150,12 +1150,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                               const ErrorObject& error_obj) const override;
 
-    void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                               const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
-                                               const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
+                                                const RecordObject& record_obj) override;
 
-    void PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
-                                            const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
+                                             const RecordObject& record_obj) override;
 
     template <typename RegionType>
     bool ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -1166,9 +1166,9 @@ class CoreChecks : public ValidationStateTracker {
                                              VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                              const ErrorObject& error_obj) const override;
 
-    void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                           VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                           const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                            VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                            const RecordObject& record_obj) override;
 
     bool PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                  const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
@@ -1177,12 +1177,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                               const ErrorObject& error_obj) const override;
 
-    void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                               const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
-                                               const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
+                                                const RecordObject& record_obj) override;
 
-    void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
-                                            const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
+                                             const RecordObject& record_obj) override;
 
     bool PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo,
                                              const ErrorObject& error_obj) const override;
@@ -1753,11 +1753,11 @@ class CoreChecks : public ValidationStateTracker {
                                             uint32_t query, const RecordObject& record_obj) override;
     void PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                          uint32_t query, const RecordObject& record_obj) override;
-    void PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
-                                                                  uint32_t accelerationStructureCount,
-                                                                  const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                                  VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery,
-                                                                  const RecordObject& record_obj) override;
+    void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
+                                                                   uint32_t accelerationStructureCount,
+                                                                   const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                   VkQueryType queryType, VkQueryPool queryPool,
+                                                                   uint32_t firstQuery, const RecordObject& record_obj) override;
     bool ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& create_info, const Location& create_info_loc,
                                         const vvl::RenderPass& rp_state, const VkRenderPassCreateInfo2& rpci) const;
     bool ValidateFrameBufferAttachmentsImageless(

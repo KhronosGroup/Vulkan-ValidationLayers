@@ -1777,11 +1777,11 @@ bool CoreChecks::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, con
                                 error_obj.location.dot(Field::pCopyImageInfo));
 }
 
-void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                           VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                           const VkImageCopy *pRegions, const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                            pRegions, record_obj);
+void CoreChecks::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                            const VkImageCopy *pRegions, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                             pRegions, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto src_image_state = Get<vvl::Image>(srcImage);
     auto dst_image_state = Get<vvl::Image>(dstImage);
@@ -1794,7 +1794,14 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
     }
 }
 
-void CoreChecks::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
+void CoreChecks::PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
+                                                const RecordObject &record_obj) {
+    PostCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
+}
+
+void CoreChecks::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
+                                             const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto src_image_state = Get<vvl::Image>(pCopyImageInfo->srcImage);
     auto dst_image_state = Get<vvl::Image>(pCopyImageInfo->dstImage);
@@ -1807,17 +1814,6 @@ void CoreChecks::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopy
         cb_state->SetImageInitialLayout(*dst_image_state, pCopyImageInfo->pRegions[i].dstSubresource,
                                         pCopyImageInfo->dstImageLayout);
     }
-}
-
-void CoreChecks::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
-                                               const RecordObject &record_obj) {
-    PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
-}
-
-void CoreChecks::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
-                                            const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
 }
 
 template <typename RegionType>
@@ -1872,24 +1868,22 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
     }
 }
 
-void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                            uint32_t regionCount, const VkBufferCopy *pRegions, const RecordObject &record_obj) {
-    const Location loc(Func::vkCmdCopyBuffer);
-    RecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, loc);
+void CoreChecks::PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                             uint32_t regionCount, const VkBufferCopy *pRegions, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, record_obj);
+    RecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, record_obj.location);
 }
 
-void CoreChecks::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                                const RecordObject &record_obj) {
-    const Location loc(Func::vkCmdCopyBuffer2KHR);
-    RecordCmdCopyBuffer(commandBuffer, pCopyBufferInfo->srcBuffer, pCopyBufferInfo->dstBuffer, pCopyBufferInfo->regionCount,
-                        pCopyBufferInfo->pRegions, loc);
+void CoreChecks::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
+                                                 const RecordObject &record_obj) {
+    return PostCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
 }
 
-void CoreChecks::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                             const RecordObject &record_obj) {
-    const Location loc(Func::vkCmdCopyBuffer2);
+void CoreChecks::PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
+                                              const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
     RecordCmdCopyBuffer(commandBuffer, pCopyBufferInfo->srcBuffer, pCopyBufferInfo->dstBuffer, pCopyBufferInfo->regionCount,
-                        pCopyBufferInfo->pRegions, loc);
+                        pCopyBufferInfo->pRegions, record_obj.location);
 }
 
 template <typename T>
@@ -2175,11 +2169,11 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuf
                                         pCopyImageToBufferInfo->pRegions, error_obj.location.dot(Field::pCopyImageToBufferInfo));
 }
 
-void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                   VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
-                                                   const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
-                                                    record_obj);
+void CoreChecks::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
+                                                    const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
+                                                     record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto src_image_state = Get<vvl::Image>(srcImage);
@@ -2191,16 +2185,16 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
     }
 }
 
-void CoreChecks::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                       const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
-                                                       const RecordObject &record_obj) {
-    PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
+void CoreChecks::PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
+                                                        const RecordObject &record_obj) {
+    PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
 }
 
-void CoreChecks::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
-                                                    const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
-                                                    const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
+void CoreChecks::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                                     const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
+                                                     const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto src_image_state = Get<vvl::Image>(pCopyImageToBufferInfo->srcImage);
@@ -2334,11 +2328,11 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuf
                                         pCopyBufferToImageInfo->pRegions, error_obj.location.dot(Field::pCopyBufferToImageInfo));
 }
 
-void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                   VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                   const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
-                                                    record_obj);
+void CoreChecks::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                    VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                    const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
+                                                     record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto dst_image_state = Get<vvl::Image>(dstImage);
@@ -2350,16 +2344,16 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
     }
 }
 
-void CoreChecks::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                                       const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR,
-                                                       const RecordObject &record_obj) {
-    PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
+void CoreChecks::PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR,
+                                                        const RecordObject &record_obj) {
+    PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
 }
 
-void CoreChecks::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
-                                                    const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
-                                                    const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
+void CoreChecks::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                                     const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
+                                                     const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto dst_image_state = Get<vvl::Image>(pCopyBufferToImageInfo->dstImage);
@@ -3216,22 +3210,22 @@ void CoreChecks::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcIm
     }
 }
 
-void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                           VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                           const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                            pRegions, filter, record_obj);
+void CoreChecks::PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                            const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                             pRegions, filter, record_obj);
     RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
 }
 
-void CoreChecks::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
-                                               const RecordObject &record_obj) {
-    PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
+void CoreChecks::PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
+                                                const RecordObject &record_obj) {
+    PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
 }
 
-void CoreChecks::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
-                                            const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
+void CoreChecks::PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
+                                             const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
                        pBlitImageInfo->filter);
