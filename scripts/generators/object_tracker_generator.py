@@ -979,7 +979,10 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         isCreate = any(x in command.name for x in ['Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']) or isGetCreate
         isDestroy = any(x in command.name for x in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL'])
 
-        pre_call_validate += self.validateObjects(command.params, '', 0, command.name, command.name, 'error_obj.location')
+        # TODO - we need to wrap with autogen list here for header to still build the function definition,
+        # but this function is being used in the header to duplicate work to know if the function will be used
+        if (command.name not in self.no_autogen_list):
+            pre_call_validate += self.validateObjects(command.params, '', 0, command.name, command.name, 'error_obj.location')
 
         # Handle object create operations if last parameter is created by this call
         if isCreate:
