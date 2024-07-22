@@ -985,7 +985,8 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
             skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::triangles), geom.geometry.triangles.pNext,
                                         allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
-                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", kVUIDUndefined);
+                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext",
+                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-unique");
             skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::vertexFormat),
                                        vvl::Enum::VkFormat, geom.geometry.triangles.vertexFormat,
                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter");
