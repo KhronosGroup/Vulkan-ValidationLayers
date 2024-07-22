@@ -625,9 +625,9 @@ bool StatelessValidation::ValidateCreateImageSwapchain(const VkImageCreateInfo &
     const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext);
     if (!swapchain_create_info || swapchain_create_info->swapchain == VK_NULL_HANDLE) return skip;
 
-    // All the following fall under the same VU that checks that the swapchain image uses parameters limited by the
-    // table in #swapchain-wsi-image-create-info. Breaking up into multiple checks allows for more useful information
-    // returned why this error occured. Check for matching Swapchain flags is done later in state tracking validation
+    // All the following fall under the same VU that checks that the swapchain image uses parameters listed in the
+    // #swapchain-wsi-image-create-info table. Breaking up into multiple checks allows for more useful information
+    // to be returned when this error occurs. Check for matching Swapchain flags is done later in state tracking validation
     const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
     const Location swapchain_loc = create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain);
 
