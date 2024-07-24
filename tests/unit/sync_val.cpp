@@ -6222,7 +6222,7 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeSyncVal, DISABLED_DebugResourceName) {
+TEST_F(NegativeSyncVal, DebugResourceName) {
     TEST_DESCRIPTION("Test that hazardous buffer is reported. Two copies write to a buffer");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -6251,7 +6251,7 @@ TEST_F(NegativeSyncVal, DISABLED_DebugResourceName) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName) {
+TEST_F(NegativeSyncVal, DebugDescriptorBufferName) {
     TEST_DESCRIPTION("Test that hazardous buffer is reported. Two dispatches write to a buffer");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -6309,7 +6309,7 @@ TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName2) {
+TEST_F(NegativeSyncVal, DebugDescriptorBufferName2) {
     TEST_DESCRIPTION("Test that hazardous buffer is reported. Dispatch writes to a buffer, then copy to the same buffer");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -6369,7 +6369,7 @@ TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName2) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncVal, DISABLED_DebugDescriptorBufferName3) {
+TEST_F(NegativeSyncVal, DebugDescriptorBufferName3) {
     TEST_DESCRIPTION("Different buffer of the same shader is reported depending on the previous access");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -6524,5 +6524,42 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoSubmits) {
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
+    TEST_DESCRIPTION("Test that stale handle indices (inconsistent state after core validation error) are handled correctly");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_d(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);  // buffer_a: handle index 0, buffer_b: handle index 1
+    m_command_buffer.Copy(buffer_c, buffer);    // buffer_c: handle index 2, buffer: handle index 3
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
+
+    // Intentional violation of core validation. Begin command buffer while previous one is still pending.
+    // The command buffer's Reset call clears HandleRecord array. Due to missing synchronization, the
+    // access context still contains references to already remove handles. This core validation error
+    // leads to inconsistent command buffer state, but syncval should handle this gracefully and do not
+    // crash/assert (although no guarantees about validity of syncval reporting from this moment).
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkBeginCommandBuffer-commandBuffer-00049");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkQueueSubmit-pCommandBuffers-00071");
+
+    m_command_buffer.begin();
+    m_command_buffer.Copy(buffer, buffer_d);
+    m_command_buffer.end();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    // Hazard prior access refers to "buffer" (handle 3) but handles array is cleared
+    // (does not happen under normal circumstances). This should not cause out of bounds array access.
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
     m_default_queue->Wait();
 }
