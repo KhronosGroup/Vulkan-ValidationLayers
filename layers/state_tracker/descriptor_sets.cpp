@@ -542,7 +542,7 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
                 auto binding = MakeBinding<BufferBinding>(free_binding++, *create_info, descriptor_count, flags);
                 if (IsDynamicDescriptor(type)) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        dynamic_offset_idx_to_descriptor_list_.push_back({i, di});
+                        dynamic_offset_idx_to_descriptor_list_.emplace_back(i, di);
                     }
                 }
                 bindings_.push_back(std::move(binding));
