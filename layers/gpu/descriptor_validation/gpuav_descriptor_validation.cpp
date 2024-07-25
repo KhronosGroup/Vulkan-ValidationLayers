@@ -21,6 +21,8 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
 
+#include "profiling/profiling.h"
+
 namespace gpuav {
 void UpdateBoundPipeline(Validator &gpuav, VkCommandBuffer cb, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
                          const Location &loc) {
@@ -110,37 +112,37 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
     cb_state->current_bindless_buffer = di_buffers.bindless_state_buffer;
 
     bindless_state->global_state = gpuav.desc_heap_->GetDeviceAddress();
+    di_buffers.descriptor_set_buffers.reserve(di_buffers.descriptor_set_buffers.size() + last_bound.per_set.size());
     for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
         const auto &s = last_bound.per_set[i];
         auto set = s.bound_descriptor_set;
         if (!set) {
             continue;
         }
-        if (gpuav.gpuav_settings.validate_descriptors) {
-            DescSetState desc_set_state;
-            desc_set_state.num = i;
-            desc_set_state.state = std::static_pointer_cast<DescriptorSet>(set);
-            bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutState();
-            // The pipeline might not have been bound yet, so will need to update binding_req later
-            if (last_bound.pipeline_state) {
-                auto slot = last_bound.pipeline_state->active_slots.find(i);
-                if (slot != last_bound.pipeline_state->active_slots.end()) {
-                    desc_set_state.binding_req = slot->second;
-                }
+
+        DescSetState desc_set_state;
+        desc_set_state.num = i;
+        desc_set_state.state = std::static_pointer_cast<DescriptorSet>(set);
+        bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutState();
+        // The pipeline might not have been bound yet, so will need to update binding_req later
+        if (last_bound.pipeline_state) {
+            auto slot = last_bound.pipeline_state->active_slots.find(i);
+            if (slot != last_bound.pipeline_state->active_slots.end()) {
+                desc_set_state.binding_req = slot->second;
             }
-            if (!desc_set_state.state->IsUpdateAfterBind()) {
-                desc_set_state.gpu_state = desc_set_state.state->GetCurrentState();
-                bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->device_addr;
-                desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav, loc);
-                if (!desc_set_state.output_state) {
-                    goto exit;
-                }
-                bindless_state->desc_sets[i].out_data = desc_set_state.output_state->device_addr;
-            }
-            di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
         }
+        if (!desc_set_state.state->IsUpdateAfterBind()) {
+            desc_set_state.gpu_state = desc_set_state.state->GetCurrentState();
+            bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->device_addr;
+            desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav, loc);
+            if (!desc_set_state.output_state) {
+                goto exit;
+            }
+            bindless_state->desc_sets[i].out_data = desc_set_state.output_state->device_addr;
+        }
+        di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
     }
-    cb_state->di_input_buffer_list.emplace_back(di_buffers);
+    cb_state->di_input_buffer_list.emplace_back(std::move(di_buffers));
 exit:
     vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation);
 }
