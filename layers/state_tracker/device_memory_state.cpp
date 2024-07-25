@@ -19,8 +19,12 @@
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_state.h"
 
+#include <algorithm>
+
+using BufferRange = vvl::BindableMemoryTracker::BufferRange;
 using MemoryRange = vvl::BindableMemoryTracker::MemoryRange;
 using BoundMemoryRange = vvl::BindableMemoryTracker::BoundMemoryRange;
+using BoundRanges = vvl::BindableLinearMemoryTracker::BoundRanges;
 using DeviceMemoryState = vvl::BindableMemoryTracker::DeviceMemoryState;
 
 // It is allowed to export memory into the handles of different types,
@@ -192,6 +196,59 @@ BoundMemoryRange vvl::BindableSparseMemoryTracker::GetBoundMemoryRange(const Mem
     return mem_ranges;
 }
 
+BoundRanges vvl::BindableSparseMemoryTracker::GetBoundRanges(const BufferRange &ranges_bounds,
+                                                             const std::vector<BufferRange> &buffer_ranges) const {
+    BoundRanges memory_to_bound_ranges_map;
+    auto guard = ReadLockGuard{binding_lock_};
+
+    auto bound_memory_ranges = binding_map_.bounds(ranges_bounds);
+
+    for (auto it = bound_memory_ranges.begin; it != bound_memory_ranges.end; ++it) {
+        const auto &[bounds_buffer_range, bounds_buffer_range_memory] = *it;
+
+        if (bounds_buffer_range_memory.memory_state && bounds_buffer_range_memory.memory_state->VkHandle() != VK_NULL_HANDLE) {
+            MemoryRange bounds_memory_range;
+            bounds_memory_range.begin = std::max(ranges_bounds.begin, bounds_buffer_range_memory.resource_offset) -
+                                        bounds_buffer_range_memory.resource_offset + bounds_buffer_range_memory.memory_offset;
+            bounds_memory_range.end =
+                std::min(ranges_bounds.end, bounds_buffer_range_memory.resource_offset + bounds_buffer_range.distance()) -
+                bounds_buffer_range_memory.resource_offset + bounds_buffer_range_memory.memory_offset;
+
+            std::pair<MemoryRange, BufferRange> bounds_mem_and_buffer_range;
+            bounds_mem_and_buffer_range.first = bounds_memory_range;
+            bounds_mem_and_buffer_range.second =
+                BufferRange(bounds_buffer_range_memory.resource_offset,
+                            bounds_buffer_range_memory.resource_offset + bounds_buffer_range.distance());
+
+            for (const BufferRange &buffer_range : buffer_ranges) {
+                if (!bounds_mem_and_buffer_range.second.intersects(buffer_range)) {
+                    continue;
+                }
+
+                MemoryRange memory_range;
+                memory_range.begin = std::max(buffer_range.begin, bounds_buffer_range_memory.resource_offset) -
+                                     bounds_buffer_range_memory.resource_offset + bounds_buffer_range_memory.memory_offset;
+                memory_range.end =
+                    std::min(buffer_range.end, bounds_buffer_range_memory.resource_offset + bounds_buffer_range.distance()) -
+                    bounds_buffer_range_memory.resource_offset + bounds_buffer_range_memory.memory_offset;
+
+                std::pair<MemoryRange, BufferRange> mem_and_buffer_range;
+                mem_and_buffer_range.first = bounds_mem_and_buffer_range.first & memory_range;
+                mem_and_buffer_range.second = bounds_mem_and_buffer_range.second & buffer_range;
+
+                std::vector<std::pair<MemoryRange, BufferRange>> &vk_memory_ranges_vec =
+                    memory_to_bound_ranges_map[bounds_buffer_range_memory.memory_state->VkHandle()];
+                auto insert_pos =
+                    std::lower_bound(vk_memory_ranges_vec.begin(), vk_memory_ranges_vec.end(), mem_and_buffer_range,
+                                     [](const std::pair<MemoryRange, BufferRange> &lhs,
+                                        const std::pair<MemoryRange, BufferRange> &rhs) { return lhs.first < rhs.first; });
+                vk_memory_ranges_vec.insert(insert_pos, mem_and_buffer_range);
+            }
+        }
+    }
+    return memory_to_bound_ranges_map;
+}
+
 DeviceMemoryState vvl::BindableSparseMemoryTracker::GetBoundMemoryStates() const {
     DeviceMemoryState dev_mem_states;
 
@@ -286,8 +343,7 @@ std::pair<VkDeviceMemory, MemoryRange> vvl::Bindable::GetResourceMemoryOverlap(
 
     for (const auto &[memory, memory_ranges] : ranges) {
         // Check if we have memory from same VkDeviceMemory bound
-        auto it = other_ranges.find(memory);
-        if (it != other_ranges.end()) {
+        if (auto it = other_ranges.find(memory); it != other_ranges.end()) {
             // Check if any of the bound memory ranges overlap
             for (const auto &memory_range : memory_ranges) {
                 for (const auto &other_memory_range : it->second) {
