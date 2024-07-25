@@ -852,6 +852,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     {
         std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
         it += 5;  // skip first 5 word of header
+        instructions.reserve(module_state.words_.size() * 4);
         while (it != module_state.words_.cend()) {
             Instruction insn(it);
             const uint32_t opcode = insn.Opcode();
@@ -2002,7 +2003,8 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     const bool storage_buffer = variable.storage_class == spv::StorageClassStorageBuffer;
     const bool uniform = variable.storage_class == spv::StorageClassUniform;
     // Block decorations are always on the struct of the variable
-    const bool buffer_block = variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::buffer_block_bit);
+    const bool buffer_block =
+        variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::buffer_block_bit);
     const bool block = variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::block_bit);
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }

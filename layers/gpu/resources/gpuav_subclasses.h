@@ -40,14 +40,14 @@ namespace gpuav {
 class Validator;
 
 struct DescSetState {
-    uint32_t num;
-    std::shared_ptr<DescriptorSet> state;
-    BindingVariableMap binding_req;
+    uint32_t num = 0;
+    std::shared_ptr<DescriptorSet> state = {};
+    BindingVariableMap binding_req = {};
     // State that will be used by the GPU-AV shader instrumentation
     // For update-after-bind, this will be set during queue submission
     // Otherwise it will be set when the DescriptorSet is bound.
-    std::shared_ptr<DescriptorSet::State> gpu_state;
-    std::shared_ptr<DescriptorSet::State> output_state;
+    std::shared_ptr<DescriptorSet::State> gpu_state = {};
+    std::shared_ptr<DescriptorSet::State> output_state = {};
 };
 
 struct DescBindingInfo {
