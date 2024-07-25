@@ -25,9 +25,10 @@ CommandBuffer::CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor, Vk
     : vvl::CommandBuffer(shader_instrumentor, handle, pCreateInfo, pool) {}
 
 Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t family_index, uint32_t queue_index,
-             VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
+             VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
     : vvl::Queue(shader_instrumentor, q, family_index, queue_index, flags, queueFamilyProperties),
-      shader_instrumentor_(shader_instrumentor) {}
+      shader_instrumentor_(shader_instrumentor),
+      timeline_khr_(timeline_khr) {}
 
 Queue::~Queue() {
     if (barrier_command_buffer_) {
@@ -153,7 +154,12 @@ void Queue::Retire(vvl::QueueSubmission &submission) {
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &barrier_sem_;
         wait_info.pValues = &submission.seq;
-        DispatchWaitSemaphoresKHR(shader_instrumentor_.device, &wait_info, 1000000000);
+
+        if (timeline_khr_) {
+            DispatchWaitSemaphoresKHR(shader_instrumentor_.device, &wait_info, 1000000000);
+        } else {
+            DispatchWaitSemaphores(shader_instrumentor_.device, &wait_info, 1000000000);
+        }
 
         for (auto &cbs : retiring_) {
             for (auto &cb : cbs) {

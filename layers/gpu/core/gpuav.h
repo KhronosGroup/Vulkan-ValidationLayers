@@ -83,8 +83,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
                                                             const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                             uint32_t variable_count) final;
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue q, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
-                                            const VkQueueFamilyProperties& queueFamilyProperties) final;
 
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,

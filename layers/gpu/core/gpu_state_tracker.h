@@ -27,7 +27,7 @@ namespace gpu_tracker {
 class Queue : public vvl::Queue {
   public:
     Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties);
+          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
     virtual ~Queue();
 
   protected:
@@ -41,6 +41,7 @@ class Queue : public vvl::Queue {
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
     std::deque<std::vector<std::shared_ptr<vvl::CommandBuffer>>> retiring_;
+    const bool timeline_khr_;
 };
 
 class CommandBuffer : public vvl::CommandBuffer {
