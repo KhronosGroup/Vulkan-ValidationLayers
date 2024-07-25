@@ -76,6 +76,32 @@ else()
     endif()
 endif()
 
+# Tracy
+option(VVL_ENABLE_TRACY "Enable profiling with Tracy" OFF)
+option(VVL_ENABLE_TRACY_CPU_MEMORY "Enable profiling memory with Tracy" OFF)
+option(VVL_TRACY_CALLSTACK "Size of the collected collected call stacks" 48)
+if (VVL_ENABLE_TRACY)
+    if(USE_MIMALLOC)
+        message(FATAL_ERROR "Tracy cannot be used with mimalloc")
+    endif()
+
+    if (VVL_TRACY_CALLSTACK STREQUAL "OFF") 
+        set(VVL_TRACY_CALLSTACK 48)
+    endif()
+
+    add_compile_definitions(
+        TRACY_ENABLE
+        TRACY_CALLSTACK=${VVL_TRACY_CALLSTACK}
+        TRACY_DELAYED_INIT
+        TRACY_MANUAL_LIFETIME
+    )
+
+    if(VVL_ENABLE_TRACY_CPU_MEMORY)
+        add_compile_definitions(VVL_TRACY_CPU_MEMORY)
+    endif()
+endif()
+
+
 find_package(VulkanHeaders CONFIG QUIET)
 
 find_package(VulkanUtilityLibraries CONFIG QUIET)
