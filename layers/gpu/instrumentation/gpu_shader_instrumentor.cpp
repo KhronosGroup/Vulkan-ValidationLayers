@@ -636,6 +636,60 @@ void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipe
     BaseClass::PreCallRecordDestroyPipeline(device, pipeline, pAllocator, record_obj);
 }
 
+void GpuShaderInstrumentor::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                     VkFence fence, const RecordObject &record_obj) {
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        Location loc = record_obj.location.dot(vvl::Field::pSubmits, submit_idx);
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            auto gpu_cb = Get<gpu_tracker::CommandBuffer>(submit->pCommandBuffers[i]);
+            gpu_cb->PreProcess(loc);
+            for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
+                auto secondary_guard = secondary_cb->WriteLock();
+                auto *secondary_gpu_cb = static_cast<gpu_tracker::CommandBuffer *>(secondary_cb);
+                secondary_gpu_cb->PreProcess(loc);
+            }
+        }
+    }
+    BaseClass::PreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
+}
+
+void GpuShaderInstrumentor::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                         VkFence fence, const RecordObject &record_obj) {
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        Location loc = record_obj.location.dot(vvl::Field::pSubmits, submit_idx);
+        const auto &submit = pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit.commandBufferInfoCount; i++) {
+            auto gpu_cb = Get<gpu_tracker::CommandBuffer>(submit.pCommandBufferInfos[i].commandBuffer);
+            gpu_cb->PreProcess(loc);
+            for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
+                auto secondary_guard = secondary_cb->WriteLock();
+                auto *secondary_gpu_cb = static_cast<gpu_tracker::CommandBuffer *>(secondary_cb);
+                secondary_gpu_cb->PreProcess(loc);
+            }
+        }
+    }
+    BaseClass::PreCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
+}
+
+void GpuShaderInstrumentor::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                      VkFence fence, const RecordObject &record_obj) {
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        Location loc = record_obj.location.dot(vvl::Field::pSubmits, submit_idx);
+        const auto &submit = pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit.commandBufferInfoCount; i++) {
+            auto gpu_cb = Get<gpu_tracker::CommandBuffer>(submit.pCommandBufferInfos[i].commandBuffer);
+            gpu_cb->PreProcess(loc);
+            for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
+                auto secondary_guard = secondary_cb->WriteLock();
+                auto *secondary_gpu_cb = static_cast<gpu_tracker::CommandBuffer *>(secondary_cb);
+                secondary_gpu_cb->PreProcess(loc);
+            }
+        }
+    }
+    BaseClass::PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+}
+
 template <typename CreateInfo>
 VkShaderModule GetShaderModule(const CreateInfo &create_info, VkShaderStageFlagBits stage) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {

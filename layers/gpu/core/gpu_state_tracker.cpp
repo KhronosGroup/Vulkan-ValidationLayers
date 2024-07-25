@@ -28,7 +28,19 @@ Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_
              VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
     : vvl::Queue(shader_instrumentor, q, family_index, queue_index, flags, queueFamilyProperties),
       shader_instrumentor_(shader_instrumentor),
-      timeline_khr_(timeline_khr) {}
+      timeline_khr_(timeline_khr) {
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    semaphore_type_create_info.initialValue = 0;
+
+    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
+
+    auto result = DispatchCreateSemaphore(shader_instrumentor_.device, &semaphore_create_info, nullptr, &barrier_sem_);
+    if (result != VK_SUCCESS) {
+        Location loc(vvl::Func::vkGetDeviceQueue);
+        shader_instrumentor_.InternalError(shader_instrumentor_.device, loc, "Unable to create barrier semaphore.");
+    }
+}
 
 Queue::~Queue() {
     if (barrier_command_buffer_) {
@@ -73,21 +85,6 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
             return;
         }
 
-        VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-        semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
-        semaphore_type_create_info.initialValue = 0;
-
-        VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
-
-        result = DispatchCreateSemaphore(shader_instrumentor_.device, &semaphore_create_info, nullptr, &barrier_sem_);
-        if (result != VK_SUCCESS) {
-            shader_instrumentor_.InternalError(shader_instrumentor_.device, loc, "Unable to create barrier semaphore.");
-            DispatchDestroyCommandPool(shader_instrumentor_.device, barrier_command_pool_, nullptr);
-            barrier_command_pool_ = VK_NULL_HANDLE;
-            barrier_command_buffer_ = VK_NULL_HANDLE;
-            return;
-        }
-
         // Hook up command buffer dispatch
         shader_instrumentor_.vk_set_device_loader_data_(shader_instrumentor_.device, barrier_command_buffer_);
 
@@ -121,44 +118,39 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
     }
 }
 
-vvl::PreSubmitResult Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
-    for (const auto &submission : submissions) {
-        auto loc = submission.loc.Get();
-        for (auto &cb : submission.cbs) {
-            auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb);
-            auto guard = gpu_cb->ReadLock();
-            gpu_cb->PreProcess(loc);
-            for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
-                auto secondary_guard = secondary_cb->ReadLock();
-                auto *secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
-                secondary_gpu_cb->PreProcess(loc);
-            }
-        }
-    }
-    return vvl::Queue::PreSubmit(std::move(submissions));
-}
+vvl::SubmitResult Queue::PostSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
+    assert(!submissions.empty());
+    auto &submission = submissions.back();
+    assert(submission.end_batch);
 
-void Queue::PostSubmit(vvl::QueueSubmission &submission) {
-    vvl::Queue::PostSubmit(submission);
-    if (submission.end_batch) {
-        auto loc = submission.loc.Get();
-        SubmitBarrier(loc, submission.seq);
-    }
+    auto loc = submission.loc.Get();
+    SubmitBarrier(loc, submission.seq);
+
+    return vvl::Queue::PostSubmit(std::move(submissions));
 }
 
 void Queue::Retire(vvl::QueueSubmission &submission) {
+    auto wait_seq = submission.seq;
     vvl::Queue::Retire(submission);
     retiring_.emplace_back(submission.cbs);
     if (submission.end_batch) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &barrier_sem_;
-        wait_info.pValues = &submission.seq;
+        wait_info.pValues = &wait_seq;
 
+        VkResult result;
         if (timeline_khr_) {
-            DispatchWaitSemaphoresKHR(shader_instrumentor_.device, &wait_info, 1000000000);
+            result = DispatchWaitSemaphoresKHR(shader_instrumentor_.device, &wait_info, 1000000000);
         } else {
-            DispatchWaitSemaphores(shader_instrumentor_.device, &wait_info, 1000000000);
+            result = DispatchWaitSemaphores(shader_instrumentor_.device, &wait_info, 1000000000);
+        }
+        if (result != VK_SUCCESS) {
+            Location loc(timeline_khr_ ? vvl::Func::vkWaitSemaphoresKHR : vvl::Func::vkWaitSemaphores);
+            std::stringstream msg;
+            msg << "Error waiting on barrier_sem VkQueue: " << Handle() << " result: " << string_VkResult(result);
+            shader_instrumentor_.InternalError(shader_instrumentor_.device, loc, msg.str().c_str());
+            return;
         }
 
         for (auto &cbs : retiring_) {

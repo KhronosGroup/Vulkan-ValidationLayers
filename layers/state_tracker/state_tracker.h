@@ -923,14 +923,10 @@ class ValidationStateTracker : public ValidationObject {
                                          const RecordObject& record_obj) override;
     void PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject& record_obj) override;
     void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
-    void PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
-                                      const RecordObject& record_obj) override;
     void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                        const RecordObject& record_obj) override;
     void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                        const RecordObject& record_obj) override;
-    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                  const RecordObject& record_obj) override;
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    const RecordObject& record_obj) override;
     void PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) override;
@@ -1614,10 +1610,6 @@ class ValidationStateTracker : public ValidationObject {
                                              uint32_t query, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                           uint32_t query, const RecordObject& record_obj) override;
-    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
-                                      const RecordObject& record_obj) override;
-    void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                   const RecordObject& record_obj) override;
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                        const RecordObject& record_obj) override;
     void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
