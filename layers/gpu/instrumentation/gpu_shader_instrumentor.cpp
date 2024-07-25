@@ -184,7 +184,7 @@ std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue q, uint32
                                                                VkDeviceQueueCreateFlags flags,
                                                                const VkQueueFamilyProperties &queueFamilyProperties) {
     return std::static_pointer_cast<vvl::Queue>(
-        std::make_shared<gpu_tracker::Queue>(*this, q, family_index, queue_index, flags, queueFamilyProperties));
+        std::make_shared<gpu_tracker::Queue>(*this, q, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
 }
 
 // These are the common things required for anything that deals with shader instrumentation
@@ -239,6 +239,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
         const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
         vku::AddExtension(*modified_create_info, ts_ext.data());
         add_missing_features();
+        timeline_khr_ = true;
     }
 }
 

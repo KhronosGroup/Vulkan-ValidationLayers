@@ -215,6 +215,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     // These are objects used to inject our descriptor set into the command buffer
     VkDescriptorSetLayout debug_desc_layout_ = VK_NULL_HANDLE;
     VkPipelineLayout debug_pipeline_layout_ = VK_NULL_HANDLE;
+    // Make sure we call the right versions of any timeline semaphore functions.
+    bool timeline_khr_{false};
 };
 
 }  // namespace gpu
