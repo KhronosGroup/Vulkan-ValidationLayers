@@ -41,6 +41,7 @@ struct GpuAVSettings {
     bool debug_validate_instrumented_shaders = false;
     bool debug_dump_instrumented_shaders = false;
     uint32_t debug_max_instrumented_count = 0;  // zero is same as "unlimited"
+    bool debug_print_instrumentation_info = false;
 
     bool IsShaderInstrumentationEnabled() const { return validate_descriptors || validate_bda || validate_ray_query; }
     // Also disables shader caching and select shader instrumentation

@@ -50,6 +50,8 @@ class Pass {
     uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it = nullptr);
     uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it = nullptr);
 
+    uint32_t GetInstrumentedCount() { return instrumented_count_; }
+
   protected:
     Pass(Module& module, bool conditional_function_check)
         : module_(module), conditional_function_check_(conditional_function_check) {}

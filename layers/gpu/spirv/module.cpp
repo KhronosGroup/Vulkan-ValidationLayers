@@ -21,15 +21,18 @@
 #include "bindless_descriptor_pass.h"
 #include "ray_query_pass.h"
 
+#include <iostream>
+
 namespace gpuav {
 namespace spirv {
 
-Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set,
+Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_info,
                uint32_t max_instrumented_count)
     : type_manager_(*this),
       max_instrumented_count_(max_instrumented_count),
       shader_id_(shader_id),
-      output_buffer_descriptor_set_(output_buffer_descriptor_set) {
+      output_buffer_descriptor_set_(output_buffer_descriptor_set),
+      print_info_(print_info) {
     uint32_t instruction_count = 0;
     std::vector<uint32_t>::const_iterator it = words.cbegin();
     header_.magic_number = *it++;
@@ -227,16 +230,25 @@ void Module::AddExtension(const char* extension) {
 void Module::RunPassBindlessDescriptor() {
     BindlessDescriptorPass pass(*this);
     pass.Run();
+    if (print_info_) {
+        std::cout << "BindlessDescriptorPass\n\tinstrumentation count: " << pass.GetInstrumentedCount() << "\n";
+    }
 }
 
 void Module::RunPassBufferDeviceAddress() {
     BufferDeviceAddressPass pass(*this);
     pass.Run();
+    if (print_info_) {
+        std::cout << "BufferDeviceAddressPass\n\tinstrumentation count: " << pass.GetInstrumentedCount() << "\n";
+    }
 }
 
 void Module::RunPassRayQuery() {
     RayQueryPass pass(*this);
     pass.Run();
+    if (print_info_) {
+        std::cout << "RayQueryPass\n\tinstrumentation count: " << pass.GetInstrumentedCount() << "\n";
+    }
 }
 
 uint32_t Module::TakeNextId() {

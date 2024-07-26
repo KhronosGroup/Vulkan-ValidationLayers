@@ -37,7 +37,7 @@ struct ModuleHeader {
 // There are other helper classes that are charge of handling the various parts of the module.
 class Module {
   public:
-    Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set,
+    Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_info,
            uint32_t max_instrumented_count = 0);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
@@ -89,6 +89,9 @@ class Module {
     // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
     // This allows anything to be set in the GLSL for the set value, as we change it at runtime
     const uint32_t output_buffer_descriptor_set_;
+
+    // Used to help debug
+    bool print_info_;
 };
 
 }  // namespace spirv
