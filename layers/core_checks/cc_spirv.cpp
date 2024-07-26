@@ -2488,6 +2488,10 @@ void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createI
 bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &loc, ValidationCache *cache) const {
     bool skip = false;
 
+    if (global_settings.debug_disable_spirv_val) {
+        return skip;
+    }
+
     uint32_t hash = 0;
     if (cache) {
         hash = hash_util::ShaderHash((void *)binary.code, binary.wordCount * sizeof(uint32_t));
@@ -2530,7 +2534,7 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &
     bool skip = false;
 
     if (disabled[shader_validation]) {
-        return skip;
+        return skip; // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
     }
 
     if (!create_info.pCode) {

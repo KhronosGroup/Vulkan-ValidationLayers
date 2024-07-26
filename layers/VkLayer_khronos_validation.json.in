@@ -613,7 +613,7 @@
                                 {
                                     "key": "check_shaders",
                                     "label": "Shader",
-                                    "description": "Shader checks. These checks can be CPU intensive during application start up, especially if Shader Validation Caching is also disabled.",
+                                    "description": "This will validate the contents of the SPIR-V which can be CPU intensive during application start up. This does internal checks as well as calling spirv-val.",
                                     "type": "BOOL",
                                     "default": true,
                                     "expanded": true,
@@ -630,7 +630,7 @@
                                         {
                                             "key": "check_shaders_caching",
                                             "label": "Caching",
-                                            "description": "Enable caching of shader validation results.",
+                                            "description": "Creates an internal instance of VK_EXT_validation_cache and upon vkDestroyInstance, will cache the shader validation so sequential usage of the validation layers will be skipped.",
                                             "type": "BOOL",
                                             "default": true,
                                             "dependence": {
@@ -646,6 +646,14 @@
                                                     }
                                                 ]
                                             }
+                                        },
+                                        {
+                                            "key": "debug_disable_spirv_val",
+                                            "label": "Disable spirv-val",
+                                            "view": "ADVANCED",
+                                            "description": "Allows normal shader validation to run, but removes just spirv-val for performance reasons",
+                                            "type": "BOOL",
+                                            "default": false
                                         }
                                     ]
                                 }

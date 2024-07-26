@@ -36,7 +36,7 @@ const auto& GetVendorInfo() {
 }
 
 ReadLockGuard BestPractices::ReadLock() const {
-    if (fine_grained_locking) {
+    if (global_settings.fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return ReadLockGuard(validation_object_mutex);
@@ -44,7 +44,7 @@ ReadLockGuard BestPractices::ReadLock() const {
 }
 
 WriteLockGuard BestPractices::WriteLock() {
-    if (fine_grained_locking) {
+    if (global_settings.fine_grained_locking) {
         return WriteLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return WriteLockGuard(validation_object_mutex);

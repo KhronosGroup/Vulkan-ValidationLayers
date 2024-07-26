@@ -165,7 +165,7 @@ bool SpirvCache::IsSpirvCached(uint32_t index, uint32_t spirv_hash, chassis::Sha
 }
 
 ReadLockGuard GpuShaderInstrumentor::ReadLock() const {
-    if (fine_grained_locking) {
+    if (global_settings.fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return ReadLockGuard(validation_object_mutex);
@@ -173,7 +173,7 @@ ReadLockGuard GpuShaderInstrumentor::ReadLock() const {
 }
 
 WriteLockGuard GpuShaderInstrumentor::WriteLock() {
-    if (fine_grained_locking) {
+    if (global_settings.fine_grained_locking) {
         return WriteLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return WriteLockGuard(validation_object_mutex);

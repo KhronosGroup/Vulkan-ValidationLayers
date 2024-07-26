@@ -113,6 +113,7 @@ const std::vector<std::string> &GetEnableFlagNameHelper() {
     };
     return enable_flag_name_helper;
 }
+
 // To enable "my_setting",
 // Set env var VK_LAYER_MY_SETTING to 1
 //
@@ -120,6 +121,9 @@ const std::vector<std::string> &GetEnableFlagNameHelper() {
 //
 // To quickly be able to find the env var corresponding to a setting,
 // the following `const char*` holding setting names match their corresponding environment variable
+
+// Corresponding to VkValidationFeatureEnableEXT
+// ---
 const char *VK_LAYER_ENABLES = "enables";
 const char *VK_LAYER_VALIDATE_BEST_PRACTICES = "validate_best_practices";
 const char *VK_LAYER_VALIDATE_BEST_PRACTICES_ARM = "validate_best_practices_arm";
@@ -129,24 +133,38 @@ const char *VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA = "validate_best_practices_n
 const char *VK_LAYER_VALIDATE_SYNC = "validate_sync";
 const char *VK_LAYER_VALIDATE_GPU_BASED = "validate_gpu_based";
 
+// Corresponding to VkValidationFeatureDisableEXT
+// ---
 const char *VK_LAYER_DISABLES = "disables";
-const char *VK_LAYER_STATELESS_PARAM = "stateless_param";
+const char *VK_LAYER_CHECK_SHADERS = "check_shaders";
 const char *VK_LAYER_THREAD_SAFETY = "thread_safety";
+const char *VK_LAYER_STATELESS_PARAM = "stateless_param";
+const char *VK_LAYER_OBJECT_LIFETIME = "object_lifetime";
 const char *VK_LAYER_VALIDATE_CORE = "validate_core";
+const char *VK_LAYER_UNIQUE_HANDLES = "unique_handles";
+const char *VK_LAYER_CHECK_SHADERS_CACHING = "check_shaders_caching";
+
+// Additional checks exposed in vkconfig, but not in VkValidationFeatureDisableEXT
+// ---
 const char *VK_LAYER_CHECK_COMMAND_BUFFER = "check_command_buffer";
 const char *VK_LAYER_CHECK_OBJECT_IN_USE = "check_object_in_use";
 const char *VK_LAYER_CHECK_QUERY = "check_query";
 const char *VK_LAYER_CHECK_IMAGE_LAYOUT = "check_image_layout";
-const char *VK_LAYER_UNIQUE_HANDLES = "unique_handles";
-const char *VK_LAYER_OBJECT_LIFETIME = "object_lifetime";
-const char *VK_LAYER_CHECK_SHADERS = "check_shaders";
-const char *VK_LAYER_CHECK_SHADERS_CACHING = "check_shaders_caching";
 
+// Options related to debug reporting
+// ---
 const char *VK_LAYER_MESSAGE_ID_FILTER = "message_id_filter";
 const char *VK_LAYER_CUSTOM_STYPE_LIST = "custom_stype_list";
 const char *VK_LAYER_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
-const char *VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 
+// GloablSettings
+// ---
+const char *VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
+// Debug settings used for internal development
+const char *VK_LAYER_DEBUG_DISABLE_SPIRV_VAL = "debug_disable_spirv_val";
+
+// DebugPrintf
+// ---
 const char *VK_LAYER_PRINTF_TO_STDOUT = "printf_to_stdout";
 const char *VK_LAYER_PRINTF_VERBOSE = "printf_verbose";
 const char *VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
@@ -182,6 +200,7 @@ const char *VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION = "syncval_submit_time_valid
 const char *VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC = "syncval_shader_accesses_heuristic";
 
 // Message Formatting
+// ---
 const char *VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_display_application_name";
 
 // These were deprecated after the 1.3.280 SDK release
@@ -489,10 +508,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     const std::string string_disables = Merge(disables);
     SetLocalDisableSetting(string_disables, ",", settings_data->disables);
 
-    // Fine Grained Locking
-    *settings_data->fine_grained_locking = true;
+    GlobalSettings &global_settings = *settings_data->global_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING, *settings_data->fine_grained_locking);
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING, global_settings.fine_grained_locking);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL, global_settings.debug_disable_spirv_val);
     }
 
     // Message ID Filtering

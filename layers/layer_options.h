@@ -78,25 +78,42 @@ enum EnableFlags {
 using CHECK_DISABLED = std::array<bool, kMaxDisableFlags>;
 using CHECK_ENABLED = std::array<bool, kMaxEnableFlags>;
 
-// Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
+// General settings to be used by all parts of the Validation Layers
+struct GlobalSettings {
+    bool fine_grained_locking = true;
+
+    bool debug_disable_spirv_val = false;
+};
 
 struct GpuAVSettings;
 struct DebugPrintfSettings;
 struct SyncValSettings;
 struct MessageFormatSettings;
 struct ConfigAndEnvSettings {
+    // Matches up with what is passed down to VK_EXT_layer_settings
     const char *layer_description;
+
+    // Used so we can find things like VkValidationFeaturesEXT
     const VkInstanceCreateInfo *create_info;
+
+    // Find grain way to turn off/on parts of validation
     CHECK_ENABLED &enables;
     CHECK_DISABLED &disables;
+
+    // Settings for DebugReport
     vvl::unordered_set<uint32_t> &message_filter_list;
     uint32_t *duplicate_message_limit;
     MessageFormatSettings *message_format_settings;
-    bool *fine_grained_locking;
+
+    GlobalSettings* global_settings;
+
+    // Individual settings for different internal layers
     GpuAVSettings *gpuav_settings;
     DebugPrintfSettings *printf_settings;
     SyncValSettings *syncval_settings;
 };
 const std::vector<std::string> &GetDisableFlagNameHelper();
 const std::vector<std::string> &GetEnableFlagNameHelper();
+
+// Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);
