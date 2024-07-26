@@ -1309,6 +1309,26 @@
                                                             }
                                                         ]
                                                     }
+                                                },
+                                                {
+                                                    "key": "gpuav_debug_print_instrumentation_info",
+                                                    "label": "Print SPIR-V instrumentation info",
+                                                    "description": "Prints verbose information about the instrumentation of the SPIR-V",
+                                                    "type": "BOOL",
+                                                    "default": false,
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "validate_gpu_based",
+                                                                "value": "GPU_BASED_GPU_ASSISTED"
+                                                            }
+                                                        ]
+                                                    }
                                                 }
                                             ]
                                         }

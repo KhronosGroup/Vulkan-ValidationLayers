@@ -123,7 +123,8 @@ int main(int argc, char** argv) {
         start_time = std::chrono::high_resolution_clock::now();
     }
 
-    gpuav::spirv::Module module(spirv_data, kDefaultShaderId, kInstDefaultDescriptorSet);
+    // Always print information as this file is only used for debugging/testing
+    gpuav::spirv::Module module(spirv_data, kDefaultShaderId, kInstDefaultDescriptorSet, true);
     if (all_passes || bindless_descriptor_pass) {
         module.RunPassBindlessDescriptor();
     }
