@@ -378,7 +378,7 @@ void OutputLayerStatusInfo(ValidationObject* context) {
     context->LogPerformanceWarning("WARNING-CreateInstance-debug-warning", context->instance, loc,
                                    "Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
-    if (!context->fine_grained_locking) {
+    if (!context->global_settings.fine_grained_locking) {
         context->LogPerformanceWarning(
             "WARNING-CreateInstance-locking-warning", context->instance, loc,
             "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
@@ -488,7 +488,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     // Set up enable and disable features flags
     CHECK_ENABLED local_enables{};
     CHECK_DISABLED local_disables{};
-    bool lock_setting;
+    GlobalSettings local_global_settings = {};
     GpuAVSettings local_gpuav_settings = {};
     DebugPrintfSettings local_printf_settings = {};
     SyncValSettings local_syncval_settings = {};
@@ -499,7 +499,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
                                                       debug_report->filter_message_ids,
                                                       &debug_report->duplicate_message_limit,
                                                       &debug_report->message_format_settings,
-                                                      &lock_setting,
+                                                      &local_global_settings,
                                                       &local_gpuav_settings,
                                                       &local_printf_settings,
                                                       &local_syncval_settings};
@@ -560,7 +560,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     framework->container_type = LayerObjectTypeInstance;
     framework->disabled = local_disables;
     framework->enabled = local_enables;
-    framework->fine_grained_locking = lock_setting;
+    framework->global_settings = local_global_settings;
     framework->gpuav_settings = local_gpuav_settings;
     framework->printf_settings = local_printf_settings;
     framework->syncval_settings = local_syncval_settings;
@@ -581,7 +581,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
         intercept->instance_dispatch_table = framework->instance_dispatch_table;
         intercept->enabled = framework->enabled;
         intercept->disabled = framework->disabled;
-        intercept->fine_grained_locking = framework->fine_grained_locking;
+        intercept->global_settings = framework->global_settings;
         intercept->gpuav_settings = framework->gpuav_settings;
         intercept->printf_settings = framework->printf_settings;
         intercept->syncval_settings = framework->syncval_settings;
@@ -733,7 +733,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         object->api_version = device_interceptor->api_version;
         object->disabled = instance_interceptor->disabled;
         object->enabled = instance_interceptor->enabled;
-        object->fine_grained_locking = instance_interceptor->fine_grained_locking;
+        object->global_settings = instance_interceptor->global_settings;
         object->gpuav_settings = instance_interceptor->gpuav_settings;
         object->printf_settings = instance_interceptor->printf_settings;
         object->syncval_settings = instance_interceptor->syncval_settings;

@@ -2227,7 +2227,7 @@ class ValidationObject {
     DeviceExtensions device_extensions = {};
     CHECK_DISABLED disabled = {};
     CHECK_ENABLED enabled = {};
-    bool fine_grained_locking{true};
+    GlobalSettings global_settings = {};
     GpuAVSettings gpuav_settings = {};
     DebugPrintfSettings printf_settings = {};
     SyncValSettings syncval_settings = {};

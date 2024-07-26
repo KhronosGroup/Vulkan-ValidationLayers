@@ -275,6 +275,11 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                                                  VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
     bool skip = false;
 
+    // the spec clarifies that VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT works on VK_EXT_shader_object as well
+    if (disabled[shader_validation]) {
+        return skip; // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
+    }
+
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     if (enabled_features.shaderObject == VK_FALSE) {
         skip |=
