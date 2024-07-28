@@ -420,7 +420,7 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                 GenerateDebugInfoMessage(command_buffer, instructions, debug_record->instruction_position, tracker_info,
                                          buffer_info.pipeline_bind_point, operation_index);
             if (use_stdout) {
-                std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str() << "\n" << debug_info_message;
+                std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {
                 LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s\n%s", shader_message.str().c_str(), debug_info_message.c_str());
             }

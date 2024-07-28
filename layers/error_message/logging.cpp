@@ -681,14 +681,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
     PrintMessageType(message_type, msg_type);
 
     msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
-        << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << "\n";
-    msg_buffer << "    Objects: " << callback_data->objectCount << "\n";
+               << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
+    msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
     for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
         msg_buffer << "        [" << obj << "] " << std::hex << std::showbase
-            << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
-            << callback_data->pObjects[obj].objectType
-            << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
-            << "\n";
+                   << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
+                   << callback_data->pObjects[obj].objectType
+                   << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
+                   << '\n';
     }
     const std::string tmp = msg_buffer.str();
     const char *cstr = tmp.c_str();
@@ -714,15 +714,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
     PrintMessageType(message_type, msg_type);
 
     msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
-               << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << "\n";
-    msg_buffer << "    Objects: " << callback_data->objectCount << "\n";
+               << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
+    msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
 
     for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
         msg_buffer << "       [" << obj << "]  " << std::hex << std::showbase
                    << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
                    << callback_data->pObjects[obj].objectType
                    << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
-                   << "\n";
+                   << '\n';
     }
     const std::string tmp = msg_buffer.str();
     [[maybe_unused]] const char *cstr = tmp.c_str();

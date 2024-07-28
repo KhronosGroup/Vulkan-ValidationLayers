@@ -546,7 +546,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                << " | AType = " << string_VkComponentTypeKHR(prop.AType) << " | BType = " << string_VkComponentTypeKHR(prop.BType)
                << " | CType = " << string_VkComponentTypeKHR(prop.CType)
                << " | ResultType = " << string_VkComponentTypeKHR(prop.ResultType) << " | scope = " << string_VkScopeKHR(prop.scope)
-               << "\n";
+               << '\n';
         }
         return ss.str();
     };

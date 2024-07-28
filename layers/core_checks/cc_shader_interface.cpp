@@ -664,12 +664,12 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
         std::stringstream msg;
         msg << string_VkShaderStageFlagBits(producer_stage) << " Output Block {\n";
         for (size_t i = 0; i < output_builtins_block.size(); i++) {
-            msg << "\t" << i << ": " << string_SpvBuiltIn(output_builtins_block[i]) << "\n";
+            msg << '\t' << i << ": " << string_SpvBuiltIn(output_builtins_block[i]) << '\n';
         }
         msg << "}\n";
         msg << string_VkShaderStageFlagBits(consumer_stage) << " Input Block {\n";
         for (size_t i = 0; i < input_builtins_block.size(); i++) {
-            msg << "\t" << i << ": " << string_SpvBuiltIn(input_builtins_block[i]) << "\n";
+            msg << '\t' << i << ": " << string_SpvBuiltIn(input_builtins_block[i]) << '\n';
         }
         msg << "}\n";
         const LogObjectList objlist(producer.handle(), consumer.handle());

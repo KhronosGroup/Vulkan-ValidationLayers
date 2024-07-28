@@ -453,7 +453,7 @@ bool DebugPrintfPass::Run() {
     return true;
 }
 
-void DebugPrintfPass::PrintDebugInfo() { std::cout << "DebugPrintfPass\n\tinstrumentation count: " << instrumented_count_ << "\n"; }
+void DebugPrintfPass::PrintDebugInfo() { std::cout << "DebugPrintfPass\n\tinstrumentation count: " << instrumented_count_ << '\n'; }
 
 }  // namespace spirv
 }  // namespace gpuav

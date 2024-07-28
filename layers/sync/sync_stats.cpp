@@ -66,8 +66,8 @@ std::string Stats::CreateReport() {
         uint32_t cb_context_max = command_buffer_context_counter.max_value.u32;
 
         str << "CommandBufferAccessContext:\n";
-        str << "\tcount = " << cb_contex << "\n";
-        str << "\tmax_count = " << cb_context_max << "\n";
+        str << "\tcount = " << cb_contex << '\n';
+        str << "\tmax_count = " << cb_context_max << '\n';
     }
     {
         uint32_t handle_record = handle_record_counter.value.u32;
@@ -76,9 +76,9 @@ std::string Stats::CreateReport() {
         uint64_t handle_record_max_memory = handle_record_max * sizeof(HandleRecord);
 
         str << "HandleRecord:\n";
-        str << "\tcount = " << handle_record << "\n";
+        str << "\tcount = " << handle_record << '\n';
         str << "\tmemory = " << handle_record_memory << " bytes\n";
-        str << "\tmax_count = " << handle_record_max << "\n";
+        str << "\tmax_count = " << handle_record_max << '\n';
         str << "\tmax_memory = " << handle_record_max_memory << " bytes\n";
     }
     return str.str();

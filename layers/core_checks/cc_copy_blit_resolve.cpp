@@ -2608,15 +2608,15 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(const vvl::Image &src_image_st
 
     if (src_info.flags != dst_info.flags) {
         mismatch_stream << "srcImage flags = " << string_VkImageCreateFlags(src_info.flags)
-                        << " and dstImage flags = " << string_VkImageCreateFlags(dst_info.flags) << "\n";
+                        << " and dstImage flags = " << string_VkImageCreateFlags(dst_info.flags) << '\n';
     }
     if (src_info.imageType != dst_info.imageType) {
         mismatch_stream << "srcImage imageType = " << string_VkImageType(src_info.imageType)
-                        << " and dstImage imageType = " << string_VkImageType(dst_info.imageType) << "\n";
+                        << " and dstImage imageType = " << string_VkImageType(dst_info.imageType) << '\n';
     }
     if (src_info.format != dst_info.format) {
         mismatch_stream << "srcImage format = " << string_VkFormat(src_info.format)
-                        << " and dstImage format = " << string_VkFormat(dst_info.format) << "\n";
+                        << " and dstImage format = " << string_VkFormat(dst_info.format) << '\n';
     }
     if ((src_info.extent.width != dst_info.extent.width) || (src_info.extent.height != dst_info.extent.height) ||
         (src_info.extent.depth != dst_info.extent.depth)) {
@@ -2625,31 +2625,31 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(const vvl::Image &src_image_st
     }
     if (src_info.mipLevels != dst_info.mipLevels) {
         mismatch_stream << "srcImage mipLevels = " << src_info.mipLevels << "and dstImage mipLevels = " << dst_info.mipLevels
-                        << "\n";
+                        << '\n';
     }
     if (src_info.arrayLayers != dst_info.arrayLayers) {
         mismatch_stream << "srcImage arrayLayers = " << src_info.arrayLayers
-                        << " and dstImage arrayLayers = " << dst_info.arrayLayers << "\n";
+                        << " and dstImage arrayLayers = " << dst_info.arrayLayers << '\n';
     }
     if (src_info.samples != dst_info.samples) {
         mismatch_stream << "srcImage samples = " << string_VkSampleCountFlagBits(src_info.samples)
-                        << " and dstImage samples = " << string_VkSampleCountFlagBits(dst_info.samples) << "\n";
+                        << " and dstImage samples = " << string_VkSampleCountFlagBits(dst_info.samples) << '\n';
     }
     if (src_info.tiling != dst_info.tiling) {
         mismatch_stream << "srcImage tiling = " << string_VkImageTiling(src_info.tiling)
-                        << " and dstImage tiling = " << string_VkImageTiling(dst_info.tiling) << "\n";
+                        << " and dstImage tiling = " << string_VkImageTiling(dst_info.tiling) << '\n';
     }
     if (src_info.usage != dst_info.usage) {
         mismatch_stream << "srcImage usage = " << string_VkImageUsageFlags(src_info.usage)
-                        << " and dstImage usage = " << string_VkImageUsageFlags(dst_info.usage) << "\n";
+                        << " and dstImage usage = " << string_VkImageUsageFlags(dst_info.usage) << '\n';
     }
     if (src_info.sharingMode != dst_info.sharingMode) {
         mismatch_stream << "srcImage sharingMode = " << string_VkSharingMode(src_info.sharingMode)
-                        << " and dstImage sharingMode = " << string_VkSharingMode(dst_info.sharingMode) << "\n";
+                        << " and dstImage sharingMode = " << string_VkSharingMode(dst_info.sharingMode) << '\n';
     }
     if (src_info.initialLayout != dst_info.initialLayout) {
         mismatch_stream << "srcImage initialLayout = " << string_VkImageLayout(src_info.initialLayout)
-                        << " and dstImage initialLayout = " << string_VkImageLayout(dst_info.initialLayout) << "\n";
+                        << " and dstImage initialLayout = " << string_VkImageLayout(dst_info.initialLayout) << '\n';
     }
 
     if (mismatch_stream.str().length() > 0) {

@@ -273,7 +273,7 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
             }
         }
     }
-    ss << "\n";
+    ss << '\n';
     return ss.str();
 }
 
