@@ -98,15 +98,21 @@ void SyncValidator::ApplyAcquireWait(const AcquiredImage &acquired) {
 
 template <typename BatchOp>
 void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
-    // Often we need to go through every queue batch context and apply synchronization operations
-    // As usual -- two groups, the "last batch" and the signaled semaphores
+    // Get last batch from each queue
     std::vector<QueueBatchContext::Ptr> batch_contexts = GetLastBatches([](auto) { return true; });
 
+    // Get batches from signaled binary semaphores
     for (auto &[_, signal_info] : signaled_semaphores_) {
         if (!vvl::Contains(batch_contexts, signal_info.batch)) {
             batch_contexts.emplace_back(signal_info.batch);
         }
     }
+
+    // Get present batches
+    ForEachShared<vvl::Swapchain>([&batch_contexts](const std::shared_ptr<vvl::Swapchain> &swapchain) {
+        auto sync_swapchain = std::static_pointer_cast<syncval_state::Swapchain>(swapchain);
+        sync_swapchain->GetPresentBatches(batch_contexts);
+    });
 
     // Note: The const is to force the reference to const be on all platforms.
     //

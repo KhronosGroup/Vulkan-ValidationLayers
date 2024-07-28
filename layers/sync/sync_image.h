@@ -67,6 +67,7 @@ class Swapchain : public vvl::Swapchain {
     ~Swapchain() { Destroy(); }
     void RecordPresentedImage(PresentedImage &&presented_images);
     PresentedImage MovePresentedImage(uint32_t image_index);
+    void GetPresentBatches(std::vector<QueueBatchContext::Ptr> &batches) const;
     std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }
 
