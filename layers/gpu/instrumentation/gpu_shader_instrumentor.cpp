@@ -1045,7 +1045,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
            << HandleToUint64(commandBuffer) << ")\n";
 
         ss << std::dec << std::noshowbase;
-        ss << "\t";  // helps to show that the index is expressed with respect to the command buffer
+        ss << '\t';  // helps to show that the index is expressed with respect to the command buffer
         if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             ss << "Draw ";
         } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
@@ -1056,7 +1056,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
             assert(false);
             ss << "Unknown Pipeline Operation ";
         }
-        ss << "Index " << operation_index << "\n";
+        ss << "Index " << operation_index << '\n';
         ss << std::hex << std::noshowbase;
 
         if (tracker_info->shader_module == VK_NULL_HANDLE) {
@@ -1075,7 +1075,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     }
 
     ss << std::dec << std::noshowbase;
-    ss << "SPIR-V Instruction Index = " << instruction_position << "\n";
+    ss << "SPIR-V Instruction Index = " << instruction_position << '\n';
 
     // Find the OpLine just before the failing instruction indicated by the debug info.
     // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
@@ -1122,7 +1122,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
             if (reported_column_number > 0) {
                 ss << ", column " << reported_column_number;
             }
-            ss << "\n";
+            ss << '\n';
             break;
         }
         // OpString can only be in the debug section, so can break early if not found
@@ -1132,7 +1132,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     if (!found_opstring) {
         ss << "Unable to find SPIR-V OpString from OpLine instruction.\n";
         ss << "File ID = " << reported_file_id << ", Line Number = " << reported_line_number
-           << ", Column = " << reported_column_number << "\n";
+           << ", Column = " << reported_column_number << '\n';
     }
 
     // Create message to display source code line containing error.
@@ -1174,17 +1174,17 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
             assert(reported_line_number >= saved_line_number);
             const size_t opsource_index = (reported_line_number - saved_line_number) + 1 + saved_opsource_offset;
             if (opsource_index < opsource_lines.size()) {
-                ss << "\n" << reported_line_number << ": " << opsource_lines[opsource_index] << "\n";
+                ss << '\n' << reported_line_number << ": " << opsource_lines[opsource_index] << '\n';
             } else {
                 ss << "Internal error: calculated source line of " << opsource_index << " for source size of "
                    << opsource_lines.size() << " lines\n";
             }
         } else if (reported_line_number < opsource_lines.size() && reported_line_number != 0) {
             // file lines normally start at 1 index
-            ss << "\n" << opsource_lines[reported_line_number - 1] << "\n";
+            ss << '\n' << opsource_lines[reported_line_number - 1] << '\n';
             if (reported_column_number > 0) {
                 std::string spaces(reported_column_number - 1, ' ');
-                ss << spaces << "^";
+                ss << spaces << '^';
             }
         } else {
             ss << "Unable to find neither a suitable line in SPIR-V OpSource\n";

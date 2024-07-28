@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 
     FILE* fp = fopen(argv[1], "rb");
     if (!fp) {
-        std::cout << "ERROR: Unable to open the input file " << argv[1] << "\n";
+        std::cout << "ERROR: Unable to open the input file " << argv[1] << '\n';
         return EXIT_FAILURE;
     }
 
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
 
     fp = fopen(out_file, "wb");
     if (!fp) {
-        std::cout << "ERROR: Unable to open the output file " << out_file << "\n";
+        std::cout << "ERROR: Unable to open the output file " << out_file << '\n';
         return EXIT_FAILURE;
     }
 

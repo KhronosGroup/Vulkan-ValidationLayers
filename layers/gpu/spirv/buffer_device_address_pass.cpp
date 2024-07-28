@@ -112,7 +112,7 @@ bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const
 }
 
 void BufferDeviceAddressPass::PrintDebugInfo() {
-    std::cout << "BufferDeviceAddressPass\n\tinstrumentation count: " << instrumented_count_ << "\n";
+    std::cout << "BufferDeviceAddressPass\n\tinstrumentation count: " << instrumented_count_ << '\n';
 }
 
 }  // namespace spirv

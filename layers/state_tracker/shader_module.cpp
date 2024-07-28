@@ -1270,7 +1270,7 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
     const Instruction* insn = FindDef(type);
     auto indent_by = [&ss](uint32_t i) {
         for (uint32_t x = 0; x < i; x++) {
-            ss << "\t";
+            ss << '\t';
         }
     };
 
@@ -1317,11 +1317,11 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
                     ss << " \"" << name << "\"";
                 }
 
-                ss << "\n";
+                ss << '\n';
             }
             indent--;
             indent_by(indent);
-            ss << "}";
+            ss << '}';
 
             auto name = GetName(type);
             if (!name.empty()) {
@@ -1361,9 +1361,9 @@ std::string Module::DescribeVariable(uint32_t id) const {
         ss << "Variable \"" << name << "\"";
         auto decorations = GetDecorations(id);
         if (!decorations.empty()) {
-            ss << " (Decorations:" << decorations << ")";
+            ss << " (Decorations:" << decorations << ')';
         }
-        ss << "\n";
+        ss << '\n';
     }
     return ss.str();
 }

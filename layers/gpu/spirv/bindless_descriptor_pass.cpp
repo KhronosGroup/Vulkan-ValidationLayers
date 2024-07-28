@@ -426,7 +426,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
 }
 
 void BindlessDescriptorPass::PrintDebugInfo() {
-    std::cout << "BindlessDescriptorPass\n\tinstrumentation count: " << instrumented_count_ << "\n";
+    std::cout << "BindlessDescriptorPass\n\tinstrumentation count: " << instrumented_count_ << '\n';
 }
 
 }  // namespace spirv

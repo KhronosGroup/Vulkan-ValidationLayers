@@ -451,7 +451,7 @@ static void GenerateStageMessage(const uint32_t *error_record, std::string &msg)
             assert(false);
         } break;
     }
-    strm << "\n";
+    strm << '\n';
     msg = strm.str();
 }
 
