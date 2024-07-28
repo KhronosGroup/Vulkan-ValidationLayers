@@ -74,6 +74,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
+
+     // Go through every queue batch context and apply synchronization operation
     template <typename BatchOp>
     void ForAllQueueBatchContexts(BatchOp &&op);
 

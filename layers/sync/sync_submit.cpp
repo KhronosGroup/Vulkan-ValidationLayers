@@ -107,6 +107,14 @@ PresentedImage syncval_state::Swapchain::MovePresentedImage(uint32_t image_index
     return ret_val;
 }
 
+void syncval_state::Swapchain::GetPresentBatches(std::vector<QueueBatchContext::Ptr>& batches) const {
+    for (const auto& presented_image : presented) {
+        if (presented_image.batch) {
+            batches.push_back(presented_image.batch);
+        }
+    }
+}
+
 class ApplySemaphoreBarrierAction {
   public:
     ApplySemaphoreBarrierAction(const SemaphoreScope& signal, const SemaphoreScope& wait) : signal_(signal), wait_(wait) {}
