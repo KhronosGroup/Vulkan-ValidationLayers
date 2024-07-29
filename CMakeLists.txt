@@ -81,7 +81,7 @@ option(VVL_ENABLE_TRACY "Enable profiling with Tracy" OFF)
 option(VVL_ENABLE_TRACY_CPU_MEMORY "Enable profiling memory with Tracy" OFF)
 option(VVL_TRACY_CALLSTACK "Size of the collected collected call stacks" 48)
 if (VVL_ENABLE_TRACY)
-    if(USE_MIMALLOC)
+    if(VVL_ENABLE_TRACY_CPU_MEMORY AND USE_MIMALLOC)
         message(FATAL_ERROR "Tracy cannot be used with mimalloc")
     endif()
 
