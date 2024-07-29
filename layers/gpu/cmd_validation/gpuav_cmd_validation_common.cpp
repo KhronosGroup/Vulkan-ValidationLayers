@@ -68,7 +68,7 @@ void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBin
     for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
         const auto &bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
         if (bound_descriptor_set) {
-            descriptor_sets_.push_back(std::make_pair(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(i)));
+            descriptor_sets_.emplace_back(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(i));
             if (bound_descriptor_set->IsPushDescriptor()) {
                 push_descriptor_set_index_ = static_cast<uint32_t>(i);
             }

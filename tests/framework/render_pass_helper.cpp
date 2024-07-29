@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,15 +46,16 @@ VkRenderPassCreateInfo RenderPassSingleSubpass::GetCreateInfo() {
 
 void RenderPassSingleSubpass::AddAttachmentDescription(VkFormat format, VkImageLayout initialLayout, VkImageLayout finalLayout,
                                                        VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp) {
-    attachment_descriptions_.push_back({0, format, VK_SAMPLE_COUNT_1_BIT, loadOp, storeOp, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                        VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout, finalLayout});
+    attachment_descriptions_.emplace_back(VkAttachmentDescription{0, format, VK_SAMPLE_COUNT_1_BIT, loadOp, storeOp,
+                                                                  VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                                  initialLayout, finalLayout});
 }
 
 void RenderPassSingleSubpass::AddAttachmentDescription(VkFormat format, VkSampleCountFlagBits samples, VkImageLayout initialLayout,
                                                        VkImageLayout finalLayout) {
-    attachment_descriptions_.push_back({0, format, samples, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                        VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout,
-                                        finalLayout});
+    attachment_descriptions_.emplace_back(VkAttachmentDescription{0, format, samples, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                                  VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                                  VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout, finalLayout});
 }
 
 void RenderPassSingleSubpass::AddAttachmentReference(VkAttachmentReference reference) {

@@ -109,7 +109,7 @@ private:
         }
         for (const auto &command : cb_state.GetLabelCommands()) {
             if (command.begin) {
-                cmdbuf_label_stack.push_back(command.label_name);
+                cmdbuf_label_stack.emplace_back(command.label_name);
             } else {
                 if (cmdbuf_label_stack.empty()) {
                     found_unbalanced_cmdbuf_label = true;

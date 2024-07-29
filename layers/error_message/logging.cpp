@@ -343,7 +343,7 @@ void DebugReport::BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLab
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto *label_state = GetLoggingLabelState(&debug_utils_queue_labels, queue, /* insert */ true);
         assert(label_state);
-        label_state->labels.emplace_back(label_info);
+        label_state->labels.push_back(label_info);
 
         // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
         label_state->insert_label.Reset();
@@ -377,7 +377,7 @@ void DebugReport::BeginCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const 
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto *label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ true);
         assert(label_state);
-        label_state->labels.push_back(LoggingLabel(label_info));
+        label_state->labels.push_back(label_info);
 
         // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
         label_state->insert_label.Reset();

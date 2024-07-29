@@ -1031,8 +1031,8 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
             queue_family_index_set.insert(queue_create_info.queueFamilyIndex);
-            device_queue_info_list.push_back(
-                {i, queue_create_info.queueFamilyIndex, queue_create_info.flags, queue_create_info.queueCount});
+            device_queue_info_list.emplace_back(
+                DeviceQueueInfo{i, queue_create_info.queueFamilyIndex, queue_create_info.flags, queue_create_info.queueCount});
         }
         for (const auto &queue_info : device_queue_info_list) {
             for (uint32_t i = 0; i < queue_info.queue_count; i++) {
@@ -4153,8 +4153,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
             pd_state->surfaceless_query_state.formats.clear();
             pd_state->surfaceless_query_state.formats.reserve(*pSurfaceFormatCount);
             for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; ++surface_format_index) {
-                pd_state->surfaceless_query_state.formats.emplace_back(
-                    vku::safe_VkSurfaceFormat2KHR(&pSurfaceFormats[surface_format_index]));
+                pd_state->surfaceless_query_state.formats.emplace_back(&pSurfaceFormats[surface_format_index]);
             }
         }
     }

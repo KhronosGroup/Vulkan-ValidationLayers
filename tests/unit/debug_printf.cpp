@@ -1171,19 +1171,19 @@ TEST_F(NegativeDebugPrintf, GPL) {
     m_commandBuffer->end();
 
     std::vector<char const *> messages;
-    messages.push_back("Here are two float values 1.000000, 3.141500");
-    messages.push_back("Here's a smaller float value 3.14");
-    messages.push_back("Here's an integer -135 with text before and after it");
-    messages.push_back("Here's an integer in octal 400 and hex 0x100");
-    messages.push_back("-135 is a negative integer");
-    messages.push_back("Here's a vector of floats 1.20, 2.20, 3.20, 4.20");
-    messages.push_back("Here's a float in sn 3.141500e+00");
-    messages.push_back("Here's a float in sn 3.14e+00");
-    messages.push_back("Here's a float in shortest 3.1415");
-    messages.push_back("Here's a float in hex 0x1.921cac000p+1");
+    messages.emplace_back("Here are two float values 1.000000, 3.141500");
+    messages.emplace_back("Here's a smaller float value 3.14");
+    messages.emplace_back("Here's an integer -135 with text before and after it");
+    messages.emplace_back("Here's an integer in octal 400 and hex 0x100");
+    messages.emplace_back("-135 is a negative integer");
+    messages.emplace_back("Here's a vector of floats 1.20, 2.20, 3.20, 4.20");
+    messages.emplace_back("Here's a float in sn 3.141500e+00");
+    messages.emplace_back("Here's a float in sn 3.14e+00");
+    messages.emplace_back("Here's a float in shortest 3.1415");
+    messages.emplace_back("Here's a float in hex 0x1.921cac000p+1");
     // Two error messages have to be last in the vector
-    messages.push_back("First printf with a % and no value");
-    messages.push_back("Second printf with a value -135");
+    messages.emplace_back("First printf with a % and no value");
+    messages.emplace_back("Second printf with a value -135");
     for (uint32_t i = 0; i < messages.size(); i++) {
         VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.memory().map();
         data[0] = i;

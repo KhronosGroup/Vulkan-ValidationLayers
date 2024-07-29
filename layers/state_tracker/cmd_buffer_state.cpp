@@ -1805,19 +1805,19 @@ void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipel
 
 void CommandBuffer::BeginLabel(const char *label_name) {
     ++label_stack_depth_;
-    label_commands_.push_back(LabelCommand{true, label_name});
+    label_commands_.emplace_back(LabelCommand{true, label_name});
 }
 
 void CommandBuffer::EndLabel() {
     --label_stack_depth_;
-    label_commands_.push_back(LabelCommand{false, std::string()});
+    label_commands_.emplace_back(LabelCommand{false, std::string()});
 }
 
 void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand> &label_commands,
                                         std::vector<std::string> &label_stack) {
     for (const LabelCommand &command : label_commands) {
         if (command.begin) {
-            label_stack.push_back(command.label_name.empty() ? "(empty label)" : command.label_name);
+            label_stack.emplace_back(command.label_name.empty() ? "(empty label)" : command.label_name);
         } else if (!label_stack.empty()) {
             // The above condition is needed for several reasons. On the primary command buffer level
             // the labels are not necessary balanced. And if the empty stack is detected in the context

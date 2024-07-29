@@ -847,7 +847,7 @@ void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, ui
     if (itr != rp_state.touchesAttachments.end()) {
         itr->aspects |= aspects;
     } else {
-        rp_state.touchesAttachments.push_back({fb_attachment, aspects});
+        rp_state.touchesAttachments.emplace_back(fb_attachment, aspects);
     }
 }
 
@@ -866,7 +866,7 @@ void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cm
         new_aspects = aspects & ~itr->aspects;
         itr->aspects |= aspects;
     } else {
-        rp_state.touchesAttachments.push_back({fb_attachment, aspects});
+        rp_state.touchesAttachments.emplace_back(fb_attachment, aspects);
     }
 
     if (new_aspects == 0) {

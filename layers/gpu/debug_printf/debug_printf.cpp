@@ -51,10 +51,9 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     }
 
     binding_slot_ = (uint32_t)instrumentation_bindings_.size();  // get next free binding
-    VkDescriptorSetLayoutBinding binding = {binding_slot_, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-                                            kShaderStageAllGraphics | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing,
-                                            nullptr};
-    instrumentation_bindings_.push_back(binding);
+    instrumentation_bindings_.emplace_back(
+        VkDescriptorSetLayoutBinding{binding_slot_, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                                     kShaderStageAllGraphics | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing, nullptr});
 
     BaseClass::PostCreateDevice(pCreateInfo, loc);  // will set up bindings
 
@@ -223,7 +222,7 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
         if (pos == std::string::npos) {
             // End of the format string   Push the rest of the characters
             substring.string = format_string.substr(begin, format_string.length());
-            parsed_strings.push_back(substring);
+            parsed_strings.emplace_back(substring);
             break;
         }
         pos++;
@@ -265,14 +264,14 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
                 substring.string = format_string.substr(begin, percent - begin);
                 substring.string += specifier;
                 substring.type = NumericTypeLookup(specifier.back());
-                parsed_strings.push_back(substring);
+                parsed_strings.emplace_back(substring);
 
                 // Continue with a comma separated list
                 char temp_string[32];
                 snprintf(temp_string, sizeof(temp_string), ", %s", specifier.c_str());
                 substring.string = temp_string;
                 for (int i = 0; i < (vec_size - 1); i++) {
-                    parsed_strings.push_back(substring);
+                    parsed_strings.emplace_back(substring);
                 }
             } else {
                 // Single non-vector value
@@ -284,7 +283,7 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
                 }
                 substring.string = format_string.substr(begin, pos - begin + 1);
                 substring.type = NumericTypeLookup(format_string[pos]);
-                parsed_strings.push_back(substring);
+                parsed_strings.emplace_back(substring);
             }
             begin = pos + 1;
         }
