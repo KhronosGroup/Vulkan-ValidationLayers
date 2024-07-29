@@ -107,7 +107,7 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        const RecordObject& record_obj, chassis::ShaderObject& chassis_state) override;
     std::vector<Substring> ParseFormatString(const std::string& format_string);
-    std::string FindFormatString(const std::vector<spirv::Instruction>& instructions, uint32_t string_id);
+    std::string FindFormatString(const std::vector<gpu::spirv::Instruction>& instructions, uint32_t string_id);
     void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, uint32_t operation_index,
                                    uint32_t* const debug_output_buffer, const Location& loc);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,

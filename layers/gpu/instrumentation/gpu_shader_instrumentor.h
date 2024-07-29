@@ -20,6 +20,7 @@
 #include "generated/chassis.h"
 #include "gpu/core/gpu_state_tracker.h"
 #include "gpu/resources/gpu_resources.h"
+#include "gpu/spirv/instruction.h"
 #include "vma/vma.h"
 
 #include <vector>
