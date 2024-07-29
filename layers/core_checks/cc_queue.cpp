@@ -667,8 +667,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     ASSERT_AND_CONTINUE(buffer_state);
                     for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
-                        const Location buffer_loc = bind_info_loc.dot(Field::pBufferBinds, buffer_idx);
-                        const Location bind_loc = buffer_loc.dot(Field::pBinds, buffer_bind_idx);
+                        const Location buffer_bind_info_loc = bind_info_loc.dot(Field::pBufferBinds, buffer_idx);
+                        const Location bind_loc = buffer_bind_info_loc.dot(Field::pBinds, buffer_bind_idx);
+                        skip |= ValidateBufferSparseMemoryBind(memory_bind, *buffer_state, bind_loc, buffer_bind_info_loc);
                         skip |=
                             ValidateSparseMemoryBind(memory_bind, buffer_state->requirements, buffer_state->requirements.size,
                                                      buffer_state->external_memory_handle_types, buffer_state->Handle(), bind_loc);

@@ -32,7 +32,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;
     copy_info.dstOffset = 0;
-    copy_info.size = 256;
+    copy_info.size = 0x10000;
 
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
@@ -129,7 +129,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     copy_info_list[2].size = copy_size;
 
     VkBufferCreateInfo b_info =
-        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(0x10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
@@ -388,7 +388,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     }
 
     VkBufferCreateInfo b_info =
-        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(0x10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
