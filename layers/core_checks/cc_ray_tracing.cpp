@@ -362,7 +362,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      p_geom_geom_triangles_loc.dot(Field::transformData));
 
                 auto vertex_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.vertexData.deviceAddress);
-                if (vertex_buffer_states.empty()) {
+                if (vertex_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03804"),
                                      cmd_buffer, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
@@ -384,7 +384,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
 
                 if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
                     auto index_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
-                    if (index_buffer_states.empty()) {
+                    if (index_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03806"),
                                          cmd_buffer, p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
@@ -466,7 +466,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 }
                 if (geom_data.geometry.triangles.transformData.deviceAddress != 0) {
                     auto tranform_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.transformData.deviceAddress);
-                    if (tranform_buffer_states.empty()) {
+                    if (tranform_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03808",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03808"),
                                          cmd_buffer, p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
@@ -497,7 +497,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 skip |= buffer_check(geom_i, geom_data.geometry.instances.data, instances_data_loc);
 
                 auto buffer_states = GetBuffersByAddress(geom_data.geometry.instances.data.deviceAddress);
-                if (buffer_states.empty()) {
+                if (buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03813"),
                                      cmd_buffer, instances_data_loc.dot(Field::deviceAddress),
@@ -524,7 +524,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data));
 
                 auto aabb_buffer_states = GetBuffersByAddress(geom_data.geometry.aabbs.data.deviceAddress);
-                if (aabb_buffer_states.empty()) {
+                if (aabb_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03811"),
                                      cmd_buffer, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),

@@ -978,6 +978,7 @@ TEST_F(PositiveRayTracing, UpdatedFirstVertex) {
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
 TEST_F(PositiveRayTracing, BindGraphicsPipelineAfterRayTracingPipeline) {
     TEST_DESCRIPTION("Bind a graphics pipeline width dynamic line width state after binding ray tracing pipeline");
 
@@ -1061,4 +1062,40 @@ TEST_F(PositiveRayTracing, BindGraphicsPipelineAfterRayTracingPipeline) {
     m_commandBuffer->end();
     m_default_queue->Submit(*m_commandBuffer);
     m_device->Wait();
+}
+
+TEST_F(PositiveRayTracing, InstanceBufferBadAddress) {
+    TEST_DESCRIPTION("Use an invalid address for an instance buffer, but also specify a primitiveCount of 0 => no errors");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+
+    m_commandBuffer->begin();
+    blas->BuildCmdBuffer(*m_commandBuffer);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
+
+    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+
+    m_commandBuffer->begin();
+    tlas.SetupBuild(*m_device, true);
+
+    auto build_range_infos = tlas.GetDefaultBuildRangeInfos();
+    build_range_infos[0].primitiveCount = 0;
+    tlas.SetBuildRanges(build_range_infos);
+
+    tlas.GetGeometries()[0].SetInstancesDeviceAddress(0);
+
+    tlas.VkCmdBuildAccelerationStructuresKHR(*m_commandBuffer);
+    m_commandBuffer->end();
 }
