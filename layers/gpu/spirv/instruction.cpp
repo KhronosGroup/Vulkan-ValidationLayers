@@ -296,9 +296,8 @@ void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<In
     instructions.reserve(spirv.size() * 4);
 
     while (it != spirv.end()) {
-        Instruction insn(it);
-        instructions.emplace_back(insn);
-        it += insn.Length();
+        auto new_insn = instructions.emplace_back(it);
+        it += new_insn.Length();
     }
     instructions.shrink_to_fit();
 }
