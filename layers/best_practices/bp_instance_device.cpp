@@ -143,7 +143,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                 VK_SUCCESS) {
                 extensions.reserve(property_list.size());
                 for (const VkExtensionProperties& properties : property_list) {
-                    extensions.push_back(properties.extensionName);
+                    extensions.emplace_back(properties.extensionName);
                 }
             }
         }

@@ -120,6 +120,9 @@ class DeviceMemory : public vvl::DeviceMemory {
 struct AttachmentInfo {
     uint32_t framebufferAttachment;
     VkImageAspectFlags aspects;
+
+    AttachmentInfo(uint32_t framebufferAttachment_, VkImageAspectFlags aspects_)
+        : framebufferAttachment(framebufferAttachment_), aspects(aspects_) {}
 };
 
 // used to track state regarding render pass heuristic checks

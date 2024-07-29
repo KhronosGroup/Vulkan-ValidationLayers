@@ -150,7 +150,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     // Create storage buffers for the sake of storing multiple device address ranges
     std::vector<vkt::Buffer> dummy_storage_buffers;
     for (int i = 0; i < 1024; ++i) {
-        (void)dummy_storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address)).address();
+        (void)dummy_storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).address();
     }
 
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -872,8 +872,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
 
     for (size_t i = 0; i < nodes_count; ++i) {
-        const VkDeviceAddress addr =
-            storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address)).address();
+        const VkDeviceAddress addr = storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).address();
         uniform_buffer_ptr[i] = addr;
     }
 
@@ -1124,11 +1123,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
     std::vector<vkt::CommandBuffer> cmd_buffers;
     std::vector<vkt::Buffer> storage_buffers;
     for (int i = 0; i < 64; ++i) {
-        auto &cb = cmd_buffers.emplace_back(vkt::CommandBuffer(*m_device, m_command_pool));
+        auto &cb = cmd_buffers.emplace_back(*m_device, m_command_pool);
 
         // Create a storage buffer and get its address,
         // effectively adding it to the BDA table
-        auto &storage_buffer = storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address));
+        auto &storage_buffer = storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address);
 
         auto storage_buffer_addr = storage_buffer.address();
 

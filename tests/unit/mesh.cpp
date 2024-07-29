@@ -369,36 +369,36 @@ TEST_F(NegativeMesh, RuntimeSpirv) {
     uint32_t max_mesh_workgroup_size_z = mesh_shader_properties.maxMeshWorkGroupSize[2];
 
     if (max_task_workgroup_size_x < vvl::MaxTypeValue(max_task_workgroup_size_x)) {
-        error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07291");
+        error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07291");
         max_task_workgroup_size_x += 1;
     }
 
     if (max_task_workgroup_size_y < vvl::MaxTypeValue(max_task_workgroup_size_y)) {
-        error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07292");
+        error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07292");
         max_task_workgroup_size_y += 1;
     }
 
     if (max_task_workgroup_size_z < vvl::MaxTypeValue(max_task_workgroup_size_z)) {
-        error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07293");
+        error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07293");
         max_task_workgroup_size_z += 1;
     }
-    error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07294");
+    error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07294");
 
     if (max_mesh_workgroup_size_x < vvl::MaxTypeValue(max_mesh_workgroup_size_x)) {
-        error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07295");
+        error_vuids.emplace_back("VUID-RuntimeSpirv-MeshEXT-07295");
         max_mesh_workgroup_size_x += 1;
     }
 
     if (max_mesh_workgroup_size_y < vvl::MaxTypeValue(max_mesh_workgroup_size_y)) {
-        error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07296");
+        error_vuids.emplace_back("VUID-RuntimeSpirv-MeshEXT-07296");
         max_mesh_workgroup_size_y += 1;
     }
 
     if (max_mesh_workgroup_size_z < vvl::MaxTypeValue(max_mesh_workgroup_size_z)) {
-        error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07297");
+        error_vuids.emplace_back("VUID-RuntimeSpirv-MeshEXT-07297");
         max_mesh_workgroup_size_z += 1;
     }
-    error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07298");
+    error_vuids.emplace_back("VUID-RuntimeSpirv-MeshEXT-07298");
 
     std::string task_src = R"(
                OpCapability MeshShadingEXT
@@ -1290,7 +1290,7 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
     };
     std::vector<std::string> vuids = {"VUID-RuntimeSpirv-TaskEXT-07299"};
     if (mesh_shader_properties.maxMeshWorkGroupCount[0] == mesh_shader_properties.maxMeshWorkGroupTotalCount) {
-        vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07302");
+        vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07302");
     }
     if (mesh_shader_properties.maxMeshWorkGroupCount[0] != std::numeric_limits<uint32_t>::max()) {
         CreatePipelineHelper::OneshotTest(*this, mesh_tasks_x, kErrorBit, vuids);

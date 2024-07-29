@@ -466,9 +466,9 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
         auto image = Get<bp_state::Image>(barrier.image);
         ASSERT_AND_RETURN(image);
         auto subresource_range = barrier.subresourceRange;
-        cb_state->queue_submit_functions.push_back([image, subresource_range](const ValidationStateTracker& vst,
-                                                                              const vvl::Queue& qs,
-                                                                              const vvl::CommandBuffer& cbs) -> bool {
+        cb_state->queue_submit_functions.emplace_back([image, subresource_range](const ValidationStateTracker& vst,
+                                                                                 const vvl::Queue& qs,
+                                                                                 const vvl::CommandBuffer& cbs) -> bool {
             ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
                 // Update queue family index without changing usage, signifying a correct queue family transfer
                 image->UpdateUsage(layer, level, image->GetUsageType(layer, level), qs.queue_family_index);

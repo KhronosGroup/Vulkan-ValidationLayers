@@ -637,7 +637,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     std::vector<vkt::Buffer> dummy_storage_buffers;
     for (int i = 0; i < 1024; ++i) {
         const VkDeviceAddress addr =
-            dummy_storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address)).address();
+            dummy_storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).address();
         const AddrRange addr_range(addr, addr + storage_buffer_size);
         // If new buffer address range overlaps with storage buffer range,
         // writes past its end may be valid, so remove dummy buffer
@@ -1023,8 +1023,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
             storage_buffer_size = 2 * sizeof(float);
         }
 
-        const VkDeviceAddress addr =
-            storage_buffers.emplace_back(vkt::Buffer(*m_device, storage_buffer_size, 0, vkt::device_address)).address();
+        const VkDeviceAddress addr = storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).address();
         uniform_buffer_ptr[i] = addr;
     }
 

@@ -316,10 +316,10 @@ TEST_F(NegativeBuffer, TexelBufferAlignment) {
     buff_view_ci.offset = 1;
     std::vector<std::string> expectedErrors;
     if (buff_view_ci.offset < align_props.storageTexelBufferOffsetAlignmentBytes) {
-        expectedErrors.push_back("VUID-VkBufferViewCreateInfo-buffer-02750");
+        expectedErrors.emplace_back("VUID-VkBufferViewCreateInfo-buffer-02750");
     }
     if (buff_view_ci.offset < align_props.uniformTexelBufferOffsetAlignmentBytes) {
-        expectedErrors.push_back("VUID-VkBufferViewCreateInfo-buffer-02751");
+        expectedErrors.emplace_back("VUID-VkBufferViewCreateInfo-buffer-02751");
     }
     CreateBufferViewTest(*this, &buff_view_ci, expectedErrors);
     expectedErrors.clear();
@@ -327,11 +327,11 @@ TEST_F(NegativeBuffer, TexelBufferAlignment) {
     buff_view_ci.offset = 4;
     if (buff_view_ci.offset < align_props.storageTexelBufferOffsetAlignmentBytes &&
         !align_props.storageTexelBufferOffsetSingleTexelAlignment) {
-        expectedErrors.push_back("VUID-VkBufferViewCreateInfo-buffer-02750");
+        expectedErrors.emplace_back("VUID-VkBufferViewCreateInfo-buffer-02750");
     }
     if (buff_view_ci.offset < align_props.uniformTexelBufferOffsetAlignmentBytes &&
         !align_props.uniformTexelBufferOffsetSingleTexelAlignment) {
-        expectedErrors.push_back("VUID-VkBufferViewCreateInfo-buffer-02751");
+        expectedErrors.emplace_back("VUID-VkBufferViewCreateInfo-buffer-02751");
     }
     CreateBufferViewTest(*this, &buff_view_ci, expectedErrors);
     expectedErrors.clear();
@@ -350,7 +350,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignment) {
         buff_view_ci.format = VK_FORMAT_R32G32B32_SFLOAT;
         buff_view_ci.offset = 1;
         if (buff_view_ci.offset < align_props.uniformTexelBufferOffsetAlignmentBytes) {
-            expectedErrors.push_back("VUID-VkBufferViewCreateInfo-buffer-02751");
+            expectedErrors.emplace_back("VUID-VkBufferViewCreateInfo-buffer-02751");
         }
         CreateBufferViewTest(*this, &buff_view_ci, expectedErrors);
         expectedErrors.clear();
@@ -358,7 +358,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignment) {
         buff_view_ci.offset = 4;
         if (buff_view_ci.offset < align_props.uniformTexelBufferOffsetAlignmentBytes &&
             !align_props.uniformTexelBufferOffsetSingleTexelAlignment) {
-            expectedErrors.push_back("VUID-VkBufferViewCreateInfo-buffer-02751");
+            expectedErrors.emplace_back("VUID-VkBufferViewCreateInfo-buffer-02751");
         }
         CreateBufferViewTest(*this, &buff_view_ci, expectedErrors);
         expectedErrors.clear();

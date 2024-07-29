@@ -725,7 +725,7 @@ vvl::span<const vku::safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surf
         } else {
             result.resize(count);
             for (uint32_t surface_format_index = 0; surface_format_index < count; ++surface_format_index) {
-                result.emplace_back(vku::safe_VkSurfaceFormat2KHR(&formats2[surface_format_index]));
+                result.emplace_back(&formats2[surface_format_index]);
             }
         }
     } else {
@@ -743,7 +743,7 @@ vvl::span<const vku::safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surf
             VkSurfaceFormat2KHR format2 = vku::InitStructHelper();
             for (const auto &format : formats) {
                 format2.surfaceFormat = format;
-                result.emplace_back(vku::safe_VkSurfaceFormat2KHR(&format2));
+                result.emplace_back(&format2);
             }
         }
     }
@@ -783,7 +783,7 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
         }
     }
     if (!info) {
-        cache.present_mode_infos.push_back(PresentModeInfo{});
+        cache.present_mode_infos.emplace_back(PresentModeInfo{});
         info = &cache.present_mode_infos.back();
         info->present_mode = present_mode;
     }

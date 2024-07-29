@@ -3156,9 +3156,9 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     dst_img_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     std::vector<std::unique_ptr<vkt::Image>> images;
-    images.emplace_back(new vkt::Image(*m_device, src_img_info));
+    images.emplace_back(std::make_unique<vkt::Image>(*m_device, src_img_info));
     for (uint32_t i = 1; i < kNumImages; i++) {
-        images.emplace_back(new vkt::Image(*m_device, dst_img_info));
+        images.emplace_back(std::make_unique<vkt::Image>(*m_device, dst_img_info));
     }
 
     vkt::ImageView attachment_wrappers[kNumImages];

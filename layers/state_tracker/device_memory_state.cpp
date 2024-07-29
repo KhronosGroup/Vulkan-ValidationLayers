@@ -312,8 +312,8 @@ BoundMemoryRange vvl::BindableMultiplanarMemoryTracker::GetBoundMemoryRange(cons
         if (plane.binding.memory_state && range.intersects(plane_range)) {
             VkDeviceSize range_end = range.end > plane_range.end ? plane_range.end : range.end;
             const VkDeviceMemory dev_mem = plane.binding.memory_state->VkHandle();
-            mem_ranges[dev_mem].emplace_back(MemoryRange{plane.binding.memory_offset + range.begin,
-                                                                                   plane.binding.memory_offset + range_end});
+            mem_ranges[dev_mem].emplace_back((plane.binding.memory_offset + range.begin),
+                                             (plane.binding.memory_offset + range_end));
         }
         start_offset += plane.size;
     }

@@ -960,7 +960,7 @@ static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, co
             std::string cur_line;
             in_stream.str(insn.GetAsString(4));
             while (std::getline(in_stream, cur_line)) {
-                opsource_lines.push_back(cur_line);
+                opsource_lines.emplace_back(cur_line);
             }
 
             for (size_t k = i + 1; k < instructions.size(); k++) {
@@ -970,7 +970,7 @@ static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, co
                 }
                 in_stream.str(continue_insn.GetAsString(1));
                 while (std::getline(in_stream, cur_line)) {
-                    opsource_lines.push_back(cur_line);
+                    opsource_lines.emplace_back(cur_line);
                 }
             }
             break;

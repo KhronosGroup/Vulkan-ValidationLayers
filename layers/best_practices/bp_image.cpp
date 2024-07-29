@@ -173,8 +173,8 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
-    funcs.push_back([this, command, state, usage, array_layer, mip_level](const ValidationStateTracker& vst, const vvl::Queue& qs,
-                                                                          const vvl::CommandBuffer& cbs) -> bool {
+    funcs.emplace_back([this, command, state, usage, array_layer, mip_level](
+                           const ValidationStateTracker& vst, const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
         ValidateImageInQueue(qs, cbs, command, *state, usage, array_layer, mip_level);
         return false;
     });

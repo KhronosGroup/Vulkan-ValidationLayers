@@ -212,7 +212,7 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
             if (create_info.pColorBlendState->pAttachments[j].colorWriteMask != 0) {
                 uint32_t attachment = subpass.pColorAttachments[j].attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
-                    result.push_back({attachment, VK_IMAGE_ASPECT_COLOR_BIT});
+                    result.emplace_back(attachment, VK_IMAGE_ASPECT_COLOR_BIT);
                 }
             }
         }
@@ -230,7 +230,7 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
             if (create_info.pDepthStencilState->stencilTestEnable) {
                 aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }
-            result.push_back({attachment, aspects});
+            result.emplace_back(attachment, aspects);
         }
     }
     return result;
