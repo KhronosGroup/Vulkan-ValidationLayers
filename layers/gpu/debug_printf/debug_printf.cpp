@@ -17,13 +17,10 @@
 
 #include "gpu/debug_printf/debug_printf.h"
 #include "generated/layer_chassis_dispatch.h"
-#include "state_tracker/shader_stage_state.h"
 #include "chassis/chassis_modification_state.h"
-#include "gpu/spirv/module.h"
 #include "gpu/shaders/gpu_error_header.h"
 
 #include <iostream>
-#include <fstream>
 
 namespace debug_printf {
 
@@ -50,9 +47,9 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         use_stdout = true;
     }
 
-    binding_slot_ = (uint32_t)instrumentation_bindings_.size();  // get next free binding
+    debug_printf_binding_slot_ = (uint32_t)instrumentation_bindings_.size();  // get next free binding
     instrumentation_bindings_.emplace_back(
-        VkDescriptorSetLayoutBinding{binding_slot_, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+        VkDescriptorSetLayoutBinding{debug_printf_binding_slot_, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                      kShaderStageAllGraphics | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing, nullptr});
 
     BaseClass::PostCreateDevice(pCreateInfo, loc);  // will set up bindings
@@ -80,70 +77,6 @@ void Validator::DestroyBuffer(BufferInfo &buffer_info) {
     if (buffer_info.desc_set != VK_NULL_HANDLE) {
         desc_set_manager_->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
     }
-}
-
-static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalarBlockLayout,
-                              spv_target_env target_env, std::string &error) {
-    // Use SPIRV-Tools validator to try and catch any issues with the module
-    spv_context ctx = spvContextCreate(target_env);
-    spv_const_binary_t binary{input.data(), input.size()};
-    spv_diagnostic diag = nullptr;
-    spv_validator_options options = spvValidatorOptionsCreate();
-    spvValidatorOptionsSetRelaxBlockLayout(options, SetRelaxBlockLayout);
-    spvValidatorOptionsSetScalarBlockLayout(options, SetScalarBlockLayout);
-    spv_result_t result = spvValidateWithOptions(ctx, options, &binary, &diag);
-    if (result != SPV_SUCCESS && diag) error = diag->error;
-    return (result == SPV_SUCCESS);
-}
-
-// Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-// TODO - Merge this with the GPU-AV InstrumentShader as they now do the same operations
-bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id, const Location &loc,
-                                 std::vector<uint32_t> &out_instrumented_spirv) {
-    if (input_spirv[0] != spv::MagicNumber) return false;
-
-    std::vector<uint32_t> temp_spirv_copy;
-    temp_spirv_copy.reserve(input_spirv.size());
-    temp_spirv_copy.insert(temp_spirv_copy.end(), &input_spirv.front(), &input_spirv.back() + 1);
-
-    spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-    if (gpuav_settings.debug_dump_instrumented_shaders) {
-        std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
-        std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-        debug_file.write(reinterpret_cast<char *>(temp_spirv_copy.data()),
-                         static_cast<std::streamsize>(temp_spirv_copy.size() * sizeof(uint32_t)));
-    }
-
-    gpu::spirv::Module module(temp_spirv_copy, unique_shader_id, desc_set_bind_index_,
-                              gpuav_settings.debug_print_instrumentation_info);
-
-    bool modified = module.RunPassDebugPrintf(binding_slot_);
-    if (!modified) return false;
-
-    module.PostProcess();
-    module.ToBinary(out_instrumented_spirv);
-
-    if (gpuav_settings.debug_dump_instrumented_shaders) {
-        std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
-        std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-        debug_file.write(reinterpret_cast<char *>(out_instrumented_spirv.data()),
-                         static_cast<std::streamsize>(out_instrumented_spirv.size() * sizeof(uint32_t)));
-    }
-
-    // (Maybe) validate the instrumented shader
-    if (gpuav_settings.debug_validate_instrumented_shaders) {
-        std::string instrumented_error;
-        if (!GpuValidateShader(out_instrumented_spirv, device_extensions.vk_khr_relaxed_block_layout,
-                               device_extensions.vk_ext_scalar_block_layout, target_env, instrumented_error)) {
-            std::ostringstream strm;
-            strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
-                 << instrumented_error << " Proceeding with non instrumented shader.";
-            InternalError(device, loc, strm.str().c_str());
-            return false;
-        }
-    }
-
-    return true;
 }
 
 // Create the instrumented shader data to provide to the driver.
@@ -726,7 +659,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     desc_writes.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     desc_writes.pBufferInfo = &output_desc_buffer_info;
     desc_writes.dstSet = desc_sets[0];
-    desc_writes.dstBinding = binding_slot_;
+    desc_writes.dstBinding = debug_printf_binding_slot_;
     DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, nullptr);
 
     const auto pipeline_layout =

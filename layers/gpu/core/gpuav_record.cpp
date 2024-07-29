@@ -18,7 +18,6 @@
 #include <cmath>
 #include <fstream>
 #include "utils/cast_utils.h"
-#include "state_tracker/shader_stage_state.h"
 #include "utils/hash_util.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_draw.h"
@@ -29,9 +28,6 @@
 #include "gpu/descriptor_validation/gpuav_image_layout.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/instrumentation/gpuav_instrumentation.h"
-#include "spirv-tools/instrument.hpp"
-#include "spirv-tools/linker.hpp"
-#include "gpu/shaders/gpu_shaders_constants.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
 

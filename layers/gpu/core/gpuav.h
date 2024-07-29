@@ -61,12 +61,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
         force_buffer_device_address_ = true;
     }
 
-    // gpuav_instrumentation.cpp
-    // -------------------------
-  public:
-    bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
-                          std::vector<uint32_t>& out_instrumented_spirv) final;
-
     // gpuav_setup.cpp
     // -------------
   public:
