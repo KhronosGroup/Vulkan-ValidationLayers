@@ -21,6 +21,8 @@
 
 #include <cstdlib>
 
+#if defined(VVL_TRACY_CPU_MEMORY)
+
 void *operator new(std ::size_t size) {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
@@ -122,6 +124,8 @@ void operator delete[](void *ptr, std::align_val_t al, const std::nothrow_t &) n
     vvl_aligned_free(ptr);
 }
 #endif
+
+#endif  // #if defined(VVL_TRACY_CPU_MEMORY)
 
 #if TRACY_MANUAL_LIFETIME
 
