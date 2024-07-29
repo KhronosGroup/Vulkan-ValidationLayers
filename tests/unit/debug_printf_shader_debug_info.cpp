@@ -196,8 +196,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Unify stage info and have DebugPrintf also print it out
-TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_StageInfo) {
+TEST_F(NegativeDebugPrintfShaderDebugInfo, StageInfo) {
     TEST_DESCRIPTION("Make sure we print the stage info correctly");
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
@@ -207,7 +206,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_StageInfo) {
         #extension GL_EXT_debug_printf : enable
         void main() {
             float myfloat = 3.1415f;
-            if (gl_WorkGroupSize.x == 3 && gl_WorkGroupSize.y == 1) {
+            if (gl_GlobalInvocationID.x == 3 && gl_GlobalInvocationID.y == 1) {
                 debugPrintfEXT("float == %f", myfloat);
             }
         }
@@ -226,6 +225,45 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_StageInfo) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Global invocation ID (x, y, z) = (3, 1, 0)");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintfShaderDebugInfo, Fragment) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(location = 0) out vec4 outColor;
+
+        void main() {
+            if (gl_FragCoord.x > 10 && gl_FragCoord.x < 11) {
+                if (gl_FragCoord.y > 10 && gl_FragCoord.y < 12) {
+                    debugPrintfEXT("gl_FragCoord.xy %1.2f, %1.2f\n", gl_FragCoord.x, gl_FragCoord.y);
+                }
+            }
+            outColor = gl_FragCoord;
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Stage = Fragment.  Fragment coord (x,y) = (10.5, 10.5)");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Stage = Fragment.  Fragment coord (x,y) = (10.5, 11.5)");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

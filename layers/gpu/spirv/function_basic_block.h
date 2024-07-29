@@ -93,7 +93,13 @@ struct Function {
     // be added as you go forward only.
     void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id);
 
+    // This is the uvec4 most consumers will need
     uint32_t stage_info_id_ = 0;
+    // The individual IDs making up the uvec4
+    uint32_t stage_info_x_id_ = 0;
+    uint32_t stage_info_y_id_ = 0;
+    uint32_t stage_info_z_id_ = 0;
+    uint32_t stage_info_w_id_ = 0;
 };
 
 using FunctionList = std::vector<std::unique_ptr<Function>>;

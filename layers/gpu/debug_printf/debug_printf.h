@@ -53,12 +53,17 @@ struct Substring {
     bool is_64_bit = false;
 };
 
+// The contents each "printf" is writting to the output buffer streams
 struct OutputRecord {
     uint32_t size;
     uint32_t shader_id;
     uint32_t instruction_position;
     uint32_t format_string_id;
-    uint32_t values;
+    uint32_t stage_id;
+    uint32_t stage_info_0;
+    uint32_t stage_info_1;
+    uint32_t stage_info_2;
+    uint32_t values;  // place holder to be casted to get rest of items in record
 };
 
 class CommandBuffer : public gpu_tracker::CommandBuffer {

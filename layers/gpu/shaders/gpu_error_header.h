@@ -63,56 +63,12 @@ const int kHeaderInstructionIdOffset = 2;
 // This is the stage which generated the validation error. This word is used
 // to determine the contents of the next two words in the record.
 const int kHeaderStageIdOffset = 3;  // Values come from SpvExecutionModel (See spirv.h):
-const int kHeaderStageInfoOffset_0 = 4;
-const int kHeaderStageInfoOffset_1 = 5;
-const int kHeaderStageInfoOffset_2 = 6;
-
-// Stage-specific Error record offsets
-// ---
 // Each stage will contain different values in the next set of words of the
 // record used to identify which instantiation of the shader generated the
 // validation error.
-//
-// Vertex Shader Output Record Offsets
-const int kHeaderVertexIndexOffset = kHeaderStageInfoOffset_0;
-const int kHeaderVertInstanceIndexOffset = kHeaderStageInfoOffset_1;
-
-// Frag Shader Output Record Offsets
-const int kHeaderFragCoordXOffset = kHeaderStageInfoOffset_0;
-const int kHeaderFragCoordYOffset = kHeaderStageInfoOffset_1;
-
-// Compute Shader Output Record Offsets
-const int kHeaderInvocationIdXOffset = kHeaderStageInfoOffset_0;
-const int kHeaderInvocationIdYOffset = kHeaderStageInfoOffset_1;
-const int kHeaderInvocationIdZOffset = kHeaderStageInfoOffset_2;
-
-// Tessellation Control Shader Output Record Offsets
-const int kHeaderTessCltInvocationIdOffset = kHeaderStageInfoOffset_0;
-const int kHeaderTessCtlPrimitiveIdOffset = kHeaderStageInfoOffset_1;
-
-// Tessellation Eval Shader Output Record Offsets
-const int kHeaderTessEvalPrimitiveIdOffset = kHeaderStageInfoOffset_0;
-const int kHeaderTessEvalCoordUOffset = kHeaderStageInfoOffset_1;
-const int kHeaderTessEvalCoordVOffset = kHeaderStageInfoOffset_2;
-
-// Geometry Shader Output Record Offsets
-const int kHeaderGeomPrimitiveIdOffset = kHeaderStageInfoOffset_0;
-const int kHeaderGeomInvocationIdOffset = kHeaderStageInfoOffset_1;
-
-// Ray Tracing Shader Output Record Offsets
-const int kHeaderRayTracingLaunchIdXOffset = kHeaderStageInfoOffset_0;
-const int kHeaderRayTracingLaunchIdYOffset = kHeaderStageInfoOffset_1;
-const int kHeaderRayTracingLaunchIdZOffset = kHeaderStageInfoOffset_2;
-
-// Mesh Shader Output Record Offsets
-const int kHeaderMeshGlobalInvocationIdXOffset = kHeaderStageInfoOffset_0;
-const int kHeaderMeshGlobalInvocationIdYOffset = kHeaderStageInfoOffset_1;
-const int kHeaderMeshGlobalInvocationIdZOffset = kHeaderStageInfoOffset_2;
-
-// Task Shader Output Record Offsets
-const int kHeaderTaskGlobalInvocationIdXOffset = kHeaderStageInfoOffset_0;
-const int kHeaderTaskGlobalInvocationIdYOffset = kHeaderStageInfoOffset_1;
-const int kHeaderTaskGlobalInvocationIdZOffset = kHeaderStageInfoOffset_2;
+const int kHeaderStageInfoOffset_0 = 4;
+const int kHeaderStageInfoOffset_1 = 5;
+const int kHeaderStageInfoOffset_2 = 6;
 
 const int kHeaderActionIdOffset = 7;
 const int kHeaderCommandResourceIdOffset = 8;

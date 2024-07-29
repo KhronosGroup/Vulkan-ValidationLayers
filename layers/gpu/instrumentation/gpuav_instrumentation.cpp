@@ -361,100 +361,6 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
     return SetupShaderInstrumentationResources(gpuav, cb_state, bind_point, loc);
 }
 
-// Generate the stage-specific part of the message.
-static void GenerateStageMessage(const uint32_t *error_record, std::string &msg) {
-    using namespace gpuav;
-    using namespace glsl;
-    std::ostringstream strm;
-    switch (error_record[kHeaderStageIdOffset]) {
-        case kHeaderStageIdMultiEntryPoint: {
-            strm << "Stage has multiple OpEntryPoint and could not detect stage. ";
-        } break;
-        case spv::ExecutionModelVertex: {
-            strm << "Stage = Vertex. Vertex Index = " << error_record[kHeaderVertexIndexOffset]
-                 << " Instance Index = " << error_record[kHeaderVertInstanceIndexOffset] << ". ";
-        } break;
-        case spv::ExecutionModelTessellationControl: {
-            strm << "Stage = Tessellation Control.  Invocation ID = " << error_record[kHeaderTessCltInvocationIdOffset]
-                 << ", Primitive ID = " << error_record[kHeaderTessCtlPrimitiveIdOffset];
-        } break;
-        case spv::ExecutionModelTessellationEvaluation: {
-            strm << "Stage = Tessellation Eval.  Primitive ID = " << error_record[kHeaderTessEvalPrimitiveIdOffset]
-                 << ", TessCoord (u, v) = (" << error_record[kHeaderTessEvalCoordUOffset] << ", "
-                 << error_record[kHeaderTessEvalCoordVOffset] << "). ";
-        } break;
-        case spv::ExecutionModelGeometry: {
-            strm << "Stage = Geometry.  Primitive ID = " << error_record[kHeaderGeomPrimitiveIdOffset]
-                 << " Invocation ID = " << error_record[kHeaderGeomInvocationIdOffset] << ". ";
-        } break;
-        case spv::ExecutionModelFragment: {
-            strm << "Stage = Fragment.  Fragment coord (x,y) = ("
-                 << *reinterpret_cast<const float *>(&error_record[kHeaderFragCoordXOffset]) << ", "
-                 << *reinterpret_cast<const float *>(&error_record[kHeaderFragCoordYOffset]) << "). ";
-        } break;
-        case spv::ExecutionModelGLCompute: {
-            strm << "Stage = Compute.  Global invocation ID (x, y, z) = (" << error_record[kHeaderInvocationIdXOffset] << ", "
-                 << error_record[kHeaderInvocationIdYOffset] << ", " << error_record[kHeaderInvocationIdZOffset] << ")";
-        } break;
-        case spv::ExecutionModelRayGenerationKHR: {
-            strm << "Stage = Ray Generation.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset]
-                 << ", " << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
-                 << "). ";
-        } break;
-        case spv::ExecutionModelIntersectionKHR: {
-            strm << "Stage = Intersection.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
-                 << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
-                 << "). ";
-        } break;
-        case spv::ExecutionModelAnyHitKHR: {
-            strm << "Stage = Any Hit.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
-                 << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
-                 << "). ";
-        } break;
-        case spv::ExecutionModelClosestHitKHR: {
-            strm << "Stage = Closest Hit.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
-                 << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
-                 << "). ";
-        } break;
-        case spv::ExecutionModelMissKHR: {
-            strm << "Stage = Miss.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
-                 << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
-                 << "). ";
-        } break;
-        case spv::ExecutionModelCallableKHR: {
-            strm << "Stage = Callable.  Global Launch ID (x,y,z) = (" << error_record[kHeaderRayTracingLaunchIdXOffset] << ", "
-                 << error_record[kHeaderRayTracingLaunchIdYOffset] << ", " << error_record[kHeaderRayTracingLaunchIdZOffset]
-                 << "). ";
-        } break;
-        case spv::ExecutionModelTaskEXT: {
-            strm << "Stage = TaskEXT. Global invocation ID (x, y, z) = (" << error_record[kHeaderTaskGlobalInvocationIdXOffset]
-                 << ", " << error_record[kHeaderTaskGlobalInvocationIdYOffset] << ", "
-                 << error_record[kHeaderTaskGlobalInvocationIdZOffset] << " )";
-        } break;
-        case spv::ExecutionModelMeshEXT: {
-            strm << "Stage = MeshEXT. Global invocation ID (x, y, z) = (" << error_record[kHeaderMeshGlobalInvocationIdXOffset]
-                 << ", " << error_record[kHeaderMeshGlobalInvocationIdYOffset] << ", "
-                 << error_record[kHeaderMeshGlobalInvocationIdZOffset] << " )";
-        } break;
-        case spv::ExecutionModelTaskNV: {
-            strm << "Stage = TaskNV. Global invocation ID (x, y, z) = (" << error_record[kHeaderTaskGlobalInvocationIdXOffset]
-                 << ", " << error_record[kHeaderTaskGlobalInvocationIdYOffset] << ", "
-                 << error_record[kHeaderTaskGlobalInvocationIdZOffset] << " )";
-        } break;
-        case spv::ExecutionModelMeshNV: {
-            strm << "Stage = MeshNV. Global invocation ID (x, y, z) = (" << error_record[kHeaderMeshGlobalInvocationIdXOffset]
-                 << ", " << error_record[kHeaderMeshGlobalInvocationIdYOffset] << ", "
-                 << error_record[kHeaderMeshGlobalInvocationIdZOffset] << " )";
-        } break;
-        default: {
-            strm << "Internal Error (unexpected stage = " << error_record[kHeaderStageIdOffset] << "). ";
-            assert(false);
-        } break;
-    }
-    strm << '\n';
-    msg = strm.str();
-}
-
 bool LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
                                       const std::vector<DescSetState> &descriptor_sets, const Location &loc,
                                       bool uses_shader_object, bool &out_oob_access) {
@@ -682,22 +588,19 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         if (tracker_info) {
             ::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
         }
-        std::string debug_info_message =
-            gpuav.GenerateDebugInfoMessage(cmd_buffer, instructions, error_record[gpuav::glsl::kHeaderInstructionIdOffset],
-                                           tracker_info, pipeline_bind_point, operation_index);
 
-        // TODO - Need to unify with debug printf
-        std::string stage_message;
-        GenerateStageMessage(error_record, stage_message);
+        std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
+            cmd_buffer, instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
+            error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
+            error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
+            tracker_info, pipeline_bind_point, operation_index);
 
         if (uses_robustness && oob_access) {
             if (gpuav.gpuav_settings.warn_on_robust_oob) {
-                gpuav.LogWarning(vuid_msg.c_str(), objlist, loc, "%s\n%s%s", error_msg.c_str(), stage_message.c_str(),
-                                 debug_info_message.c_str());
+                gpuav.LogWarning(vuid_msg.c_str(), objlist, loc, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
             }
         } else {
-            gpuav.LogError(vuid_msg.c_str(), objlist, loc, "%s\n%s%s", error_msg.c_str(), stage_message.c_str(),
-                           debug_info_message.c_str());
+            gpuav.LogError(vuid_msg.c_str(), objlist, loc, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
         }
     }
 
