@@ -28,7 +28,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     }
 
     VkBufferCreateInfo b_info =
-        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(0x10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
@@ -60,6 +60,66 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindAlignments) {
+    TEST_DESCRIPTION("Test QueueBindSparse with invalid sparse memory bind size");
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    if (m_device->QueuesWithSparseCapability().empty()) {
+        GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
+    }
+
+    VkBufferCreateInfo b_info =
+        vkt::Buffer::create_info(0x20000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    if (buffer_mem_reqs.alignment == 1) {
+        GTEST_SKIP() << "Need buffer memory required alignment to be more than 1";
+    }
+    const auto buffer_mem_alloc =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vkt::DeviceMemory buffer_mem;
+    buffer_mem.init(*m_device, buffer_mem_alloc);
+
+    std::array<VkSparseMemoryBind, 3> buffer_memory_binds = {};
+    buffer_memory_binds[0].resourceOffset = 0;
+    buffer_memory_binds[0].size = 1u;  // Unaligned
+    buffer_memory_binds[0].memory = buffer_mem.handle();
+    buffer_memory_binds[0].memoryOffset = 0;
+
+    buffer_memory_binds[1].resourceOffset = 1;  // Unaligned
+    buffer_memory_binds[1].size = 0x10000;
+    buffer_memory_binds[1].memory = buffer_mem.handle();
+    buffer_memory_binds[1].memoryOffset = 0;
+
+    buffer_memory_binds[2].resourceOffset = 0;
+    buffer_memory_binds[2].size = 0x10000;
+    buffer_memory_binds[2].memory = buffer_mem.handle();
+    buffer_memory_binds[2].memoryOffset = 1;  // Unaligned
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info{};
+    buffer_memory_bind_info.buffer = buffer_sparse.handle();
+    buffer_memory_bind_info.bindCount = size32(buffer_memory_binds);
+    buffer_memory_bind_info.pBinds = buffer_memory_binds.data();
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.bufferBindCount = 1;
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+
+    VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
+
+    // Unaligned size, resourceOffset, memoryOffset
+    m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-resourceOffset-09491", 3);
+    // Also aligned memoryOffset
+    m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindResourceOffset) {
     TEST_DESCRIPTION("Test QueueBindSparse with invalid sparse memory bind resource offset");
     AddRequiredFeature(vkt::Feature::sparseBinding);
@@ -70,7 +130,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindResourceOffset) {
     }
 
     VkBufferCreateInfo b_info =
-        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(0x10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
@@ -114,7 +174,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeResourceOffset) {
     }
 
     VkBufferCreateInfo b_info =
-        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(0x10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
@@ -144,6 +204,9 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeResourceOffset) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-size-01100");
+    if (buffer_memory_bind.resourceOffset % buffer_mem_reqs.alignment != 0) {
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-resourceOffset-09491");
+    }
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
@@ -159,7 +222,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeMemoryOffset) {
     }
 
     VkBufferCreateInfo b_info =
-        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(0x10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
@@ -191,6 +254,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeMemoryOffset) {
     m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-size-01102");
     if (buffer_memory_bind.memoryOffset % buffer_mem_reqs.alignment != 0) {
         m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-resourceOffset-09491");
     }
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
@@ -307,7 +371,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     copy_info_list[3].size = copy_size;
 
     VkBufferCreateInfo b_info =
-        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(0x10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 

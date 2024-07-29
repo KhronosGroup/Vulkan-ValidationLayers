@@ -222,7 +222,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    buffer_create_info.size = 1024;
+    buffer_create_info.size = 0x10000;
 
     if (m_device->phy().features().sparseResidencyBuffer) {
         buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;

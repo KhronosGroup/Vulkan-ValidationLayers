@@ -2094,6 +2094,38 @@ void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bin
     PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 }
 
+bool CoreChecks::ValidateBufferSparseMemoryBind(const VkSparseMemoryBind &bind, const vvl::Buffer &buffer, const Location &bind_loc,
+                                                const Location &buffer_bind_info_loc) const {
+    bool skip = false;
+
+    if (SafeModulo(bind.resourceOffset, buffer.requirements.alignment) != 0) {
+        const LogObjectList objlist(bind.memory, buffer.Handle());
+        skip |=
+            LogError("VUID-VkSparseMemoryBind-resourceOffset-09491", objlist, buffer_bind_info_loc.dot(Field::buffer),
+                     "(%s) is being bound, but %s.resourceOffset (%" PRIu64
+                     ") is not a multiple of required memory alignment (%" PRIu64 ").",
+                     FormatHandle(buffer).c_str(), bind_loc.Fields().c_str(), bind.resourceOffset, buffer.requirements.alignment);
+    }
+
+    if (SafeModulo(bind.memoryOffset, buffer.requirements.alignment) != 0) {
+        const LogObjectList objlist(bind.memory, buffer.Handle());
+        skip |= LogError("VUID-VkSparseMemoryBind-resourceOffset-09491", objlist, buffer_bind_info_loc.dot(Field::buffer),
+                         "(%s) is being bound, but %s.memoryOffset  (%" PRIu64
+                         ") is not a multiple of required memory alignment (%" PRIu64 ").",
+                         FormatHandle(buffer).c_str(), bind_loc.Fields().c_str(), bind.memoryOffset, buffer.requirements.alignment);
+    }
+
+    if (SafeModulo(bind.size, buffer.requirements.alignment) != 0) {
+        const LogObjectList objlist(bind.memory, buffer.Handle());
+        skip |=
+            LogError("VUID-VkSparseMemoryBind-resourceOffset-09491", objlist, buffer_bind_info_loc.dot(Field::buffer),
+                     "(%s) is being bound, but %s.size (%" PRIu64 ") is not a multiple of required memory alignment (%" PRIu64 ").",
+                     FormatHandle(buffer).c_str(), bind_loc.Fields().c_str(), bind.size, buffer.requirements.alignment);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const VkMemoryRequirements &requirements,
                                           VkDeviceSize resource_size, VkExternalMemoryHandleTypeFlags external_handle_types,
                                           const VulkanTypedHandle &resource_handle, const Location &loc) const {
