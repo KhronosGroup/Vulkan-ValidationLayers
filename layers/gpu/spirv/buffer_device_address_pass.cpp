@@ -20,7 +20,7 @@
 
 #include "generated/instrumentation_buffer_device_address_comp.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size,
@@ -116,4 +116,4 @@ void BufferDeviceAddressPass::PrintDebugInfo() {
 }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

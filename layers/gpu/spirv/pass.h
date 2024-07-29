@@ -18,7 +18,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "function_basic_block.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 class Module;
@@ -63,4 +63,4 @@ class Pass {
 };
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

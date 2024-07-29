@@ -16,7 +16,7 @@
 #include "inject_function_pass.h"
 #include "module.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 InjectFunctionPass::InjectFunctionPass(Module& module, bool conditional_function_check)
@@ -163,4 +163,4 @@ bool InjectFunctionPass::Run() {
 }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

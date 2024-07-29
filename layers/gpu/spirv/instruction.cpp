@@ -17,7 +17,7 @@
 #include "generated/spirv_grammar_helper.h"
 #include "module.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 void Instruction::UpdateDebugInfo() {
@@ -289,4 +289,4 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
 }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu
