@@ -21,6 +21,7 @@
 #include "instruction.h"
 #include "function_basic_block.h"
 #include "type_manager.h"
+#include "containers/custom_containers.h"
 
 namespace gpu {
 namespace spirv {
@@ -37,7 +38,7 @@ struct ModuleHeader {
 // There are other helper classes that are charge of handling the various parts of the module.
 class Module {
   public:
-    Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
+    Module(vvl::span<const uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
            uint32_t max_instrumented_count = 0);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.

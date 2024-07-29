@@ -27,7 +27,7 @@
 namespace gpu {
 namespace spirv {
 
-Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
+Module::Module(vvl::span<const uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
                uint32_t max_instrumented_count)
     : type_manager_(*this),
       max_instrumented_count_(max_instrumented_count),
@@ -35,14 +35,14 @@ Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_
       output_buffer_descriptor_set_(output_buffer_descriptor_set),
       print_debug_info_(print_debug_info) {
     uint32_t instruction_count = 0;
-    std::vector<uint32_t>::const_iterator it = words.cbegin();
+    spirv_iterator it = words.begin();
     header_.magic_number = *it++;
     header_.version = *it++;
     header_.generator = *it++;
     header_.bound = *it++;
     header_.schema = *it++;
     // Parse everything up until the first function and sort into seperate lists
-    while (it != words.cend()) {
+    while (it != words.end()) {
         const uint32_t opcode = *it & 0x0ffffu;
         const uint32_t length = *it >> 16;
         if (opcode == spv::OpFunction) {
@@ -139,7 +139,7 @@ Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_
     Function* current_function = nullptr;
     bool block_found = false;
     bool function_end_found = false;
-    while (it != words.cend()) {
+    while (it != words.end()) {
         const uint32_t opcode = *it & 0x0ffffu;
         const uint32_t length = *it >> 16;
         auto new_inst = std::make_unique<Instruction>(it, instruction_count++);
@@ -379,7 +379,7 @@ void Module::LinkFunction(const LinkInfo& info) {
             break;
         }
 
-        auto new_inst = std::make_unique<Instruction>(inst_word);
+        auto new_inst = std::make_unique<Instruction>(inst_word, kLinkedInstruction);
         uint32_t old_result_id = new_inst->ResultId();
 
         SpvType spv_type = GetSpvType(opcode);
@@ -542,7 +542,7 @@ void Module::LinkFunction(const LinkInfo& info) {
         const uint32_t opcode = *inst_word & 0x0ffffu;
         const uint32_t length = *inst_word >> 16;
         if (opcode == spv::OpLabel) {
-            Instruction inst(inst_word);
+            Instruction inst(inst_word, kLinkedInstruction);
             uint32_t new_result_id = TakeNextId();
             id_swap_map[inst.ResultId()] = new_result_id;
         }
@@ -555,7 +555,7 @@ void Module::LinkFunction(const LinkInfo& info) {
     auto& new_function = functions_.emplace_back(std::make_unique<Function>(*this));
     while (offset < info.word_count) {
         const uint32_t* inst_word = &info.words[offset];
-        auto new_inst = std::make_unique<Instruction>(inst_word);
+        auto new_inst = std::make_unique<Instruction>(inst_word, kLinkedInstruction);
         const uint32_t opcode = new_inst->Opcode();
         const uint32_t length = new_inst->Length();
 

@@ -931,20 +931,16 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                                              const Location &loc, std::vector<uint32_t> &out_instrumented_spirv) {
     if (input_spirv[0] != spv::MagicNumber) return false;
 
-    std::vector<uint32_t> temp_spirv_copy;
-    temp_spirv_copy.reserve(input_spirv.size());
-    temp_spirv_copy.insert(temp_spirv_copy.end(), &input_spirv.front(), &input_spirv.back() + 1);
-
     if (gpuav_settings.debug_dump_instrumented_shaders) {
         std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
         std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-        debug_file.write(reinterpret_cast<char *>(temp_spirv_copy.data()),
-                         static_cast<std::streamsize>(temp_spirv_copy.size() * sizeof(uint32_t)));
+        debug_file.write(reinterpret_cast<const char *>(input_spirv.data()),
+                         static_cast<std::streamsize>(input_spirv.size() * sizeof(uint32_t)));
     }
 
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
-    gpu::spirv::Module module(temp_spirv_copy, unique_shader_id, desc_set_bind_index_,
-                              gpuav_settings.debug_print_instrumentation_info, gpuav_settings.debug_max_instrumented_count);
+    gpu::spirv::Module module(input_spirv, unique_shader_id, desc_set_bind_index_, gpuav_settings.debug_print_instrumentation_info,
+                              gpuav_settings.debug_max_instrumented_count);
 
     // For now, we don't yet support (or have tested) combining GPU-AV and DebugPrintf, so have 2 paths here
     const bool is_debug_printf = container_type == LayerObjectTypeDebugPrintf;
