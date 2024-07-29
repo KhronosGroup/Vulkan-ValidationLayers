@@ -169,6 +169,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     bool CheckForGpuAvEnabled(const void *pNext);
 
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
+                                         uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
                                          uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
                                          VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const;
 

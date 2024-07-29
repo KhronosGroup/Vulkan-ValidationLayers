@@ -171,6 +171,11 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
                             {uvec4_type.Id(), function.stage_info_id_, stage_info[0], stage_info[1], stage_info[2], stage_info[3]},
                             &inst_it);
 
+    function.stage_info_x_id_ = stage_info[0];
+    function.stage_info_y_id_ = stage_info[1];
+    function.stage_info_z_id_ = stage_info[2];
+    function.stage_info_w_id_ = stage_info[3];
+
     // because we are injecting things in the first block, there is a chance we just destroyed the iterator if the target
     // instruction was also in the first block, so need to regain it for the caller
     if ((*target_block_it)->GetLabelId() == block.GetLabelId()) {

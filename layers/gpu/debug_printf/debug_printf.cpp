@@ -313,18 +313,10 @@ std::string Validator::FindFormatString(const std::vector<spirv::Instruction> &i
 
 void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo &buffer_info,
                                           uint32_t operation_index, uint32_t *const debug_output_buffer, const Location &loc) {
-    // Word         Content
-    //    0         Must be zero
-    //    1         Size of output record, including this word
-    //    2         Shader ID
-    //    3         Instruction Position
-    //    4         Printf Format String Id
-    //    5         Printf Values Word 0 (optional)
-    //    6         Printf Values Word 1 (optional)
-    uint32_t expect = debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize];
-    if (!expect) return;
+    uint32_t output_record_counts = debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize];
+    if (!output_record_counts) return;
 
-    uint32_t index = gpuav::kDebugPrintfOutputBufferData;
+    uint32_t index = gpuav::kDebugPrintfOutputBufferData;  // get first OutputRecord index
     while (debug_output_buffer[index]) {
         std::stringstream shader_message;
 
@@ -350,7 +342,7 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
         // Break the format string into strings with 1 or 0 value
         auto format_substrings = ParseFormatString(format_string);
-        void *values = static_cast<void *>(&debug_record->values);
+        void *current_value = static_cast<void *>(&debug_record->values);
         // Sprintf each format substring into a temporary string then add that to the message
         for (auto &substring : format_substrings) {
             std::string temp_string;
@@ -373,11 +365,11 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                             break;
                         }
 
-                        uint64_t longval = *static_cast<uint64_t *>(values);
+                        const uint64_t value = *static_cast<uint64_t *>(current_value);
                         // +1 for null terminator
-                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), longval) + 1;
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
-                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), longval);
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
 
                     } else if (substring.type == NumericTypeFloat) {
                         // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
@@ -385,24 +377,27 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                 } else {
                     if (substring.type == NumericTypeUint) {
                         // +1 for null terminator
-                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<uint32_t *>(values)) + 1;
+                        const uint32_t value = *static_cast<uint32_t *>(current_value);
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
-                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<uint32_t *>(values));
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
 
                     } else if (substring.type == NumericTypeSint) {
-                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<int32_t *>(values)) + 1;
+                        const int32_t value = *static_cast<int32_t *>(current_value);
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
-                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<int32_t *>(values));
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
 
                     } else if (substring.type == NumericTypeFloat) {
-                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), *static_cast<float *>(values)) + 1;
+                        const float value = *static_cast<float *>(current_value);
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
-                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), *static_cast<float *>(values));
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
                     }
                 }
 
                 const uint32_t offset = substring.is_64_bit ? 2 : 1;
-                values = static_cast<uint32_t *>(values) + offset;
+                current_value = static_cast<uint32_t *>(current_value) + offset;
 
             } else {
                 // incase where someone just printing a string with no arguments to it
@@ -416,8 +411,9 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
 
         if (verbose) {
             std::string debug_info_message =
-                GenerateDebugInfoMessage(command_buffer, instructions, debug_record->instruction_position, tracker_info,
-                                         buffer_info.pipeline_bind_point, operation_index);
+                GenerateDebugInfoMessage(command_buffer, instructions, debug_record->stage_id, debug_record->stage_info_0,
+                                         debug_record->stage_info_1, debug_record->stage_info_2, debug_record->instruction_position,
+                                         tracker_info, buffer_info.pipeline_bind_point, operation_index);
             if (use_stdout) {
                 std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {
@@ -434,7 +430,7 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         }
         index += debug_record->size;
     }
-    if ((index - gpuav::kDebugPrintfOutputBufferData) != expect) {
+    if ((index - gpuav::kDebugPrintfOutputBufferData) != output_record_counts) {
         std::stringstream message;
         message << "Debug Printf message was truncated due to a buffer size (" << printf_settings.buffer_size
                 << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";

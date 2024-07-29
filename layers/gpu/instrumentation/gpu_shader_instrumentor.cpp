@@ -19,6 +19,7 @@
 
 #include "gpu/core/gpu_state_tracker.h"
 #include "chassis/chassis_modification_state.h"
+#include "gpu/shaders/gpu_error_codes.h"
 
 #include <regex>
 
@@ -1022,15 +1023,98 @@ static bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, 
     return true;
 }
 
+// Generate the stage-specific part of the message.
+static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1,
+                                 uint32_t stage_info_2) {
+    switch (stage_id) {
+        case gpuav::glsl::kHeaderStageIdMultiEntryPoint: {
+            ss << "Stage has multiple OpEntryPoint and could not detect stage. ";
+        } break;
+        case spv::ExecutionModelVertex: {
+            ss << "Stage = Vertex. Vertex Index = " << stage_info_0 << " Instance Index = " << stage_info_1 << ". ";
+        } break;
+        case spv::ExecutionModelTessellationControl: {
+            ss << "Stage = Tessellation Control.  Invocation ID = " << stage_info_0 << ", Primitive ID = " << stage_info_1;
+        } break;
+        case spv::ExecutionModelTessellationEvaluation: {
+            ss << "Stage = Tessellation Eval.  Primitive ID = " << stage_info_0 << ", TessCoord (u, v) = (" << stage_info_1 << ", "
+               << stage_info_2 << "). ";
+        } break;
+        case spv::ExecutionModelGeometry: {
+            ss << "Stage = Geometry.  Primitive ID = " << stage_info_0 << " Invocation ID = " << stage_info_1 << ". ";
+        } break;
+        case spv::ExecutionModelFragment: {
+            // Should use std::bit_cast but requires c++20
+            float x_coord;
+            float y_coord;
+            std::memcpy(&x_coord, &stage_info_0, sizeof(float));
+            std::memcpy(&y_coord, &stage_info_1, sizeof(float));
+            ss << "Stage = Fragment.  Fragment coord (x,y) = (" << x_coord << ", " << y_coord << "). ";
+        } break;
+        case spv::ExecutionModelGLCompute: {
+            ss << "Stage = Compute.  Global invocation ID (x, y, z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << ")";
+        } break;
+        case spv::ExecutionModelRayGenerationKHR: {
+            ss << "Stage = Ray Generation.  Global Launch ID (x,y,z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << "). ";
+        } break;
+        case spv::ExecutionModelIntersectionKHR: {
+            ss << "Stage = Intersection.  Global Launch ID (x,y,z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << "). ";
+        } break;
+        case spv::ExecutionModelAnyHitKHR: {
+            ss << "Stage = Any Hit.  Global Launch ID (x,y,z) = (" << stage_info_0 << ", " << stage_info_1 << ", " << stage_info_2
+               << "). ";
+        } break;
+        case spv::ExecutionModelClosestHitKHR: {
+            ss << "Stage = Closest Hit.  Global Launch ID (x,y,z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << "). ";
+        } break;
+        case spv::ExecutionModelMissKHR: {
+            ss << "Stage = Miss.  Global Launch ID (x,y,z) = (" << stage_info_0 << ", " << stage_info_1 << ", " << stage_info_2
+               << "). ";
+        } break;
+        case spv::ExecutionModelCallableKHR: {
+            ss << "Stage = Callable.  Global Launch ID (x,y,z) = (" << stage_info_0 << ", " << stage_info_1 << ", " << stage_info_2
+               << "). ";
+        } break;
+        case spv::ExecutionModelTaskEXT: {
+            ss << "Stage = TaskEXT. Global invocation ID (x, y, z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << " )";
+        } break;
+        case spv::ExecutionModelMeshEXT: {
+            ss << "Stage = MeshEXT. Global invocation ID (x, y, z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << " )";
+        } break;
+        case spv::ExecutionModelTaskNV: {
+            ss << "Stage = TaskNV. Global invocation ID (x, y, z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << " )";
+        } break;
+        case spv::ExecutionModelMeshNV: {
+            ss << "Stage = MeshNV. Global invocation ID (x, y, z) = (" << stage_info_0 << ", " << stage_info_1 << ", "
+               << stage_info_2 << " )";
+        } break;
+        default: {
+            ss << "Internal Error (unexpected stage = " << stage_id << "). ";
+            assert(false);
+        } break;
+    }
+    ss << '\n';
+}
+
 // Where we build up the error message with all the useful debug information about where the error occured
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
-    VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions, uint32_t instruction_position,
-    const gpu::GpuAssistedShaderTracker *tracker_info, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
+    VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
+    uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
+    VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
     std::ostringstream ss;
     if (instructions.empty() || !tracker_info) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";
         return ss.str();
     }
+
+    GenerateStageMessage(ss, stage_id, stage_info_0, stage_info_1, stage_info_2);
 
     ss << std::hex << std::showbase;
     if (tracker_info->shader_module == VK_NULL_HANDLE && tracker_info->shader_object == VK_NULL_HANDLE) {
