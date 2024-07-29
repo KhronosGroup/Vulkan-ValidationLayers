@@ -1136,3 +1136,83 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSparseImage, UnalignedBindOffsets) {
+    TEST_DESCRIPTION("VkSparseMemoryBind have unaligned memory offset and resource offset");
+
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    auto index = m_device->graphics_queue_node_index_;
+    if (!(m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
+    }
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 1024;
+    image_create_info.extent.height = 1024;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+
+    VkMemoryRequirements memory_reqs;
+    vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
+    if (memory_reqs.alignment == 1) {
+        GTEST_SKIP() << "Need image memory required alignment to be more than 1";
+    }
+    // Find an image big enough to allow sparse mapping of 2 memory regions
+    // Increase the image size until it is at least twice the
+    // size of the required alignment, to ensure we can bind both
+    // allocated memory blocks to the image on aligned offsets.
+    while (memory_reqs.size < (memory_reqs.alignment * 2)) {
+        image.destroy();
+        image_create_info.extent.width *= 2;
+        image_create_info.extent.height *= 2;
+        image.init_no_mem(*m_device, image_create_info);
+        vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
+    }
+    // Allocate 2 memory regions of minimum alignment size, bind one at 0, the other
+    // at the end of the first
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
+    memory_info.allocationSize = 2 * memory_reqs.alignment;
+    bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
+    ASSERT_TRUE(pass);
+    vkt::DeviceMemory memory_one(*m_device, memory_info);
+    vkt::DeviceMemory memory_two(*m_device, memory_info);
+
+    std::array<VkSparseMemoryBind, 2> binds = {};
+    binds[0].memory = memory_one;
+    binds[0].memoryOffset = 1;
+    binds[0].resourceOffset = memory_info.allocationSize / 2;
+    binds[0].size = memory_info.allocationSize / 2;
+    binds[1].memory = memory_two;
+    binds[1].memoryOffset = 0;
+    binds[1].resourceOffset = 1;
+    binds[1].size = memory_info.allocationSize / 2;
+
+    VkSparseImageOpaqueMemoryBindInfo opaqueBindInfo;
+    opaqueBindInfo.image = image;
+    opaqueBindInfo.bindCount = size32(binds);
+    opaqueBindInfo.pBinds = binds.data();
+
+    VkBindSparseInfo bindSparseInfo = vku::InitStructHelper();
+    bindSparseInfo.imageOpaqueBindCount = 1;
+    bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
+
+    // Unaligned memory bind offset
+    m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
+    // Unaligned memory bind offset, and resource offset
+    m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-resourceOffset-09492", 2);
+    vk::QueueBindSparse(m_default_queue->handle(), 1, &bindSparseInfo, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // Wait for operations to finish before destroying anything
+    m_default_queue->Wait();
+}

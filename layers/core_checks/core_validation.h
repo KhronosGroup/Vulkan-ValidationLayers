@@ -1847,8 +1847,10 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
     bool PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject& error_obj) const override;
-    bool ValidateBufferSparseMemoryBind(const VkSparseMemoryBind& bind, const vvl::Buffer& buffer, const Location& bind_loc,
-                                        const Location& buffer_bind_info_loc) const;
+    bool ValidateBufferSparseMemoryBindAlignments(const VkSparseMemoryBind& bind, const vvl::Buffer& buffer,
+                                                  const Location& bind_loc, const Location& buffer_bind_info_loc) const;
+    bool ValidateImageSparseMemoryBindAlignments(const VkSparseMemoryBind& bind, const vvl::Image& image, const Location& bind_loc,
+                                                 const Location& image_bind_info_loc) const;
     bool ValidateSparseMemoryBind(const VkSparseMemoryBind& bind, const VkMemoryRequirements& requirements,
                                   VkDeviceSize resource_size, VkExternalMemoryHandleTypeFlags external_handle_types,
                                   const VulkanTypedHandle& resource_handle, const Location& loc) const;
