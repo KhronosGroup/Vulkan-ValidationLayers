@@ -98,8 +98,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
                                    vku::safe_VkDeviceCreateInfo* modified_create_info) final;
     void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-    bool InstrumentShader(const vvl::span<const uint32_t>& input, uint32_t unique_shader_id, const Location& loc,
-                          std::vector<uint32_t>& out_instrumented_spirv) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) override;
@@ -196,6 +194,5 @@ class Validator : public gpu::GpuShaderInstrumentor {
   private:
     bool verbose = false;
     bool use_stdout = false;
-    uint32_t binding_slot_ = 0;
 };
 }  // namespace debug_printf
