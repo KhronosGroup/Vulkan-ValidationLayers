@@ -105,6 +105,4 @@ class Instruction {
 #endif
 };
 
-void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<spirv::Instruction>& instructions);
-
 }  // namespace spirv

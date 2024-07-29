@@ -24,7 +24,6 @@
 #include "gpu/shaders/gpu_error_header.h"
 #include "gpu/spirv/module.h"
 #include "state_tracker/shader_stage_state.h"
-#include "state_tracker/shader_instruction.h"
 #include "spirv-tools/optimizer.hpp"
 
 #include <fstream>
@@ -591,9 +590,9 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         }
 
         // If we somehow can't find our state, we can still report our error message
-        std::vector<::spirv::Instruction> instructions;
-        if (tracker_info) {
-            ::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
+        std::vector<gpu::spirv::Instruction> instructions;
+        if (tracker_info && !tracker_info->instrumented_spirv.empty()) {
+            gpu::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
         }
 
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(

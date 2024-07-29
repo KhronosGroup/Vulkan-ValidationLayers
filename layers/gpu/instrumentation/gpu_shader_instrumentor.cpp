@@ -955,7 +955,7 @@ static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, c
 static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, const uint32_t reported_file_id,
                          std::vector<std::string> &opsource_lines) {
     for (size_t i = 0; i < instructions.size(); i++) {
-        const spirv::Instruction &insn = instructions[i];
+        const auto &insn = instructions[i];
         if ((insn.Opcode() == spv::OpSource) && (insn.Length() >= 5) && (insn.Word(3) == reported_file_id)) {
             std::istringstream in_stream;
             std::string cur_line;
@@ -965,7 +965,7 @@ static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, co
             }
 
             for (size_t k = i + 1; k < instructions.size(); k++) {
-                const spirv::Instruction &continue_insn = instructions[k];
+                const auto &continue_insn = instructions[k];
                 if (continue_insn.Opcode() != spv::OpSourceContinued) {
                     break;
                 }
@@ -1167,7 +1167,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     uint32_t reported_file_id = 0;
     uint32_t reported_line_number = 0;
     uint32_t reported_column_number = 0;
-    for (const spirv::Instruction &insn : instructions) {
+    for (const auto &insn : instructions) {
         if (insn.Opcode() == spv::OpLine) {
             reported_file_id = insn.Word(1);
             reported_line_number = insn.Word(2);
@@ -1194,7 +1194,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     // Create message with file information obtained from the OpString pointed to by the discovered OpLine.
     bool found_opstring = false;
     std::string reported_filename;
-    for (const spirv::Instruction &insn : instructions) {
+    for (const auto &insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Length() >= 3 && insn.Word(1) == reported_file_id) {
             found_opstring = true;
             reported_filename = insn.GetAsString(2);

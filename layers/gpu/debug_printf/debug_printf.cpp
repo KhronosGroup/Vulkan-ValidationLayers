@@ -291,9 +291,9 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
     return parsed_strings;
 }
 
-std::string Validator::FindFormatString(const std::vector<spirv::Instruction> &instructions, uint32_t string_id) {
+std::string Validator::FindFormatString(const std::vector<gpu::spirv::Instruction> &instructions, uint32_t string_id) {
     std::string format_string;
-    for (const spirv::Instruction &insn : instructions) {
+    for (const auto &insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Word(1) == string_id) {
             format_string = insn.GetAsString(2);
             break;
@@ -335,8 +335,8 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
             return;
         }
 
-        std::vector<spirv::Instruction> instructions;
-        spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
+        std::vector<gpu::spirv::Instruction> instructions;
+        gpu::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
 
         // Search through the shader source for the printf format string for this invocation
         const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
