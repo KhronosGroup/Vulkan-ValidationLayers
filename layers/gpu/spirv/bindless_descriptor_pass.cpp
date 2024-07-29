@@ -20,7 +20,7 @@
 
 #include "generated/instrumentation_bindless_descriptor_comp.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 static LinkInfo link_info = {instrumentation_bindless_descriptor_comp, instrumentation_bindless_descriptor_comp_size,
@@ -430,4 +430,4 @@ void BindlessDescriptorPass::PrintDebugInfo() {
 }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

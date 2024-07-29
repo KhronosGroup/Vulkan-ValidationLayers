@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include "inject_function_pass.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 // Create a pass to instrument bindless descriptor checking
@@ -54,4 +54,4 @@ class BindlessDescriptorPass : public InjectFunctionPass {
 };
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

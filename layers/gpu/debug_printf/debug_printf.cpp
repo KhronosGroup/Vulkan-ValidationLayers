@@ -114,8 +114,8 @@ bool Validator::InstrumentShader(const vvl::span<const uint32_t> &input_spirv, u
                          static_cast<std::streamsize>(temp_spirv_copy.size() * sizeof(uint32_t)));
     }
 
-    gpuav::spirv::Module module(temp_spirv_copy, unique_shader_id, desc_set_bind_index_,
-                                gpuav_settings.debug_print_instrumentation_info);
+    gpu::spirv::Module module(temp_spirv_copy, unique_shader_id, desc_set_bind_index_,
+                              gpuav_settings.debug_print_instrumentation_info);
 
     bool modified = module.RunPassDebugPrintf(binding_slot_);
     if (!modified) return false;

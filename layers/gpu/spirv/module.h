@@ -22,7 +22,7 @@
 #include "function_basic_block.h"
 #include "type_manager.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 struct ModuleHeader {
@@ -104,4 +104,4 @@ class Module {
 void InternalWarning(const char* message);
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

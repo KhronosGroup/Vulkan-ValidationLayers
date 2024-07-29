@@ -22,7 +22,7 @@
 
 struct OperandInfo;
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 class Module;
@@ -104,4 +104,4 @@ struct Instruction {
 };
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

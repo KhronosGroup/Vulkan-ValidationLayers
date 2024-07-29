@@ -20,7 +20,7 @@
 #include <cstring>
 #include <iostream>
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 // All functions are a list of uint32_t
@@ -498,4 +498,4 @@ bool DebugPrintfPass::Run() {
 void DebugPrintfPass::PrintDebugInfo() { std::cout << "DebugPrintfPass\n\tinstrumentation count: " << instrumented_count_ << '\n'; }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

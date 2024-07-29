@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 // Functions name match those found in the GLSL for ease of searching
@@ -40,4 +40,4 @@ struct LinkInfo {
 };
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

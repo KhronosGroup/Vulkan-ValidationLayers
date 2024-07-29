@@ -16,7 +16,7 @@
 
 #include "pass.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 // Info we know is the same regardless what pass is consuming the CreateFunctionCall()
@@ -76,4 +76,4 @@ class InjectFunctionPass : public Pass {
 };
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

@@ -16,7 +16,7 @@
 #include "type_manager.h"
 #include "module.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 // Simplest way to check if same type is see if items line up.
@@ -527,4 +527,4 @@ const Variable* TypeManager::FindVariableById(uint32_t id) const {
 }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

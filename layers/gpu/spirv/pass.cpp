@@ -17,7 +17,7 @@
 #include "module.h"
 #include "gpu/shaders/gpu_error_codes.h"
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
@@ -279,4 +279,4 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
 }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu

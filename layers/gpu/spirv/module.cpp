@@ -24,7 +24,7 @@
 
 #include <iostream>
 
-namespace gpuav {
+namespace gpu {
 namespace spirv {
 
 Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
@@ -641,4 +641,4 @@ void Module::PostProcess() {
 void InternalWarning(const char* message) { std::cout << "[Internal Shader Instrumentation Warning] " << message << '\n'; }
 
 }  // namespace spirv
-}  // namespace gpuav
+}  // namespace gpu
