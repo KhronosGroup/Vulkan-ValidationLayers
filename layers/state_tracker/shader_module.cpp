@@ -854,8 +854,8 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
         it += 5;  // skip first 5 word of header
         instructions.reserve(module_state.words_.size() * 4);
         while (it != module_state.words_.cend()) {
-            Instruction insn(it);
-            const uint32_t opcode = insn.Opcode();
+            auto new_insn = instructions.emplace_back(it);
+            const uint32_t opcode = new_insn.Opcode();
 
             // Check for opcodes that would require reparsing of the words
             if (opcode == spv::OpGroupDecorate || opcode == spv::OpDecorationGroup || opcode == spv::OpGroupMemberDecorate) {
@@ -866,8 +866,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 }
             }
 
-            instructions.emplace_back(insn);
-            it += insn.Length();
+            it += new_insn.Length();
         }
         instructions.shrink_to_fit();
     }
