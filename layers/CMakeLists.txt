@@ -250,6 +250,7 @@ target_sources(vvl PRIVATE
     gpu/instrumentation/gpuav_instrumentation.cpp
     gpu/resources/gpuav_subclasses.cpp
     gpu/resources/gpuav_subclasses.h
+    gpu/resources/gpu_shader_resources.h
     gpu/resources/gpu_resources.h
     gpu/resources/gpu_resources.cpp
     gpu/shaders/gpu_error_codes.h
@@ -431,7 +432,7 @@ if (VVL_ENABLE_TRACY)
 
     FetchContent_MakeAvailable(tracy)
 
-    target_sources(vvl PRIVATE 
+    target_sources(vvl PRIVATE
         profiling/profiling.h
         profiling/profiling.cpp
     )

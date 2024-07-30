@@ -180,6 +180,7 @@ vvl_sources = [
   "layers/gpu/instrumentation/gpuav_instrumentation.h",
   "layers/gpu/resources/gpu_resources.cpp",
   "layers/gpu/resources/gpu_resources.h",
+  "layers/gpu/resources/gpu_shader_resources.h",
   "layers/gpu/resources/gpuav_subclasses.cpp",
   "layers/gpu/resources/gpuav_subclasses.h",
   "layers/gpu/shaders/gpu_error_codes.h",

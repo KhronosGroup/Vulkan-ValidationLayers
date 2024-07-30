@@ -31,6 +31,7 @@
 #include "gpu/instrumentation/gpuav_instrumentation.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"
+#include "gpu/shaders/gpu_shaders_constants.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
 
