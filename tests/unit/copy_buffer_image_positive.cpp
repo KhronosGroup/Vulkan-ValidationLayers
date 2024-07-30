@@ -373,3 +373,55 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveCopyBufferImage, BufferCopiesStressTest) {
+    TEST_DESCRIPTION("Do many buffer copies, make sure perf is good");
+
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_ci.size = 1024;
+    vkt::Buffer src_buffer(*m_device, buffer_ci, vkt::no_mem);
+    vkt::Buffer dst_buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), src_buffer.handle(), &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_mem_alloc =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    buffer_mem_alloc.allocationSize *= 2;
+
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
+    src_buffer.bind_memory(buffer_mem, 0);
+    dst_buffer.bind_memory(buffer_mem, 1024);
+
+    constexpr VkDeviceSize copy_size = 1024 / 4;
+    std::vector<VkBufferCopy> copy_info_list(4);
+    copy_info_list[3].srcOffset = 0;
+    copy_info_list[3].dstOffset = 0;
+    copy_info_list[3].size = copy_size;
+
+    copy_info_list[2].srcOffset = copy_size;
+    copy_info_list[2].dstOffset = copy_size;
+    copy_info_list[2].size = copy_size;
+
+    copy_info_list[1].srcOffset = 2 * copy_size;
+    copy_info_list[1].dstOffset = 2 * copy_size;
+    copy_info_list[1].size = copy_size;
+
+    copy_info_list[0].srcOffset = 3 * copy_size;
+    copy_info_list[0].dstOffset = 3 * copy_size;
+    copy_info_list[0].size = copy_size;
+
+    const size_t size = 10000;
+    copy_info_list.resize(copy_info_list.size() + size);
+    for (size_t i = 0; i < size; ++i) {
+        copy_info_list[i + 4] = copy_info_list[i % 4];
+    }
+
+    m_commandBuffer->begin();
+
+    vk::CmdCopyBuffer(*m_commandBuffer, src_buffer.handle(), dst_buffer.handle(), size32(copy_info_list), copy_info_list.data());
+
+    m_commandBuffer->end();
+}
