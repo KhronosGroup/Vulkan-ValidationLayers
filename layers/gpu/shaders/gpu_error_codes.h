@@ -44,6 +44,7 @@ const int kErrorSubCodeBindlessDescriptorBounds = 1;
 const int kErrorSubCodeBindlessDescriptorUninit = 2;
 const int kErrorSubCodeBindlessDescriptorOOB = 3;
 const int kErrorSubCodeBindlessDescriptorDestroyed = 4;
+const int kErrorSubCodeBindlessDescriptorNullPointer = 5;
 
 // Buffer Device Address
 //

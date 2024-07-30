@@ -49,8 +49,8 @@ class DescriptorSet : public vvl::DescriptorSet {
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
     void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
 
-    VkDeviceAddress GetLayoutState();
-    std::shared_ptr<State> GetCurrentState();
+    VkDeviceAddress GetLayoutState(Validator &gpuav, const Location &loc);
+    std::shared_ptr<State> GetCurrentState(Validator &gpuav, const Location &loc);
     std::shared_ptr<State> GetOutputState(Validator &gpuav, const Location &loc);
 
   protected:
@@ -74,7 +74,7 @@ class DescriptorSet : public vvl::DescriptorSet {
 typedef uint32_t DescriptorId;
 class DescriptorHeap {
   public:
-    DescriptorHeap(Validator &, uint32_t max_descriptors);
+    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors);
     ~DescriptorHeap();
     DescriptorId NextId(const VulkanTypedHandle &handle);
     void DeleteId(DescriptorId id);

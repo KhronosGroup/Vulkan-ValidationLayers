@@ -20,7 +20,7 @@
 #include "chassis/chassis_modification_state.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/error_message/gpuav_vuids.h"
-#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/resources/gpu_shader_resources.h"
 #include "gpu/shaders/gpu_error_header.h"
 #include "gpu/spirv/module.h"
 #include "state_tracker/shader_stage_state.h"
@@ -390,6 +390,13 @@ bool LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string 
                  << ", binding = " << error_record[kInstBindlessUninitBindingOffset] << ") Descriptor index "
                  << error_record[kInstBindlessUninitDescIndexOffset] << " references a resource that was destroyed.";
             out_vuid_msg = "UNASSIGNED-Descriptor destroyed";
+            error_found = true;
+        } break;
+        case kErrorSubCodeBindlessDescriptorNullPointer: {
+            strm << "(set = " << error_record[kInstBindlessUninitDescSetOffset]
+                 << ", binding = " << error_record[kInstBindlessUninitBindingOffset] << ") Descriptor index "
+                 << error_record[kInstBindlessUninitDescIndexOffset] << " had error getting pointer to descriptor.";
+            out_vuid_msg = "UNASSIGNED-Descriptor Null Pointer";
             error_found = true;
         } break;
         case kErrorSubCodeBindlessDescriptorOOB: {

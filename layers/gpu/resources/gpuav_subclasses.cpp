@@ -17,6 +17,7 @@
 
 #include "gpu/resources/gpuav_subclasses.h"
 
+#include "gpu/resources/gpu_shader_resources.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/core/gpuav_constants.h"
 #include "gpu/descriptor_validation/gpuav_image_layout.h"

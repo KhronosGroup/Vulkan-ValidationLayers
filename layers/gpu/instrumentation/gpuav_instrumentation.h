@@ -21,6 +21,8 @@
 
 namespace gpuav {
 
+struct DescSetState;
+
 void SetupShaderInstrumentationResources(Validator& gpuav, LockedSharedPtr<gpuav::CommandBuffer, WriteLockGuard>& cmd_buffer,
                                          VkPipelineBindPoint bind_point, const Location& loc);
 void SetupShaderInstrumentationResources(Validator& gpuav, VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,

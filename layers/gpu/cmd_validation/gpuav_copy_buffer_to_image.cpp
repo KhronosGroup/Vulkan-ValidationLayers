@@ -19,6 +19,7 @@
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/shaders/gpu_error_header.h"
+#include "gpu/shaders/gpu_shaders_constants.h"
 #include "generated/cmd_validation_copy_buffer_to_image_comp.h"
 
 namespace gpuav {
