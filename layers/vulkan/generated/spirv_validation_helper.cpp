@@ -548,6 +548,8 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "RayQueryProvisionalKHR";
         case spv::CapabilityRayQueryKHR:
             return "RayQueryKHR";
+        case spv::CapabilityUntypedPointersKHR:
+            return "UntypedPointersKHR";
         case spv::CapabilityRayTraversalPrimitiveCullingKHR:
             return "RayTraversalPrimitiveCullingKHR";
         case spv::CapabilityRayTracingKHR:
