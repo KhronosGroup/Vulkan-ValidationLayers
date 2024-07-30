@@ -155,6 +155,7 @@ class BindableLinearMemoryTracker : public BindableMemoryTracker {
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
+    // No need to have this overload for linear memory
     BoundRanges GetBoundRanges(const BufferRange &ranges_bounds, const std::vector<BufferRange> &ranges) const override {
         assert(false);
         return {};
@@ -216,6 +217,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
+    // No reason to have this function for multi planar memory
     BoundRanges GetBoundRanges(const BufferRange &ranges_bounds, const std::vector<BufferRange> &ranges) const override {
         assert(false);
         return {};
