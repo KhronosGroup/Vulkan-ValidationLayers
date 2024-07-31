@@ -822,21 +822,22 @@ class BestPractices : public ValidationStateTracker {
 // Include code-generated functions
 #include "generated/best_practices.h"
   protected:
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle, const VkCommandBufferAllocateInfo* create_info,
+    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
+                                                             const VkCommandBufferAllocateInfo* allocate_info,
                                                              const vvl::CommandPool* pool) final;
 
     std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info, VkSwapchainKHR handle) final;
 
     std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle) final;
 
-    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* pCreateInfo,
-                                                 VkFormatFeatureFlags2KHR features) final;
+    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
+                                                 VkFormatFeatureFlags2 features) final;
 
-    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
-                                                 uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final;
+    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* create_info, VkSwapchainKHR swapchain,
+                                                 uint32_t swapchain_index, VkFormatFeatureFlags2 features) final;
 
     std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool handle,
-                                                                   const VkDescriptorPoolCreateInfo* pCreateInfo) final;
+                                                                   const VkDescriptorPoolCreateInfo* create_info) final;
 
     std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(VkDeviceMemory handle, const VkMemoryAllocateInfo* p_alloc_info,
                                                                uint64_t fake_address, const VkMemoryType& memory_type,
@@ -844,7 +845,7 @@ class BestPractices : public ValidationStateTracker {
                                                                std::optional<vvl::DedicatedBinding>&& dedicated_binding,
                                                                uint32_t physical_device_count) final;
 
-    std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
+    std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* create_info,
                                                                std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                std::shared_ptr<const vvl::RenderPass>&& render_pass,
                                                                std::shared_ptr<const vvl::PipelineLayout>&& layout,

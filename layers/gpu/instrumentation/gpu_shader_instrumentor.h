@@ -174,7 +174,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                          VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const;
 
   protected:
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue q, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
+    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
+                                            VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties &queueFamilyProperties) override;
 
     template <typename CreateInfo, typename SafeCreateInfo, typename ChassisState>

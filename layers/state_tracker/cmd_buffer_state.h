@@ -104,7 +104,7 @@ namespace vvl {
 
 class Event : public StateObject {
   public:
-    Event(VkEvent handle, const VkEventCreateInfo *pCreateInfo);
+    Event(VkEvent handle, const VkEventCreateInfo *create_info);
     VkEvent VkHandle() const { return handle_.Cast<VkEvent>(); }
 
     const VkEventCreateFlags flags;
@@ -138,12 +138,12 @@ class CommandPool : public StateObject {
     // Cmd buffers allocated from this pool
     vvl::unordered_map<VkCommandBuffer, CommandBuffer *> commandBuffers;
 
-    CommandPool(ValidationStateTracker &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *pCreateInfo, VkQueueFlags flags);
+    CommandPool(ValidationStateTracker &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info, VkQueueFlags flags);
     virtual ~CommandPool() { Destroy(); }
 
     VkCommandPool VkHandle() const { return handle_.Cast<VkCommandPool>(); }
 
-    void Allocate(const VkCommandBufferAllocateInfo *create_info, const VkCommandBuffer *command_buffers);
+    void Allocate(const VkCommandBufferAllocateInfo *allocate_info, const VkCommandBuffer *command_buffers);
     void Free(uint32_t count, const VkCommandBuffer *command_buffers);
     void Reset(const Location &loc);
 
@@ -538,7 +538,7 @@ class CommandBuffer : public RefcountedStateObject {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CommandBuffer(ValidationStateTracker &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pAllocateInfo,
+    CommandBuffer(ValidationStateTracker &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
                   const vvl::CommandPool *cmd_pool);
 
     virtual ~CommandBuffer() { Destroy(); }

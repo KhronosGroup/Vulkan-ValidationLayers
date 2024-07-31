@@ -213,15 +213,15 @@ VkFormatFeatureFlags2 ValidationStateTracker::GetImageFormatFeatures(VkPhysicalD
     return format_features;
 }
 
-std::shared_ptr<vvl::Image> ValidationStateTracker::CreateImageState(VkImage handle, const VkImageCreateInfo *pCreateInfo,
-                                                                     VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<vvl::Image>(*this, handle, pCreateInfo, features);
+std::shared_ptr<vvl::Image> ValidationStateTracker::CreateImageState(VkImage handle, const VkImageCreateInfo *create_info,
+                                                                     VkFormatFeatureFlags2 features) {
+    return std::make_shared<vvl::Image>(*this, handle, create_info, features);
 }
 
-std::shared_ptr<vvl::Image> ValidationStateTracker::CreateImageState(VkImage handle, const VkImageCreateInfo *pCreateInfo,
+std::shared_ptr<vvl::Image> ValidationStateTracker::CreateImageState(VkImage handle, const VkImageCreateInfo *create_info,
                                                                      VkSwapchainKHR swapchain, uint32_t swapchain_index,
-                                                                     VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<vvl::Image>(*this, handle, pCreateInfo, swapchain, swapchain_index, features);
+                                                                     VkFormatFeatureFlags2 features) {
+    return std::make_shared<vvl::Image>(*this, handle, create_info, swapchain, swapchain_index, features);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
@@ -367,8 +367,8 @@ struct BufferAddressInfillUpdateOps {
     const Mapped &insert_value;
 };
 
-std::shared_ptr<vvl::Buffer> ValidationStateTracker::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *pCreateInfo) {
-    return std::make_shared<vvl::Buffer>(*this, handle, pCreateInfo);
+std::shared_ptr<vvl::Buffer> ValidationStateTracker::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *create_info) {
+    return std::make_shared<vvl::Buffer>(*this, handle, create_info);
 }
 
 void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
@@ -408,9 +408,9 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
 
 std::shared_ptr<vvl::BufferView> ValidationStateTracker::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &buffer,
                                                                                VkBufferView handle,
-                                                                               const VkBufferViewCreateInfo *pCreateInfo,
+                                                                               const VkBufferViewCreateInfo *create_info,
                                                                                VkFormatFeatureFlags2KHR format_features) {
-    return std::make_shared<vvl::BufferView>(buffer, handle, pCreateInfo, format_features);
+    return std::make_shared<vvl::BufferView>(buffer, handle, create_info, format_features);
 }
 
 void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
@@ -436,9 +436,9 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
 }
 
 std::shared_ptr<vvl::ImageView> ValidationStateTracker::CreateImageViewState(
-    const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *pCreateInfo,
+    const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *create_info,
     VkFormatFeatureFlags2KHR format_features, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
-    return std::make_shared<vvl::ImageView>(image_state, handle, pCreateInfo, format_features, cubic_props);
+    return std::make_shared<vvl::ImageView>(image_state, handle, create_info, format_features, cubic_props);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
@@ -1746,9 +1746,9 @@ void ValidationStateTracker::PreCallRecordFreeCommandBuffers(VkDevice device, Vk
 }
 
 std::shared_ptr<vvl::CommandPool> ValidationStateTracker::CreateCommandPoolState(VkCommandPool handle,
-                                                                                 const VkCommandPoolCreateInfo *pCreateInfo) {
-    auto queue_flags = physical_device_state->queue_family_properties[pCreateInfo->queueFamilyIndex].queueFlags;
-    return std::make_shared<vvl::CommandPool>(*this, handle, pCreateInfo, queue_flags);
+                                                                                 const VkCommandPoolCreateInfo *create_info) {
+    auto queue_flags = physical_device_state->queue_family_properties[create_info->queueFamilyIndex].queueFlags;
+    return std::make_shared<vvl::CommandPool>(*this, handle, create_info, queue_flags);
 }
 
 void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -1848,8 +1848,8 @@ void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const Vk
 }
 
 std::shared_ptr<vvl::PipelineCache> ValidationStateTracker::CreatePipelineCacheState(
-    VkPipelineCache handle, const VkPipelineCacheCreateInfo *pCreateInfo) const {
-    return std::make_shared<vvl::PipelineCache>(handle, pCreateInfo);
+    VkPipelineCache handle, const VkPipelineCacheCreateInfo *create_info) const {
+    return std::make_shared<vvl::PipelineCache>(handle, create_info);
 }
 
 void ValidationStateTracker::PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
@@ -1866,10 +1866,10 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, 
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateGraphicsPipelineState(
-    const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    const VkGraphicsPipelineCreateInfo *create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
     std::shared_ptr<const vvl::RenderPass> &&render_pass, std::shared_ptr<const vvl::PipelineLayout> &&layout,
     spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages], ShaderModuleUniqueIds *shader_unique_id_map) const {
-    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(render_pass), std::move(layout),
+    return std::make_shared<vvl::Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(render_pass), std::move(layout),
                                            stateless_data, shader_unique_id_map);
 }
 
@@ -1928,9 +1928,9 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateComputePipelineState(
-    const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    const VkComputePipelineCreateInfo *create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
     std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
-    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
+    return std::make_shared<vvl::Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1965,9 +1965,9 @@ void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice devic
 
 // TODO - Add tests and pass down StatelessData
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
-    const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    const VkRayTracingPipelineCreateInfoNV *create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
     std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
-    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
+    return std::make_shared<vvl::Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
@@ -2000,9 +2000,9 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
 
 // TODO - Add tests and pass down StatelessData
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
-    const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    const VkRayTracingPipelineCreateInfoKHR *create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
     std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
-    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
+    return std::make_shared<vvl::Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
@@ -2055,8 +2055,8 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
     pipeline_states.clear();
 }
 
-std::shared_ptr<vvl::Sampler> ValidationStateTracker::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *pCreateInfo) {
-    return std::make_shared<vvl::Sampler>(handle, pCreateInfo);
+std::shared_ptr<vvl::Sampler> ValidationStateTracker::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *create_info) {
+    return std::make_shared<vvl::Sampler>(handle, create_info);
 }
 
 void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
@@ -2094,8 +2094,8 @@ void ValidationStateTracker::PostCallRecordCreatePipelineLayout(VkDevice device,
 }
 
 std::shared_ptr<vvl::DescriptorPool> ValidationStateTracker::CreateDescriptorPoolState(
-    VkDescriptorPool handle, const VkDescriptorPoolCreateInfo *pCreateInfo) {
-    return std::make_shared<vvl::DescriptorPool>(*this, handle, pCreateInfo);
+    VkDescriptorPool handle, const VkDescriptorPoolCreateInfo *create_info) {
+    return std::make_shared<vvl::DescriptorPool>(*this, handle, create_info);
 }
 
 std::shared_ptr<vvl::DescriptorSet> ValidationStateTracker::CreateDescriptorSet(
@@ -2178,12 +2178,12 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, 
     PerformUpdateDescriptorSets(descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
 }
 
-void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
+void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
                                                                   VkCommandBuffer *pCommandBuffers,
                                                                   const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    if (auto pool = Get<vvl::CommandPool>(pCreateInfo->commandPool)) {
-        pool->Allocate(pCreateInfo, pCommandBuffers);
+    if (auto pool = Get<vvl::CommandPool>(pAllocateInfo->commandPool)) {
+        pool->Allocate(pAllocateInfo, pCommandBuffers);
     }
 }
 
@@ -2393,8 +2393,8 @@ void ValidationStateTracker::PostCallRecordCmdSetViewportShadingRatePaletteNV(Vk
 }
 
 std::shared_ptr<vvl::AccelerationStructureNV> ValidationStateTracker::CreateAccelerationStructureState(
-    VkAccelerationStructureNV handle, const VkAccelerationStructureCreateInfoNV *pCreateInfo) {
-    return std::make_shared<vvl::AccelerationStructureNV>(device, handle, pCreateInfo);
+    VkAccelerationStructureNV handle, const VkAccelerationStructureCreateInfoNV *create_info) {
+    return std::make_shared<vvl::AccelerationStructureNV>(device, handle, create_info);
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
@@ -2407,9 +2407,9 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
 }
 
 std::shared_ptr<vvl::AccelerationStructureKHR> ValidationStateTracker::CreateAccelerationStructureState(
-    VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
+    VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *create_info,
     std::shared_ptr<vvl::Buffer> &&buf_state) {
-    return std::make_shared<vvl::AccelerationStructureKHR>(handle, pCreateInfo, std::move(buf_state));
+    return std::make_shared<vvl::AccelerationStructureKHR>(handle, create_info, std::move(buf_state));
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
@@ -4474,12 +4474,12 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
 }
 
 // Update the common AllocateDescriptorSetsData
-void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *pAllocateInfo,
+void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *allocate_info,
                                                               vvl::AllocateDescriptorSetsData &ds_data) const {
     const auto *count_allocate_info =
-        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(pAllocateInfo->pNext);
-    for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-        if (auto layout = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i])) {
+        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(allocate_info->pNext);
+    for (uint32_t i = 0; i < allocate_info->descriptorSetCount; i++) {
+        if (auto layout = Get<vvl::DescriptorSetLayout>(allocate_info->pSetLayouts[i])) {
             ds_data.layout_nodes[i] = layout;
             // Count total descriptors required per type
             for (uint32_t j = 0; j < layout->GetBindingCount(); ++j) {
@@ -5574,21 +5574,21 @@ void ValidationStateTracker::PostCallRecordGetBufferDeviceAddressEXT(VkDevice de
     PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
 }
 
-std::shared_ptr<vvl::Swapchain> ValidationStateTracker::CreateSwapchainState(const VkSwapchainCreateInfoKHR *pCreateInfo,
+std::shared_ptr<vvl::Swapchain> ValidationStateTracker::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
                                                                              VkSwapchainKHR handle) {
-    return std::make_shared<vvl::Swapchain>(*this, pCreateInfo, handle);
+    return std::make_shared<vvl::Swapchain>(*this, create_info, handle);
 }
 
 std::shared_ptr<vvl::CommandBuffer> ValidationStateTracker::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                                 const VkCommandBufferAllocateInfo *pAllocateInfo,
+                                                                                 const VkCommandBufferAllocateInfo *allocate_info,
                                                                                  const vvl::CommandPool *pool) {
-    return std::make_shared<vvl::CommandBuffer>(*this, handle, pAllocateInfo, pool);
+    return std::make_shared<vvl::CommandBuffer>(*this, handle, allocate_info, pool);
 }
 
 std::shared_ptr<vvl::DeviceMemory> ValidationStateTracker::CreateDeviceMemoryState(
-    VkDeviceMemory handle, const VkMemoryAllocateInfo *pAllocateInfo, uint64_t fake_address, const VkMemoryType &memory_type,
+    VkDeviceMemory handle, const VkMemoryAllocateInfo *allocate_info, uint64_t fake_address, const VkMemoryType &memory_type,
     const VkMemoryHeap &memory_heap, std::optional<vvl::DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count) {
-    return std::make_shared<vvl::DeviceMemory>(handle, pAllocateInfo, fake_address, memory_type, memory_heap,
+    return std::make_shared<vvl::DeviceMemory>(handle, allocate_info, fake_address, memory_type, memory_heap,
                                                std::move(dedicated_binding), physical_device_count);
 }
 

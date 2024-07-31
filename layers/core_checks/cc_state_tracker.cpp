@@ -21,9 +21,9 @@
 #include "cc_state_tracker.h"
 #include "core_validation.h"
 
-core::CommandBuffer::CommandBuffer(CoreChecks& core, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
+core::CommandBuffer::CommandBuffer(CoreChecks& core, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
                                    const vvl::CommandPool* pool)
-    : vvl::CommandBuffer(core, handle, pCreateInfo, pool) {}
+    : vvl::CommandBuffer(core, handle, allocate_info, pool) {}
 
 // Much of the data stored in vvl::CommandBuffer is only used by core validation, and is
 // set up by Record calls in class CoreChecks. Because both the state tracker and
@@ -55,7 +55,7 @@ void core::CommandBuffer::RecordWaitEvents(vvl::Func command, uint32_t eventCoun
 }
 
 std::shared_ptr<vvl::CommandBuffer> CoreChecks::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                     const VkCommandBufferAllocateInfo* create_info,
+                                                                     const VkCommandBufferAllocateInfo* allocate_info,
                                                                      const vvl::CommandPool* pool) {
-    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<core::CommandBuffer>(*this, handle, create_info, pool));
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<core::CommandBuffer>(*this, handle, allocate_info, pool));
 }

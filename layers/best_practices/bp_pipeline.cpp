@@ -236,20 +236,20 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
     return result;
 }
 
-bp_state::Pipeline::Pipeline(const ValidationStateTracker& state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
+bp_state::Pipeline::Pipeline(const ValidationStateTracker& state_data, const VkGraphicsPipelineCreateInfo* create_info,
                              std::shared_ptr<const vvl::PipelineCache>&& pipe_cache,
                              std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout,
                              ShaderModuleUniqueIds* shader_unique_id_map)
-    : vvl::Pipeline(state_data, pCreateInfo, std::move(pipe_cache), std::move(rpstate), std::move(layout), nullptr,
+    : vvl::Pipeline(state_data, create_info, std::move(pipe_cache), std::move(rpstate), std::move(layout), nullptr,
                     shader_unique_id_map),
       access_framebuffer_attachments(GetAttachmentAccess(*this)) {}
 
 std::shared_ptr<vvl::Pipeline> BestPractices::CreateGraphicsPipelineState(
-    const VkGraphicsPipelineCreateInfo* pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    const VkGraphicsPipelineCreateInfo* create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
     std::shared_ptr<const vvl::RenderPass>&& render_pass, std::shared_ptr<const vvl::PipelineLayout>&& layout,
     spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages], ShaderModuleUniqueIds* shader_unique_id_map) const {
     return std::static_pointer_cast<vvl::Pipeline>(std::make_shared<bp_state::Pipeline>(
-        *this, pCreateInfo, std::move(pipeline_cache), std::move(render_pass), std::move(layout), shader_unique_id_map));
+        *this, create_info, std::move(pipeline_cache), std::move(render_pass), std::move(layout), shader_unique_id_map));
 }
 
 void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
