@@ -219,7 +219,7 @@ class DebugReport {
         return FormatHandle(VkHandleInfo<T>::Typename(), HandleToUint64(handle));
     }
 
-    bool LogMsg(VkFlags msg_flags, const LogObjectList &objects, const Location *loc, std::string_view vuid_text,
+    bool LogMsg(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
                 const char *format, va_list argptr);
 
     void BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
