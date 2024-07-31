@@ -101,5 +101,7 @@ class Module {
     const bool print_debug_info_;
 };
 
+void InternalWarning(const char* message);
+
 }  // namespace spirv
 }  // namespace gpuav

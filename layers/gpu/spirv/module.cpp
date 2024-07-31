@@ -22,6 +22,8 @@
 #include "ray_query_pass.h"
 #include "debug_printf_pass.h"
 
+#include <iostream>
+
 namespace gpuav {
 namespace spirv {
 
@@ -634,6 +636,9 @@ void Module::PostProcess() {
         AddExtension("SPV_KHR_storage_buffer_storage_class");
     }
 }
+
+// TODO - Currently this is not tied into validation layers callback, should be using LogWarning/LogError
+void InternalWarning(const char* message) { std::cout << "[Internal Shader Instrumentation Warning] " << message << '\n'; }
 
 }  // namespace spirv
 }  // namespace gpuav

@@ -46,6 +46,12 @@ class DebugPrintfPass : public Pass {
     uint32_t GetLinkFunctionId(uint32_t argument_count);
 
     uint32_t output_buffer_variable_id_ = 0;
+
+    // Used to detect where 64-bit floats are
+    uint32_t double_bitmask_ = 0;
+    // Count number of parameters the CPU will need to print out
+    // This expands vectors and accounts for 64-bit parameters
+    uint32_t expanded_parameter_count_ = 0;
 };
 
 }  // namespace spirv
