@@ -115,6 +115,9 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
     VkDebugUtilsMessageTypeFlagsEXT types;
     VkDebugUtilsMessageSeverityFlagsEXT severity;
     DebugReportFlagsToAnnotFlags(msg_flags, &severity, &types);
+    if (!(active_severities & severity) || !(active_types & types)) {
+        return false;  // quick check again to make sure use wants these printed
+    }
 
     std::vector<std::string> object_labels;
     // Ensures that push_back will not reallocate, thereby providing pointer

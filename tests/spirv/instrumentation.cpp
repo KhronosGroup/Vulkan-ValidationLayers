@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
     }
 
     // Always print information as this file is only used for debugging/testing
-    gpu::spirv::Module module(spirv_data, kDefaultShaderId, kInstDefaultDescriptorSet, true);
+    gpu::spirv::Module module(spirv_data, kDefaultShaderId, kInstDefaultDescriptorSet, true, 0, nullptr);
     if (all_passes || bindless_descriptor_pass) {
         module.RunPassBindlessDescriptor();
     }

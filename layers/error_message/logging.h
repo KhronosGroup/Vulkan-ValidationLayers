@@ -219,8 +219,11 @@ class DebugReport {
         return FormatHandle(VkHandleInfo<T>::Typename(), HandleToUint64(handle));
     }
 
+    // Formats messages to be in the proper format, handles VUID logic, and any legacy issues
     bool LogMsg(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
                 const char *format, va_list argptr);
+    // Core logging that interacts with the DebugCallbacks
+    bool DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *message, const char *text_vuid) const;
 
     void BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
     void EndQueueDebugUtilsLabel(VkQueue queue);
@@ -234,7 +237,6 @@ class DebugReport {
 
   private:
     bool UpdateLogMsgCounts(int32_t vuid_hash) const;
-    bool DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *message, const char *text_vuid) const;
     bool LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageSeverityFlagsEXT severity,
                        VkDebugUtilsMessageTypeFlagsEXT type);
 
