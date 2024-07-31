@@ -688,14 +688,14 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
 }
 
 std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                    const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                    const VkCommandBufferAllocateInfo *allocate_info,
                                                                     const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, pCreateInfo, pool));
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool));
 }
 
-CommandBuffer::CommandBuffer(Validator &dp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
+CommandBuffer::CommandBuffer(Validator &dp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
                              const vvl::CommandPool *pool)
-    : gpu_tracker::CommandBuffer(dp, handle, pCreateInfo, pool) {}
+    : gpu_tracker::CommandBuffer(dp, handle, allocate_info, pool) {}
 
 CommandBuffer::~CommandBuffer() { Destroy(); }
 

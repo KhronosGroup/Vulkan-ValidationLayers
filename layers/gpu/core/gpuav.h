@@ -64,16 +64,19 @@ class Validator : public gpu::GpuShaderInstrumentor {
     // gpuav_setup.cpp
     // -------------
   public:
-    std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) final;
-    std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
-                                                           const VkBufferViewCreateInfo* ci, VkFormatFeatureFlags2KHR buf_ff) final;
-    std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView iv,
-                                                         const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2KHR ff,
+    std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer handle, const VkBufferCreateInfo* create_info) final;
+    std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& buffer, VkBufferView handle,
+                                                           const VkBufferViewCreateInfo* create_info,
+                                                           VkFormatFeatureFlags2 format_features) final;
+    std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView handle,
+                                                         const VkImageViewCreateInfo* create_info,
+                                                         VkFormatFeatureFlags2 format_features,
                                                          const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) final;
-    std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+    std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo* create_info) final;
+    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
+                                                             const VkCommandBufferAllocateInfo* allocate_info,
                                                              const vvl::CommandPool* pool) final;
-    std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
+    std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool* pool,
                                                             const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                             uint32_t variable_count) final;
 

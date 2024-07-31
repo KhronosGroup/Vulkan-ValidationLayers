@@ -90,20 +90,20 @@ static bool GetMetalExport(const VkMemoryAllocateInfo *info) {
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 namespace vvl {
-DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo *pAllocateInfo, uint64_t fake_address,
+DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo *allocate_info, uint64_t fake_address,
                            const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
                            std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count)
     : StateObject(handle, kVulkanObjectTypeDeviceMemory),
-      safe_allocate_info(pAllocateInfo),
+      safe_allocate_info(allocate_info),
       allocate_info(*safe_allocate_info.ptr()),
-      export_handle_types(GetExportHandleTypes(pAllocateInfo)),
-      import_handle_type(GetImportHandleType(pAllocateInfo)),
+      export_handle_types(GetExportHandleTypes(allocate_info)),
+      import_handle_type(GetImportHandleType(allocate_info)),
       unprotected((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0),
-      multi_instance(IsMultiInstance(pAllocateInfo, memory_heap, physical_device_count)),
+      multi_instance(IsMultiInstance(allocate_info, memory_heap, physical_device_count)),
       dedicated(std::move(dedicated_binding)),
       mapped_range{},
 #ifdef VK_USE_PLATFORM_METAL_EXT
-      metal_buffer_export(GetMetalExport(pAllocateInfo)),
+      metal_buffer_export(GetMetalExport(allocate_info)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
       p_driver_data(nullptr),
       fake_base_address(fake_address) {

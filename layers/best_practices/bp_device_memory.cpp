@@ -307,10 +307,10 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
 }
 
 std::shared_ptr<vvl::DeviceMemory> BestPractices::CreateDeviceMemoryState(
-    VkDeviceMemory handle, const VkMemoryAllocateInfo* pAllocateInfo, uint64_t fake_address, const VkMemoryType& memory_type,
+    VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, uint64_t fake_address, const VkMemoryType& memory_type,
     const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count) {
     return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
-        handle, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
+        handle, allocate_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
 }
 
 void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,

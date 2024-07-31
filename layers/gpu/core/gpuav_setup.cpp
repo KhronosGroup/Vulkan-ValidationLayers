@@ -39,36 +39,38 @@
 
 namespace gpuav {
 
-std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *pCreateInfo) {
-    return std::make_shared<Buffer>(*this, handle, pCreateInfo, *desc_heap_);
+std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *create_info) {
+    return std::make_shared<Buffer>(*this, handle, create_info, *desc_heap_);
 }
 
-std::shared_ptr<vvl::BufferView> Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
-                                                                  const VkBufferViewCreateInfo *ci,
-                                                                  VkFormatFeatureFlags2KHR buf_ff) {
-    return std::make_shared<BufferView>(bf, bv, ci, buf_ff, *desc_heap_);
+std::shared_ptr<vvl::BufferView> Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &buffer, VkBufferView handle,
+                                                                  const VkBufferViewCreateInfo *create_info,
+                                                                  VkFormatFeatureFlags2 format_features) {
+    return std::make_shared<BufferView>(buffer, handle, create_info, format_features, *desc_heap_);
 }
 
-std::shared_ptr<vvl::ImageView> Validator::CreateImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv,
-                                                                const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+std::shared_ptr<vvl::ImageView> Validator::CreateImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
+                                                                const VkImageViewCreateInfo *create_info,
+                                                                VkFormatFeatureFlags2 format_features,
                                                                 const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
-    return std::make_shared<ImageView>(image_state, iv, ci, ff, cubic_props, *desc_heap_);
+    return std::make_shared<ImageView>(image_state, handle, create_info, format_features, cubic_props, *desc_heap_);
 }
 
-std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
-    return std::make_shared<Sampler>(s, ci, *desc_heap_);
+std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *create_info) {
+    return std::make_shared<Sampler>(handle, create_info, *desc_heap_);
 }
 
-std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet set, vvl::DescriptorPool *pool,
+std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool *pool,
                                                                    const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
                                                                    uint32_t variable_count) {
-    return std::static_pointer_cast<vvl::DescriptorSet>(std::make_shared<DescriptorSet>(set, pool, layout, variable_count, this));
+    return std::static_pointer_cast<vvl::DescriptorSet>(
+        std::make_shared<DescriptorSet>(handle, pool, layout, variable_count, this));
 }
 
 std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                    const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                    const VkCommandBufferAllocateInfo *allocate_info,
                                                                     const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, pCreateInfo, pool));
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool));
 }
 
 void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,

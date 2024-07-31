@@ -2548,6 +2548,7 @@ class CoreChecks : public ValidationStateTracker {
                                                                       struct _screen_window* window,
                                                                       const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle, const VkCommandBufferAllocateInfo* create_info,
+    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
+                                                             const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                              const vvl::CommandPool* pool) final;
 };  // Class CoreChecks

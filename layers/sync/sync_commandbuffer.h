@@ -411,7 +411,7 @@ class CommandBuffer : public vvl::CommandBuffer {
   public:
     CommandBufferAccessContext access_context;
 
-    CommandBuffer(SyncValidator &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
+    CommandBuffer(SyncValidator &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
                   const vvl::CommandPool *pool);
     ~CommandBuffer() { Destroy(); }
 

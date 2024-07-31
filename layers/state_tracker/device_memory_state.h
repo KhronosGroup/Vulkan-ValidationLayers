@@ -62,7 +62,7 @@ class DeviceMemory : public StateObject {
     void *p_driver_data;                   // Pointer to application's actual memory
     const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
 
-    DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *pAllocateInfo, uint64_t fake_address,
+    DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *allocate_info, uint64_t fake_address,
                  const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
                  std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
 
