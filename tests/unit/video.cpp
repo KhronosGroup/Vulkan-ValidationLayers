@@ -12263,6 +12263,9 @@ TEST_F(NegativeVideo, BeginQueryInlineQueries) {
     if (!config) {
         GTEST_SKIP() << "Test requires video support";
     }
+    if (!QueueFamilySupportsResultStatusOnlyQueries(config.QueueFamilyIndex())) {
+        GTEST_SKIP() << "Test requires video queue to support result status queries";
+    }
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
