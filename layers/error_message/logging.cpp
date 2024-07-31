@@ -544,7 +544,7 @@ bool DebugReport::LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageS
     return true;
 }
 
-bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const Location *loc, std::string_view vuid_text,
+bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
                          const char *format, va_list argptr) {
     assert(*(vuid_text.data() + vuid_text.size()) == '\0');
 
@@ -590,10 +590,7 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
         str_plus_spec_text.resize(result);
     }
 
-    // TODO - make Location a reference once old LogError is gone
-    if (loc) {
-        str_plus_spec_text = loc->Message() + " " + str_plus_spec_text;
-    }
+    str_plus_spec_text = loc.Message() + " " + str_plus_spec_text;
 
     // Append the spec error text to the error message, unless it contains a word treated as special
     if ((vuid_text.find("VUID-") != std::string::npos)) {

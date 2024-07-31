@@ -514,7 +514,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = debug_report->LogMsg(kErrorBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kErrorBit, objlist, loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -523,7 +523,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = debug_report->LogMsg(kWarningBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -531,7 +531,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = debug_report->LogMsg(kWarningBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -539,7 +539,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -547,7 +547,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = debug_report->LogMsg(kInformationBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kInformationBit, objlist, loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -555,7 +555,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = debug_report->LogMsg(kVerboseBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kVerboseBit, objlist, loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
