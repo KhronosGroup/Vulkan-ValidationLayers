@@ -23,6 +23,8 @@
 #include "type_manager.h"
 #include "containers/custom_containers.h"
 
+class DebugReport;
+
 namespace gpu {
 namespace spirv {
 
@@ -39,7 +41,7 @@ struct ModuleHeader {
 class Module {
   public:
     Module(vvl::span<const uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
-           uint32_t max_instrumented_count = 0);
+           uint32_t max_instrumented_count, DebugReport* debug_report);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -100,9 +102,13 @@ class Module {
 
     // Used to help debug
     const bool print_debug_info_;
-};
 
-void InternalWarning(const char* message);
+    // To keep the GPU Shader Instrumentation a standalone sub-project, the runtime version needs to pass in info to allow for
+    // warnings/errors to be piped into the normal callback (otherwise will be sent to stdout)
+    DebugReport* debug_report_ = nullptr;
+    void InternalWarning(const char* tag, const char* message);
+    void InternalError(const char* tag, const char* message);
+};
 
 }  // namespace spirv
 }  // namespace gpu

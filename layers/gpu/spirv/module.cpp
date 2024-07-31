@@ -16,6 +16,7 @@
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include "gpu/shaders/gpu_shaders_constants.h"
+#include "error_message/logging.h"
 
 #include "buffer_device_address_pass.h"
 #include "bindless_descriptor_pass.h"
@@ -28,12 +29,13 @@ namespace gpu {
 namespace spirv {
 
 Module::Module(vvl::span<const uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
-               uint32_t max_instrumented_count)
+               uint32_t max_instrumented_count, DebugReport* debug_report)
     : type_manager_(*this),
       max_instrumented_count_(max_instrumented_count),
       shader_id_(shader_id),
       output_buffer_descriptor_set_(output_buffer_descriptor_set),
-      print_debug_info_(print_debug_info) {
+      print_debug_info_(print_debug_info),
+      debug_report_(debug_report) {
     uint32_t instruction_count = 0;
     spirv_iterator it = words.begin();
     header_.magic_number = *it++;
@@ -637,8 +639,21 @@ void Module::PostProcess() {
     }
 }
 
-// TODO - Currently this is not tied into validation layers callback, should be using LogWarning/LogError
-void InternalWarning(const char* message) { std::cout << "[Internal Shader Instrumentation Warning] " << message << '\n'; }
+void Module::InternalWarning(const char* tag, const char* message) {
+    if (debug_report_) {
+        debug_report_->DebugLogMsg(kWarningBit, {}, message, tag);
+    } else {
+        std::cout << "[" << tag << "]" << message << '\n';
+    }
+}
+
+void Module::InternalError(const char* tag, const char* message) {
+    if (debug_report_) {
+        debug_report_->DebugLogMsg(kErrorBit, {}, message, tag);
+    } else {
+        std::cerr << "[" << tag << "]" << message << '\n';
+    }
+}
 
 }  // namespace spirv
 }  // namespace gpu

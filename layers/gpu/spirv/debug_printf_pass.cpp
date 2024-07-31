@@ -125,7 +125,8 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 if (expanded_parameter_count_ > 31) {
                     // It is very unlikely to hit this, if the user does, they can just split the very long printf() into 2 printf()
                     // calls ontop of each other
-                    InternalWarning("More than 32 expanded parameters, can't properly detect 64-bit float");
+                    module_.InternalWarning("DEBUG-PRINTF-DOUBLE-MASK",
+                                            "More than 32 expanded parameters, can't properly detect 64-bit float");
                 }
                 double_bitmask_ |= 1 << expanded_parameter_count_;
 
