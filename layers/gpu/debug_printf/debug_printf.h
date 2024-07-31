@@ -59,6 +59,7 @@ struct OutputRecord {
     uint32_t shader_id;
     uint32_t instruction_position;
     uint32_t format_string_id;
+    uint32_t double_bitmask;  // used to distinguish if float is 1 or 2 dwords
     uint32_t stage_id;
     uint32_t stage_info_0;
     uint32_t stage_info_1;

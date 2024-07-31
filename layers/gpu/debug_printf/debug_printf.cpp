@@ -344,14 +344,14 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         auto format_substrings = ParseFormatString(format_string);
         void *current_value = static_cast<void *>(&debug_record->values);
         // Sprintf each format substring into a temporary string then add that to the message
-        for (auto &substring : format_substrings) {
+        for (size_t i = 0; i < format_substrings.size(); i++) {
+            auto &substring = format_substrings[i];
             std::string temp_string;
             size_t needed = 0;
 
             if (substring.needs_value) {
                 if (substring.is_64_bit) {
                     assert(substring.type != NumericTypeSint);  // not supported
-
                     if (substring.type == NumericTypeUint) {
                         std::vector<std::string> format_strings = {"%ul", "%lu", "%lx"};
                         for (const auto &ul_string : format_strings) {
@@ -370,9 +370,6 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                         needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
                         std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
-
-                    } else if (substring.type == NumericTypeFloat) {
-                        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
                     }
                 } else {
                     if (substring.type == NumericTypeUint) {
@@ -389,10 +386,22 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                         std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
 
                     } else if (substring.type == NumericTypeFloat) {
-                        const float value = *static_cast<float *>(current_value);
-                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
-                        temp_string.resize(needed);
-                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                        // On the CPU printf the "%f" is used for 16, 32, and 64-bit floats,
+                        // but we need to store the 64-bit floats in 2 dwords in our GPU side buffer.
+                        // Using the bitmask, we know if the incoming float was 64-bit or not.
+                        // This is much simpler than enforcing a %lf which doesn't line up with how the CPU side works
+                        if (debug_record->double_bitmask & (1 << i)) {
+                            substring.is_64_bit = true;
+                            const double value = *static_cast<double *>(current_value);
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                        } else {
+                            const float value = *static_cast<float *>(current_value);
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                        }
                     }
                 }
 

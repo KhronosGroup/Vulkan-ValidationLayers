@@ -80,12 +80,15 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 const uint32_t uconvert_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_id, incoming_id}, inst_it);
                 params.push_back(uconvert_id);
+                expanded_parameter_count_++;
             } else if (width == 32) {
                 params.push_back(incoming_id);
+                expanded_parameter_count_++;
             } else if (width == 64) {
                 const uint32_t uconvert_high_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_high_id, incoming_id}, inst_it);
                 params.push_back(uconvert_high_id);
+                expanded_parameter_count_++;
 
                 const uint32_t uint64_type_id = module_.type_manager_.GetTypeInt(64, false).Id();
                 const uint32_t shift_right_id = module_.TakeNextId();
@@ -112,11 +115,23 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 const uint32_t bitcast_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpBitcast, {uint32_type_id, bitcast_id, fconvert_id}, inst_it);
                 params.push_back(bitcast_id);
+                expanded_parameter_count_++;
             } else if (width == 32) {
                 const uint32_t bitcast_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpBitcast, {uint32_type_id, bitcast_id, argument_id}, inst_it);
                 params.push_back(bitcast_id);
+                expanded_parameter_count_++;
             } else if (width == 64) {
+                if (expanded_parameter_count_ > 31) {
+                    // It is very unlikely to hit this, if the user does, they can just split the very long printf() into 2 printf()
+                    // calls ontop of each other
+                    InternalWarning("More than 32 expanded parameters, can't properly detect 64-bit float");
+                }
+                double_bitmask_ |= 1 << expanded_parameter_count_;
+
+                // TODO (Also in GPU-AV) need to detect if shaderInt64 is supported or not before forcing this on
+                module_.AddCapability(spv::CapabilityInt64);
+
                 const uint32_t uint64_type_id = module_.type_manager_.GetTypeInt(64, false).Id();
                 const uint32_t bitcast_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpBitcast, {uint64_type_id, bitcast_id, argument_id}, inst_it);
@@ -124,6 +139,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 const uint32_t uconvert_high_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_high_id, bitcast_id}, inst_it);
                 params.push_back(uconvert_high_id);
+                expanded_parameter_count_++;
 
                 const uint32_t shift_right_id = module_.TakeNextId();
                 const uint32_t constant_32_id = module_.type_manager_.GetConstantUInt32(32).Id();
@@ -146,6 +162,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
             const uint32_t select_id = module_.TakeNextId();
             block.CreateInstruction(spv::OpSelect, {uint32_type_id, select_id, argument_id, one_id, zero_id}, inst_it);
             params.push_back(select_id);
+            expanded_parameter_count_++;
             break;
         }
 
@@ -171,12 +188,15 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     const uint32_t function_result = module_.TakeNextId();
 
     // We know the first part, then build up the rest from the printf arguments
-    // except the function_def, we place hold it with zero
+    // except a few slots, we place hold it with zero until we build up the params
+    const size_t function_def_slot = 2;
+    const size_t double_bitmask_slot = 5;
     std::vector<uint32_t> function_call_params = {void_type,
                                                   function_result,
-                                                  0,
+                                                  0,  // function_def_slot
                                                   inst_position_constant.Id(),
                                                   string_id_constant.Id(),
+                                                  0,  // double_bitmask_slot,
                                                   block_func.stage_info_x_id_,
                                                   block_func.stage_info_y_id_,
                                                   block_func.stage_info_z_id_,
@@ -206,7 +226,10 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     const uint32_t ignored_params = 3;
     const uint32_t param_count = (uint32_t)function_call_params.size() - ignored_params;
     const uint32_t function_def = GetLinkFunctionId(param_count);
-    function_call_params[2] = function_def;
+
+    // patch in params
+    function_call_params[function_def_slot] = function_def;
+    function_call_params[double_bitmask_slot] = module_.type_manager_.GetConstantUInt32(double_bitmask_).Id();
 
     block.CreateInstruction(spv::OpFunctionCall, function_call_params, inst_it);
 }
@@ -400,7 +423,12 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     }
 }
 
-void DebugPrintfPass::Reset() { target_instruction_ = nullptr; }
+// Used between injections of a function
+void DebugPrintfPass::Reset() {
+    target_instruction_ = nullptr;
+    double_bitmask_ = 0;
+    expanded_parameter_count_ = 0;
+}
 
 bool DebugPrintfPass::Run() {
     for (const auto& inst : module_.ext_inst_imports_) {

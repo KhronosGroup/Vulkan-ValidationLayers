@@ -465,8 +465,7 @@ TEST_F(NegativeDebugPrintf, Int64VectorDecimal) {
     BasicComputeTest(shader_source, "vector of lu 2305843009213693953, 2305843009213693953");
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
-TEST_F(NegativeDebugPrintf, DISABLED_Float64) {
+TEST_F(NegativeDebugPrintf, Float64) {
     AddRequiredFeature(vkt::Feature::shaderFloat64);
     char const *shader_source = R"glsl(
         #version 450
@@ -475,14 +474,28 @@ TEST_F(NegativeDebugPrintf, DISABLED_Float64) {
         void main() {
             float64_t foo = 1.23456789;
             float bar = 1.23456789;
-            debugPrintfEXT("floats and doubles %f %f %f", foo, bar, foo);
+            debugPrintfEXT("floats and doubles %f %f %f %f %f", foo, bar, foo, bar, foo);
         }
     )glsl";
-    BasicComputeTest(shader_source, "float64 == 1.23456789");
+    BasicComputeTest(shader_source, "floats and doubles 1.234568 1.234568 1.234568 1.234568 1.234568");
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
-TEST_F(NegativeDebugPrintf, DISABLED_Float64Vector) {
+TEST_F(NegativeDebugPrintf, Float64Vector) {
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        void main() {
+            float64_t foo = 1.23456789;
+            f64vec3 vecfloat = f64vec3(foo, foo, foo);
+            debugPrintfEXT("vector of float64 %v3f", vecfloat);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "vector of float64 1.234568, 1.234568, 1.234568");
+}
+
+TEST_F(NegativeDebugPrintf, Float64VectorPrecision) {
     AddRequiredFeature(vkt::Feature::shaderFloat64);
     char const *shader_source = R"glsl(
         #version 450
@@ -491,30 +504,13 @@ TEST_F(NegativeDebugPrintf, DISABLED_Float64Vector) {
         void main() {
             float64_t foo = 1.23456789;
             f64vec2 vecfloat = f64vec2(foo, foo);
-            debugPrintfEXT("vector of float64 %v2lf", vecfloat);
+            debugPrintfEXT("vector of float64 %1.2v2f", vecfloat);
         }
     )glsl";
-    BasicComputeTest(shader_source, "vector of float64 1.23456789 1.23456789");
+    BasicComputeTest(shader_source, "vector of float64 1.23, 1.23");
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
-TEST_F(NegativeDebugPrintf, DISABLED_Float64VectorPrecision) {
-    AddRequiredFeature(vkt::Feature::shaderFloat64);
-    char const *shader_source = R"glsl(
-        #version 450
-        #extension GL_EXT_debug_printf : enable
-        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
-        void main() {
-            float64_t foo = 1.23456789;
-            f64vec2 vecfloat = f64vec2(foo, foo);
-            debugPrintfEXT("vector of float64 %1.2v2lf", vecfloat);
-        }
-    )glsl";
-    BasicComputeTest(shader_source, "vector of float64 1.23 1.23");
-}
-
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7143
-TEST_F(NegativeDebugPrintf, DISABLED_FloatMix) {
+TEST_F(NegativeDebugPrintf, FloatMix) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::shaderFloat64);
@@ -524,13 +520,13 @@ TEST_F(NegativeDebugPrintf, DISABLED_FloatMix) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         void main() {
-            float16_t a = float16_t(3.33);
-            float b = 3.33;
-            float64_t c = float64_t(3.33);
-            debugPrintfEXT("%f %f %f %f", a, b, c, 3.33f);
+            float16_t a = float16_t(3.3333333333);
+            float b = 3.3333333333;
+            float64_t c = float64_t(3.3333333333);
+            debugPrintfEXT("%f %f %f %f", a, b, c, 3.3333333333f);
         }
     )glsl";
-    BasicComputeTest(shader_source, "32, 16, 32 | 3.300000 3.298828 3.300000");
+    BasicComputeTest(shader_source, "3.332031 3.333333 3.333333 3.333333");
 }
 
 TEST_F(NegativeDebugPrintf, Float16) {
