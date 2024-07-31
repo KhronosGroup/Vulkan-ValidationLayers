@@ -41,7 +41,7 @@ void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot)
 class NegativeDebugPrintf : public DebugPrintfTests {
   public:
     void BasicComputeTest(const char *shader, const char *message);
-    void BasicFormattingTest(const char *shader);
+    void BasicFormattingTest(const char *shader, bool warning = false);
 };
 
 void NegativeDebugPrintf::BasicComputeTest(const char *shader, const char *message) {
@@ -2639,11 +2639,11 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-void NegativeDebugPrintf::BasicFormattingTest(const char *shader) {
+void NegativeDebugPrintf::BasicFormattingTest(const char *shader, bool warning) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    m_errorMonitor->SetDesiredWarning("DEBUG-PRINTF-FORMATTING");
+    m_errorMonitor->SetDesiredFailureMsg(warning ? kWarningBit : kErrorBit, "DEBUG-PRINTF-FORMATTING");
     VkShaderObj cs(this, shader, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -2746,7 +2746,7 @@ TEST_F(NegativeDebugPrintf, MisformattedExtraArguments) {
             debugPrintfEXT("%d %d", 0, 1, 2, 3);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNoModifiers) {
@@ -2757,7 +2757,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNoModifiers) {
             debugPrintfEXT("test", 3);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedIsloatedPercent) {
@@ -2825,7 +2825,7 @@ TEST_F(NegativeDebugPrintf, MisformattedVectorSmall) {
             debugPrintfEXT("%v3f", vec2(0));
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedVectorLarge) {
@@ -2836,7 +2836,7 @@ TEST_F(NegativeDebugPrintf, MisformattedVectorLarge) {
             debugPrintfEXT("%v3f", vec4(0));
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloat1) {
@@ -2848,7 +2848,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloat1) {
             debugPrintfEXT("%d", foo);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloat2) {
@@ -2860,7 +2860,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloat2) {
             debugPrintfEXT("%f", foo);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloatVector1) {
@@ -2872,7 +2872,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloatVector1) {
             debugPrintfEXT("%v3d", foo);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloatVector2) {
@@ -2884,7 +2884,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloatVector2) {
             debugPrintfEXT("%v3f", foo);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, Misformatted64Int1) {
@@ -2898,7 +2898,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64Int1) {
             debugPrintfEXT("%u", foo);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, Misformatted64Int2) {
@@ -2912,7 +2912,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64Int2) {
             debugPrintfEXT("%lu", 4);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, Misformatted64IntVector1) {
@@ -2927,7 +2927,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64IntVector1) {
             debugPrintfEXT("0x%v2x", vecul);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, Misformatted64IntVector2) {
@@ -2941,7 +2941,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64IntVector2) {
             debugPrintfEXT("0x%v2lx", foo);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, Misformatted64Bool) {
@@ -2955,7 +2955,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64Bool) {
             debugPrintfEXT("%lu", foo);
         }
     )glsl";
-    BasicFormattingTest(shader_source);
+    BasicFormattingTest(shader_source, true);
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedEmptyString) {

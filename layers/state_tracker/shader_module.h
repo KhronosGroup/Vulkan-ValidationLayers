@@ -568,11 +568,6 @@ struct StatelessData {
     // simpler to just track all OpExecutionModeId and parse things needed later
     std::vector<const Instruction *> execution_mode_id_inst;
 
-    // OpExtInstImport "NonSemantic.DebugPrintf"
-    uint32_t debug_printf_import_id = 0;
-    std::vector<const Instruction *> debug_printf_inst;
-    std::vector<const Instruction *> string_inst;
-
     bool has_builtin_fully_covered{false};
     bool has_invocation_repack_instruction{false};
     bool has_group_decoration{false};

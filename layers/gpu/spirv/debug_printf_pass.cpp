@@ -449,6 +449,7 @@ bool DebugPrintfPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 if (!AnalyzeInstruction(*(inst_it->get()))) continue;
+                if (!Validate(*(function.get()))) continue;  // if not valid, don't attempt to instrument it
                 instrumented_count_++;
 
                 CreateFunctionCall(block_it, &inst_it);
@@ -497,6 +498,265 @@ bool DebugPrintfPass::Run() {
 }
 
 void DebugPrintfPass::PrintDebugInfo() { std::cout << "DebugPrintfPass\n\tinstrumentation count: " << instrumented_count_ << '\n'; }
+
+// Strictly speaking - the format given in GLSL_EXT_debug_printf is a client side implementation of SPIR-V
+// NonSemantic.DebugPrintf There is nothing stopping someone from creating a debug printf implementation
+// that goes `printf("Use this &q to print int", myInt)` but this requires both having
+// a different HLL and Tool consuming it.
+// Currently RenderDoc and the Validation Layers both follow the same syntax, but that also could possibly change.
+// Therefore, we validate these here based on the VVL implementation only
+bool DebugPrintfPass::Validate(const Function& current_function) {
+    static const char* tag = "DEBUG-PRINTF-FORMATTING";
+
+    struct ParamInfo {
+        bool is_float = false;  // else int (don't attempt to validate unsigned vs signed here)
+        bool is_64_bit = false;
+        uint32_t vector_size = 0;  // zero == scalar
+        char modifier[32];
+    };
+
+    // where we find the first arugment in OpExtInst instruction
+    const uint32_t first_argument_offset = 6;
+
+    if (target_instruction_->Length() < first_argument_offset) {
+        module_.InternalError(tag, "OpExtInst in a invalid SPIR-V format and should have been caught in spirv-val");
+        return false;
+    }
+
+    uint32_t string_id = target_instruction_->Word(5);
+    const char* op_string = nullptr;
+    for (const auto& inst : module_.debug_source_) {
+        if (inst->Opcode() == spv::OpString && inst->ResultId() == string_id) {
+            op_string = inst->GetAsString(2);
+            break;
+        }
+    }
+    if (!op_string) {
+        module_.InternalError(tag, "OpExtInst points to an empty/invalid OpString, this should have been caught in spirv-val");
+        return false;
+    }
+
+    const size_t op_string_len = strlen(op_string);
+    if (op_string_len == 0) {
+        module_.InternalError(tag, "OpString is empty (string was found, but is empty)");
+        return false;
+    }
+
+    bool valid = true;
+    std::vector<ParamInfo> param_infos;
+
+    // No reason to start checking at the last character, since always need % and something following it
+    for (size_t i = 0; i < op_string_len - 1; i++) {
+        if (op_string[i] != '%') continue;
+        const size_t starting_i = i;
+        i++;
+        char modifier = op_string[i];
+        if (modifier == '%') continue;  // skip "%%"
+
+        if (modifier == ' ') {
+            std::string err_msg = "OpString \"" + std::string(op_string) +
+                                  "\" contains a isolated % which is missing the modifier (to escape use %%)";
+            module_.InternalError(tag, err_msg.c_str());
+            valid = false;
+            break;
+        }
+
+        bool found_specifier = false;
+        ParamInfo param_info;
+        while (i < op_string_len && modifier != ' ' && valid && !found_specifier) {
+            switch (modifier) {
+                case 'i':
+                case 'd':
+                case 'o':
+                case 'X':
+                case 'x':
+                    found_specifier = true;
+                    break;
+                case 'u':
+                    if (i + 1 < op_string_len && op_string[i + 1] == 'l') {
+                        param_info.is_64_bit = true;
+                    }
+                    found_specifier = true;
+                    break;
+                case 'a':
+                case 'A':
+                case 'e':
+                case 'E':
+                case 'f':
+                case 'F':
+                case 'g':
+                case 'G':
+                    found_specifier = true;
+                    param_info.is_float = true;
+                    break;
+                case 'l':
+                    param_info.is_64_bit = true;
+                    break;
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '*':
+                case '.':
+                    break;  // expected for precision
+                case 'v': {
+                    if (i + 1 >= op_string_len) {
+                        std::string err_msg = "OpString \"" + std::string(op_string) +
+                                              "\" contains a %v at the end, but vectors require a width and type after it";
+                        module_.InternalError(tag, err_msg.c_str());
+                        valid = false;
+                    } else {
+                        i++;
+                        const char vec_size = op_string[i];
+                        if (vec_size == '2') {
+                            param_info.vector_size = 2;
+                        } else if (vec_size == '3') {
+                            param_info.vector_size = 3;
+                        } else if (vec_size == '4') {
+                            param_info.vector_size = 4;
+                        } else {
+                            std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a %v" + vec_size +
+                                                  " needs to be valid vector width (v2, v3, or v4)";
+                            module_.InternalError(tag, err_msg.c_str());
+                            valid = false;
+                        }
+                    }
+                    break;
+                }
+                default:
+                    std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a \"" + modifier +
+                                          "\" modifier which is an unknown modifier.";
+                    module_.InternalError(tag, err_msg.c_str());
+                    valid = false;
+                    break;  // unknown
+            };
+
+            i++;
+            modifier = op_string[i];
+        }
+
+        if (valid) {
+            // Get for other error messages
+            strncpy(param_info.modifier, &op_string[starting_i], i - starting_i);
+            param_info.modifier[i - starting_i] = '\0';
+
+            if (!found_specifier) {
+                std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains \"" + std::string(param_info.modifier) +
+                                      "\" which is missing a valid specifier (d, i, o, u, x, X, a, A, e, E, f, F, g, or G).";
+                module_.InternalError(tag, err_msg.c_str());
+                valid = false;
+            }
+        }
+
+        if (!valid) break;
+        param_infos.push_back(param_info);
+    }
+    if (!valid) return false;
+
+    const uint32_t argument_count = target_instruction_->Length() - first_argument_offset;
+    if (argument_count > param_infos.size()) {
+        std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains only " + std::to_string(param_infos.size()) +
+                              " modifiers, but " + std::to_string(argument_count) +
+                              " arguments were passed in and some will be ignored";
+        module_.InternalWarning(tag, err_msg.c_str());
+
+    } else if (argument_count < param_infos.size()) {
+        std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains " + std::to_string(param_infos.size()) +
+                              " modifiers, but only " + std::to_string(argument_count) +
+                              " arguments were passed in and garbage data might start to occur";
+        module_.InternalError(tag, err_msg.c_str());
+        return false;
+    }
+
+    const uint32_t count = std::min(argument_count, (uint32_t)param_infos.size());
+    for (uint32_t i = 0; i < count; i++) {
+        const ParamInfo& param = param_infos[i];
+        const uint32_t argument_id = target_instruction_->Word(first_argument_offset + i);
+
+        const Type* argument_type = nullptr;
+        if (const Constant* constant = module_.type_manager_.FindConstantById(argument_id)) {
+            argument_type = &constant->type_;
+        } else {
+            const Instruction* inst = current_function.FindInstruction(argument_id);
+            if (!inst) {
+                module_.InternalWarning(tag, "Unable to find OpExtInst ID inside function block");
+                return true;  // possibily our error, so leave a warning
+            }
+            argument_type = module_.type_manager_.FindTypeById(inst->TypeId());
+        }
+        if (!argument_type) {
+            module_.InternalWarning(tag, "Unable find OpExtInst ID type");
+            return true;  // possibily our error, so leave a warning
+        }
+
+        // first strip/validate vectors
+        if (param.vector_size != 0) {
+            if (argument_type->spv_type_ != SpvType::kVector) {
+                std::string err_msg = "OpString \"" + std::string(op_string) + "\" a vector modifier \"" + param.modifier +
+                                      "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not a vector";
+                module_.InternalError(tag, err_msg.c_str());
+                return false;
+            }
+            const uint32_t vector_size = argument_type->inst_.Word(3);
+            if (vector_size != param.vector_size) {
+                std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a " +
+                                      std::to_string(param.vector_size) + "-wide vector modifier \"" + param.modifier +
+                                      "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is a " +
+                                      std::to_string(vector_size) + "-wide vector (values might be truncated or padded)";
+                module_.InternalWarning(tag, err_msg.c_str());
+            }
+
+            // Get the underlying type (float or int)
+            argument_type = module_.type_manager_.FindTypeById(argument_type->inst_.Word(2));
+            assert(argument_type);
+        } else {
+            if (argument_type->spv_type_ == SpvType::kVector) {
+                std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a non-vector modifier \"" +
+                                      param.modifier + "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
+                                      ") is a vector";
+                module_.InternalError(tag, err_msg.c_str());
+                return false;
+            }
+        }
+
+        // this is after stripping the vector
+        if (argument_type->spv_type_ != SpvType::kFloat && argument_type->spv_type_ != SpvType::kInt &&
+            argument_type->spv_type_ != SpvType::kBool) {
+            std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a modifier \"" + param.modifier +
+                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
+                                  ") is not a float, int, or bool";
+            module_.InternalError(tag, err_msg.c_str());
+            return false;
+        }
+
+        const bool type_is_64 = argument_type->spv_type_ != SpvType::kBool && argument_type->inst_.Word(2) == 64;
+        if (!param.is_64_bit && type_is_64) {
+            std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a non-64-bit modifier \"" + param.modifier +
+                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") a 64-bit";
+            module_.InternalWarning(tag, err_msg.c_str());
+        } else if (param.is_64_bit && !type_is_64) {
+            std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a 64-bit modifier \"" + param.modifier +
+                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not 64-bit";
+            module_.InternalWarning(tag, err_msg.c_str());
+        } else if (!param.is_float && argument_type->spv_type_ == SpvType::kFloat) {
+            std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a non-float modifier \"" + param.modifier +
+                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is a float";
+            module_.InternalWarning(tag, err_msg.c_str());
+        } else if (param.is_float && argument_type->spv_type_ != SpvType::kFloat) {
+            std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a float modifier \"" + param.modifier +
+                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not a float";
+            module_.InternalWarning(tag, err_msg.c_str());
+        }
+    }
+
+    return true;
+}
 
 }  // namespace spirv
 }  // namespace gpu

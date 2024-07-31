@@ -643,7 +643,7 @@ void Module::InternalWarning(const char* tag, const char* message) {
     if (debug_report_) {
         debug_report_->DebugLogMsg(kWarningBit, {}, message, tag);
     } else {
-        std::cout << "[" << tag << "]" << message << '\n';
+        std::cout << "[" << tag << "] " << message << '\n';
     }
 }
 
@@ -651,7 +651,7 @@ void Module::InternalError(const char* tag, const char* message) {
     if (debug_report_) {
         debug_report_->DebugLogMsg(kErrorBit, {}, message, tag);
     } else {
-        std::cerr << "[" << tag << "]" << message << '\n';
+        std::cerr << "[" << tag << "] " << message << '\n';
     }
 }
 

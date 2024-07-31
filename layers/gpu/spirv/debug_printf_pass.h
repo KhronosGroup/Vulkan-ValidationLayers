@@ -38,6 +38,8 @@ class DebugPrintfPass : public Pass {
     void CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id);
     void Reset() final;
 
+    bool Validate(const Function& current_function);
+
     const uint32_t binding_slot_;
     uint32_t ext_import_id_ = 0;
 
