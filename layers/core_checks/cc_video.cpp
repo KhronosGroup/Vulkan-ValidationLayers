@@ -4424,7 +4424,8 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                 }
 
                 const auto &qf_ext_props = queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
-                if (!qf_ext_props.query_result_status_props.queryResultStatusSupport) {
+                if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR &&
+                    !qf_ext_props.query_result_status_props.queryResultStatusSupport) {
                     const LogObjectList objlist(commandBuffer, inline_query_info->queryPool);
                     skip |= LogError("VUID-vkCmdEncodeVideoKHR-queryType-08364", objlist, error_obj.location,
                                      "the command pool's queue family (index %u) the command "
