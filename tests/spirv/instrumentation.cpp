@@ -22,6 +22,7 @@ static constexpr uint32_t kDefaultShaderId = 23;
 static constexpr uint32_t kInstDefaultDescriptorSet = 3;
 
 static bool timer = false;
+static bool print_debug_info = false;
 static bool all_passes = false;
 static bool bindless_descriptor_pass = false;
 static bool buffer_device_address_pass = false;
@@ -49,6 +50,8 @@ USAGE: %s <input> -o <output> <passes>
                Runs DebugPrintfPass
   --timer
                Prints time it takes to instrument entire module
+  --print-debug-info
+               Prints debug info for each pass
   -h, --help
                Print this help)");
     printf("\n");
@@ -70,6 +73,8 @@ bool ParseFlags(int argc, char** argv, const char** out_file) {
             }
         } else if (0 == strcmp(cur_arg, "--timer")) {
             timer = true;
+        } else if (0 == strcmp(cur_arg, "--print-debug-info")) {
+            print_debug_info = true;
         } else if (0 == strcmp(cur_arg, "--all-passes")) {
             all_passes = true;
         } else if (0 == strcmp(cur_arg, "--bindless-descriptor")) {
@@ -128,8 +133,7 @@ int main(int argc, char** argv) {
         start_time = std::chrono::high_resolution_clock::now();
     }
 
-    // Always print information as this file is only used for debugging/testing
-    gpu::spirv::Module module(spirv_data, kDefaultShaderId, kInstDefaultDescriptorSet, true, 0, nullptr);
+    gpu::spirv::Module module(spirv_data, kDefaultShaderId, kInstDefaultDescriptorSet, print_debug_info, 0, nullptr);
     if (all_passes || bindless_descriptor_pass) {
         module.RunPassBindlessDescriptor();
     }
