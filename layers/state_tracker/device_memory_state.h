@@ -156,10 +156,7 @@ class BindableLinearMemoryTracker : public BindableMemoryTracker {
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
     // No need to have this overload for linear memory
-    BoundRanges GetBoundRanges(const BufferRange &ranges_bounds, const std::vector<BufferRange> &ranges) const override {
-        assert(false);
-        return {};
-    }
+    BoundRanges GetBoundRanges(const BufferRange &ranges_bounds, const std::vector<BufferRange> &ranges) const override;
     DeviceMemoryState GetBoundMemoryStates() const override;
 
   private:
@@ -183,7 +180,7 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
-    // With a list of buffer ranges as input, and `ranges_bounds` being a range that contains all of those buffer ranges,
+    // With a list of (VALID) buffer ranges as input, and `ranges_bounds` being a range that contains all of those buffer ranges,
     // find what tracked VkDeviceMemory maps to what buffer range.
     // Result is stored in a "VkDeviceMemory -> vector<(memory range, buffer range)>" map.
     // Pairs in vector<(memory range, buffer range)> are sorted in ascending order with respect to memory ranges
