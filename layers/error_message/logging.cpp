@@ -62,14 +62,14 @@ void DebugReport::SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState
     // For all callback in list, return their complete set of severities and modes
     for (const auto &item : callbacks) {
         if (item.IsUtils()) {
-            active_severities |= item.debug_utils_msg_flags;
-            active_types |= item.debug_utils_msg_type;
+            active_msg_severities |= item.debug_utils_msg_flags;
+            active_msg_types |= item.debug_utils_msg_type;
         } else {
             VkFlags severities = 0;
             VkFlags types = 0;
             DebugReportFlagsToAnnotFlags(item.debug_report_msg_flags, &severities, &types);
-            active_severities |= severities;
-            active_types |= types;
+            active_msg_severities |= severities;
+            active_msg_types |= types;
         }
     }
 }
@@ -106,17 +106,17 @@ bool DebugReport::UpdateLogMsgCounts(int32_t vuid_hash) const {
     }
 }
 
-bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *message, const char *text_vuid) const {
+bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *msg, const char *text_vuid) const {
     bool bail = false;
     std::vector<VkDebugUtilsLabelEXT> queue_labels;
     std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
 
     // Convert the info to the VK_EXT_debug_utils format
-    VkDebugUtilsMessageTypeFlagsEXT types;
-    VkDebugUtilsMessageSeverityFlagsEXT severity;
-    DebugReportFlagsToAnnotFlags(msg_flags, &severity, &types);
-    if (!(active_severities & severity) || !(active_types & types)) {
-        return false;  // quick check again to make sure use wants these printed
+    VkDebugUtilsMessageTypeFlagsEXT msg_type;
+    VkDebugUtilsMessageSeverityFlagsEXT msg_severity;
+    DebugReportFlagsToAnnotFlags(msg_flags, &msg_severity, &msg_type);
+    if (!(active_msg_severities & msg_severity) || !(active_msg_types & msg_type)) {
+        return false;  // quick check again to make sure user wants these printed
     }
 
     std::vector<std::string> object_labels;
@@ -223,7 +223,7 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
             oss << "Object " << index++ << ": VK_NULL_HANDLE, type = " << string_VkObjectType(src_object.objectType) << "; ";
         }
     }
-    oss << "| MessageID = 0x" << std::hex << message_id_number << " | " << message;
+    oss << "| MessageID = 0x" << std::hex << message_id_number << " | " << msg;
     std::string composite = oss.str();
 
     const auto callback_list = &debug_callback_list;
@@ -245,11 +245,12 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
         if (current_callback.IsDefault() && !use_default_callbacks) continue;
 
         // VK_EXT_debug_utils callback
-        if (current_callback.IsUtils() && (current_callback.debug_utils_msg_flags & severity) &&
-            (current_callback.debug_utils_msg_type & types)) {
+        if (current_callback.IsUtils() && (current_callback.debug_utils_msg_flags & msg_severity) &&
+            (current_callback.debug_utils_msg_type & msg_type)) {
             callback_data.pMessage = composite.c_str();
-            if (current_callback.debug_utils_callback_function_ptr(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity),
-                                                                   types, &callback_data, current_callback.pUserData)) {
+            if (current_callback.debug_utils_callback_function_ptr(
+                    static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(msg_severity), msg_type, &callback_data,
+                    current_callback.pUserData)) {
                 bail = true;
             }
         } else if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
@@ -530,9 +531,9 @@ VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport *debug_report) {
 
 // helper for VUID based filtering. This needs to be separate so it can be called before incurring
 // the cost of sprintf()-ing the err_msg needed by LogMsgLocked().
-bool DebugReport::LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageSeverityFlagsEXT severity,
-                                VkDebugUtilsMessageTypeFlagsEXT type) {
-    if (!(active_severities & severity) || !(active_types & type)) {
+bool DebugReport::LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageSeverityFlagsEXT msg_severity,
+                                VkDebugUtilsMessageTypeFlagsEXT msg_type) {
+    if (!(active_msg_severities & msg_severity) || !(active_msg_types & msg_type)) {
         return false;
     }
     // If message is in filter list, bail out very early
@@ -551,13 +552,13 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
                          const char *format, va_list argptr) {
     assert(*(vuid_text.data() + vuid_text.size()) == '\0');
 
-    VkDebugUtilsMessageSeverityFlagsEXT severity;
-    VkDebugUtilsMessageTypeFlagsEXT type;
+    VkDebugUtilsMessageSeverityFlagsEXT msg_severity;
+    VkDebugUtilsMessageTypeFlagsEXT msg_type;
 
-    DebugReportFlagsToAnnotFlags(msg_flags, &severity, &type);
+    DebugReportFlagsToAnnotFlags(msg_flags, &msg_severity, &msg_type);
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     // Avoid logging cost if msg is to be ignored
-    if (!LogMsgEnabled(vuid_text, severity, type)) {
+    if (!LogMsgEnabled(vuid_text, msg_severity, msg_type)) {
         return false;
     }
 
