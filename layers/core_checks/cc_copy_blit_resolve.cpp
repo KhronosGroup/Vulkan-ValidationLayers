@@ -777,12 +777,15 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
                 const LogObjectList objlist(cb, src_binding->memory_state->Handle(), src_buffer_state.Handle(),
                                             dst_buffer_state.Handle());
                 const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
-                skip |= LogError(vuid, objlist, loc,
-                                 "Copy source buffer range %s and destination buffer range %s are bound to the same memory, "
-                                 "and end up overlapping on memory range %s.",
-                                 sparse_container::string_range(*src_ranges_it).c_str(),
-                                 sparse_container::string_range(*dst_ranges_it).c_str(),
-                                 sparse_container::string_range(memory_range_overlap).c_str());
+                skip |= LogError(
+                    vuid, objlist, loc,
+                    "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are bound to "
+                    "the same memory (%s), "
+                    "and end up overlapping on memory range %s.",
+                    sparse_container::string_range(*src_ranges_it).c_str(), FormatHandle(src_buffer_state.VkHandle()).c_str(),
+                    sparse_container::string_range(*dst_ranges_it).c_str(), FormatHandle(dst_buffer_state.VkHandle()).c_str(),
+                    FormatHandle(src_binding->memory_state->VkHandle()).c_str(),
+                    sparse_container::string_range(memory_range_overlap).c_str());
             }
 
             if (*src_ranges_it < *dst_ranges_it)
@@ -1921,10 +1924,14 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
                                                         vk_memory);
                             skip |= this->LogError(
                                 vuid, objlist, loc,
-                                "Copy source buffer range %s and destination buffer range %s are bound to the same memory "
-                                "(%s), and end up overlapping on memory range %s.",
-                                string_range(src_ranges_it->second).c_str(), string_range(dst_ranges_it->second).c_str(),
-                                FormatHandle(vk_memory).c_str(), string_range(memory_range_overlap).c_str());
+                                "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
+                                "bound to the same memory (%s), "
+                                "and end up overlapping on memory range %s.",
+                                sparse_container::string_range(src_ranges_it->second).c_str(),
+                                FormatHandle(src_buffer_state->VkHandle()).c_str(),
+                                sparse_container::string_range(dst_ranges_it->second).c_str(),
+                                FormatHandle(dst_buffer_state->VkHandle()).c_str(), FormatHandle(vk_memory).c_str(),
+                                sparse_container::string_range(memory_range_overlap).c_str());
                         }
 
                         if (src_ranges_it->first < dst_ranges_it->first)

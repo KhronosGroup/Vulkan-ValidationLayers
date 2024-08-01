@@ -130,6 +130,26 @@ BoundMemoryRange vvl::BindableLinearMemoryTracker::GetBoundMemoryRange(const Mem
                                  : BoundMemoryRange{};
 }
 
+BoundRanges vvl::BindableLinearMemoryTracker::GetBoundRanges(const BufferRange &ranges_bounds,
+                                                             const std::vector<BufferRange> &ranges) const {
+    BoundRanges memory_to_bound_ranges_map;
+    if (!binding_.memory_state) {
+        return memory_to_bound_ranges_map;
+    }
+
+    const VkDeviceMemory bound_memory = binding_.memory_state->VkHandle();
+    std::vector<std::pair<MemoryRange, BufferRange>> &bound_ranges = memory_to_bound_ranges_map[bound_memory];
+    bound_ranges.reserve(ranges.size());
+
+    for (const BufferRange &buffer_range : ranges) {
+        const MemoryRange memory_range_bounds(binding_.memory_offset,
+                                              binding_.memory_offset + buffer_range.begin + buffer_range.distance());
+        bound_ranges.emplace_back(memory_range_bounds, buffer_range);
+    }
+
+    return memory_to_bound_ranges_map;
+}
+
 unsigned vvl::BindableSparseMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) const {
     unsigned count = 0u;
     auto guard = ReadLockGuard{binding_lock_};
