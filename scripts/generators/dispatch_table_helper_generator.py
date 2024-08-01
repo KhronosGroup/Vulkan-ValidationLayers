@@ -26,6 +26,28 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
+        # These functions need stub functions since Android loader doesn't support them, but layers can make them work still on their behalf
+        self.stub_functions = [
+            # VK_EXT_debug_marker
+            'vkCmdDebugMarkerBeginEXT',
+            'vkCmdDebugMarkerEndEXT',
+            'vkCmdDebugMarkerInsertEXT',
+            'vkDebugMarkerSetObjectNameEXT',
+            'vkDebugMarkerSetObjectTagEXT',
+            # VK_EXT_debug_utils
+            'vkCmdBeginDebugUtilsLabelEXT',
+            'vkCmdEndDebugUtilsLabelEXT',
+            'vkCmdInsertDebugUtilsLabelEXT',
+            'vkCreateDebugUtilsMessengerEXT',
+            'vkDestroyDebugUtilsMessengerEXT',
+            'vkQueueBeginDebugUtilsLabelEXT',
+            'vkQueueEndDebugUtilsLabelEXT',
+            'vkQueueInsertDebugUtilsLabelEXT',
+            'vkSetDebugUtilsObjectNameEXT',
+            'vkSetDebugUtilsObjectTagEXT',
+            'vkSubmitDebugUtilsMessageEXT',
+        ]
+
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -89,26 +111,19 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         out = []
         out.append('#include "vk_dispatch_table_helper.h"\n')
 
-        guard_helper = PlatformGuardHelper()
-
-        for command in [x for x in self.vk.commands.values() if x.extensions or x.version]:
-            if command.name == 'vkEnumerateInstanceVersion':
-                continue # TODO - Figure out how this can be automatically detected
-            out.extend(guard_helper.add_guard(command.protect))
-
+        out.append('\n// These are stub functions so Android can make use of debug extensions not supported in the Android Loader\n')
+        for command in [x for x in self.vk.commands.values() if x.name in self.stub_functions]:
             prototype = ' '.join(command.cPrototype.split()) # remove duplicate whitespace
             prototype = prototype.replace('\n', '').replace('( ', '(').replace(');', ')').replace(' vk', ' Stub')
             # Remove the parameter names so that we don't get any unreferenced parameter warnings
             for param in command.params:
                 prototype = prototype.replace(f'{param.name},', ',').replace(f'{param.name})', ')').replace(f' {param.name}[', '[')
-
             result = '' if command.returnType == 'void' else 'return 0;'
             result = 'return VK_SUCCESS;' if command.returnType == 'VkResult' else result
-            result = 'return VK_FALSE;' if command.returnType == 'VkBool32' else result
-
             out.append(f'static {prototype} {{ {result} }}\n')
-        out.extend(guard_helper.add_guard(None))
         out.append('\n')
+
+        guard_helper = PlatformGuardHelper()
 
         out.append('const auto &GetApiPromotedMap() {\n')
         out.append('    static const vvl::unordered_map<std::string, std::string> api_promoted_map {\n')
@@ -179,7 +194,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         for command in [x for x in self.vk.commands.values() if x.device and x.name != 'vkGetDeviceProcAddr']:
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    table->{command.name[2:]} = (PFN_{command.name}) gpa(device, "{command.name}");\n')
-            if command.version or command.extensions:
+            if command.name in self.stub_functions:
                 out.append(f'    if (table->{command.name[2:]} == nullptr) {{ table->{command.name[2:]} = (PFN_{command.name})Stub{command.name[2:]}; }}\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
@@ -203,7 +218,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         for command in [x for x in self.vk.commands.values() if x.instance and x.name not in ignoreList]:
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    table->{command.name[2:]} = (PFN_{command.name}) gpa(instance, "{command.name}");\n')
-            if command.version or command.extensions:
+            if command.name in self.stub_functions:
                 out.append(f'    if (table->{command.name[2:]} == nullptr) {{ table->{command.name[2:]} = (PFN_{command.name})Stub{command.name[2:]}; }}\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
