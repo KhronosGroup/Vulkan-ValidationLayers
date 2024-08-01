@@ -223,7 +223,7 @@ class DebugReport {
     bool LogMsg(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
                 const char *format, va_list argptr);
     // Core logging that interacts with the DebugCallbacks
-    bool DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *message, const char *text_vuid) const;
+    bool DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *msg, const char *text_vuid) const;
 
     void BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
     void EndQueueDebugUtilsLabel(VkQueue queue);
@@ -237,11 +237,11 @@ class DebugReport {
 
   private:
     bool UpdateLogMsgCounts(int32_t vuid_hash) const;
-    bool LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageSeverityFlagsEXT severity,
-                       VkDebugUtilsMessageTypeFlagsEXT type);
+    bool LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageSeverityFlagsEXT msg_severity,
+                       VkDebugUtilsMessageTypeFlagsEXT msg_type);
 
-    VkDebugUtilsMessageSeverityFlagsEXT active_severities{0};
-    VkDebugUtilsMessageTypeFlagsEXT active_types{0};
+    VkDebugUtilsMessageSeverityFlagsEXT active_msg_severities{0};
+    VkDebugUtilsMessageTypeFlagsEXT active_msg_types{0};
     mutable vvl::unordered_map<uint32_t, uint32_t> duplicate_message_count_map{};
 
     vvl::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debug_utils_queue_labels;
