@@ -710,6 +710,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryScope(const spirv::Module& module_state, const spirv::Instruction& insn, const Location& loc) const;
     bool ValidateSubgroupRotateClustered(const spirv::Module& module_state, const spirv::Instruction& insn,
                                          const Location& loc) const;
+    bool ValidateStaticAccess(const spirv::Module& module_state, const Location& loc) const;
     bool ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const ShaderStageState& stage_state, const uint32_t local_size_x, const Location& loc) const;
     bool ValidateShaderResolveQCOM(const spirv::Module& module_state, VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline,

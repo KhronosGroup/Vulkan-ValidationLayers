@@ -313,7 +313,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
 
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
         // TODO - Should have loop to walk Load/Store to the Pointer,
-        // this case will not cover things such as OpCopyObject or double OpAccessChains
+        // this case will not cover things such as OpCopyObject or double OpAccessChains or OpInBoundsAccessChain
         access_chain_inst_ = function.FindInstruction(inst.Operand(0));
         if (!access_chain_inst_ || access_chain_inst_->Opcode() != spv::OpAccessChain) {
             return false;

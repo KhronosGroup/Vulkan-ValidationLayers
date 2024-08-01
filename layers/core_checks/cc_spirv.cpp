@@ -374,6 +374,128 @@ bool CoreChecks::ValidateSubgroupRotateClustered(const spirv::Module &module_sta
     return skip;
 }
 
+// Checks that any indexing/accesses that are known statically (using constants) are valid.
+// This could try checking a LOT of edge cases, but if things are staic, any proper HLL (glsl, hlsl, slang, etc) will catch this, so
+// this is just trying to do basic coverage.
+bool CoreChecks::ValidateStaticAccess(const spirv::Module &module_state, const Location &loc) const {
+    bool skip = false;
+
+    // Profiled and found we wasted lots of time getting to end of search to realize the base of the access chain contains no constant arrays, so track them and quickly exit if seen many times.
+    vvl::unordered_set<uint32_t> skip_bases;
+    for (const spirv::Instruction &insn : module_state.GetInstructions()) {
+        // Find structs to skip while going through instructions
+        if (insn.Opcode() == spv::OpTypeStruct) {
+            bool found_array = false;
+            // first member starts at Word 2
+            for (uint32_t i = 2; i < insn.Length(); i++) {
+                const auto *member_insn = module_state.FindDef(insn.Word(i));
+                if (member_insn->Opcode() == spv::OpTypeStruct) {
+                    found_array = true;  // if nested structs, move on incase recursive from BDA
+                    break;
+                } else if (member_insn->Opcode() == spv::OpTypeArray) {
+                    found_array = true;
+                    break;
+                }
+            }
+            if (!found_array) {
+                skip_bases.insert(insn.ResultId());
+            }
+        }
+
+        if (insn.Opcode() != spv::OpLoad && insn.Opcode() != spv::OpStore) {
+            continue;
+        }
+
+        // TODO - Should have loop to walk Load/Store to the Pointer,
+        // this case will not cover things such as OpCopyObject or double OpAccessChains or OpInBoundsAccessChain
+        const uint32_t pointer_insn_index = insn.Opcode() == spv::OpLoad ? 3 : 1;
+        const spirv::Instruction *access_chain_insn = module_state.FindDef(insn.Word(pointer_insn_index));
+        if (!access_chain_insn || access_chain_insn->Opcode() != spv::OpAccessChain) {
+            continue;
+        }
+
+        const uint32_t base_id = access_chain_insn->Word(3);
+        if (skip_bases.find(base_id) != skip_bases.end()) {
+            continue;
+        }
+
+        const uint32_t index_0_offset = 4;  // in OpAccessChain
+        const uint32_t index_count = access_chain_insn->Length() - index_0_offset;
+        if (index_count == 0) {
+            continue;  // can occur if accessing into something like gl_Position
+        }
+        std::vector<uint32_t> indexes(index_count);
+        for (uint32_t i = 0; i < index_count; i++) {
+            const spirv::Instruction *index_insn = module_state.FindDef(access_chain_insn->Word(index_0_offset + i));
+            // TODO - Handle Spec Constants
+            if (!index_insn || index_insn->Opcode() != spv::OpConstant) {
+                continue;  // not constants, so can't detect and need GPU-AV to catch
+            }
+            indexes[i] = index_insn->GetConstantValue();
+        }
+
+        // Currently just searching inside Resource Interface variables
+        const spirv::Instruction *base_insn = module_state.FindDef(base_id);
+        if (!base_insn || base_insn->Opcode() != spv::OpVariable) {
+            skip_bases.insert(base_id);
+            continue;
+        }
+
+        const spirv::Instruction *base_ptr_insn = module_state.FindDef(base_insn->TypeId());
+        if (!base_ptr_insn || base_ptr_insn->Opcode() != spv::OpTypePointer) {
+            skip_bases.insert(base_id);
+            continue;
+        }
+
+        // From here, walk down the types and check if there is an array with constants
+        uint32_t current_index = 0;
+        const spirv::Instruction *type_insn = module_state.FindDef(base_ptr_insn->Word(3));
+        while (type_insn && current_index < index_count) {
+            switch (type_insn->Opcode()) {
+                case spv::OpCopyObject:
+                    type_insn = module_state.FindDef(type_insn->Word(3));
+                    break;
+                case spv::OpTypeStruct:
+                    // Structs start members at word 2
+                    type_insn = module_state.FindDef(type_insn->Word(2 + indexes[current_index]));
+                    current_index++;
+                    break;
+                case spv::OpTypeArray: {
+                    // can't use GetConstantValueById() because of
+                    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293
+                    const spirv::Instruction *array_length_insn = module_state.FindDef(type_insn->Word(3));
+                    if (array_length_insn->Opcode() == spv::OpConstant) {
+                        const uint32_t array_length = array_length_insn->GetConstantValue();
+                        if (indexes[current_index] >= array_length) {
+                            // This is considered undefined behavior in SPIR-V, but is not properly detectable until runtime
+                            const char *vuid = loc.function == Func::vkCreateShadersEXT
+                                                   ? "VUID-VkShaderCreateInfoEXT-pCode-08737"
+                                                   : "VUID-VkShaderModuleCreateInfo-pCode-08737";
+                            skip |=
+                                LogError(vuid, module_state.handle(), loc,
+                                         "SPIR-V instruction (%s) indexes [%" PRIu32 "] into an array of size [%" PRIu32
+                                         "]. (Even if this is in a conditional path that won't be taken, we can't assume how the "
+                                         "compiler may optimize this logic).",
+                                         insn.Describe().c_str(), indexes[current_index], array_length);
+                            return skip;
+                        }
+                    }
+
+                    type_insn = module_state.FindDef(type_insn->Word(2));  // for 2D or 3D arrays
+                    current_index++;
+                    break;
+                }
+                case spv::OpTypeRuntimeArray:  // can't detect and need GPU-AV to catch
+                default:
+                    type_insn = nullptr;
+                    break;
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const spirv::Module &module_state, const spirv::Instruction &insn,
                                                             const Location &loc) const {
     bool skip = false;
@@ -2899,6 +3021,7 @@ bool CoreChecks::ValidateSpirvStateless(const spirv::Module &module_state, const
 
     skip |= ValidateShaderClock(module_state, stateless_data, loc);
     skip |= ValidateAtomicsTypes(module_state, stateless_data, loc);
+    skip |= ValidateStaticAccess(module_state, loc);
     skip |= ValidateVariables(module_state, loc);
 
     if (enabled_features.transformFeedback) {
