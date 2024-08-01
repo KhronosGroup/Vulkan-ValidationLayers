@@ -4336,7 +4336,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
 using Func = vvl::Func;
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
 const auto &GetDrawDispatchVuid() {
-static const std::map<Func, DrawDispatchVuid> kDrawdispatchVuid = {
+static const std::pair<Func, DrawDispatchVuid> pairs[] = {
     {Func::vkCmdDraw, DispatchVuidsCmdDraw()},
     {Func::vkCmdDrawMultiEXT, DispatchVuidsCmdDrawMultiEXT()},
     {Func::vkCmdDrawIndexed, DispatchVuidsCmdDrawIndexed()},
@@ -4365,6 +4365,8 @@ static const std::map<Func, DrawDispatchVuid> kDrawdispatchVuid = {
     // Used if invalid function is used
     {Func::Empty, DrawDispatchVuid(Func::Empty)}
 };
+static const auto kDrawdispatchVuid = std::map<Func, DrawDispatchVuid>{std::begin(pairs), std::end(pairs)};
+
   return kDrawdispatchVuid;
 }
 // clang-format on
