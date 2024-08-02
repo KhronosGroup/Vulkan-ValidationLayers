@@ -12,7 +12,6 @@
  */
 
 #include "queue_submit_context.h"
-#include "render.h"
 
 QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Queue* force_q1)
     : dev(device), q0(VK_NULL_HANDLE), q1(VK_NULL_HANDLE) {

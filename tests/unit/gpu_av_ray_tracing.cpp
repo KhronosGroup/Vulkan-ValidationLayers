@@ -12,10 +12,8 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/ray_tracing_objects.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/shader_helper.h"
-#include "../framework/gpu_av_helper.h"
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 

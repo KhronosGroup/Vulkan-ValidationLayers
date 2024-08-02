@@ -25,7 +25,6 @@
 #include <vulkan/utility/vk_format_utils.h>
 
 #include "generated/vk_extension_helper.h"
-#include "utils/vk_layer_utils.h"
 #include "layer_validation_tests.h"
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)

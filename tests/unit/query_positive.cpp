@@ -13,7 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "generated/vk_extension_helper.h"
 
 bool QueryTest::HasZeroTimestampValidBits() {
     uint32_t queue_count;

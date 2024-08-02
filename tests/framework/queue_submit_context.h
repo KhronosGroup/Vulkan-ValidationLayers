@@ -12,7 +12,9 @@
  */
 
 #pragma once
-#include "test_common.h"
+
+#include <vulkan/vulkan.h>
+#include "binding.h"
 
 struct QSTestContext {
     vkt::Device* dev;

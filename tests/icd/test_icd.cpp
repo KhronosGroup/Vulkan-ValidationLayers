@@ -14,6 +14,7 @@
 ** limitations under the License.
 */
 
+#include <algorithm>
 #include "test_icd.h"
 #include "test_icd_helper.h"
 #include <vulkan/utility/vk_format_utils.h>

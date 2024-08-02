@@ -17,8 +17,13 @@
  */
 #pragma once
 
-#include "test_common.h"
+#include <atomic>
+#include <mutex>
 #include <regex>
+#include <cassert>
+
+#include "vk_layer_config.h"
+#include <vulkan/vulkan.h>
 
 // ErrorMonitor Usage:
 //

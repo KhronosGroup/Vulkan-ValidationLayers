@@ -11,6 +11,16 @@
  */
 
 #include "../framework/test_common.h"
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <array>
+#include <cstdarg>
+#include <vector>
+
+#include <vulkan/utility/vk_struct_helper.hpp>
+#include "containers/custom_containers.h"
 
 template <typename T, typename U>
 bool HaveSameElementsUpTo(const T& l1, const U& l2, size_t n) {

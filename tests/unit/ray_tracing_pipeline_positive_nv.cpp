@@ -13,7 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_helper_nv.h"
-#include "../framework/pipeline_helper.h"
 
 class PositiveRayTracingPipelineNV : public RayTracingTest {};
 

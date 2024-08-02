@@ -15,7 +15,6 @@
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/shader_helper.h"
 #include "../framework/feature_requirements.h"
-#include "generated/vk_extension_helper.h"
 #include "../layers/utils/vk_layer_utils.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/pipeline_helper.h"

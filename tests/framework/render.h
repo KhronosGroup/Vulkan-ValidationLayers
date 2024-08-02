@@ -18,22 +18,17 @@
 
 #pragma once
 
-#include "generated/vk_function_pointers.h"
 #include "error_monitor.h"
 #include "test_framework.h"
 #include "feature_requirements.h"
+#include "binding.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
 #include <android_native_app_glue.h>
 #endif
 
-#include <algorithm>
-#include <array>
-#include <memory>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
 
 using vkt::MakeVkHandles;
 

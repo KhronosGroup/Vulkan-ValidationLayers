@@ -12,11 +12,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "utils/cast_utils.h"
-#include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "utils/vk_layer_utils.h"
 #include "utils/hash_util.h"
 #include "generated/vk_validation_error_messages.h"
 
