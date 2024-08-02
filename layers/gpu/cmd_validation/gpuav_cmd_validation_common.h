@@ -27,14 +27,17 @@ class CommandBuffer;
 
 class RestorablePipelineState {
   public:
-    RestorablePipelineState(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
+    RestorablePipelineState(CommandBuffer& cb_state, VkPipelineBindPoint bind_point) : cb_state_(cb_state) {
+        Create(cb_state, bind_point);
+    }
     ~RestorablePipelineState() { Restore(); }
 
   private:
-    void Create(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point);
+    void Create(CommandBuffer& cb_state, VkPipelineBindPoint bind_point);
     void Restore() const;
 
-    VkCommandBuffer cmd_buffer_;
+    CommandBuffer& cb_state_;
+    const vku::safe_VkRenderingInfo* rendering_info_ = nullptr;
     VkPipelineBindPoint pipeline_bind_point_ = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineLayout desc_set_pipeline_layout_ = VK_NULL_HANDLE;

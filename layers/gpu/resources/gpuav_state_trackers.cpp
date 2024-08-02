@@ -140,7 +140,10 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = gpuav.output_buffer_pool_;
-    error_output_buffer.Create(loc, &buffer_info, &alloc_info);
+    const bool success = error_output_buffer.Create(loc, &buffer_info, &alloc_info);
+    if (!success) {
+        return false;
+    }
 
     auto output_buffer_ptr = (uint32_t *)error_output_buffer.MapMemory(loc);
 
@@ -185,7 +188,10 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.pool = gpuav->output_buffer_pool_;
-        cmd_errors_counts_buffer_.Create(loc, &buffer_info, &alloc_info);
+        const bool success = cmd_errors_counts_buffer_.Create(loc, &buffer_info, &alloc_info);
+        if (!success) {
+            return;
+        }
 
         ClearCmdErrorsCountsBuffer(loc);
         if (gpuav->aborted_) return;
@@ -200,7 +206,10 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
         // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-        bda_ranges_snapshot_.Create(loc, &buffer_info, &alloc_info);
+        bool success = bda_ranges_snapshot_.Create(loc, &buffer_info, &alloc_info);
+        if (!success) {
+            return;
+        }
     }
 
     // Update validation commands common descriptor set
@@ -252,7 +261,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[0].descriptorCount = 1;
         validation_cmd_descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         validation_cmd_descriptor_writes[0].pBufferInfo = &error_output_buffer_desc_info;
-        validation_cmd_descriptor_writes[0].dstSet = GetErrorLoggingDescriptorSet();
+        validation_cmd_descriptor_writes[0].dstSet = GetErrorLoggingDescSet();
 
         VkDescriptorBufferInfo cmd_indices_buffer_desc_info = {};
 
@@ -266,7 +275,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[1].descriptorCount = 1;
         validation_cmd_descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
         validation_cmd_descriptor_writes[1].pBufferInfo = &cmd_indices_buffer_desc_info;
-        validation_cmd_descriptor_writes[1].dstSet = GetErrorLoggingDescriptorSet();
+        validation_cmd_descriptor_writes[1].dstSet = GetErrorLoggingDescSet();
 
         validation_cmd_descriptor_writes[2] = validation_cmd_descriptor_writes[1];
         validation_cmd_descriptor_writes[2].dstBinding = glsl::kBindingDiagCmdResourceIndex;
@@ -281,7 +290,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[3].descriptorCount = 1;
         validation_cmd_descriptor_writes[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         validation_cmd_descriptor_writes[3].pBufferInfo = &cmd_errors_count_buffer_desc_info;
-        validation_cmd_descriptor_writes[3].dstSet = GetErrorLoggingDescriptorSet();
+        validation_cmd_descriptor_writes[3].dstSet = GetErrorLoggingDescSet();
 
         DispatchUpdateDescriptorSets(gpuav->device, static_cast<uint32_t>(validation_cmd_descriptor_writes.size()),
                                      validation_cmd_descriptor_writes.data(), 0, NULL);

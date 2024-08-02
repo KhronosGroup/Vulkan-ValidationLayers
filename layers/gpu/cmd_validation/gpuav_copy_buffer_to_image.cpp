@@ -200,7 +200,10 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         vmaFindMemoryTypeIndexForBufferInfo(gpuav.vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
 
         alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
-        copy_src_regions_mem_buffer.Create(loc, &buffer_info, &alloc_info);
+        const bool success = copy_src_regions_mem_buffer.Create(loc, &buffer_info, &alloc_info);
+        if (!success) {
+            return;
+        }
 
         cb_state.gpu_resources_manager.ManageBuffer(copy_src_regions_mem_buffer);
 

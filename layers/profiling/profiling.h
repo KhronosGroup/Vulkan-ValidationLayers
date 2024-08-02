@@ -31,6 +31,7 @@
 
 // Print messages
 #define VVL_TracyMessage TracyMessage
+#define VVL_TracyPlot(name, value) TracyPlot(name, value)
 #define VVL_TracyMessageStream(message)                \
     {                                                  \
         std::stringstream tracy_ss;                    \
@@ -63,6 +64,7 @@
 #define VVL_TracyCZoneEnd(zone_name)
 #define VVL_TracyCFrameMark
 #define VVL_TracyMessage
+#define VVL_TracyPlot(name, value)
 #define VVL_TracyMessageStream(message)
 #define VVL_TracyMessageMap(map, key_printer, value_printer)
 #endif

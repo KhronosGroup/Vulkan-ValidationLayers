@@ -212,7 +212,10 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    input_buffer_.Create(loc, &buffer_info, &alloc_info);
+    const bool success = input_buffer_.Create(loc, &buffer_info, &alloc_info);
+    if (!success) {
+        return 0;
+    }
 
     auto data = (glsl::DescriptorState *)input_buffer_.MapMemory(loc);
 
@@ -277,7 +280,10 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    post_process_buffer_.Create(loc, &buffer_info, &alloc_info);
+    const bool success = post_process_buffer_.Create(loc, &buffer_info, &alloc_info);
+    if (!success) {
+        return 0;
+    }
 
     void *data = post_process_buffer_.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
@@ -345,7 +351,10 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const
 
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer_.Create(loc, &buffer_info, &alloc_info);
+    const bool success = buffer_.Create(loc, &buffer_info, &alloc_info);
+    if (!success) {
+        return;
+    }
 
     gpu_heap_state_ = (uint32_t *)buffer_.MapMemory(loc);
     memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));

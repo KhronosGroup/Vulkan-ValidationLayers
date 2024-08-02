@@ -103,7 +103,7 @@ class Validator : public GpuShaderInstrumentor {
 
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
-    void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
+    void RecordCmdEndRenderPassLayouts(vvl::CommandBuffer& cb_state);
     void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          VkSubpassContents contents, const RecordObject&) final;
     void PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -111,7 +111,7 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                           const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject&) final;
 
-    void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
+    void RecordCmdNextSubpassLayouts(vvl::CommandBuffer& cb_state, VkSubpassContents contents);
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                       const RecordObject& record_obj) final;
     void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
@@ -124,7 +124,8 @@ class Validator : public GpuShaderInstrumentor {
                                             const RecordObject& record_obj) final;
     void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                          const RecordObject& record_obj) final;
-
+    void PostCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject& record_obj) final;
+    void PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject& record_obj) final;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                        const RecordObject& record_obj) final;
     void PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
@@ -423,7 +424,7 @@ class Validator : public GpuShaderInstrumentor {
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
-    vko::SharedResourcesManager shared_resources_manager;
+    vko::SharedResourcesCache shared_resources_manager;
 
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
 

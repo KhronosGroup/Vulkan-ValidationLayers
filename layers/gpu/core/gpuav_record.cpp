@@ -42,8 +42,13 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
 
     // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
     if (gpuav_settings.IsBufferValidationEnabled() &&
-        chassis_state.modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+        (chassis_state.modified_create_info.usage & (VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT))) {
         chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+
+    // Align index buffer size to 4: validation shader reads DWORDS
+    if (gpuav_settings.IsBufferValidationEnabled()) {
+        chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
     }
 
     BaseClass::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, chassis_state);
@@ -77,7 +82,6 @@ void Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice phys
 
 void Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
                                                const RecordObject &record_obj) {
-    DestroyRenderPassMappedResources(*this, renderPass);
     BaseClass::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
 }
 
@@ -134,17 +138,26 @@ void Validator::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, 
     RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
-void Validator::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (cb_state) {
-        TransitionFinalSubpassLayouts(*cb_state);
-    }
-}
+void Validator::RecordCmdEndRenderPassLayouts(vvl::CommandBuffer &cb_state) { TransitionFinalSubpassLayouts(cb_state); }
 
 void Validator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
-    RecordCmdEndRenderPassLayouts(commandBuffer);
+    {
+        auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+        if (!cb_state) {
+            InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+            return;
+        }
+        RecordCmdEndRenderPassLayouts(*cb_state);
+    }
     BaseClass::PostCallRecordCmdEndRenderPass(commandBuffer, record_obj);
+
+    auto gpuav_cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    if (!gpuav_cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    valcmd::FlushValidationCmds(*this, *gpuav_cb_state);
 }
 
 void Validator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -154,19 +167,51 @@ void Validator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer
 
 void Validator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                 const RecordObject &record_obj) {
-    RecordCmdEndRenderPassLayouts(commandBuffer);
+    {
+        auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+        if (!cb_state) {
+            InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+            return;
+        }
+        RecordCmdEndRenderPassLayouts(*cb_state);
+    }
     BaseClass::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
+
+    auto gpuav_cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    if (!gpuav_cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    valcmd::FlushValidationCmds(*this, *gpuav_cb_state);
 }
 
-void Validator::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionSubpassLayouts(*cb_state, *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
+void Validator::PostCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdEndRendering(commandBuffer, record_obj);
+    auto gpuav_cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    if (!gpuav_cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    valcmd::FlushValidationCmds(*this, *gpuav_cb_state);
+}
+
+void Validator::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
+    PostCallRecordCmdEndRendering(commandBuffer, record_obj);
+}
+
+void Validator::RecordCmdNextSubpassLayouts(vvl::CommandBuffer &cb_state, VkSubpassContents contents) {
+    TransitionSubpassLayouts(cb_state, *cb_state.activeRenderPass, cb_state.GetActiveSubpass());
 }
 
 void Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                              const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
-    RecordCmdNextSubpassLayouts(commandBuffer, contents);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    RecordCmdNextSubpassLayouts(*cb_state, contents);
 }
 
 void Validator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
@@ -177,7 +222,12 @@ void Validator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, 
 void Validator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                               const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
-    RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    RecordCmdNextSubpassLayouts(*cb_state, pSubpassBeginInfo->contents);
 }
 
 void Validator::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -374,6 +424,8 @@ void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint3
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    valcmd::DrawIndexed(*this, *cb_state, record_obj.location, indexCount, firstIndex, vertexOffset,
+                        "VUID-vkCmdDrawIndexed-None-02721");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -436,7 +488,14 @@ void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBu
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, count, VK_NULL_HANDLE, 0, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    valcmd::FirstInstance<VkDrawIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, count, VK_NULL_HANDLE, 0,
+                                                 "VUID-VkDrawIndirectCommand-firstInstance-00501");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -464,7 +523,13 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, count, VK_NULL_HANDLE, 0, stride);
+
+    valcmd::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
+                                           "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+    valcmd::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
+                                            "VUID-vkCmdDrawIndexedIndirect-None-02721");
+    valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, count,
+                                                        VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -508,8 +573,17 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawIndirectCommand),
+                        vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawIndirectCount-countBuffer-03122", "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
+    valcmd::FirstInstance<VkDrawIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, maxDrawCount, countBuffer,
+                                                 countBufferOffset, "VUID-VkDrawIndirectCommand-firstInstance-00501");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -588,8 +662,18 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+    valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawIndexedIndirectCommand),
+                        vvl::Struct::VkDrawIndexedIndirectCommand, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154",
+                        "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717");
+    valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, maxDrawCount,
+                                                        countBuffer, countBufferOffset,
+                                                        "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
+
+    valcmd::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount, countBuffer,
+                                           countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+    valcmd::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount,
+                                            countBuffer, countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-None-00552");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -644,7 +728,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandB
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, drawCount, VK_NULL_HANDLE, 0, stride);
+    
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -675,8 +759,16 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer com
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawMeshTasksIndirectCommandNV),
+                        vvl::Struct::VkDrawMeshTasksIndirectCommandNV, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02192",
+                        "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02717");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -732,7 +824,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer command
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, drawCount, VK_NULL_HANDLE, 0, stride);
+    valcmd::DrawMeshIndirect(*this, *cb_state, record_obj.location, buffer, offset, stride, VK_NULL_HANDLE, 0, drawCount);
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -763,8 +855,19 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer co
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    valcmd::DrawMeshIndirect(*this, *cb_state, record_obj.location, buffer, offset, stride, countBuffer, countBufferOffset,
+                             maxDrawCount);
+
+    valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                        vvl::Struct::VkDrawMeshTasksIndirectCommandEXT, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099",
+                        "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
