@@ -205,8 +205,8 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     push_constants[3] = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_dispatch_resources.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                              sizeof(push_constants), push_constants);
-    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
-                                    cb_state.compute_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    BindErrorLoggingDescriptorSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
+                                  cb_state.compute_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &indirect_buffer_desc_set, 0, nullptr);
     DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);

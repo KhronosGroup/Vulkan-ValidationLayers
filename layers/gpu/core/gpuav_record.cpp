@@ -48,8 +48,13 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
 
     // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
     if (gpuav_settings.IsBufferValidationEnabled() &&
-        chassis_state.modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+        (chassis_state.modified_create_info.usage & (VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT))) {
         chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+
+    // Align index buffer size to 4: validation shader reads DWORDS
+    if (gpuav_settings.IsBufferValidationEnabled()) {
+        chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
     }
 
     BaseClass::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, chassis_state);
@@ -83,7 +88,7 @@ void Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice phys
 
 void Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
                                                const RecordObject &record_obj) {
-    DestroyRenderPassMappedResources(*this, renderPass);
+    draw::DestroyRenderPassMappedResources(*this, renderPass);
     BaseClass::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
 }
 
@@ -337,6 +342,9 @@ void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint3
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+
+    draw::DrawIndexed(*this, *cb_state, record_obj.location, indexCount, firstIndex, vertexOffset,
+                        "VUID-vkCmdDrawIndexed-None-02721");
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -367,7 +375,15 @@ void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBu
         return;
     }
 
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, count, VK_NULL_HANDLE, 0, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    draw::FirstInstance<VkDrawIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, count, VK_NULL_HANDLE, 0,
+                                                 "VUID-VkDrawIndirectCommand-firstInstance-00501");
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -381,7 +397,13 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
         return;
     }
 
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, count, VK_NULL_HANDLE, 0, stride);
+    draw::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
+                                           "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+    draw::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
+                                            "VUID-vkCmdDrawIndexedIndirect-None-02721");
+    draw::FirstInstance<VkDrawIndexedIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, count,
+                                                        VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -403,8 +425,18 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    draw::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawIndirectCommand),
+                        vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawIndirectCount-countBuffer-03122", "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
+    draw::FirstInstance<VkDrawIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, maxDrawCount, countBuffer,
+                                                 countBufferOffset, "VUID-VkDrawIndirectCommand-firstInstance-00501");
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -441,8 +473,19 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+    draw::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawIndexedIndirectCommand),
+                        vvl::Struct::VkDrawIndexedIndirectCommand, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154",
+                        "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717");
+    draw::FirstInstance<VkDrawIndexedIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, maxDrawCount,
+                                                        countBuffer, countBufferOffset,
+                                                        "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
+
+    draw::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount, countBuffer,
+                                           countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+    draw::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount,
+                                            countBuffer, countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-None-00552");
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -466,7 +509,12 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandB
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, drawCount, VK_NULL_HANDLE, 0, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -482,8 +530,16 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer com
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    draw::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawMeshTasksIndirectCommandNV),
+                        vvl::Struct::VkDrawMeshTasksIndirectCommandNV, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02192",
+                        "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02717");
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -507,7 +563,18 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer command
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, drawCount, VK_NULL_HANDLE, 0, stride);
+
+    draw::DrawMeshIndirectVuids vuids;
+    vuids.task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
+    vuids.task_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323";
+    vuids.task_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324";
+    vuids.task_group_count_exceeds_max_total = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07325";
+    vuids.mesh_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07326";
+    vuids.mesh_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07327";
+    vuids.mesh_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07328";
+    vuids.mesh_group_count_exceeds_max_total = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329";
+    draw::DrawMeshIndirect(*this, *cb_state, record_obj.location, buffer, offset, stride, VK_NULL_HANDLE, 0, drawCount, vuids);
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -523,8 +590,29 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer co
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
-                                 countBufferOffset, stride);
+    auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer_state) {
+        InternalError(commandBuffer, record_obj.location, "buffer must be a valid VkBuffer handle");
+        return;
+    }
+
+    draw::DrawMeshIndirectVuids vuids;
+    vuids.task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
+    vuids.task_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323";
+    vuids.task_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324";
+    vuids.task_group_count_exceeds_max_total = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07325";
+    vuids.mesh_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07326";
+    vuids.mesh_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07327";
+    vuids.mesh_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07328";
+    vuids.mesh_group_count_exceeds_max_total = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329";
+    draw::DrawMeshIndirect(*this, *cb_state, record_obj.location, buffer, offset, stride, countBuffer, countBufferOffset,
+                             maxDrawCount, vuids);
+
+    draw::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                        vvl::Struct::VkDrawMeshTasksIndirectCommandEXT, stride, countBuffer, countBufferOffset,
+                        "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099",
+                        "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717");
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 

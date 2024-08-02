@@ -135,7 +135,7 @@ void DescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDe
     return;
 }
 
-void SharedResourcesManager::Clear() {
+void SharedResourcesCache::Clear() {
     for (auto &[key, value] : shared_validation_resources_map_) {
         auto &[object, destructor] = value;
         destructor(object);

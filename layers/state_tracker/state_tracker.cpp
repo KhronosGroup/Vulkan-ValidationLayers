@@ -4992,8 +4992,12 @@ void ValidationStateTracker::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
         vertex_buffer_binding.buffer = pBuffers[i];
-        vertex_buffer_binding.size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
         vertex_buffer_binding.offset = pOffsets[i];
+        vertex_buffer_binding.size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
+        if (vertex_buffer_binding.size == VK_WHOLE_SIZE) {
+            vertex_buffer_binding.size = vvl::Buffer::ComputeSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
+        }
+
         if (pStrides) {
             vertex_buffer_binding.stride = pStrides[i];
         }

@@ -46,6 +46,8 @@ struct GpuVuid {
     const char* trace_rays_width_exceeds_device_limit = kVUIDUndefined;
     const char* trace_rays_height_exceeds_device_limit = kVUIDUndefined;
     const char* trace_rays_depth_exceeds_device_limit = kVUIDUndefined;
+    const char* index_buffer_size = kVUIDUndefined;
+    const char* vertex_index_oob = kVUIDUndefined;
 };
 
 // Getter function to provide kVUIDUndefined in case an invalid function is passed in

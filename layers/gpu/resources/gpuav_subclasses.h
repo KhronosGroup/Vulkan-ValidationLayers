@@ -94,7 +94,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     gpu::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
+        stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 192>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
   private:

@@ -19,15 +19,67 @@
 
 #include <vulkan/vulkan.h>
 
+#include "vulkan/generated/error_location_helper.h"
+
 struct Location;
 
 namespace gpuav {
 class Validator;
+class CommandBuffer;
+
+namespace draw {
 
 void DestroyRenderPassMappedResources(Validator &gpuav, VkRenderPass render_pass);
 
-void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
-                                  VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
-                                  VkDeviceSize count_buffer_offset, uint32_t stride);
+template <typename IndirectCommand>
+void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+                   VkDeviceSize draw_buffer_offset, uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
+                   const char *vuid);
 
+template <>
+void FirstInstance<VkDrawIndirectCommand>(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+                                          VkDeviceSize draw_buffer_offset, uint32_t draw_count, VkBuffer count_buffer,
+                                          VkDeviceSize count_buffer_offset, const char *vuid);
+template <>
+void FirstInstance<VkDrawIndexedIndirectCommand>(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
+                                                 VkBuffer draw_buffer, VkDeviceSize draw_buffer_offset, uint32_t draw_count,
+                                                 VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid);
+
+void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+                   VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, vvl::Struct draw_indirect_struct_name,
+                   uint32_t first_instance_member_pos, uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
+                   const char *vuid);
+
+void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+                 VkDeviceSize draw_buffer_offset, uint32_t draw_indirect_struct_byte_size, vvl::Struct draw_indirect_struct_name,
+                 uint32_t draw_cmds_byte_stride, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
+                 const char *vuid_draw_buffer_size, const char *vuid_max_draw_count);
+
+struct DrawMeshIndirectVuids {
+    const char *task_group_count_exceeds_max_x{};
+    const char *task_group_count_exceeds_max_y{};
+    const char *task_group_count_exceeds_max_z{};
+    const char *task_group_count_exceeds_max_total{};
+    const char *mesh_group_count_exceeds_max_x{};
+    const char *mesh_group_count_exceeds_max_y{};
+    const char *mesh_group_count_exceeds_max_z{};
+    const char *mesh_group_count_exceeds_max_total{};
+};
+
+void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+                      VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, VkBuffer count_buffer,
+                      VkDeviceSize count_buffer_offset, uint32_t draw_count, const DrawMeshIndirectVuids &vuids);
+
+void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, uint32_t index_count, uint32_t first_index,
+                 uint32_t vertex_offset, const char *vuid_oob_vertex);
+
+void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+                                    VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, uint32_t draw_count,
+                                    VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid_oob_index);
+
+void DrawIndexedIndirectVertexBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+                                     VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, uint32_t draw_count,
+                                     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid_oob_vertex);
+
+}  // namespace draw
 }  // namespace gpuav

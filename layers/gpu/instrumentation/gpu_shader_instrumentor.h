@@ -228,7 +228,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     SpirvCache instrumented_shaders_cache_;
     DeviceMemoryBlock indices_buffer_{};
-    unsigned int indices_buffer_alignment_ = 0;
+    uint32_t indices_buffer_alignment_ = 0;
 
     // DebugPrintf takes the first available slot in the set
     uint32_t debug_printf_binding_slot_ = 0;

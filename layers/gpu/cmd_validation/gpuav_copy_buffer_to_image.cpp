@@ -312,9 +312,8 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     // Insert diagnostic dispatch
     DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline);
 
-    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    shared_copy_validation_resources.pipeline_layout, 0,
-                                    static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    BindErrorLoggingDescriptorSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline_layout,
+                                  0, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
                                   shared_copy_validation_resources.pipeline_layout, glsl::kDiagPerCmdDescriptorSet, 1,
                                   &validation_desc_set, 0, nullptr);

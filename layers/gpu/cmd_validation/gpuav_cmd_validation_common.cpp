@@ -26,8 +26,8 @@
 
 namespace gpuav {
 
-void BindValidationCmdsCommonDescSet(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
-                                     VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index) {
+void BindErrorLoggingDescriptorSet(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
+                                   VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index) {
     assert(cmd_index < cst::indices_count);
     assert(error_logger_index < cst::indices_count);
     std::array<uint32_t, 2> dynamic_offsets = {
