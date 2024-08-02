@@ -67,18 +67,21 @@ const int kErrorSubCodeRayQueryDirectionFinite = 12;
 
 // Pre Draw
 //
+// The draw count exceeded the draw buffer size
 const int kErrorSubCodePreDrawBufferSize = 1;
+// The draw count exceeded the maxDrawCount parameter to the command
 const int kErrorSubCodePreDrawCountLimit = 2;
+// A firstInstance field was non-zero
 const int kErrorSubCodePreDrawFirstInstance = 3;
+// Mesh limit checks
 const int kErrorSubCodePreDrawGroupCountX = 4;
 const int kErrorSubCodePreDrawGroupCountY = 5;
 const int kErrorSubCodePreDrawGroupCountZ = 6;
 const int kErrorSubCodePreDrawGroupCountTotal = 7;
-
-const int kPreDrawSelectCountBuffer = 1;
-const int kPreDrawSelectDrawBuffer = 2;
-const int kPreDrawSelectMeshCountBuffer = 3;
-const int kPreDrawSelectMeshNoCount = 4;
+// The index count exceeded the index buffer size
+const int kErrorSubCodePreDrawIndexBuffer = 8;
+// An index in the index buffer exceeded the vertex buffer size
+const int kErrorSubCodePreDrawVertexIndex = 9;
 
 // Pre Dispatch
 //

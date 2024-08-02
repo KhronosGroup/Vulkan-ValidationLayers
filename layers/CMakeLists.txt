@@ -213,8 +213,12 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.cpp
     ${API_TYPE}/generated/cmd_validation_dispatch_comp.h
     ${API_TYPE}/generated/cmd_validation_dispatch_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_draw_vert.h
-    ${API_TYPE}/generated/cmd_validation_draw_vert.cpp
+    ${API_TYPE}/generated/cmd_validation_indexed_draw_vert.h
+    ${API_TYPE}/generated/cmd_validation_indexed_draw_vert.cpp
+    ${API_TYPE}/generated/cmd_validation_indirect_draw_vert.h
+    ${API_TYPE}/generated/cmd_validation_indirect_draw_vert.cpp
+    ${API_TYPE}/generated/cmd_validation_mesh_draw_vert.h
+    ${API_TYPE}/generated/cmd_validation_mesh_draw_vert.cpp
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.h
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.cpp
     gpu/core/gpu_settings.h

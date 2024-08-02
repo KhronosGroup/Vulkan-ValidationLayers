@@ -30,4 +30,12 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
                                   VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
                                   VkDeviceSize count_buffer_offset, uint32_t stride);
 
+void InsertIndexedDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
+                                 VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
+                                 VkDeviceSize count_buffer_offset, uint32_t stride, uint32_t first_index, uint32_t index_count);
+
+void InsertMeshDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
+                              VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
+                              VkDeviceSize count_buffer_offset, uint32_t stride);
+
 }  // namespace gpuav
