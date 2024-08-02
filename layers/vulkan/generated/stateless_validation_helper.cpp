@@ -3648,6 +3648,22 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
         } break;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+        // Validation code for VkPhysicalDeviceAntiLagFeaturesAMD structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ANTI_LAG_FEATURES_AMD: {  // Covers
+                                                                         // VUID-VkPhysicalDeviceAntiLagFeaturesAMD-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceAntiLagFeaturesAMD);
+                if (!IsExtEnabled(device_extensions.vk_amd_anti_lag)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceAntiLagFeaturesAMD, but when creating VkDevice, the "
+                                     "parent extension "
+                                     "(VK_AMD_anti_lag) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceAntiLagFeaturesAMD* structure = (VkPhysicalDeviceAntiLagFeaturesAMD*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::antiLag), structure->antiLag);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderObjectFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {  // Covers
                                                                               // VUID-VkPhysicalDeviceShaderObjectFeaturesEXT-sType-sType
@@ -9677,6 +9693,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ADDRESS_BINDING_REPORT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_AMIGO_PROFILING_FEATURES_SEC,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ANTI_LAG_FEATURES_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT,
@@ -25376,6 +25393,31 @@ bool StatelessValidation::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer
 
                 // No xml-driven validation
             }
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_amd_anti_lag)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_anti_lag});
+    skip |= ValidateStructType(loc.dot(Field::pData), pData, VK_STRUCTURE_TYPE_ANTI_LAG_DATA_AMD, true,
+                               "VUID-vkAntiLagUpdateAMD-pData-parameter", "VUID-VkAntiLagDataAMD-sType-sType");
+    if (pData != nullptr) {
+        [[maybe_unused]] const Location pData_loc = loc.dot(Field::pData);
+        skip |= ValidateRangedEnum(pData_loc.dot(Field::mode), vvl::Enum::VkAntiLagModeAMD, pData->mode,
+                                   "VUID-VkAntiLagDataAMD-mode-parameter");
+
+        skip |= ValidateStructType(
+            pData_loc.dot(Field::pPresentationInfo), pData->pPresentationInfo, VK_STRUCTURE_TYPE_ANTI_LAG_PRESENTATION_INFO_AMD,
+            false, "VUID-VkAntiLagDataAMD-pPresentationInfo-parameter", "VUID-VkAntiLagPresentationInfoAMD-sType-sType");
+
+        if (pData->pPresentationInfo != nullptr) {
+            [[maybe_unused]] const Location pPresentationInfo_loc = pData_loc.dot(Field::pPresentationInfo);
+            skip |= ValidateRangedEnum(pPresentationInfo_loc.dot(Field::stage), vvl::Enum::VkAntiLagStageAMD,
+                                       pData->pPresentationInfo->stage, "VUID-VkAntiLagPresentationInfoAMD-stage-parameter");
         }
     }
     return skip;

@@ -62,6 +62,8 @@ enum class Feature {
     reportAddressBinding,
     // VkPhysicalDeviceAmigoProfilingFeaturesSEC
     amigoProfiling,
+    // VkPhysicalDeviceAntiLagFeaturesAMD
+    antiLag,
     // VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT
     attachmentFeedbackLoopDynamicState,
     // VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT

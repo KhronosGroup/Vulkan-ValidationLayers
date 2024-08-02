@@ -1150,6 +1150,7 @@ VkResult DispatchBindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSes
                                                VkImageLayout layout);
 void DispatchCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
                                      const VkOpticalFlowExecuteInfoNV* pExecuteInfo);
+void DispatchAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData);
 VkResult DispatchCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                   const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders);
 void DispatchDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator);

@@ -727,6 +727,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkDestroyOpticalFlowSessionNV DestroyOpticalFlowSessionNV;
     PFN_vkBindOpticalFlowSessionImageNV BindOpticalFlowSessionImageNV;
     PFN_vkCmdOpticalFlowExecuteNV CmdOpticalFlowExecuteNV;
+    PFN_vkAntiLagUpdateAMD AntiLagUpdateAMD;
     PFN_vkCreateShadersEXT CreateShadersEXT;
     PFN_vkDestroyShaderEXT DestroyShaderEXT;
     PFN_vkGetShaderBinaryDataEXT GetShaderBinaryDataEXT;

@@ -2741,6 +2741,11 @@ void PnextChainFree(void *chain) {
             delete reinterpret_cast<const VkAndroidHardwareBufferFormatResolvePropertiesANDROID *>(header);
             break;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ANTI_LAG_FEATURES_AMD:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceAntiLagFeaturesAMD *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
