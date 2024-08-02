@@ -2478,7 +2478,6 @@ void ValidationStateTracker::PostCallRecordCmdSetViewport(VkCommandBuffer comman
     uint32_t bits = ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->viewportMask |= bits;
     cb_state->trashedViewportMask &= ~bits;
-
     if (cb_state->dynamic_state_value.viewports.size() < firstViewport + viewportCount) {
         cb_state->dynamic_state_value.viewports.resize(firstViewport + viewportCount);
     }
@@ -2805,8 +2804,8 @@ void ValidationStateTracker::PostCallRecordCmdSetDepthBias(VkCommandBuffer comma
 void ValidationStateTracker::PostCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer,
                                                                const VkDepthBiasInfoEXT *pDepthBiasInfo,
                                                                const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_DEPTH_BIAS);
+    PostCallRecordCmdSetDepthBias(commandBuffer, pDepthBiasInfo->depthBiasConstantFactor, pDepthBiasInfo->depthBiasClamp,
+                                  pDepthBiasInfo->depthBiasSlopeFactor, record_obj);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor,
@@ -3014,22 +3013,20 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     ASSERT_AND_RETURN(cb_state);
 
-    LvlBindPoint bind_point = BindPoint_Count;
+    cb_state->RecordCmd(record_obj.location.function);
+    auto layout_state = Get<vvl::PipelineLayout>(layout);
+    cb_state->ResetPushConstantRangesLayoutIfIncompatible(*layout_state);
+
     if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        bind_point = BindPoint_Graphics;
+        cb_state->push_constant_latest_used_layout[BindPoint_Graphics] = layout;
     } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        bind_point = BindPoint_Compute;
+        cb_state->push_constant_latest_used_layout[BindPoint_Compute] = layout;
     } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        bind_point = BindPoint_Ray_Tracing;
+        cb_state->push_constant_latest_used_layout[BindPoint_Ray_Tracing] = layout;
     } else {
         // Need to handle new binding point
         assert(false);
     }
-    cb_state->push_constant_latest_used_layout[bind_point] = layout;
-
-    cb_state->RecordCmd(record_obj.location.function);
-    auto layout_state = Get<vvl::PipelineLayout>(layout);
-    cb_state->ResetPushConstantRangesLayoutIfIncompatible(*layout_state);
 
     vvl::CommandBuffer::PushConstantData push_constant_data;
     push_constant_data.layout = layout;
@@ -5187,8 +5184,12 @@ void ValidationStateTracker::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
         vertex_buffer_binding.buffer = pBuffers[i];
-        vertex_buffer_binding.size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
         vertex_buffer_binding.offset = pOffsets[i];
+        vertex_buffer_binding.size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
+        if (vertex_buffer_binding.size == VK_WHOLE_SIZE) {
+            vertex_buffer_binding.size = vvl::Buffer::ComputeSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
+        }
+
         if (pStrides) {
             vertex_buffer_binding.stride = pStrides[i];
         }

@@ -167,9 +167,6 @@ struct GpuVuidsCmdTraceRaysIndirectKHR : GpuVuid {
         storage_access_oob_08613 = "VUID-vkCmdTraceRaysIndirectKHR-None-08613";
         invalid_descriptor_08114 = "VUID-vkCmdTraceRaysIndirectKHR-None-08114";
         descriptor_index_oob_10068 = "VUID-vkCmdTraceRaysIndirectKHR-None-10068";
-        trace_rays_width_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-width-03638";
-        trace_rays_height_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-height-03639";
-        trace_rays_depth_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-depth-03640";
     }
 };
 
@@ -182,7 +179,7 @@ struct GpuVuidsCmdTraceRaysIndirect2KHR : GpuVuid {
         invalid_descriptor_08114 = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
         descriptor_index_oob_10068 = "VUID-vkCmdTraceRaysIndirect2KHR-None-10068";
     }
-};
+};  
 
 struct GpuVuidsCmdDrawMeshTasksNV : GpuVuid {
     GpuVuidsCmdDrawMeshTasksNV() : GpuVuid() {

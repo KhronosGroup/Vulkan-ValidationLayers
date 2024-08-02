@@ -23,9 +23,11 @@ layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagErrorBuffer) buffer
     uint errors_buffer[];
 };
 
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex) buffer ActionIndexBuffer { uint action_index[]; };
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex) readonly buffer ActionIndexBuffer {
+    uint action_index[];
+};
 
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdResourceIndex) buffer ResourceIndexBuffer {
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdResourceIndex) readonly buffer ResourceIndexBuffer {
     uint resource_index[];
 };
 
@@ -39,7 +41,7 @@ bool MaxCmdErrorsCountReached() {
     return cmd_errors_count >= kMaxErrorsPerCmd;
 }
 
-void GpuavLogError(uint error_group, uint error_sub_code, uint param_0, uint param_1) {
+void GpuavLogError4(uint error_group, uint error_sub_code, uint param_0, uint param_1, uint param_2, uint param_3) {
     if (MaxCmdErrorsCountReached()) return;
 
     uint vo_idx = atomicAdd(errors_count, kErrorRecordSize);
@@ -54,4 +56,10 @@ void GpuavLogError(uint error_group, uint error_sub_code, uint param_0, uint par
 
     errors_buffer[vo_idx + kPreActionParamOffset_0] = param_0;
     errors_buffer[vo_idx + kPreActionParamOffset_1] = param_1;
+    errors_buffer[vo_idx + kPreActionParamOffset_2] = param_2;
+    errors_buffer[vo_idx + kPreActionParamOffset_3] = param_3;
+}
+
+void GpuavLogError2(uint error_group, uint error_sub_code, uint param_0, uint param_1) {
+    GpuavLogError4(error_group, error_sub_code, param_0, param_1, 0, 0);
 }

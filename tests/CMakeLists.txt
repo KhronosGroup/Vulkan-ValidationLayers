@@ -117,6 +117,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_descriptor_post_process_positive.cpp
     unit/gpu_av_image_layout.cpp
     unit/gpu_av_indirect_buffer.cpp
+    unit/gpu_av_indirect_buffer_positive.cpp
+    unit/gpu_av_index_buffer_positive.cpp
     unit/gpu_av_positive.cpp
     unit/gpu_av_shader_object_positive.cpp
     unit/gpu_av_shader_debug_info.cpp

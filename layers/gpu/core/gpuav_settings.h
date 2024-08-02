@@ -24,12 +24,11 @@ struct GpuAVSettings {
     uint32_t max_bda_in_use = 10000;
     bool select_instrumented_shaders = false;
 
-    // Turned off until we can fix things
-    // see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8579
-    bool validate_indirect_draws_buffers = false;
-    bool validate_indirect_dispatches_buffers = false;
-    bool validate_indirect_trace_rays_buffers = false;
+    bool validate_indirect_draws_buffers = true;
+    bool validate_indirect_dispatches_buffers = true;
+    bool validate_indirect_trace_rays_buffers = true;
     bool validate_buffer_copies = true;
+    bool validate_index_buffers = true;
 
     bool vma_linear_output = true;
 
@@ -65,13 +64,14 @@ struct GpuAVSettings {
     }
     bool IsBufferValidationEnabled() const {
         return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers || validate_indirect_trace_rays_buffers ||
-               validate_buffer_copies;
+               validate_buffer_copies || validate_index_buffers;
     }
     void SetBufferValidationEnabled(bool enabled) {
         validate_indirect_draws_buffers = enabled;
         validate_indirect_dispatches_buffers = enabled;
         validate_indirect_trace_rays_buffers = enabled;
         validate_buffer_copies = enabled;
+        validate_index_buffers = enabled;
     }
 
     // For people who are using VkValidationFeatureEnableEXT to set only DebugPrintf (and want the rest of GPU-AV off)

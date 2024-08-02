@@ -64,8 +64,8 @@ class Buffer {
     void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
     void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-    void Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                const VmaAllocationCreateInfo *allocation_create_info);
+    [[nodiscard]] bool Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                              const VmaAllocationCreateInfo *allocation_create_info);
     void Destroy();
 
     bool IsDestroyed() const { return buffer == VK_NULL_HANDLE; }
@@ -96,7 +96,8 @@ class GpuResourcesManager {
     std::vector<vko::Buffer> buffers_;
 };
 
-class SharedResourcesManager {
+// Cache a single object of type T. Key is *only* based on typeid(T)
+class SharedResourcesCache {
   public:
     template <typename T>
     T *TryGet() {
@@ -108,6 +109,10 @@ class SharedResourcesManager {
         return t;
     }
 
+    // First call to Get<T> will create the object, subsequent calls will retrieve the cached entry.
+    // /!\ The cache key is only based on the type T, not on the passed parameters
+    // => Successive calls to Get<T> with different parameters will NOT give different objects,
+    // only the entry cached upon the first call to Get<T> will be retrieved
     template <typename T, class... ConstructorTypes>
     T &Get(ConstructorTypes &&...args) {
         T *t = TryGet<T>();

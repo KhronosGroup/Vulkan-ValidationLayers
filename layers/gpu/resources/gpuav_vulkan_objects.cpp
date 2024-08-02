@@ -137,7 +137,7 @@ void DescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDe
     return;
 }
 
-void SharedResourcesManager::Clear() {
+void SharedResourcesCache::Clear() {
     for (auto &[key, value] : shared_validation_resources_map_) {
         auto &[object, destructor] = value;
         destructor(object);
@@ -171,12 +171,13 @@ void Buffer::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDe
     }
 }
 
-void Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
                     const VmaAllocationCreateInfo *allocation_create_info) {
     VkResult result =
         vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.");
+        return false;
     }
 
     if (buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
@@ -184,8 +185,10 @@ void Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
         device_address = gpuav.GetBufferDeviceAddressHelper(buffer);
         if (device_address == 0) {
             gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
+            return false;
         }
     }
+    return true;
 }
 
 void Buffer::Destroy() {

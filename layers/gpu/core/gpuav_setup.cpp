@@ -373,6 +373,24 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
             }
         }
     }
+    
+    // shaderInt64
+    // ---
+    VkPhysicalDeviceFeatures physical_device_features{};
+    DispatchGetPhysicalDeviceFeatures(physicalDevice, &physical_device_features);
+    if (physical_device_features.shaderInt64) {
+        if (enabled_features) {
+            enabled_features->shaderInt64 = VK_TRUE;
+        } else if (auto *features = const_cast<VkPhysicalDeviceFeatures2 *>(
+                       vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext))) {
+            features->features.shaderInt64 = VK_TRUE;
+        } else {
+            // Need to add a VkPhysicalDeviceFeatures pointer
+            enabled_features = new VkPhysicalDeviceFeatures;
+            enabled_features->shaderInt64 = VK_TRUE;
+            modified_create_info->pEnabledFeatures = enabled_features;
+        }
+    }
 }
 
 // Perform initializations that can be done at Create Device time.
@@ -477,7 +495,10 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         assert(output_buffer_pool_);
         alloc_info.pool = output_buffer_pool_;
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        indices_buffer_.Create(loc, &buffer_info, &alloc_info);
+        const bool success = indices_buffer_.Create(loc, &buffer_info, &alloc_info);
+        if (!success) {
+            return;
+        }
 
         auto indices_ptr = (uint32_t *)indices_buffer_.MapMemory(loc);
 
@@ -556,12 +577,16 @@ void Validator::InitSettings(const Location &loc) {
     }
 
     if (gpuav_settings.IsBufferValidationEnabled()) {
-        if (phys_dev_props.limits.maxPushConstantsSize < 4 * sizeof(uint32_t)) {
+        if (phys_dev_props.limits.maxPushConstantsSize < 9 * sizeof(uint32_t)) {
             gpuav_settings.SetBufferValidationEnabled(false);
-            InternalWarning(
-                device, loc,
-                "Device does not support the minimum range of push constants (32 bytes). No indirect buffer checking will be "
-                "attempted");
+            InternalWarning(device, loc,
+                            "Device does not support required minimum maxPushConstantsSize. Buffer validation needs at least 9 * "
+                            "sizeof(uint32_t) bytes. No indirect buffer checking will be "
+                            "attempted");
+        } else if (!supported_features.shaderInt64) {
+            InternalWarning(device, loc,
+                            "shaderInt64 feature not available, countBuffer (as seen in commands like "
+                            "vkCmdDrawIndexedIndirectCount) validation will not be performed.");
         }
     }
 

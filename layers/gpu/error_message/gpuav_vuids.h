@@ -41,10 +41,6 @@ struct GpuVuid {
     const char* task_group_count_exceeds_max_y = kVUIDUndefined;
     const char* task_group_count_exceeds_max_z = kVUIDUndefined;
     const char* task_group_count_exceeds_max_total = kVUIDUndefined;
-    // vkCmdTraceRaysIndirectKHR
-    const char* trace_rays_width_exceeds_device_limit = kVUIDUndefined;
-    const char* trace_rays_height_exceeds_device_limit = kVUIDUndefined;
-    const char* trace_rays_depth_exceeds_device_limit = kVUIDUndefined;
 };
 
 // Getter function to provide kVUIDUndefined in case an invalid function is passed in

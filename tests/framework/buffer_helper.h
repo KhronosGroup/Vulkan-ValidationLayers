@@ -23,7 +23,7 @@
 namespace vkt {
 
 template <typename VertexT>
-Buffer VertexBuffer(const Device &dev, const std::vector<float> &vertices) {
+Buffer VertexBuffer(const Device &dev, const std::vector<VertexT> &vertices) {
     vkt::Buffer vertex_buffer(dev, vertices.size() * sizeof(VertexT), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     auto *vertex_buffer_ptr = static_cast<VertexT *>(vertex_buffer.Memory().Map());
@@ -40,6 +40,17 @@ Buffer IndexBuffer(const Device &dev, const std::vector<IndexT> &indices) {
     std::copy(indices.data(), indices.data() + indices.size(), index_buffer_ptr);
     index_buffer.Memory().Unmap();
     return index_buffer;
+}
+
+// stride == sizeof(IndirectCmdT)
+template <typename IndirectCmdT>
+Buffer IndirectBuffer(const Device &dev, const std::vector<IndirectCmdT> &indirect_cmds) {
+    vkt::Buffer indirect_buffer(dev, indirect_cmds.size() * sizeof(IndirectCmdT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto *indirect_buffer_ptr = static_cast<IndirectCmdT *>(indirect_buffer.memory().map());
+    std::copy(indirect_cmds.data(), indirect_cmds.data() + indirect_cmds.size(), indirect_buffer_ptr);
+    indirect_buffer.memory().unmap();
+    return indirect_buffer;
 }
 
 }  // namespace vkt
