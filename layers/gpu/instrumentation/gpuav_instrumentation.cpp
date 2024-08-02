@@ -134,7 +134,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, LockedSharedPtr<Comma
 
         // BDA snapshot buffer
         VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-        if (gpuav.bda_validation_possible) {
+        if (gpuav.gpuav_settings.validate_bda) {
             bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
             bda_input_desc_buffer_info.buffer = cmd_buffer->GetBdaRangesSnapshot().buffer;
             bda_input_desc_buffer_info.offset = 0;
