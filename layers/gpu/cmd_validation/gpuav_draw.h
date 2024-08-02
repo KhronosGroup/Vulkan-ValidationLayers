@@ -21,13 +21,25 @@
 
 struct Location;
 
+namespace vvl {
+class Buffer;
+}
+
 namespace gpuav {
 class Validator;
 
 void DestroyRenderPassMappedResources(Validator &gpuav, VkRenderPass render_pass);
 
-void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
-                                  VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
-                                  VkDeviceSize count_buffer_offset, uint32_t stride);
+void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
+                                  vvl::Buffer &indirect_buffer_state, VkDeviceSize indirect_offset, uint32_t draw_count,
+                                  VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
+
+void InsertIndexedDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
+                                 VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
+                                 VkDeviceSize count_buffer_offset, uint32_t stride, uint32_t first_index, uint32_t index_count);
+
+void InsertIndirectMeshDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
+                                      vvl::Buffer &indirect_buffer_state, VkDeviceSize indirect_offset, uint32_t draw_count,
+                                      VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
 
 }  // namespace gpuav

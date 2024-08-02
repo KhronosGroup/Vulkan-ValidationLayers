@@ -278,6 +278,21 @@ static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
     }
 }
 
+static inline uint32_t GetIndexBitsSize(VkIndexType indexType) {
+    switch (indexType) {
+        case VK_INDEX_TYPE_UINT16:
+            return 16;
+        case VK_INDEX_TYPE_UINT32:
+            return 32;
+        case VK_INDEX_TYPE_NONE_KHR:
+            return 0;
+        case VK_INDEX_TYPE_UINT8_KHR:
+            return 8;
+        default:
+            return 0;
+    }
+}
+
 // vkspec.html#formats-planes-image-aspect
 static inline bool IsValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask) {
     const uint32_t planes = vkuFormatPlaneCount(format);

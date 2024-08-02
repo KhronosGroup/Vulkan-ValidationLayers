@@ -13,6 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/buffer_helper.h"
 
 class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
 
@@ -547,6 +548,14 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     RETURN_IF_SKIP(InitState(nullptr));
     InitRenderTarget();
 
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
@@ -559,15 +568,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     }
     draw_buffer.memory().unmap();
 
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
-    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
-
-    CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->SetDesiredError("VUID-VkDrawIndirectCommand-firstInstance-00501");
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkDrawIndirectCommand-firstInstance-00501", "at index 3");
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -577,7 +578,25 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(NegativeGpuAVIndirectBuffer, FirstInstanceIndexed) {
+    TEST_DESCRIPTION("Validate illegal firstInstance values");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     // Now with an offset and indexed draw
     m_errorMonitor->SetDesiredError("VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -596,7 +615,14 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint32_t *index_ptr = (uint32_t *)index_buffer.memory().map();
+    index_ptr[0] = 0;
+    index_ptr[1] = 1;
+    index_ptr[2] = 2;
+    index_buffer.memory().unmap();
+
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_draw_buffer.handle(), sizeof(VkDrawIndexedIndirectCommand), 3,
                                sizeof(VkDrawIndexedIndirectCommand));
@@ -606,6 +632,550 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVIndirectBuffer, IndexBufferOOB) {
+    TEST_DESCRIPTION("Validate overruning the index buffer");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    // Now with an offset and indexed draw
+    vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    {
+        VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+        indexed_draw_ptr->indexCount = 3;
+        indexed_draw_ptr->instanceCount = 1;
+        indexed_draw_ptr->firstIndex = 1;
+        indexed_draw_ptr->vertexOffset = 0;
+        indexed_draw_ptr->firstInstance = 0;
+        indexed_draw_buffer.memory().unmap();
+    }
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    auto *indicies = static_cast<uint32_t *>(index_buffer.memory().map());
+    indicies[0] = 0u;
+    indicies[1] = 1u;
+    indicies[2] = 2u;
+    index_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-robustBufferAccess2-08798",
+                                         " firstIndex = 1 plus indexCount = 3");
+
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, IndirectDrawBadVertexIndex32) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint32_t index");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    char const *vsSource = R"glsl(
+        #version 450
+        
+        layout(location=0) in vec3 pos;
+        
+		void main() {
+			gl_Position = vec4(pos, 1.0);
+        }
+	)glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    // Now with an offset and indexed draw
+    vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    {
+        VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+        indexed_draw_ptr->indexCount = 3;
+        indexed_draw_ptr->instanceCount = 1;
+        indexed_draw_ptr->firstIndex = 0;
+        indexed_draw_ptr->vertexOffset = 0;
+        indexed_draw_ptr->firstInstance = 0;
+        indexed_draw_buffer.memory().unmap();
+    }
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 666");
+    // Validation shader breaks at first bad index
+    // m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 42");
+    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, IndirectDrawBadVertexIndex16) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint16_t index");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    char const *vsSource = R"glsl(
+        #version 450
+        
+        layout(location=0) in vec3 pos;
+        
+		void main() {
+			gl_Position = vec4(pos, 1.0);
+        }
+	)glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    // Now with an offset and indexed draw
+    vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    {
+        VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+        indexed_draw_ptr->indexCount = 3;
+        indexed_draw_ptr->instanceCount = 1;
+        indexed_draw_ptr->firstIndex = 0;
+        indexed_draw_ptr->vertexOffset = 0;
+        indexed_draw_ptr->firstInstance = 0;
+        indexed_draw_buffer.memory().unmap();
+    }
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 128, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 128");
+    // Validation shader breaks at first bad index
+    // m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 42");
+    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, IndirectDrawBadVertexIndex8) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint8_t index");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddRequiredFeature(vkt::Feature::indexTypeUint8);
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    char const *vsSource = R"glsl(
+        #version 450
+        
+        layout(location=0) in vec3 pos;
+        
+		void main() {
+			gl_Position = vec4(pos, 1.0);
+        }
+	)glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    // Now with an offset and indexed draw
+    vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    {
+        VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+        indexed_draw_ptr->indexCount = 3;
+        indexed_draw_ptr->instanceCount = 1;
+        indexed_draw_ptr->firstIndex = 0;
+        indexed_draw_ptr->vertexOffset = 0;
+        indexed_draw_ptr->firstInstance = 0;
+        indexed_draw_buffer.memory().unmap();
+    }
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint8_t>(*m_device, {0, 128, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT8_KHR);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 128");
+    // Validation shader breaks at first bad index
+    // m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 42");
+    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, DrawBadVertexIndex32) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint32_t index");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    char const *vsSource = R"glsl(
+        #version 450
+        
+        layout(location=0) in vec3 pos;
+        
+		void main() {
+			gl_Position = vec4(pos, 1.0);
+        }
+	)glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "index buffer at index 1 is 666");
+    // Validation shader breaks at first bad index
+    // m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 42");
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, DrawBadVertexIndex16) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint16_t index");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    char const *vsSource = R"glsl(
+        #version 450
+        
+        layout(location=0) in vec3 pos;
+        
+		void main() {
+			gl_Position = vec4(pos, 1.0);
+        }
+	)glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 666, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "index buffer at index 1 is 666");
+    // Validation shader breaks at first bad index
+    // m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 42");
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, DrawBadVertexIndex8) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint8_t index");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddRequiredFeature(vkt::Feature::indexTypeUint8);
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    char const *vsSource = R"glsl(
+        #version 450
+        
+        layout(location=0) in vec3 pos;
+        
+		void main() {
+			gl_Position = vec4(pos, 1.0);
+        }
+	)glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint8_t>(*m_device, {0, 66, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT8_KHR);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "index buffer at index 1 is 66");
+    // Validation shader breaks at first bad index
+    // m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexedIndirect-None-02721", "index buffer at index 1 is 42");
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+#if 0
+TEST_F(NegativeGpuAVIndirectBuffer, BadVertexIndexDirect) {
+    TEST_DESCRIPTION("Validate illegal index buffer values for vkCmdDrawIndexed");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vkt::Buffer index_buffer(*m_device, 4 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    auto *indicies = static_cast<uint32_t *>(index_buffer.memory().map());
+    indicies[0] = 0u;
+    indicies[1] = 1u;
+    indicies[2] = 512u;
+    indicies[3] = 2u;
+    index_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "index buffer at index 2 is 512");
+
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, BadVertexIndexDirect16) {
+    TEST_DESCRIPTION("Validate illegal 16 bit index buffer values for vkCmdDrawIndexed");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vkt::Buffer index_buffer(*m_device, 4 * sizeof(uint16_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    auto *indicies = static_cast<uint16_t *>(index_buffer.memory().map());
+    indicies[0] = 0u;
+    indicies[1] = 1u;
+    indicies[2] = 65535u;
+    indicies[3] = 2u;
+    index_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "index buffer at index 2 is 65535");
+
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+#endif
 
 TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");

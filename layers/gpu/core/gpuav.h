@@ -321,7 +321,7 @@ class Validator : public gpu::GpuShaderInstrumentor {
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
-    gpu::SharedResourcesManager shared_resources_manager;
+    gpu::SharedResourcesCache shared_resources_manager;
 
   private:
     std::string instrumented_shader_cache_path_{};

@@ -26,5 +26,5 @@
 #include <cstdint>
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-extern const uint32_t cmd_validation_draw_vert_size;
-extern const uint32_t cmd_validation_draw_vert[];
+extern const uint32_t cmd_validation_mesh_draw_vert_size;
+extern const uint32_t cmd_validation_mesh_draw_vert[];
