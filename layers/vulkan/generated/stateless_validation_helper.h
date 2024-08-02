@@ -1697,6 +1697,7 @@ bool PreCallValidateBindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlow
 bool PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
                                             const VkOpticalFlowExecuteInfoNV* pExecuteInfo,
                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData, const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                      const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                      const ErrorObject& error_obj) const override;

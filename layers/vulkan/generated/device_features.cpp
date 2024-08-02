@@ -1391,6 +1391,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 break;
             }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ANTI_LAG_FEATURES_AMD: {
+                const VkPhysicalDeviceAntiLagFeaturesAMD *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceAntiLagFeaturesAMD *>(pNext);
+                features->antiLag |= enabled->antiLag == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderObjectFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderObjectFeaturesEXT *>(pNext);

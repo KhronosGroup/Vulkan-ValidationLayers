@@ -1204,6 +1204,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubBindOpticalFlowSessionImageNV(VkDevice
 }
 static VKAPI_ATTR void VKAPI_CALL StubCmdOpticalFlowExecuteNV(VkCommandBuffer, VkOpticalFlowSessionNV,
                                                               const VkOpticalFlowExecuteInfoNV*) {}
+static VKAPI_ATTR void VKAPI_CALL StubAntiLagUpdateAMD(VkDevice, const VkAntiLagDataAMD*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateShadersEXT(VkDevice, uint32_t, const VkShaderCreateInfoEXT*,
                                                            const VkAllocationCallbacks*, VkShaderEXT*) {
     return VK_SUCCESS;
@@ -1761,6 +1762,7 @@ const auto& GetApiExtensionMap() {
         {"vkDestroyOpticalFlowSessionNV", {vvl::Extension::_VK_NV_optical_flow}},
         {"vkBindOpticalFlowSessionImageNV", {vvl::Extension::_VK_NV_optical_flow}},
         {"vkCmdOpticalFlowExecuteNV", {vvl::Extension::_VK_NV_optical_flow}},
+        {"vkAntiLagUpdateAMD", {vvl::Extension::_VK_AMD_anti_lag}},
         {"vkCreateShadersEXT", {vvl::Extension::_VK_EXT_shader_object}},
         {"vkDestroyShaderEXT", {vvl::Extension::_VK_EXT_shader_object}},
         {"vkGetShaderBinaryDataEXT", {vvl::Extension::_VK_EXT_shader_object}},
@@ -3809,6 +3811,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->CmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)gpa(device, "vkCmdOpticalFlowExecuteNV");
     if (table->CmdOpticalFlowExecuteNV == nullptr) {
         table->CmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)StubCmdOpticalFlowExecuteNV;
+    }
+    table->AntiLagUpdateAMD = (PFN_vkAntiLagUpdateAMD)gpa(device, "vkAntiLagUpdateAMD");
+    if (table->AntiLagUpdateAMD == nullptr) {
+        table->AntiLagUpdateAMD = (PFN_vkAntiLagUpdateAMD)StubAntiLagUpdateAMD;
     }
     table->CreateShadersEXT = (PFN_vkCreateShadersEXT)gpa(device, "vkCreateShadersEXT");
     if (table->CreateShadersEXT == nullptr) {

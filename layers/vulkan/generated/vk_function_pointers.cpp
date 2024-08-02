@@ -766,6 +766,7 @@ PFN_vkCreateOpticalFlowSessionNV CreateOpticalFlowSessionNV;
 PFN_vkDestroyOpticalFlowSessionNV DestroyOpticalFlowSessionNV;
 PFN_vkBindOpticalFlowSessionImageNV BindOpticalFlowSessionImageNV;
 PFN_vkCmdOpticalFlowExecuteNV CmdOpticalFlowExecuteNV;
+PFN_vkAntiLagUpdateAMD AntiLagUpdateAMD;
 PFN_vkCreateShadersEXT CreateShadersEXT;
 PFN_vkDestroyShaderEXT DestroyShaderEXT;
 PFN_vkGetShaderBinaryDataEXT GetShaderBinaryDataEXT;
@@ -2300,6 +2301,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_AMD_anti_lag", [](VkInstance , VkDevice device) {
+                AntiLagUpdateAMD = reinterpret_cast<PFN_vkAntiLagUpdateAMD>(GetDeviceProcAddr(device, "vkAntiLagUpdateAMD"));
+            }
+        },
+        {
             "VK_EXT_shader_object", [](VkInstance , VkDevice device) {
                 CreateShadersEXT = reinterpret_cast<PFN_vkCreateShadersEXT>(GetDeviceProcAddr(device, "vkCreateShadersEXT"));
                 DestroyShaderEXT = reinterpret_cast<PFN_vkDestroyShaderEXT>(GetDeviceProcAddr(device, "vkDestroyShaderEXT"));
@@ -2903,6 +2909,7 @@ void ResetAllExtensions() {
     DestroyOpticalFlowSessionNV = nullptr;
     BindOpticalFlowSessionImageNV = nullptr;
     CmdOpticalFlowExecuteNV = nullptr;
+    AntiLagUpdateAMD = nullptr;
     CreateShadersEXT = nullptr;
     DestroyShaderEXT = nullptr;
     GetShaderBinaryDataEXT = nullptr;

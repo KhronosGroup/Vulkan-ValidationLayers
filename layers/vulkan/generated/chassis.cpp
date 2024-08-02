@@ -25706,6 +25706,41 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL AntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkAntiLagUpdateAMD, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateAntiLagUpdateAMD]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateAntiLagUpdateAMD(device, pData, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkAntiLagUpdateAMD);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAntiLagUpdateAMD]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordAntiLagUpdateAMD(device, pData, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        DispatchAntiLagUpdateAMD(device, pData);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAntiLagUpdateAMD]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordAntiLagUpdateAMD(device, pData, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL DestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
@@ -27895,6 +27930,7 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
     {"vkDestroyOpticalFlowSessionNV", {kFuncTypeDev, (void*)DestroyOpticalFlowSessionNV}},
     {"vkBindOpticalFlowSessionImageNV", {kFuncTypeDev, (void*)BindOpticalFlowSessionImageNV}},
     {"vkCmdOpticalFlowExecuteNV", {kFuncTypeDev, (void*)CmdOpticalFlowExecuteNV}},
+    {"vkAntiLagUpdateAMD", {kFuncTypeDev, (void*)AntiLagUpdateAMD}},
     {"vkCreateShadersEXT", {kFuncTypeDev, (void*)CreateShadersEXT}},
     {"vkDestroyShaderEXT", {kFuncTypeDev, (void*)DestroyShaderEXT}},
     {"vkGetShaderBinaryDataEXT", {kFuncTypeDev, (void*)GetShaderBinaryDataEXT}},

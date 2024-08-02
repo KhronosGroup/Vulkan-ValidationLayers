@@ -43,6 +43,7 @@ const char* String(Func func) {
     {"vkAllocateCommandBuffers", 25},
     {"vkAllocateDescriptorSets", 25},
     {"vkAllocateMemory", 17},
+    {"vkAntiLagUpdateAMD", 19},
     {"vkBeginCommandBuffer", 21},
     {"vkBindAccelerationStructureMemoryNV", 36},
     {"vkBindBufferMemory", 19},
@@ -754,6 +755,8 @@ const char* String(Struct structure) {
     {"VkAndroidHardwareBufferPropertiesANDROID", 41},
     {"VkAndroidHardwareBufferUsageANDROID", 36},
     {"VkAndroidSurfaceCreateInfoKHR", 30},
+    {"VkAntiLagDataAMD", 17},
+    {"VkAntiLagPresentationInfoAMD", 29},
     {"VkApplicationInfo", 18},
     {"VkAttachmentDescription", 24},
     {"VkAttachmentDescription2", 25},
@@ -1159,6 +1162,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceAccelerationStructurePropertiesKHR", 51},
     {"VkPhysicalDeviceAddressBindingReportFeaturesEXT", 48},
     {"VkPhysicalDeviceAmigoProfilingFeaturesSEC", 42},
+    {"VkPhysicalDeviceAntiLagFeaturesAMD", 35},
     {"VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT", 62},
     {"VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT", 56},
     {"VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT", 50},
@@ -1829,6 +1833,7 @@ const char* String(Field field) {
     {"amigoProfiling", 15},
     {"androidHardwareBufferUsage", 27},
     {"anisotropyEnable", 17},
+    {"antiLag", 8},
     {"anyHitShader", 13},
     {"apiVersion", 11},
     {"applicationNameOffset", 22},
@@ -2370,6 +2375,7 @@ const char* String(Field field) {
     {"frameHeaderOffset", 18},
     {"frameID", 8},
     {"frameISize", 11},
+    {"frameIndex", 11},
     {"framePSize", 11},
     {"frameRateDenominator", 21},
     {"frameRateNumerator", 19},
@@ -2704,6 +2710,7 @@ const char* String(Field field) {
     {"maxExecutionGraphShaderPayloadSize", 35},
     {"maxExtent", 10},
     {"maxExtraPrimitiveOverestimationSize", 36},
+    {"maxFPS", 7},
     {"maxFragmentCombinedOutputResources", 35},
     {"maxFragmentDensityTexelSize", 28},
     {"maxFragmentDualSrcAttachments", 30},
@@ -3384,6 +3391,7 @@ const char* String(Field field) {
     {"pPresentInfo", 13},
     {"pPresentModeCount", 18},
     {"pPresentModes", 14},
+    {"pPresentationInfo", 18},
     {"pPresentationTimingCount", 25},
     {"pPresentationTimings", 21},
     {"pPreserveAttachments", 21},
@@ -4420,6 +4428,8 @@ const char* String(Enum value) {
     {"VkAccelerationStructureMemoryRequirementsTypeNV", 48},
     {"VkAccelerationStructureMotionInstanceTypeNV", 44},
     {"VkAccelerationStructureTypeKHR", 31},
+    {"VkAntiLagModeAMD", 17},
+    {"VkAntiLagStageAMD", 18},
     {"VkAttachmentLoadOp", 19},
     {"VkAttachmentStoreOp", 20},
     {"VkBlendFactor", 14},
@@ -4670,7 +4680,6 @@ const char* String(FlagBitmask value) {
     {"VkVideoEncodeCapabilityFlagBitsKHR", 35},
     {"VkVideoEncodeContentFlagBitsKHR", 32},
     {"VkVideoEncodeFeedbackFlagBitsKHR", 33},
-    {"VkVideoEncodeFlagBitsKHR", 25},
     {"VkVideoEncodeH264CapabilityFlagBitsKHR", 39},
     {"VkVideoEncodeH264RateControlFlagBitsKHR", 40},
     {"VkVideoEncodeH264StdFlagBitsKHR", 32},
@@ -4690,6 +4699,7 @@ const char* String(Extension extension) {
     static const std::string_view table[] = {
     {"INVALID_EMPTY", 15}, // Extension::Empty
     {"VK_AMDX_shader_enqueue", 23},
+    {"VK_AMD_anti_lag", 16},
     {"VK_AMD_buffer_marker", 21},
     {"VK_AMD_device_coherent_memory", 30},
     {"VK_AMD_display_native_hdr", 26},
@@ -5399,6 +5409,7 @@ bool IsFieldPointer(Field field) {
     case Field::pPresentInfo:
     case Field::pPresentModeCount:
     case Field::pPresentModes:
+    case Field::pPresentationInfo:
     case Field::pPresentationTimingCount:
     case Field::pPresentationTimings:
     case Field::pPreserveAttachments:

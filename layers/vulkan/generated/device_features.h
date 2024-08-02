@@ -59,6 +59,8 @@ struct DeviceFeatures {
     bool reportAddressBinding;
     // VkPhysicalDeviceAmigoProfilingFeaturesSEC
     bool amigoProfiling;
+    // VkPhysicalDeviceAntiLagFeaturesAMD
+    bool antiLag;
     // VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT
     bool attachmentFeedbackLoopDynamicState;
     // VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT

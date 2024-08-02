@@ -8703,6 +8703,12 @@ void DispatchCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlo
     layer_data->device_dispatch_table.CmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
 }
 
+void DispatchAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+
+    layer_data->device_dispatch_table.AntiLagUpdateAMD(device, pData);
+}
+
 VkResult DispatchCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                   const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);

@@ -208,6 +208,10 @@ ValidValue StatelessValidation::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkOpticalFlowSessionBindingPointNV value) const;
 template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkAntiLagModeAMD value) const;
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkAntiLagStageAMD value) const;
+template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkShaderCodeTypeEXT value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkLayerSettingTypeEXT value) const;

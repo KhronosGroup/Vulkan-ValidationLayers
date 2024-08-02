@@ -7305,6 +7305,9 @@ bool ObjectLifetimes::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer com
     return skip;
 }
 
+// vkAntiLagUpdateAMD:
+// Checked by chassis: device: "VUID-vkAntiLagUpdateAMD-device-parameter"
+
 bool ObjectLifetimes::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                       const VkShaderCreateInfoEXT* pCreateInfos,
                                                       const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,

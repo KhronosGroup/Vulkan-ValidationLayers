@@ -729,6 +729,7 @@ extern PFN_vkCreateOpticalFlowSessionNV CreateOpticalFlowSessionNV;
 extern PFN_vkDestroyOpticalFlowSessionNV DestroyOpticalFlowSessionNV;
 extern PFN_vkBindOpticalFlowSessionImageNV BindOpticalFlowSessionImageNV;
 extern PFN_vkCmdOpticalFlowExecuteNV CmdOpticalFlowExecuteNV;
+extern PFN_vkAntiLagUpdateAMD AntiLagUpdateAMD;
 extern PFN_vkCreateShadersEXT CreateShadersEXT;
 extern PFN_vkDestroyShaderEXT DestroyShaderEXT;
 extern PFN_vkGetShaderBinaryDataEXT GetShaderBinaryDataEXT;

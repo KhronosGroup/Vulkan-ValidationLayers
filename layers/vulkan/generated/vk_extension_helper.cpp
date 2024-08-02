@@ -370,6 +370,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_legacy_dithering", vvl::Extension::_VK_EXT_legacy_dithering},
         {"VK_EXT_pipeline_protected_access", vvl::Extension::_VK_EXT_pipeline_protected_access},
         {"VK_ANDROID_external_format_resolve", vvl::Extension::_VK_ANDROID_external_format_resolve},
+        {"VK_AMD_anti_lag", vvl::Extension::_VK_AMD_anti_lag},
         {"VK_EXT_shader_object", vvl::Extension::_VK_EXT_shader_object},
         {"VK_QCOM_tile_properties", vvl::Extension::_VK_QCOM_tile_properties},
         {"VK_SEC_amigo_profiling", vvl::Extension::_VK_SEC_amigo_profiling},

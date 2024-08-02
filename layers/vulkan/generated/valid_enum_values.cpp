@@ -1894,6 +1894,29 @@ ValidValue StatelessValidation::IsValidEnumValue(VkOpticalFlowSessionBindingPoin
 }
 
 template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkAntiLagModeAMD value) const {
+    switch (value) {
+        case VK_ANTI_LAG_MODE_DRIVER_CONTROL_AMD:
+        case VK_ANTI_LAG_MODE_ON_AMD:
+        case VK_ANTI_LAG_MODE_OFF_AMD:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkAntiLagStageAMD value) const {
+    switch (value) {
+        case VK_ANTI_LAG_STAGE_INPUT_AMD:
+        case VK_ANTI_LAG_STAGE_PRESENT_AMD:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkShaderCodeTypeEXT value) const {
     switch (value) {
         case VK_SHADER_CODE_TYPE_BINARY_EXT:
@@ -2916,6 +2939,16 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkOpticalFlowPerformanceL
 
 template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkOpticalFlowSessionBindingPointNV value) const {
+    return {};
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAntiLagModeAMD value) const {
+    return {};
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkAntiLagStageAMD value) const {
     return {};
 }
 

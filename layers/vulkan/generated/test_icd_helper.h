@@ -439,6 +439,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     {VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME, VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_SPEC_VERSION},
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+    {VK_AMD_ANTI_LAG_EXTENSION_NAME, VK_AMD_ANTI_LAG_SPEC_VERSION},
     {VK_EXT_SHADER_OBJECT_EXTENSION_NAME, VK_EXT_SHADER_OBJECT_SPEC_VERSION},
     {VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME, VK_QCOM_TILE_PROPERTIES_SPEC_VERSION},
     {VK_SEC_AMIGO_PROFILING_EXTENSION_NAME, VK_SEC_AMIGO_PROFILING_SPEC_VERSION},
@@ -1869,6 +1870,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL BindOpticalFlowSessionImageNV(VkDevice dev
                                                                     VkImageView view, VkImageLayout layout);
 static VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
                                                           const VkOpticalFlowExecuteInfoNV* pExecuteInfo);
+static VKAPI_ATTR void VKAPI_CALL AntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData);
 static VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                        const VkShaderCreateInfoEXT* pCreateInfos,
                                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders);
@@ -2665,6 +2667,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkDestroyOpticalFlowSessionNV", (void*)DestroyOpticalFlowSessionNV},
     {"vkBindOpticalFlowSessionImageNV", (void*)BindOpticalFlowSessionImageNV},
     {"vkCmdOpticalFlowExecuteNV", (void*)CmdOpticalFlowExecuteNV},
+    {"vkAntiLagUpdateAMD", (void*)AntiLagUpdateAMD},
     {"vkCreateShadersEXT", (void*)CreateShadersEXT},
     {"vkDestroyShaderEXT", (void*)DestroyShaderEXT},
     {"vkGetShaderBinaryDataEXT", (void*)GetShaderBinaryDataEXT},
@@ -5154,6 +5157,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL BindOpticalFlowSessionImageNV(VkDevice dev
 
 static VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
                                                           const VkOpticalFlowExecuteInfoNV* pExecuteInfo) {}
+
+static VKAPI_ATTR void VKAPI_CALL AntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData) {}
 
 static VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                        const VkShaderCreateInfoEXT* pCreateInfos,

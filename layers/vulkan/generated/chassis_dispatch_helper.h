@@ -1598,6 +1598,9 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateCmdOpticalFlowExecuteNV,
     InterceptIdPreCallRecordCmdOpticalFlowExecuteNV,
     InterceptIdPostCallRecordCmdOpticalFlowExecuteNV,
+    InterceptIdPreCallValidateAntiLagUpdateAMD,
+    InterceptIdPreCallRecordAntiLagUpdateAMD,
+    InterceptIdPostCallRecordAntiLagUpdateAMD,
     InterceptIdPreCallValidateDestroyShaderEXT,
     InterceptIdPreCallRecordDestroyShaderEXT,
     InterceptIdPostCallRecordDestroyShaderEXT,
@@ -3356,6 +3359,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdOpticalFlowExecuteNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdOpticalFlowExecuteNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdOpticalFlowExecuteNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateAntiLagUpdateAMD);
+    BUILD_DISPATCH_VECTOR(PreCallRecordAntiLagUpdateAMD);
+    BUILD_DISPATCH_VECTOR(PostCallRecordAntiLagUpdateAMD);
     BUILD_DISPATCH_VECTOR(PreCallValidateDestroyShaderEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordDestroyShaderEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordDestroyShaderEXT);

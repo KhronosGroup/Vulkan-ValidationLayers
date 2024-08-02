@@ -7620,6 +7620,14 @@ void ThreadSafety::PostCallRecordCmdOpticalFlowExecuteNV(VkCommandBuffer command
     FinishReadObject(session, record_obj.location);
 }
 
+void ThreadSafety::PreCallRecordAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void ThreadSafety::PostCallRecordAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 void ThreadSafety::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                  const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
                                                  VkShaderEXT* pShaders, const RecordObject& record_obj) {

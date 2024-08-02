@@ -585,6 +585,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_legacy_dithering{kNotEnabled};
     ExtEnabled vk_ext_pipeline_protected_access{kNotEnabled};
     ExtEnabled vk_android_external_format_resolve{kNotEnabled};
+    ExtEnabled vk_amd_anti_lag{kNotEnabled};
     ExtEnabled vk_ext_shader_object{kNotEnabled};
     ExtEnabled vk_qcom_tile_properties{kNotEnabled};
     ExtEnabled vk_sec_amigo_profiling{kNotEnabled};
@@ -1572,6 +1573,7 @@ struct DeviceExtensions : public InstanceExtensions {
                   {{{&DeviceExtensions::vk_android_external_memory_android_hardware_buffer,
                      VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+            {vvl::Extension::_VK_AMD_anti_lag, Info(&DeviceExtensions::vk_amd_anti_lag, {})},
             {vvl::Extension::_VK_EXT_shader_object,
              Info(&DeviceExtensions::vk_ext_shader_object,
                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
@@ -2050,6 +2052,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_legacy_dithering:
         case vvl::Extension::_VK_EXT_pipeline_protected_access:
         case vvl::Extension::_VK_ANDROID_external_format_resolve:
+        case vvl::Extension::_VK_AMD_anti_lag:
         case vvl::Extension::_VK_EXT_shader_object:
         case vvl::Extension::_VK_QCOM_tile_properties:
         case vvl::Extension::_VK_SEC_amigo_profiling:
