@@ -17,7 +17,6 @@
 
 #include <cmath>
 #include <fstream>
-#include "utils/cast_utils.h"
 #include "utils/hash_util.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_draw.h"
@@ -29,7 +28,6 @@
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/instrumentation/gpuav_instrumentation.h"
 #include "gpu/shaders/gpu_shaders_constants.h"
-#include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
 
 // Generated shaders

@@ -21,6 +21,7 @@
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpu_error_codes.h"
+#include "spirv-tools/optimizer.hpp"
 
 #include <regex>
 #include <fstream>

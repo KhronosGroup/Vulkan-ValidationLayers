@@ -27,7 +27,6 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_module.h"
 #include "cc_buffer_address.h"
-#include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 

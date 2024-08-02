@@ -21,8 +21,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
-#include <vector>
 
 #include "containers/range_vector.h"
 #include "containers/subresource_adapter.h"

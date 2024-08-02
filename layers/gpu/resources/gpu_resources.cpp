@@ -18,7 +18,7 @@
 #include "gpu/resources/gpu_resources.h"
 
 #include "generated/layer_chassis_dispatch.h"
-#include "utils/vk_layer_utils.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpu {
 

@@ -18,7 +18,6 @@
 #pragma once
 
 #include "test_common.h"
-#include <unordered_set>
 #include <regex>
 
 // ErrorMonitor Usage:

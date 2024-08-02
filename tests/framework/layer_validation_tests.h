@@ -36,15 +36,11 @@
 #include "utils/convert_utils.h"
 #include "shader_templates.h"
 
-#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <limits>
-#include <memory>
 #include <string>
-#include <unordered_set>
 #include <vector>
-#include <condition_variable>
 
 using std::string;
 using std::vector;

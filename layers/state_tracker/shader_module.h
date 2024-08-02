@@ -26,7 +26,6 @@
 #include "state_tracker/state_object.h"
 #include "state_tracker/sampler_state.h"
 #include <spirv/unified1/spirv.hpp>
-#include "spirv-tools/optimizer.hpp"
 
 namespace vvl {
 class Pipeline;

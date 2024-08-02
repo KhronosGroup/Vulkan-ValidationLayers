@@ -18,7 +18,6 @@
  */
 
 #include <string>
-#include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"

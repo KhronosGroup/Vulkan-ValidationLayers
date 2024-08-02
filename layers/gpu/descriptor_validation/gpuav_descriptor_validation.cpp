@@ -22,8 +22,6 @@
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/resources/gpu_shader_resources.h"
 
-#include "profiling/profiling.h"
-
 namespace gpuav {
 void UpdateBoundPipeline(Validator &gpuav, VkCommandBuffer cb, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
                          const Location &loc) {

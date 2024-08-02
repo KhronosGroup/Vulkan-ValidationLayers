@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 #pragma once
-#include "utils/hash_vk_types.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_state.h"

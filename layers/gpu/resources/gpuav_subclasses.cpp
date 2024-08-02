@@ -21,7 +21,6 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/core/gpuav_constants.h"
 #include "gpu/descriptor_validation/gpuav_image_layout.h"
-#include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpu/shaders/gpu_error_header.h"
 

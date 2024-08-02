@@ -27,6 +27,7 @@
 #include "generated/vk_validation_error_messages.h"
 #include "error_location.h"
 #include "utils/hash_util.h"
+#include "vk_layer_config.h"
 
 [[maybe_unused]] const char *kVUIDUndefined = "VUID_Undefined";
 

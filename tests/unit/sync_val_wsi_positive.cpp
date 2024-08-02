@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <thread>
 #include "../framework/layer_validation_tests.h"
 
 struct PositiveSyncValWsi : public VkSyncValTest {};

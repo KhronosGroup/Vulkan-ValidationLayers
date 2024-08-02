@@ -20,19 +20,10 @@
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
 #endif
-#include "utils/cast_utils.h"
-#include "state_tracker/shader_stage_state.h"
-#include "utils/hash_util.h"
 #include "gpu/core/gpuav_constants.h"
-#include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "state_tracker/device_state.h"
-#include "state_tracker/shader_object_state.h"
-#include "spirv-tools/instrument.hpp"
-#include "spirv-tools/linker.hpp"
 #include "generated/layer_chassis_dispatch.h"
-#include "containers/custom_containers.h"
 #include "gpu/shaders/gpu_error_header.h"
 #include "gpu/shaders/gpu_shaders_constants.h"
 #include "generated/chassis.h"

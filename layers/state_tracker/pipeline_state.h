@@ -21,7 +21,6 @@
 
 #include <vulkan/utility/vk_safe_struct.hpp>
 
-#include "utils/hash_vk_types.h"
 #include "state_tracker/pipeline_sub_state.h"
 #include "generated/dynamic_state_helper.h"
 #include "utils/shader_utils.h"
