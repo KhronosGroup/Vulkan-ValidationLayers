@@ -15,7 +15,6 @@
 #pragma once
 
 #include <vector>
-#include <list>
 #include "instruction.h"
 #include "generated/spirv_grammar_helper.h"
 

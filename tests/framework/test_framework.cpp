@@ -17,7 +17,6 @@
  */
 
 #include "test_framework.h"
-#include "render.h"
 #include CONFIG_HEADER_FILE
 #include <filesystem>
 #include <cmath>

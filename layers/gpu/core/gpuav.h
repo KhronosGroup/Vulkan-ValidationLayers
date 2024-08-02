@@ -21,7 +21,6 @@
 #include "gpu/resources/gpu_resources.h"
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"
 
-#include <unordered_map>
 #include <memory>
 
 namespace chassis {

@@ -19,8 +19,7 @@
 #include <string>
 #include <queue>
 
-#include "state_tracker/pipeline_state.h"
-#include "state_tracker/descriptor_sets.h"
+#include "utils/hash_util.h"
 #include "generated/spirv_grammar_helper.h"
 #include "spirv/1.2/GLSL.std.450.h"
 

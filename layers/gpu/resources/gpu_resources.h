@@ -18,11 +18,8 @@
 #pragma once
 
 #include "containers/custom_containers.h"
-#include "error_message/logging.h"
-#include "generated/error_location_helper.h"
 #include "vma/vma.h"
 
-#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>

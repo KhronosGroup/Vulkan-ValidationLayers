@@ -22,8 +22,6 @@
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/resources/gpu_shader_resources.h"
 #include "gpu/shaders/gpu_error_header.h"
-#include "state_tracker/shader_stage_state.h"
-#include "spirv-tools/optimizer.hpp"
 
 namespace gpuav {
 

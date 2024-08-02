@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+#include <sstream>
 #include "state_tracker/shader_instruction.h"
-#include "state_tracker/shader_module.h"
 #include "generated/spirv_grammar_helper.h"
 
 namespace spirv {

@@ -20,7 +20,6 @@
 #include <array>
 #include <cstdarg>
 #include <mutex>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>

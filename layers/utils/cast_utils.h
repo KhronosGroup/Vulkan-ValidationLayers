@@ -1,6 +1,6 @@
-/* Copyright (c) 2019 The Khronos Group Inc.
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+/* Copyright (c) 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 #pragma once
 
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
-#include <functional>
 
 #define CAST_TO_FROM_UTILS
 // Casts to allow various types of less than 64 bits to be cast to and from uint64_t safely and portably

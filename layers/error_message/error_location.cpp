@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 #include "error_location.h"
-#include "utils/vk_layer_utils.h"
-#include <map>
 
 void Location::AppendFields(std::ostream& out) const {
     if (prev) {

@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 #include <vector>
-#include <memory>
 #include "link.h"
 #include "instruction.h"
 #include "function_basic_block.h"

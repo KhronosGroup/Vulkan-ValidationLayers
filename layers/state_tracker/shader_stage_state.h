@@ -17,7 +17,8 @@
  */
 
 #pragma once
-#include "utils/vk_layer_utils.h"
+#include <vulkan/vulkan.h>
+#include "containers/custom_containers.h"
 
 namespace vku {
 struct safe_VkPipelineShaderStageCreateInfo;

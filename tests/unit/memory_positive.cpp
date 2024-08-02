@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <thread>
 #include "../framework/layer_validation_tests.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR

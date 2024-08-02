@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 #include "state_tracker/device_memory_state.h"
-#include "state_tracker/image_state.h"
 
 #include <algorithm>
 
@@ -373,4 +372,3 @@ void vvl::Bindable::CacheInvalidMemory() const {
         }
     }
 }
-

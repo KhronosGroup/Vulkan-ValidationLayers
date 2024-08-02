@@ -11,11 +11,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <thread>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/thread_helper.h"
-#include "generated/vk_extension_helper.h"
 
 class PositiveCommand : public VkLayerTest {};
 

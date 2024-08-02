@@ -20,8 +20,6 @@
  */
 #pragma once
 
-#include <algorithm>
-#include <array>
 #include <vector>
 #include "range_vector.h"
 #include "custom_containers.h"

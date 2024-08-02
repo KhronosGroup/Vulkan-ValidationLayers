@@ -19,7 +19,6 @@
  */
 #pragma once
 
-#include <utility>
 #include <variant>
 
 #include "state_tracker/device_memory_state.h"

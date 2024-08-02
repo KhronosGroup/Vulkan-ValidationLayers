@@ -15,7 +15,6 @@
 
 #include "instruction.h"
 #include "generated/spirv_grammar_helper.h"
-#include "module.h"
 
 namespace gpu {
 namespace spirv {

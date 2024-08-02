@@ -22,7 +22,6 @@
 #include "state_tracker/state_object.h"
 #include "state_tracker/submission_reference.h"
 #include <future>
-#include <mutex>
 
 class ValidationStateTracker;
 

@@ -19,7 +19,6 @@
 
 #include <cstdint>
 #include <string>
-#include <limits>
 
 #include "generated/error_location_helper.h"
 #include "logging.h"
