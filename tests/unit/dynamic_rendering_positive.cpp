@@ -14,7 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
-#include "generated/vk_extension_helper.h"
 
 void DynamicRenderingTest::InitBasicDynamicRendering() {
     SetTargetApiVersion(VK_API_VERSION_1_2);

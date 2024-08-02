@@ -23,9 +23,11 @@
 #include <iterator>
 #include <memory>
 #include <vector>
+#include <optional>
 
+#include "containers/custom_containers.h"
 #include "generated/vk_function_pointers.h"
-#include "generated/vk_extension_helper.h"
+#include "utils/cast_utils.h"
 #include "test_common.h"
 
 namespace vkt {

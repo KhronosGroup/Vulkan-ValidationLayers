@@ -21,13 +21,8 @@
 #include <glslang/Public/ShaderLang.h>
 #include "test_common.h"
 
-#include <fstream>
-#include <iostream>
-#include <list>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>

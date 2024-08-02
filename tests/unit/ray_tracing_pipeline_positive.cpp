@@ -12,7 +12,6 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
 class PositiveRayTracingPipeline : public RayTracingTest {};

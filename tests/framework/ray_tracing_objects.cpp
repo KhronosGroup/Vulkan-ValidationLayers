@@ -13,8 +13,6 @@
 
 #include "utils/vk_layer_utils.h"
 
-#include <iostream>
-
 namespace vkt {
 namespace as {
 
@@ -1348,7 +1346,7 @@ void Pipeline::BuildSbt() {
 
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
-    
+
     // Allocate buffer to store SBT, and fill it with sbt_host_storage
     VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
     sbt_buffer_info.size = Align<VkDeviceSize>(sbt_host_storage.size() + 2 * rt_pipeline_props.shaderGroupBaseAlignment, 4096);
@@ -1426,7 +1424,7 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt() {
 
     VkStridedDeviceAddressRegionKHR closest_hit_sbt{};
     if (!closest_hit_shaders_.empty()) {
-        sbt_offseted_address = Align<VkDeviceAddress>(sbt_offseted_address, rt_pipeline_props.shaderGroupBaseAlignment);        
+        sbt_offseted_address = Align<VkDeviceAddress>(sbt_offseted_address, rt_pipeline_props.shaderGroupBaseAlignment);
         closest_hit_sbt.deviceAddress = sbt_offseted_address;
         closest_hit_sbt.stride = handle_size_aligned;
         closest_hit_sbt.size = closest_hit_shaders_.size() * handle_size_aligned;

@@ -10,7 +10,6 @@
  */
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "generated/vk_extension_helper.h"
 
 void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);

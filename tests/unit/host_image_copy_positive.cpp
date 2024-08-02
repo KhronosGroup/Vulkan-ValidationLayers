@@ -12,7 +12,6 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "utils/vk_layer_utils.h"
 
 bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout> &src_layouts,
                                             const std::vector<VkImageLayout> &dst_layouts, VkImageLayout layout) {

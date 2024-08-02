@@ -1067,7 +1067,7 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
 
     // Try to import Win32 handle while semaphore is still in use
     // Waiting for: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3507
-    m_errorMonitor->SetDesiredError(kVUIDUndefined);
+    m_errorMonitor->SetDesiredError("VUID_Undefined");
     semaphore.import_handle(handle, handle_type);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();

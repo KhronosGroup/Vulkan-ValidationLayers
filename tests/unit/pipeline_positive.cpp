@@ -15,7 +15,6 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
-#include "generated/vk_extension_helper.h"
 
 class PositivePipeline : public VkLayerTest {};
 

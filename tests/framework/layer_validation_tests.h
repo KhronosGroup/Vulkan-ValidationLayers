@@ -30,6 +30,7 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "test_common.h"
+#include "binding.h"
 #include "containers/custom_containers.h"
 #include "generated/vk_extension_helper.h"
 #include "render.h"

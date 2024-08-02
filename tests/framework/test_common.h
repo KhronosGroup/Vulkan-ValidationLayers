@@ -17,16 +17,9 @@
  */
 #pragma once
 
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include "error_message/logging.h"
-
 #include <vulkan/vulkan.h>
-
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 // GTest and Xlib collide due to redefinitions of "None" and "Bool"
 #ifdef VK_USE_PLATFORM_XLIB_KHR
@@ -49,8 +42,6 @@
 #define RETURN_IF_SKIP(function) \
     function;                    \
     if (::testing::Test::IsSkipped()) return;
-
-#include "binding.h"
 
 // Stream operator for VkResult so GTEST will print out error codes as strings (automatically)
 inline std::ostream& operator<<(std::ostream& os, const VkResult& result) { return os << string_VkResult(result); }
