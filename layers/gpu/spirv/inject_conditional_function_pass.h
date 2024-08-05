@@ -19,16 +19,40 @@
 namespace gpu {
 namespace spirv {
 
-// A type of common pass that will inject a function call and link it up later.
-// We assume through other means (such as robustness) we won't crash on bad values and go
-//     PassFunction(original_value)
-//     value = original_value;
-class InjectFunctionPass : public Pass {
+// A type of common pass that will inject a function call and link it up later,
+// We will have wrap the checks to be safe from bad values crashing things
+// For OpStore we will just ignore the store if it is invalid, example:
+// Before:
+//     bda.data[index] = value;
+// After:
+//    if (isValid(bda.data, index)) {
+//         bda.data[index] = value;
+//    }
+//
+// For OpLoad we replace the value with Zero (via Phi node) if it is invalid, example
+// Before:
+//     int X = bda.data[index];
+//     int Y = bda.data[X];
+// After:
+//    if (isValid(bda.data, index)) {
+//         int X = bda.data[index];
+//    } else {
+//         int X = 0;
+//    }
+//    if (isValid(bda.data, X)) {
+//         int Y = bda.data[X];
+//    } else {
+//         int Y = 0;
+//    }
+class InjectConditionalFunctionPass : public Pass {
   public:
     bool Run() final;
 
   protected:
-    InjectFunctionPass(Module& module);
+    InjectConditionalFunctionPass(Module& module);
+
+    BasicBlockIt InjectFunction(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
+                                const InjectionData& injection_data);
 
     // Each pass decides if the instruction should needs to have its function check injected
     virtual bool AnalyzeInstruction(const Function& function, const Instruction& inst) = 0;

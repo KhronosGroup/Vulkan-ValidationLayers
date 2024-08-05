@@ -119,7 +119,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* i
                 // Get array stride and multiply by current index
                 uint32_t arr_stride = GetDecoration(current_type_id, spv::DecorationArrayStride)->Word(3);
                 const uint32_t arr_stride_id = module_.type_manager_.GetConstantUInt32(arr_stride).Id();
-                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block);
+                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
 
                 current_offset_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, arr_stride_id, ac_index_id_32}, inst_it);
@@ -145,7 +145,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* i
                     col_stride_id = module_.type_manager_.GetConstantUInt32(col_stride).Id();
                 }
 
-                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block);
+                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
                 current_offset_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, col_stride_id, ac_index_id_32}, inst_it);
 
@@ -157,7 +157,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* i
                 // If inside a row major matrix type, multiply index by matrix stride,
                 // else multiply by component size
                 const uint32_t component_type_id = current_type->inst_.Operand(0);
-                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block);
+                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
                 if (in_matrix && !col_major) {
                     current_offset_id = module_.TakeNextId();
                     block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, matrix_stride_id, ac_index_id_32},
@@ -224,7 +224,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
                                                     const InjectionData& injection_data) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block);  // might be int32
+    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
     if (image_inst_) {
         // Get Texel buffer offset
@@ -245,7 +245,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
                 const uint32_t arrayed = image_type->inst_.Operand(3);
                 const uint32_t ms = image_type->inst_.Operand(4);
                 if (depth == 0 && arrayed == 0 && ms == 0) {
-                    descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block);
+                    descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
                 }
             }
         } else {

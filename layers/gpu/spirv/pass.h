@@ -25,6 +25,12 @@ class Module;
 struct Variable;
 struct BasicBlock;
 
+// Info we know is the same regardless what pass is consuming the CreateFunctionCall()
+struct InjectionData {
+    uint32_t stage_info_id;
+    uint32_t inst_position_id;
+};
+
 // Common helpers for all passes
 class Pass {
   public:
@@ -44,8 +50,8 @@ class Pass {
 
     // Generate SPIR-V needed to help convert things to be uniformly uint32_t
     // If no inst_it is passed in, any new instructions will be added to end of the Block
-    uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it = nullptr);
-    uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it = nullptr);
+    uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it);
+    uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it);
 
   protected:
     Pass(Module& module) : module_(module) {}

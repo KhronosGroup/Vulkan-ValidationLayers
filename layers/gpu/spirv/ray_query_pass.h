@@ -15,15 +15,15 @@
 #pragma once
 
 #include <stdint.h>
-#include "inject_function_pass.h"
+#include "inject_conditional_function_pass.h"
 
 namespace gpu {
 namespace spirv {
 
 // Create a pass to instrument SPV_KHR_ray_query instructions
-class RayQueryPass : public InjectFunctionPass {
+class RayQueryPass : public InjectConditionalFunctionPass {
   public:
-    RayQueryPass(Module& module) : InjectFunctionPass(module, true) {}
+    RayQueryPass(Module& module) : InjectConditionalFunctionPass(module) {}
     void PrintDebugInfo() final;
 
   private:
