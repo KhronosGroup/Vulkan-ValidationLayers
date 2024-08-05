@@ -38,7 +38,7 @@ bool Type::operator==(Type const& other) const {
 //   %B = OpTypePointer Input %A
 //   %C = OpVariable %B Input
 const Type* Variable::PointerType(TypeManager& type_manager_) const {
-    assert(type_.inst_.Opcode() == spv::OpTypePointer);
+    assert(type_.spv_type_ == SpvType::kPointer || type_.spv_type_ == SpvType::kForwardPointer);
     uint32_t type_id = type_.inst_.Word(3);
     return type_manager_.FindTypeById(type_id);
 }

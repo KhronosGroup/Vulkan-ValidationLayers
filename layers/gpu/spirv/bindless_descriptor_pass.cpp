@@ -43,7 +43,9 @@ uint32_t BindlessDescriptorPass::FindTypeByteSize(uint32_t type_id, uint32_t mat
             return 8;  // Assuming PhysicalStorageBuffer pointer
             break;
         case SpvType::kMatrix: {
-            assert(matrix_stride != 0 && "missing matrix stride");
+            if (matrix_stride == 0) {
+                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize is missing matrix stride");
+            }
             if (col_major) {
                 return type.inst_.Word(3) * matrix_stride;
             } else {
@@ -61,7 +63,7 @@ uint32_t BindlessDescriptorPass::FindTypeByteSize(uint32_t type_id, uint32_t mat
                 const uint32_t width = component_type->inst_.Word(2);
                 size *= width;
             } else {
-                assert(false && "unexpected type");
+                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize has unexpected vector type");
             }
             return size / 8;
         }
@@ -92,7 +94,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* i
     } else if (descriptor_type->spv_type_ == SpvType::kStruct) {
         current_type_id = descriptor_type->Id();
     } else {
-        assert(false && "unexpected descriptor type");
+        module_.InternalError("BindlessDescriptorPass", "GetLastByte has unexpected descriptor type");
         return 0;
     }
 
@@ -126,7 +128,9 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* i
                 current_type_id = current_type->inst_.Operand(0);
             } break;
             case SpvType::kMatrix: {
-                assert(matrix_stride != 0 && "missing matrix stride");
+                if (matrix_stride == 0) {
+                    module_.InternalError("BindlessDescriptorPass", "GetLastByte is missing matrix stride");
+                }
                 matrix_stride_id = module_.type_manager_.GetConstantUInt32(matrix_stride).Id();
                 uint32_t vec_type_id = current_type->inst_.Operand(0);
 
@@ -191,7 +195,7 @@ uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* i
                 current_type_id = current_type->inst_.Operand(member_index);
             } break;
             default: {
-                assert(false && "unexpected non-composite type");
+                module_.InternalError("BindlessDescriptorPass", "GetLastByte has unexpected non-composite type");
             } break;
         }
 
@@ -330,19 +334,24 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
             return false;
         }
 
-        const uint32_t pointer_type_id = variable->type_.inst_.Operand(1);
-        const Type* pointer_type = module_.type_manager_.FindTypeById(pointer_type_id);
+        const Type* pointer_type = variable->PointerType(module_.type_manager_);
 
         // Check for deprecated storage block form
         if (storage_class == spv::StorageClassUniform) {
-            const uint32_t block_type_id = (pointer_type->inst_.IsArray()) ? pointer_type->inst_.Operand(0) : pointer_type_id;
-            assert(module_.type_manager_.FindTypeById(block_type_id)->spv_type_ == SpvType::kStruct && "unexpected block type");
+            const uint32_t block_type_id = (pointer_type->inst_.IsArray()) ? pointer_type->inst_.Operand(0) : pointer_type->Id();
+            if (module_.type_manager_.FindTypeById(block_type_id)->spv_type_ != SpvType::kStruct) {
+                module_.InternalError("BindlessDescriptorPass", "Uniform variable block type is not OpTypeStruct");
+                return false;
+            }
 
             const bool block_found = GetDecoration(block_type_id, spv::DecorationBlock) != nullptr;
 
             // If block decoration not found, verify deprecated form of SSBO
             if (!block_found) {
-                assert(GetDecoration(block_type_id, spv::DecorationBufferBlock) != nullptr && "block decoration not found");
+                if (GetDecoration(block_type_id, spv::DecorationBufferBlock) == nullptr) {
+                    module_.InternalError("BindlessDescriptorPass", "Uniform variable block decoration not found");
+                    return false;
+                }
                 storage_class = spv::StorageClassStorageBuffer;
             }
         }
@@ -392,13 +401,13 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
             descriptor_index_id_ = var_inst_->Operand(1);
 
             if (var_inst_->Length() > 5) {
-                assert(false && "OpAccessChain has more than 1 indexes");
+                module_.InternalError("BindlessDescriptorPass", "OpAccessChain has more than 1 indexes");
                 return false;
             }
 
             const Variable* variable = module_.type_manager_.FindVariableById(var_inst_->Operand(0));
             if (!variable) {
-                assert(false && "OpAccessChain base is not a variable");
+                module_.InternalError("BindlessDescriptorPass", "OpAccessChain base is not a variable");
                 return false;
             }
             var_inst_ = &variable->inst_;
