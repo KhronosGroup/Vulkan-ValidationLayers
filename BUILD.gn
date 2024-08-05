@@ -197,6 +197,8 @@ vvl_sources = [
   "layers/gpu/spirv/link.h",
   "layers/gpu/spirv/module.cpp",
   "layers/gpu/spirv/module.h",
+  "layers/gpu/spirv/inject_conditional_function_pass.cpp",
+  "layers/gpu/spirv/inject_conditional_function_pass.h",
   "layers/gpu/spirv/inject_function_pass.cpp",
   "layers/gpu/spirv/inject_function_pass.h",
   "layers/gpu/spirv/pass.cpp",

@@ -15,7 +15,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "inject_function_pass.h"
+#include "inject_conditional_function_pass.h"
 
 namespace gpu {
 namespace spirv {
@@ -23,9 +23,9 @@ namespace spirv {
 // Create a pass to instrument physical buffer address checking
 // This pass instruments all physical buffer address references to check that
 // all referenced bytes fall in a valid buffer.
-class BufferDeviceAddressPass : public InjectFunctionPass {
+class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
   public:
-    BufferDeviceAddressPass(Module& module) : InjectFunctionPass(module, true) {}
+    BufferDeviceAddressPass(Module& module) : InjectConditionalFunctionPass(module) {}
     void PrintDebugInfo() final;
 
   private:

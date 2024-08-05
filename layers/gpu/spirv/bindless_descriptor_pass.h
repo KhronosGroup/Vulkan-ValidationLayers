@@ -15,7 +15,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "inject_function_pass.h"
+#include "inject_conditional_function_pass.h"
 
 namespace gpu {
 namespace spirv {
@@ -24,9 +24,9 @@ namespace spirv {
 // This pass instruments all bindless references to check that descriptor
 // array indices are inbounds, and if the descriptor indexing extension is
 // enabled, that the descriptor has been initialized.
-class BindlessDescriptorPass : public InjectFunctionPass {
+class BindlessDescriptorPass : public InjectConditionalFunctionPass {
   public:
-    BindlessDescriptorPass(Module& module) : InjectFunctionPass(module, true) {}
+    BindlessDescriptorPass(Module& module) : InjectConditionalFunctionPass(module) {}
     void PrintDebugInfo() final;
 
   private:
