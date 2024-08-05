@@ -160,9 +160,9 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
                     stage_info[i + 2] = extract_id;
                 }
             } break;
-            default: {
-                assert(false && "unsupported stage");
-            } break;
+            default:
+                module_.InternalError("Passs", "GetStageInfo has unsupported stage");
+                break;
         }
     }
 
@@ -274,7 +274,8 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
             }
         }
     }
-    assert(false);
+
+    module_.InternalError("FindTargetInstruction", "failed to find instruction");
     return block.instructions_.end();
 }
 

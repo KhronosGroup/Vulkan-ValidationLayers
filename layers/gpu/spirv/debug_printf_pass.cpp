@@ -100,7 +100,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_low_id, shift_right_id}, inst_it);
                 params.push_back(uconvert_low_id);
             } else {
-                assert(false && "unsupported for int width");
+                module_.InternalError("DebugPrintfPass", "CreateFunctionParams has unsupported for int width");
             }
             break;
         }
@@ -151,7 +151,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_low_id, shift_right_id}, inst_it);
                 params.push_back(uconvert_low_id);
             } else {
-                assert(false && "unsupported for float width");
+                module_.InternalError("DebugPrintfPass", "CreateFunctionParams has unsupported for float width");
             }
             break;
         }
@@ -168,7 +168,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
         }
 
         default:
-            assert(false && "unsupported for function param type");
+            module_.InternalError("DebugPrintfPass", "CreateFunctionParams has unsupported function param type");
             break;
     }
 }
