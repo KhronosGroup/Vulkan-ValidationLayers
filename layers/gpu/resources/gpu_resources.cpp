@@ -143,6 +143,14 @@ void SharedResourcesManager::Clear() {
     shared_validation_resources_map_.clear();
 }
 
+void DeviceMemoryBlock::Destroy(VmaAllocator allocator) {
+    if (buffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(allocator, buffer, allocation);
+        buffer = VK_NULL_HANDLE;
+        allocation = VK_NULL_HANDLE;
+    }
+}
+
 VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {
     std::pair<VkDescriptorPool, VkDescriptorSet> descriptor;
     descriptor_set_manager_.GetDescriptorSet(&descriptor.first, desc_set_layout, &descriptor.second);

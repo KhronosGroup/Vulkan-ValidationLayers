@@ -393,7 +393,7 @@ void CommandBuffer::ResetCBState() {
     per_command_error_loggers.clear();
 
     for (auto &buffer_info : di_input_buffer_list) {
-        vmaDestroyBuffer(gpuav->vma_allocator_, buffer_info.bindless_state_buffer, buffer_info.bindless_state_buffer_allocation);
+        vmaDestroyBuffer(gpuav->vma_allocator_, buffer_info.bindless_state.buffer, buffer_info.bindless_state.allocation);
     }
     di_input_buffer_list.clear();
     current_bindless_buffer = VK_NULL_HANDLE;
@@ -440,7 +440,7 @@ void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
 bool CommandBuffer::PreProcess(const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
-    bool succeeded = UpdateBindlessStateBuffer(*gpuav, *this, state_.vma_allocator_, loc);
+    bool succeeded = UpdateBindlessStateBuffer(*gpuav, *this, loc);
     if (!succeeded) {
         return false;
     }

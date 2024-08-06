@@ -65,6 +65,10 @@ void UpdateBoundPipeline(Validator &gpuav, VkCommandBuffer cb, VkPipelineBindPoi
 }
 
 void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBindPoint pipeline_bind_point, const Location &loc) {
+    if (!gpuav.gpuav_settings.validate_descriptors || !gpuav.force_buffer_device_address_) {
+        return;
+    }
+
     auto cb_state = gpuav.GetWrite<CommandBuffer>(cb);
     if (!cb_state) {
         gpuav.InternalError(cb, loc, "Unrecognized command buffer");
@@ -74,17 +78,17 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto const &last_bound = cb_state->lastBound[lv_bind_point];
 
-    uint32_t number_of_sets = static_cast<uint32_t>(last_bound.per_set.size());
-
-    if (number_of_sets == 0 || !gpuav.gpuav_settings.validate_descriptors || !gpuav.force_buffer_device_address_) {
+    const size_t number_of_sets = last_bound.per_set.size();
+    if (number_of_sets == 0) {
+        return;  // empty bind
+    } else if (number_of_sets > glsl::kDebugInputBindlessMaxDescSets) {
+        gpuav.InternalError(cb, loc, "Binding more than kDebugInputBindlessMaxDescSets limit");
         return;
     }
 
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
-
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    assert(number_of_sets <= glsl::kDebugInputBindlessMaxDescSets);
     buffer_info.size = sizeof(glsl::BindlessStateBuffer);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
@@ -94,21 +98,20 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
 
     // Allocate buffer for device addresses of the input buffer for each descriptor set.  This is the buffer written to each
     // draw's descriptor set.
-    VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &di_buffers.bindless_state_buffer,
-                                      &di_buffers.bindless_state_buffer_allocation, nullptr);
+    VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &di_buffers.bindless_state.buffer,
+                                      &di_buffers.bindless_state.allocation, nullptr);
     if (result != VK_SUCCESS) {
         gpuav.InternalError(cb_state->Handle(), loc, "Unable to allocate device memory.", true);
         return;
     }
     glsl::BindlessStateBuffer *bindless_state{nullptr};
-    result =
-        vmaMapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
+    result = vmaMapMemory(gpuav.vma_allocator_, di_buffers.bindless_state.allocation, reinterpret_cast<void **>(&bindless_state));
     if (result != VK_SUCCESS) {
         gpuav.InternalError(cb_state->Handle(), loc, "Unable to map device memory.", true);
         return;
     }
     memset(bindless_state, 0, static_cast<size_t>(buffer_info.size));
-    cb_state->current_bindless_buffer = di_buffers.bindless_state_buffer;
+    cb_state->current_bindless_buffer = di_buffers.bindless_state.buffer;
 
     bindless_state->global_state = gpuav.desc_heap_->GetDeviceAddress();
     di_buffers.descriptor_set_buffers.reserve(di_buffers.descriptor_set_buffers.size() + last_bound.per_set.size());
@@ -134,7 +137,7 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
             bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->device_addr;
             desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav, loc);
             if (!desc_set_state.output_state) {
-                vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation);
+                vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state.allocation);
                 return;
             }
             bindless_state->desc_sets[i].out_data = desc_set_state.output_state->device_addr;
@@ -142,16 +145,15 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
         di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
     }
     cb_state->di_input_buffer_list.emplace_back(std::move(di_buffers));
-    vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation);
+    vmaUnmapMemory(gpuav.vma_allocator_, di_buffers.bindless_state.allocation);
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-[[nodiscard]] bool UpdateBindlessStateBuffer(Validator &gpuav, CommandBuffer &cb_state, VmaAllocator vma_allocator,
-                                             const Location &loc) {
+[[nodiscard]] bool UpdateBindlessStateBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc) {
     for (auto &cmd_info : cb_state.di_input_buffer_list) {
         glsl::BindlessStateBuffer *bindless_state{nullptr};
         VkResult result =
-            vmaMapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
+            vmaMapMemory(gpuav.vma_allocator_, cmd_info.bindless_state.allocation, reinterpret_cast<void **>(&bindless_state));
         if (result != VK_SUCCESS) {
             gpuav.InternalError(gpuav.device, loc, "Unable to map device memory allocated for error output buffer.", true);
             return false;
@@ -166,13 +168,13 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
             if (!set_buffer.output_state) {
                 set_buffer.output_state = set_buffer.state->GetOutputState(gpuav, loc);
                 if (!set_buffer.output_state) {
-                    vmaUnmapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation);
+                    vmaUnmapMemory(gpuav.vma_allocator_, cmd_info.bindless_state.allocation);
                     return false;
                 }
                 bindless_state->desc_sets[i].out_data = set_buffer.output_state->device_addr;
             }
         }
-        vmaUnmapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation);
+        vmaUnmapMemory(gpuav.vma_allocator_, cmd_info.bindless_state.allocation);
     }
     return true;
 }

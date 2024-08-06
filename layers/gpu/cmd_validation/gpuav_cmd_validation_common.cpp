@@ -115,29 +115,4 @@ void RestorablePipelineState::Restore() const {
     }
 }
 
-VkDeviceAddress GetBufferDeviceAddress(Validator &gpuav, VkBuffer buffer, const Location &loc) {
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8001
-    // Setting enabled_features.bufferDeviceAddress to true in GpuShaderInstrumentor::PreCallRecordCreateDevice
-    // when adding missing features will modify another validator object, one associated to VkInstance,
-    // and "this" validator is associated to a device. enabled_features is not inherited, and besides
-    // would be reset in GetEnabledDeviceFeatures.
-    // The switch from the instance validator object to the device one happens in
-    // `state_tracker.cpp`, `ValidationStateTracker::PostCallRecordCreateDevice`
-    // TL;DR is the following type of sanity check is currently invalid, but it would be nice to have
-    // assert(enabled_features.bufferDeviceAddress);
-
-    VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
-    address_info.buffer = buffer;
-    if (gpuav.api_version >= VK_API_VERSION_1_2) {
-        return DispatchGetBufferDeviceAddress(gpuav.device, &address_info);
-    }
-    if (IsExtEnabled(gpuav.device_extensions.vk_ext_buffer_device_address)) {
-        return DispatchGetBufferDeviceAddressEXT(gpuav.device, &address_info);
-    }
-    if (IsExtEnabled(gpuav.device_extensions.vk_khr_buffer_device_address)) {
-        return DispatchGetBufferDeviceAddressKHR(gpuav.device, &address_info);
-    }
-    return 0;
-}
-
 }  // namespace gpuav

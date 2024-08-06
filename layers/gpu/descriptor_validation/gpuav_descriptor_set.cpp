@@ -100,16 +100,8 @@ VkDeviceAddress DescriptorSet::GetLayoutState(Validator &gpuav, const Location &
             state_start += binding->count;
         }
     }
-    auto buffer_device_address_info = vku::InitStruct<VkBufferDeviceAddressInfo>();
-    buffer_device_address_info.buffer = layout_.buffer;
 
-    // We cannot rely on device_extensions here, since we may be enabling BDA support even
-    // though the application has not requested it.
-    if (gpuav.api_version >= VK_API_VERSION_1_2) {
-        layout_.device_addr = DispatchGetBufferDeviceAddress(gpuav.device, &buffer_device_address_info);
-    } else {
-        layout_.device_addr = DispatchGetBufferDeviceAddressKHR(gpuav.device, &buffer_device_address_info);
-    }
+    layout_.device_addr = gpuav.GetBufferDeviceAddressHelper(layout_.buffer);
     if (layout_.device_addr == 0) {
         gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
         return 0;
@@ -248,10 +240,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
     if (last_used_state_ && last_used_state_->version == cur_version) {
         return last_used_state_;
     }
-    auto next_state = std::make_shared<State>();
-    next_state->set = VkHandle();
-    next_state->version = cur_version;
-    next_state->allocator = gpuav.vma_allocator_;
+    auto next_state = std::make_shared<State>(VkHandle(), cur_version, gpuav.vma_allocator_);
 
     uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
     if (GetBindingCount() > 0) {
@@ -316,20 +305,12 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
             case DescriptorClass::AccelerationStructure:
                 FillBindingInData(static_cast<const vvl::AccelerationStructureBinding &>(binding), data, index);
                 break;
-            default:
-                assert(false);
+            case DescriptorClass::NoDescriptorClass:
+                gpuav.InternalError(gpuav.device, loc, "NoDescriptorClass not supported.");
         }
     }
-    VkBufferDeviceAddressInfo buffer_device_address_info = vku::InitStructHelper();
-    buffer_device_address_info.buffer = next_state->buffer;
 
-    // We cannot rely on device_extensions here, since we may be enabling BDA support even
-    // though the application has not requested it.
-    if (gpuav.api_version >= VK_API_VERSION_1_2) {
-        next_state->device_addr = DispatchGetBufferDeviceAddress(gpuav.device, &buffer_device_address_info);
-    } else {
-        next_state->device_addr = DispatchGetBufferDeviceAddressKHR(gpuav.device, &buffer_device_address_info);
-    }
+    next_state->device_addr = gpuav.GetBufferDeviceAddressHelper(next_state->buffer);
     if (next_state->device_addr == 0) {
         gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
         return nullptr;
@@ -353,10 +334,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     if (output_state_) {
         return output_state_;
     }
-    auto next_state = std::make_shared<State>();
-    next_state->set = VkHandle();
-    next_state->version = cur_version;
-    next_state->allocator = gpuav.vma_allocator_;
+    auto next_state = std::make_shared<State>(VkHandle(), cur_version, gpuav.vma_allocator_);
 
     uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
     for (const auto &binding : *this) {
@@ -393,16 +371,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     assert(result == VK_SUCCESS);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
-    VkBufferDeviceAddressInfo buffer_device_address_info = vku::InitStructHelper();
-    buffer_device_address_info.buffer = next_state->buffer;
-
-    // We cannot rely on device_extensions here, since we may be enabling BDA support even
-    // though the application has not requested it.
-    if (gpuav.api_version >= VK_API_VERSION_1_2) {
-        next_state->device_addr = DispatchGetBufferDeviceAddress(gpuav.device, &buffer_device_address_info);
-    } else {
-        next_state->device_addr = DispatchGetBufferDeviceAddressKHR(gpuav.device, &buffer_device_address_info);
-    }
+    next_state->device_addr = gpuav.GetBufferDeviceAddressHelper(next_state->buffer);
     if (next_state->device_addr == 0) {
         gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
         return nullptr;
@@ -491,15 +460,7 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors)
     assert(result == VK_SUCCESS);
     memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
 
-    auto buffer_device_address_info = vku::InitStruct<VkBufferDeviceAddressInfo>();
-    buffer_device_address_info.buffer = buffer_;
-    // We cannot rely on device_extensions here, since we may be enabling BDA support even
-    // though the application has not requested it.
-    if (gpuav.api_version >= VK_API_VERSION_1_2) {
-        device_address_ = DispatchGetBufferDeviceAddress(gpuav.device, &buffer_device_address_info);
-    } else {
-        device_address_ = DispatchGetBufferDeviceAddressKHR(gpuav.device, &buffer_device_address_info);
-    }
+    device_address_ = gpuav.GetBufferDeviceAddressHelper(buffer_);
     assert(device_address_ != 0);
 }
 

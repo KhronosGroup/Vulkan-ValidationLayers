@@ -34,11 +34,12 @@ class DescriptorSet : public vvl::DescriptorSet {
     virtual ~DescriptorSet();
     void Destroy() override { last_used_state_.reset(); };
     struct State {
+        State(VkDescriptorSet set, uint32_t version, VmaAllocator allocator) : set(set), version(version), allocator(allocator) {}
         ~State();
 
-        VkDescriptorSet set{VK_NULL_HANDLE};
-        uint32_t version{0};
-        VmaAllocator allocator{nullptr};
+        const VkDescriptorSet set;
+        const uint32_t version;
+        const VmaAllocator allocator;
         VmaAllocation allocation{nullptr};
         VkBuffer buffer{VK_NULL_HANDLE};
         VkDeviceAddress device_addr{0};
