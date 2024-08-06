@@ -74,6 +74,24 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 const uint32_t unsigned_type_id = module_.type_manager_.GetTypeInt(width, false).Id();
                 block.CreateInstruction(spv::OpBitcast, {unsigned_type_id, bitcast_id, argument_id}, inst_it);
                 incoming_id = bitcast_id;
+
+                if (width == 8) {
+                    if (expanded_parameter_count_ > 31) {
+                        module_.InternalWarning("DEBUG-PRINTF-SIGNED-8-MASK",
+                                                "More than 32 expanded parameters, can't properly detect 8-bit signed ints [Simple "
+                                                "fix is to turn long printf() into 2 shorter printf() calls]");
+                    } else {
+                        signed_8_bitmask_ |= 1 << expanded_parameter_count_;
+                    }
+                } else if (width == 16) {
+                    if (expanded_parameter_count_ > 31) {
+                        module_.InternalWarning("DEBUG-PRINTF-SIGNED-16-MASK",
+                                                "More than 32 expanded parameters, can't properly detect 16-bit signed ints "
+                                                "[Simple fix is to turn long printf() into 2 shorter printf() calls]");
+                    } else {
+                        signed_16_bitmask_ |= 1 << expanded_parameter_count_;
+                    }
+                }
             }
 
             if (width == 8 || width == 16) {
@@ -123,12 +141,13 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 expanded_parameter_count_++;
             } else if (width == 64) {
                 if (expanded_parameter_count_ > 31) {
-                    // It is very unlikely to hit this, if the user does, they can just split the very long printf() into 2 printf()
-                    // calls ontop of each other
+                    // It is very unlikely to hit this
                     module_.InternalWarning("DEBUG-PRINTF-DOUBLE-MASK",
-                                            "More than 32 expanded parameters, can't properly detect 64-bit float");
+                                            "More than 32 expanded parameters, can't properly detect 64-bit float [Simple fix is "
+                                            "to turn long printf() into 2 shorter printf() calls]");
+                } else {
+                    double_bitmask_ |= 1 << expanded_parameter_count_;
                 }
-                double_bitmask_ |= 1 << expanded_parameter_count_;
 
                 // TODO (Also in GPU-AV) need to detect if shaderInt64 is supported or not before forcing this on
                 module_.AddCapability(spv::CapabilityInt64);
@@ -192,12 +211,16 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     // except a few slots, we place hold it with zero until we build up the params
     const size_t function_def_slot = 2;
     const size_t double_bitmask_slot = 5;
+    const size_t signed_8_bitmask_slot = 6;
+    const size_t signed_16_bitmask_slot = 7;
     std::vector<uint32_t> function_call_params = {void_type,
                                                   function_result,
                                                   0,  // function_def_slot
                                                   inst_position_constant.Id(),
                                                   string_id_constant.Id(),
                                                   0,  // double_bitmask_slot,
+                                                  0,  // signed_8_bitmask_slot,
+                                                  0,  // signed_16_bitmask_slot,
                                                   block_func.stage_info_x_id_,
                                                   block_func.stage_info_y_id_,
                                                   block_func.stage_info_z_id_,
@@ -231,6 +254,8 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     // patch in params
     function_call_params[function_def_slot] = function_def;
     function_call_params[double_bitmask_slot] = module_.type_manager_.GetConstantUInt32(double_bitmask_).Id();
+    function_call_params[signed_8_bitmask_slot] = module_.type_manager_.GetConstantUInt32(signed_8_bitmask_).Id();
+    function_call_params[signed_16_bitmask_slot] = module_.type_manager_.GetConstantUInt32(signed_16_bitmask_).Id();
 
     block.CreateInstruction(spv::OpFunctionCall, function_call_params, inst_it);
 }
@@ -428,6 +453,8 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
 void DebugPrintfPass::Reset() {
     target_instruction_ = nullptr;
     double_bitmask_ = 0;
+    signed_8_bitmask_ = 0;
+    signed_16_bitmask_ = 0;
     expanded_parameter_count_ = 0;
 }
 
