@@ -26,7 +26,7 @@ class Validator;
 
 void DestroyRenderPassMappedResources(Validator &gpuav, VkRenderPass render_pass);
 
-void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, VkCommandBuffer cmd_buffer,
+void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
                                        VkDeviceAddress indirect_data_address);
 
 }  // namespace gpuav

@@ -25,30 +25,24 @@
 
 namespace gpuav {
 
-void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
+void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
                                          const Location &loc) {
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
-    auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer.");
-        return;
-    }
-
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto const &last_bound = cb_state->lastBound[lv_bind_point];
+    auto const &last_bound = cb_state.lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
-        gpuav.InternalError(cb_state->VkHandle(), loc, "Neither pipeline state nor shader object states were found.");
+        gpuav.InternalError(cb_state.VkHandle(), loc, "Neither pipeline state nor shader object states were found.");
         return;
     }
 
     VkDescriptorSet instrumentation_desc_set =
-        cb_state->gpu_resources_manager.GetManagedDescriptorSet(cb_state->GetInstrumentationDescriptorSetLayout());
+        cb_state.gpu_resources_manager.GetManagedDescriptorSet(cb_state.GetInstrumentationDescriptorSetLayout());
     if (!instrumentation_desc_set) {
-        gpuav.InternalError(cb_state->VkHandle(), loc, "Unable to allocate instrumentation descriptor sets.");
+        gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to allocate instrumentation descriptor sets.");
         return;
     }
 
@@ -63,7 +57,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
         VkDescriptorBufferInfo error_output_desc_buffer_info = {};
         {
             error_output_desc_buffer_info.range = VK_WHOLE_SIZE;
-            error_output_desc_buffer_info.buffer = cb_state->GetErrorOutputBuffer();
+            error_output_desc_buffer_info.buffer = cb_state.GetErrorOutputBuffer();
             error_output_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -106,7 +100,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
         VkDescriptorBufferInfo cmd_errors_counts_desc_buffer_info = {};
         {
             cmd_errors_counts_desc_buffer_info.range = VK_WHOLE_SIZE;
-            cmd_errors_counts_desc_buffer_info.buffer = cb_state->GetCmdErrorsCountsBuffer();
+            cmd_errors_counts_desc_buffer_info.buffer = cb_state.GetCmdErrorsCountsBuffer();
             cmd_errors_counts_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -120,9 +114,9 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
 
         // Current bindless buffer
         VkDescriptorBufferInfo di_input_desc_buffer_info = {};
-        if (cb_state->current_bindless_buffer != VK_NULL_HANDLE) {
+        if (cb_state.current_bindless_buffer != VK_NULL_HANDLE) {
             di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-            di_input_desc_buffer_info.buffer = cb_state->current_bindless_buffer;
+            di_input_desc_buffer_info.buffer = cb_state.current_bindless_buffer;
             di_input_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -138,7 +132,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
         VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
         if (gpuav.gpuav_settings.validate_bda) {
             bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-            bda_input_desc_buffer_info.buffer = cb_state->GetBdaRangesSnapshot().buffer;
+            bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().buffer;
             bda_input_desc_buffer_info.offset = 0;
 
             VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -169,44 +163,44 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
 
     uint32_t operation_index = 0;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
-        operation_index = cb_state->draw_index++;
+        operation_index = cb_state.draw_index++;
     else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
-        operation_index = cb_state->compute_index++;
+        operation_index = cb_state.compute_index++;
     else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-        operation_index = cb_state->trace_rays_index++;
+        operation_index = cb_state.trace_rays_index++;
 
-    // TODO: Using cb_state->per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a
+    // TODO: Using cb_state.per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a
     // parameter
-    const uint32_t error_logger_i = static_cast<uint32_t>(cb_state->per_command_error_loggers.size());
+    const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.per_command_error_loggers.size());
     const std::array<uint32_t, 2> dynamic_offsets = {
         {operation_index * static_cast<uint32_t>(sizeof(uint32_t)), error_logger_i * static_cast<uint32_t>(sizeof(uint32_t))}};
     if ((pipeline_layout && pipeline_layout->set_layouts.size() <= gpuav.desc_set_bind_index_) &&
         pipeline_layout_handle != VK_NULL_HANDLE) {
-        DispatchCmdBindDescriptorSets(cb_state->VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
+        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
                                       &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cb_state->VkHandle(), bind_point, gpuav.GetDebugPipelineLayout(), gpuav.desc_set_bind_index_,
+        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, gpuav.GetDebugPipelineLayout(), gpuav.desc_set_bind_index_,
                                       1, &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     }
 
     if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
-        gpuav.InternalError(cb_state->Handle(), loc, "Unable to find pipeline layout to bind debug descriptor set");
+        gpuav.InternalError(cb_state.Handle(), loc, "Unable to find pipeline layout to bind debug descriptor set");
         return;
     }
 
     // It is possible to have no descriptor sets bound, for example if using push constants.
     const uint32_t desc_binding_index =
-        !cb_state->di_input_buffer_list.empty() ? uint32_t(cb_state->di_input_buffer_list.size()) - 1 : vvl::kU32Max;
+        !cb_state.di_input_buffer_list.empty() ? uint32_t(cb_state.di_input_buffer_list.size()) - 1 : vvl::kU32Max;
 
     const bool uses_robustness = (gpuav.enabled_features.robustBufferAccess || gpuav.enabled_features.robustBufferAccess2 ||
                                   (pipeline_state && pipeline_state->uses_pipeline_robustness));
 
-    CommandBuffer::ErrorLoggerFunc error_logger = [loc, desc_binding_index, desc_binding_list = &cb_state->di_input_buffer_list,
-                                                   cb_state_handle = cb_state->VkHandle(), bind_point, operation_index,
+    CommandBuffer::ErrorLoggerFunc error_logger = [loc, desc_binding_index, desc_binding_list = &cb_state.di_input_buffer_list,
+                                                   cb_state_handle = cb_state.VkHandle(), bind_point, operation_index,
                                                    uses_shader_object = pipeline_state == nullptr,
                                                    uses_robustness](Validator &gpuav, const uint32_t *error_record,
                                                                     const LogObjectList &objlist) {
@@ -219,7 +213,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, VkCommandBuffer cmd_b
         return skip;
     };
 
-    cb_state->per_command_error_loggers.emplace_back(error_logger);
+    cb_state.per_command_error_loggers.emplace_back(error_logger);
 }
 
 bool LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
