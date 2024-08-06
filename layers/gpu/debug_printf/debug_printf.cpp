@@ -237,6 +237,8 @@ struct OutputRecord {
     uint32_t instruction_position;
     uint32_t format_string_id;
     uint32_t double_bitmask;  // used to distinguish if float is 1 or 2 dwords
+    uint32_t signed_8_bitmask;   // used to distinguish if signed int is a int8_t
+    uint32_t signed_16_bitmask;  // used to distinguish if signed int is a int16_t
     uint32_t stage_id;
     uint32_t stage_info_0;
     uint32_t stage_info_1;
@@ -313,10 +315,23 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                         std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
 
                     } else if (substring.type == NumericTypeSint) {
-                        const int32_t value = *static_cast<int32_t *>(current_value);
-                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
-                        temp_string.resize(needed);
-                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                        // When dealing with signed int, we need to know which size the int was to print the correct value
+                        if (debug_record->signed_8_bitmask & (1 << i)) {
+                            const int8_t value = *static_cast<int8_t *>(current_value);
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                        } else if (debug_record->signed_16_bitmask & (1 << i)) {
+                            const int16_t value = *static_cast<int16_t *>(current_value);
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                        } else {
+                            const int32_t value = *static_cast<int32_t *>(current_value);
+                            needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
+                            temp_string.resize(needed);
+                            std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                        }
 
                     } else if (substring.type == NumericTypeFloat) {
                         // On the CPU printf the "%f" is used for 16, 32, and 64-bit floats,

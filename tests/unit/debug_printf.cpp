@@ -577,7 +577,7 @@ TEST_F(NegativeDebugPrintf, Float16Precision) {
 }
 
 // TODO casting is wrong
-TEST_F(NegativeDebugPrintf, DISABLED_Int16) {
+TEST_F(NegativeDebugPrintf, Int16) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
     char const *shader_source = R"glsl(
         #version 450
@@ -592,7 +592,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_Int16) {
     BasicComputeTest(shader_source, "unsigned and signed 123 -123");
 }
 
-TEST_F(NegativeDebugPrintf, DISABLED_Int16Vector) {
+TEST_F(NegativeDebugPrintf, Int16Vector) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
     char const *shader_source = R"glsl(
         #version 450
@@ -603,13 +603,13 @@ TEST_F(NegativeDebugPrintf, DISABLED_Int16Vector) {
             u16vec2 fooVec = u16vec2(foo, foo);
             int16_t bar = int16_t(-123);
             i16vec2 barVec = i16vec2(bar, bar);
-            debugPrintfEXT("unsigned and signed %v2d %v2d", fooVec, barVec);
+            debugPrintfEXT("unsigned and signed %v2d | %v2d", fooVec, barVec);
         }
     )glsl";
     BasicComputeTest(shader_source, "unsigned and signed 123, 123 | -123, -123");
 }
 
-TEST_F(NegativeDebugPrintf, DISABLED_Int16Hex) {
+TEST_F(NegativeDebugPrintf, Int16Hex) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
     char const *shader_source = R"glsl(
         #version 450
@@ -621,10 +621,10 @@ TEST_F(NegativeDebugPrintf, DISABLED_Int16Hex) {
             debugPrintfEXT("unsigned and signed 0x%x 0x%x", foo, bar);
         }
     )glsl";
-    BasicComputeTest(shader_source, "unsigned and signed 0x7b 0x85");
+    BasicComputeTest(shader_source, "unsigned and signed 0x7b 0xff85");
 }
 
-TEST_F(NegativeDebugPrintf, DISABLED_Int8) {
+TEST_F(NegativeDebugPrintf, Int8) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     char const *shader_source = R"glsl(
@@ -640,7 +640,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_Int8) {
     BasicComputeTest(shader_source, "unsigned and signed 123 -123");
 }
 
-TEST_F(NegativeDebugPrintf, DISABLED_Int8Vector) {
+TEST_F(NegativeDebugPrintf, Int8Vector) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     char const *shader_source = R"glsl(
