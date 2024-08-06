@@ -97,14 +97,14 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
     VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &di_buffers.bindless_state_buffer,
                                       &di_buffers.bindless_state_buffer_allocation, nullptr);
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(cb_state->Handle(), loc, "Unable to allocate device memory. Device could become unstable.", true);
+        gpuav.InternalError(cb_state->Handle(), loc, "Unable to allocate device memory.", true);
         return;
     }
     glsl::BindlessStateBuffer *bindless_state{nullptr};
     result =
         vmaMapMemory(gpuav.vma_allocator_, di_buffers.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(cb_state->Handle(), loc, "Unable to map device memory. Device could become unstable.", true);
+        gpuav.InternalError(cb_state->Handle(), loc, "Unable to map device memory.", true);
         return;
     }
     memset(bindless_state, 0, static_cast<size_t>(buffer_info.size));
@@ -153,8 +153,7 @@ void UpdateBoundDescriptors(Validator &gpuav, VkCommandBuffer cb, VkPipelineBind
         VkResult result =
             vmaMapMemory(vma_allocator, cmd_info.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc,
-                                "Unable to map device memory allocated for error output buffer. Aborting GPU-AV.", true);
+            gpuav.InternalError(gpuav.device, loc, "Unable to map device memory allocated for error output buffer.", true);
             return false;
         }
         for (size_t i = 0; i < cmd_info.descriptor_set_buffers.size(); i++) {

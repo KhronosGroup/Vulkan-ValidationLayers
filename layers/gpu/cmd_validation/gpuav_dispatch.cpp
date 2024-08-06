@@ -47,7 +47,7 @@ struct SharedDispatchValidationResources final {
         ds_layout_ci.pBindings = bindings.data();
         result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &ds_layout);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV.");
+            gpuav.InternalError(device, loc, "Unable to create descriptor set layout.");
             return;
         }
 
@@ -64,7 +64,7 @@ struct SharedDispatchValidationResources final {
         pipeline_layout_ci.pSetLayouts = set_layouts.data();
         result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &pipeline_layout);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(device, loc, "Unable to create pipeline layout. Aborting GPU-AV.");
+            gpuav.InternalError(device, loc, "Unable to create pipeline layout.");
             return;
         }
 
@@ -81,7 +81,7 @@ struct SharedDispatchValidationResources final {
             shader_ci.pPushConstantRanges = pipeline_layout_ci.pPushConstantRanges;
             result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &shader_object);
             if (result != VK_SUCCESS) {
-                gpuav.InternalError(device, loc, "Unable to create shader object. Aborting GPU-AV.");
+                gpuav.InternalError(device, loc, "Unable to create shader object.");
                 return;
             }
         } else {
@@ -91,7 +91,7 @@ struct SharedDispatchValidationResources final {
             VkShaderModule validation_shader = VK_NULL_HANDLE;
             result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
             if (result != VK_SUCCESS) {
-                gpuav.InternalError(device, loc, "Unable to create shader module. Aborting GPU-AV.");
+                gpuav.InternalError(device, loc, "Unable to create shader module.");
                 return;
             }
 
@@ -110,7 +110,7 @@ struct SharedDispatchValidationResources final {
             DispatchDestroyShaderModule(device, validation_shader, nullptr);
 
             if (result != VK_SUCCESS) {
-                gpuav.InternalError(device, loc, "Failed to create compute pipeline for dispatch validation. Aborting GPU-AV.");
+                gpuav.InternalError(device, loc, "Failed to create compute pipeline for dispatch validation.");
                 return;
             }
         }
@@ -149,7 +149,7 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkC
 
     auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer. Aborting GPU-AV.");
+        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer.");
         return;
     }
 
@@ -174,7 +174,7 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkC
     VkDescriptorSet indirect_buffer_desc_set =
         cb_state->gpu_resources_manager.GetManagedDescriptorSet(shared_dispatch_resources.ds_layout);
     if (indirect_buffer_desc_set == VK_NULL_HANDLE) {
-        gpuav.InternalError(cmd_buffer, loc, "Unable to allocate descriptor set. Aborting GPU-AV.");
+        gpuav.InternalError(cmd_buffer, loc, "Unable to allocate descriptor set.");
         return;
     }
 

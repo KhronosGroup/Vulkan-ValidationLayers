@@ -385,7 +385,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     VkResult result =
         vmaCreateBuffer(next_state->allocator, &buffer_info, &alloc_info, &next_state->buffer, &next_state->allocation, nullptr);
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for error output buffer. Aborting GPU-AV.", true);
+        gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for error output buffer.", true);
         return nullptr;
     }
     uint32_t *data = nullptr;

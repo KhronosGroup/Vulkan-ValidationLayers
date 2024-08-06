@@ -55,7 +55,7 @@ struct SharedTraceRaysValidationResources final {
         pipeline_layout_ci.pSetLayouts = &error_output_desc_layout;
         result = DispatchCreatePipelineLayout(gpuav.device, &pipeline_layout_ci, nullptr, &pipeline_layout);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Unable to create pipeline layout. Aborting GPU-AV.");
+            gpuav.InternalError(gpuav.device, loc, "Unable to create pipeline layout.");
             return;
         }
 
@@ -65,7 +65,7 @@ struct SharedTraceRaysValidationResources final {
         VkShaderModule validation_shader = VK_NULL_HANDLE;
         result = DispatchCreateShaderModule(gpuav.device, &shader_module_ci, nullptr, &validation_shader);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Unable to create ray tracing shader module. Aborting GPU-AV.");
+            gpuav.InternalError(gpuav.device, loc, "Unable to create ray tracing shader module.");
             return;
         }
 
@@ -95,8 +95,7 @@ struct SharedTraceRaysValidationResources final {
         DispatchDestroyShaderModule(gpuav.device, validation_shader, nullptr);
 
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc,
-                                "Failed to create ray tracing pipeline for pre trace rays validation. Aborting GPU-AV.");
+            gpuav.InternalError(gpuav.device, loc, "Failed to create ray tracing pipeline for pre trace rays validation.");
             return;
         }
 
@@ -112,7 +111,7 @@ struct SharedTraceRaysValidationResources final {
         result = DispatchGetRayTracingShaderGroupHandlesKHR(gpuav.device, pipeline, 0, rt_pipeline_create_info.groupCount, sbt_size,
                                                             sbt_host_storage.data());
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Failed to call vkGetRayTracingShaderGroupHandlesKHR. Aborting GPU-AV.");
+            gpuav.InternalError(gpuav.device, loc, "Failed to call vkGetRayTracingShaderGroupHandlesKHR.");
             return;
         }
 
@@ -133,15 +132,14 @@ struct SharedTraceRaysValidationResources final {
         pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
         result = vmaCreatePool(vma_allocator, &pool_create_info, &sbt_pool);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Unable to create VMA memory pool for SBT. Aborting GPU-AV.");
+            gpuav.InternalError(gpuav.device, loc, "Unable to create VMA memory pool for SBT.", true);
             return;
         }
 
         alloc_info.pool = sbt_pool;
         result = vmaCreateBuffer(vma_allocator, &buffer_info, &alloc_info, &sbt_buffer, &sbt_allocation, nullptr);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for shader binding table. Aborting GPU-AV.",
-                                true);
+            gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for shader binding table.", true);
             return;
         }
 
@@ -149,9 +147,8 @@ struct SharedTraceRaysValidationResources final {
         result = vmaMapMemory(vma_allocator, sbt_allocation, reinterpret_cast<void **>(&mapped_sbt));
 
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(
-                gpuav.device, loc,
-                "Failed to map shader binding table when creating trace rays validation resources. Aborting GPU-AV.", true);
+            gpuav.InternalError(gpuav.device, loc,
+                                "Failed to map shader binding table when creating trace rays validation resources.", true);
             return;
         }
 
@@ -165,7 +162,7 @@ struct SharedTraceRaysValidationResources final {
         const VkDeviceAddress sbt_address = GetBufferDeviceAddress(gpuav, sbt_buffer, loc);
         assert(sbt_address != 0);
         if (sbt_address == 0) {
-            gpuav.InternalError(gpuav.device, loc, "Retrieved SBT buffer device address is null. Aborting GPU-AV.");
+            gpuav.InternalError(gpuav.device, loc, "Retrieved SBT buffer device address is null.");
             return;
         }
         assert(sbt_address == Align(sbt_address, static_cast<VkDeviceAddress>(rt_pipeline_props.shaderGroupBaseAlignment)));
@@ -211,7 +208,7 @@ void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, Vk
 
     auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer. Aborting GPU-AV.");
+        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer.");
         return;
     }
 

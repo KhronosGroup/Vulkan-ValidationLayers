@@ -137,26 +137,13 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         {glsl::kBindingInstCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
 
-    // TODO: Such a call is expected to be the first thing happening in this function,
-    // but moving it at the top breaks GPU-AV. Try to fix it
+    // Currently, both GPU-AV and DebugPrintf set their own instrumentation_bindings_ that this call will use
     BaseClass::PostCreateDevice(pCreateInfo, loc);
-
-    if (api_version < VK_API_VERSION_1_1) {
-        InternalError(device, loc, "GPU-Assisted validation requires Vulkan 1.1 or later. Aborting GPU-AV.");
-        return;
-    }
+    // We might fail in parent class device creation if global requirements are not met
+    if (aborted_) return;
 
     VkPhysicalDeviceFeatures supported_features{};
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
-
-    if (!supported_features.fragmentStoresAndAtomics) {
-        InternalError(device, loc, "GPU-Assisted validation requires fragmentStoresAndAtomics. Aborting GPU-AV.");
-        return;
-    }
-    if (!supported_features.vertexPipelineStoresAndAtomics) {
-        InternalError(device, loc, "GPU-Assisted validation requires vertexPipelineStoresAndAtomics. Aborting GPU-AV.");
-        return;
-    }
 
     bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
                                 IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
@@ -238,7 +225,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     uint32_t mem_type_index;
     VkResult result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &alloc_create_info, &mem_type_index);
     if (result != VK_SUCCESS) {
-        InternalError(device, loc, "Unable to find memory type index. Aborting GPU-AV.");
+        InternalError(device, loc, "Unable to find memory type index.", true);
         return;
     }
     VmaPoolCreateInfo vma_pool_ci = {};
@@ -250,7 +237,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     }
     result = vmaCreatePool(vma_allocator_, &vma_pool_ci, &output_buffer_pool_);
     if (result != VK_SUCCESS) {
-        InternalError(device, loc, "Unable to create VMA memory pool. Aborting GPU-AV.");
+        InternalError(device, loc, "Unable to create VMA memory pool.", true);
         return;
     }
 
@@ -297,14 +284,14 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         result = vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &indices_buffer_.buffer, &indices_buffer_.allocation,
                                  nullptr);
         if (result != VK_SUCCESS) {
-            InternalError(device, loc, "Unable to allocate device memory for command indices. Aborting GPU-AV.", true);
+            InternalError(device, loc, "Unable to allocate device memory for command indices.", true);
             return;
         }
 
         uint32_t *indices_ptr = nullptr;
         result = vmaMapMemory(vma_allocator_, indices_buffer_.allocation, reinterpret_cast<void **>(&indices_ptr));
         if (result != VK_SUCCESS) {
-            InternalError(device, loc, "Unable to map device memory for command indices buffer. Aborting GPU-AV.");
+            InternalError(device, loc, "Unable to map device memory for command indices buffer.", true);
             return;
         }
 

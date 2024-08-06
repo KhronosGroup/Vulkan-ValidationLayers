@@ -2130,7 +2130,7 @@ TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
         GTEST_SKIP() << "Currently disabled for Portability";
     }
 
-    m_errorMonitor->SetDesiredError("Debug Printf requires Vulkan 1.1 or later");
+    m_errorMonitor->SetDesiredError("requires Vulkan 1.1 or later");
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();
 
@@ -2967,4 +2967,40 @@ TEST_F(NegativeDebugPrintf, MisformattedEmptyString) {
         }
     )glsl";
     BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, ValidationAbort) {
+    TEST_DESCRIPTION("Verify that aborting DebugPrintf is safe.");
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+
+    PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFeaturesEXT fpvkGetOriginalPhysicalDeviceFeaturesEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFeaturesEXT, fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkPhysicalDeviceFeatures features = {};
+    fpvkGetOriginalPhysicalDeviceFeaturesEXT(gpu(), &features);
+
+    // Disable features so initialization aborts
+    features.vertexPipelineStoresAndAtomics = false;
+    features.fragmentStoresAndAtomics = false;
+    fpvkSetPhysicalDeviceFeaturesEXT(gpu(), features);
+    m_errorMonitor->SetDesiredError("DebugPrintf is being disabled");
+    RETURN_IF_SKIP(InitState());
+    m_errorMonitor->VerifyFound();
+
+    // Still make sure we can use Vulkan as expected without errors
+    InitRenderTarget();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
 }
