@@ -250,6 +250,27 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
 void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::PostCreateDevice(pCreateInfo, loc);
+
+    if (api_version < VK_API_VERSION_1_1) {
+        InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
+        return;
+    }
+
+    VkPhysicalDeviceFeatures supported_features{};
+    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
+    if (!supported_features.fragmentStoresAndAtomics) {
+        InternalError(
+            device, loc,
+            "GPU Shader Instrumentation requires fragmentStoresAndAtomics to allow writting out data inside the fragment shader.");
+        return;
+    }
+    if (!supported_features.vertexPipelineStoresAndAtomics) {
+        InternalError(device, loc,
+                      "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writting out data inside the "
+                      "vertex shader.");
+        return;
+    }
+
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
     auto chain_info = GetChainInfo(pCreateInfo, VK_LOADER_DATA_CALLBACK);
     assert(chain_info->u.pfnSetDeviceLoaderData);
@@ -462,7 +483,7 @@ void GpuShaderInstrumentor::PostCallRecordCreatePipelineLayout(VkDevice device, 
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
-        InternalError(device, record_obj.location, "Unable to create pipeline layout.  Device could become unstable.");
+        InternalError(device, record_obj.location, "Unable to create pipeline layout.");
         return;
     }
     BaseClass::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
@@ -1027,7 +1048,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                                device_extensions.vk_ext_scalar_block_layout, target_env, instrumented_error)) {
             std::ostringstream strm;
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
-                 << instrumented_error << " Proceeding with non instrumented shader. Aborting GPU-AV.";
+                 << instrumented_error << " Proceeding with non instrumented shader.";
             InternalError(device, loc, strm.str().c_str());
             return false;
         }
@@ -1059,9 +1080,8 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         // Call CreateAggressiveDCEPass with preserve_interface == true
         dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
         if (!dce_pass.Run(out_instrumented_spirv.data(), out_instrumented_spirv.size(), &out_instrumented_spirv, opt_options)) {
-            InternalError(
-                device, loc,
-                "Failure to run spirv-opt DCE on instrumented shader. Proceeding with non-instrumented shader. Aborting GPU-AV.");
+            InternalError(device, loc,
+                          "Failure to run spirv-opt DCE on instrumented shader. Proceeding with non-instrumented shader.");
             return false;
         }
 
@@ -1088,7 +1108,7 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
         vmaFreeStatsString(vma_allocator_, stats_string);
     }
 
-    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "Debug PrintF" : "GPU-AV";
+    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "DebugPrintf" : "GPU-AV";
     char const *vuid =
         container_type == LayerObjectTypeDebugPrintf ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
 

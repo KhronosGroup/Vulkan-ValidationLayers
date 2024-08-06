@@ -45,7 +45,7 @@ struct SharedCopyBufferToImageValidationResources final {
         ds_layout_ci.pBindings = bindings.data();
         result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &ds_layout);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV.");
+            gpuav.InternalError(device, loc, "Unable to create descriptor set layout.");
             return;
         }
 
@@ -65,8 +65,7 @@ struct SharedCopyBufferToImageValidationResources final {
         pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
         result = vmaCreatePool(vma_allocator, &pool_create_info, &copy_regions_pool);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(device, loc,
-                                "Unable to create VMA memory pool for buffer to image copies validation. Aborting GPU-AV.");
+            gpuav.InternalError(device, loc, "Unable to create VMA memory pool for buffer to image copies validation.");
             return;
         }
 
@@ -76,7 +75,7 @@ struct SharedCopyBufferToImageValidationResources final {
         pipeline_layout_ci.pSetLayouts = set_layouts.data();
         result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &pipeline_layout);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(device, loc, "Unable to create pipeline layout. Aborting GPU-AV.");
+            gpuav.InternalError(device, loc, "Unable to create pipeline layout.");
             return;
         }
 
@@ -86,7 +85,7 @@ struct SharedCopyBufferToImageValidationResources final {
         VkShaderModule validation_shader = VK_NULL_HANDLE;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(device, loc, "Unable to create shader module. Aborting GPU-AV.");
+            gpuav.InternalError(device, loc, "Unable to create shader module.");
             return;
         }
 
@@ -102,8 +101,7 @@ struct SharedCopyBufferToImageValidationResources final {
 
         result = DispatchCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(device, loc,
-                                "Failed to create compute pipeline for copy buffer to image validation. Aborting GPU-AV.");
+            gpuav.InternalError(device, loc, "Failed to create compute pipeline for copy buffer to image validation.");
         }
 
         DispatchDestroyShaderModule(device, validation_shader, nullptr);
@@ -149,8 +147,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
 
     auto image_state = gpuav.Get<vvl::Image>(copy_buffer_to_img_info->dstImage);
     if (!image_state) {
-        gpuav.InternalError(cmd_buffer, loc,
-                            "AllocatePreCopyBufferToImageValidationResources: Unrecognized image. Aborting GPU-AV.");
+        gpuav.InternalError(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image.");
         return;
     }
 
@@ -162,8 +159,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
 
     auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc,
-                            "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer. Aborting GPU-AV.");
+        gpuav.InternalError(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer.");
         return;
     }
 
@@ -213,8 +209,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
         VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &copy_src_regions_mem_block.buffer,
                                           &copy_src_regions_mem_block.allocation, nullptr);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(cmd_buffer, loc, "Unable to allocate device memory for GPU copy of pRegions. Aborting GPU-AV.",
-                                true);
+            gpuav.InternalError(cmd_buffer, loc, "Unable to allocate device memory for GPU copy of pRegions.", true);
             return;
         }
         cb_state->gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
@@ -224,7 +219,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
                               reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(cmd_buffer, loc, "Unable to map device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
+            gpuav.InternalError(cmd_buffer, loc, "Unable to map device memory for GPU copy of pRegions.", true);
             return;
         }
 
@@ -292,8 +287,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
     {
         validation_desc_set = cb_state->gpu_resources_manager.GetManagedDescriptorSet(shared_copy_validation_resources.ds_layout);
         if (validation_desc_set == VK_NULL_HANDLE) {
-            gpuav.InternalError(cmd_buffer, loc,
-                                "Unable to allocate descriptor set for copy buffer to image validation. Aborting GPU-AV");
+            gpuav.InternalError(cmd_buffer, loc, "Unable to allocate descriptor set for copy buffer to image validation");
             return;
         }
 

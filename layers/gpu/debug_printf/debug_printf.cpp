@@ -40,7 +40,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     verbose = printf_settings.verbose;
     use_stdout = printf_settings.to_stdout;
 
-    // This option was published when Debug PrintF came out, leave to not break people's flow
+    // This option was published when DebugPrintf came out, leave to not break people's flow
     // Deprecated right after the 1.3.280 SDK release
     if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
         InternalWarning(device, loc, "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
@@ -52,23 +52,10 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         VkDescriptorSetLayoutBinding{debug_printf_binding_slot_, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                      kShaderStageAllGraphics | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing, nullptr});
 
-    BaseClass::PostCreateDevice(pCreateInfo, loc);  // will set up bindings
-
-    if (api_version < VK_API_VERSION_1_1) {
-        InternalError(device, loc, "Debug Printf requires Vulkan 1.1 or later.");
-        return;
-    }
-
-    VkPhysicalDeviceFeatures supported_features{};
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
-    if (!supported_features.fragmentStoresAndAtomics) {
-        InternalError(device, loc, "Debug Printf requires fragmentStoresAndAtomics.");
-        return;
-    }
-    if (!supported_features.vertexPipelineStoresAndAtomics) {
-        InternalError(device, loc, "Debug Printf requires vertexPipelineStoresAndAtomics.");
-        return;
-    }
+    // Currently, both GPU-AV and DebugPrintf set their own instrumentation_bindings_ that this call will use
+    BaseClass::PostCreateDevice(pCreateInfo, loc);
+    // We might fail in parent class device creation if global requirements are not met
+    if (aborted_) return;
 }
 
 // Free the device memory and descriptor set associated with a command buffer.
@@ -608,10 +595,8 @@ void Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuf
 
 void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
                                              const Location &loc) {
-    if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
-        bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-        return;
-    }
+    assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
+           bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
     VkResult result;
 
     std::vector<VkDescriptorSet> desc_sets;
