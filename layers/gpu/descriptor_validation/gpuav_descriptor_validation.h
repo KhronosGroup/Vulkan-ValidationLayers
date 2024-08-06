@@ -26,8 +26,9 @@ namespace gpuav {
 class CommandBuffer;
 class Validator;
 
-void UpdateBoundPipeline(Validator& gpuav, VkCommandBuffer cb, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
+void UpdateBoundPipeline(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
                          const Location& loc);
-void UpdateBoundDescriptors(Validator& gpuav, VkCommandBuffer cb, VkPipelineBindPoint pipeline_bind_point, const Location& loc);
+void UpdateBoundDescriptors(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point,
+                            const Location& loc);
 [[nodiscard]] bool UpdateBindlessStateBuffer(Validator& gpuav, CommandBuffer& cb_state, const Location& loc);
 }  // namespace gpuav

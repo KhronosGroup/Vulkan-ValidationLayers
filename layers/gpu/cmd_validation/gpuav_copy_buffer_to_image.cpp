@@ -134,7 +134,7 @@ struct SharedCopyBufferToImageValidationResources final {
     }
 };
 
-void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, VkCommandBuffer cmd_buffer,
+void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
                                        const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
     if (!gpuav.gpuav_settings.validate_buffer_copies) {
         return;
@@ -147,7 +147,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
 
     auto image_state = gpuav.Get<vvl::Image>(copy_buffer_to_img_info->dstImage);
     if (!image_state) {
-        gpuav.InternalError(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image.");
+        gpuav.InternalError(cb_state.VkHandle(), loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image.");
         return;
     }
 
@@ -157,14 +157,8 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
         return;
     }
 
-    auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer.");
-        return;
-    }
-
     auto &shared_copy_validation_resources = gpuav.shared_resources_manager.Get<SharedCopyBufferToImageValidationResources>(
-        gpuav, cb_state->GetValidationCmdCommonDescriptorSetLayout(), loc);
+        gpuav, cb_state.GetValidationCmdCommonDescriptorSetLayout(), loc);
 
     assert(shared_copy_validation_resources.IsValid());
     if (!shared_copy_validation_resources.IsValid()) {
@@ -209,17 +203,17 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
         VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &copy_src_regions_mem_block.buffer,
                                           &copy_src_regions_mem_block.allocation, nullptr);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(cmd_buffer, loc, "Unable to allocate device memory for GPU copy of pRegions.", true);
+            gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to allocate device memory for GPU copy of pRegions.", true);
             return;
         }
-        cb_state->gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
+        cb_state.gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
 
         uint32_t *gpu_regions_u32_ptr = nullptr;
         result = vmaMapMemory(gpuav.vma_allocator_, copy_src_regions_mem_block.allocation,
                               reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(cmd_buffer, loc, "Unable to map device memory for GPU copy of pRegions.", true);
+            gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to map device memory for GPU copy of pRegions.", true);
             return;
         }
 
@@ -285,9 +279,9 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
     // Update descriptor set
     VkDescriptorSet validation_desc_set = VK_NULL_HANDLE;
     {
-        validation_desc_set = cb_state->gpu_resources_manager.GetManagedDescriptorSet(shared_copy_validation_resources.ds_layout);
+        validation_desc_set = cb_state.gpu_resources_manager.GetManagedDescriptorSet(shared_copy_validation_resources.ds_layout);
         if (validation_desc_set == VK_NULL_HANDLE) {
-            gpuav.InternalError(cmd_buffer, loc, "Unable to allocate descriptor set for copy buffer to image validation");
+            gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to allocate descriptor set for copy buffer to image validation");
             return;
         }
 
@@ -313,19 +307,19 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
         DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Insert diagnostic dispatch
-    DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline);
+    DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline);
 
-    BindValidationCmdsCommonDescSet(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline_layout, 0,
-                                    static_cast<uint32_t>(cb_state->per_command_error_loggers.size()));
-    DispatchCmdBindDescriptorSets(cb_state->VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
+    BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline_layout, 0,
+                                    static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
                                   shared_copy_validation_resources.pipeline_layout, glsl::kDiagPerCmdDescriptorSet, 1,
                                   &validation_desc_set, 0, nullptr);
     // correct_count == max texelsCount?
     const uint32_t group_count_x = max_texels_count_in_regions / 64 + uint32_t(max_texels_count_in_regions % 64 > 0);
-    DispatchCmdDispatch(cmd_buffer, group_count_x, 1, 1);
+    DispatchCmdDispatch(cb_state.VkHandle(), group_count_x, 1, 1);
 
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
                                                       Validator &gpuav, const uint32_t *error_record,
@@ -359,7 +353,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
         return skip;
     };
 
-    cb_state->per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
 }
 
 }  // namespace gpuav

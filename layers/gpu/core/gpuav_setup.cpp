@@ -120,7 +120,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         });
 
     // Set up a stub implementation of the descriptor heap in case we abort.
-    desc_heap_.emplace(*this, 0);
+    desc_heap_.emplace(*this, 0, loc);
 
     instrumentation_bindings_ = {
         // Error output buffer
@@ -214,7 +214,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             num_descs = glsl::kDebugInputBindlessMaxDescriptors;
         }
 
-        desc_heap_.emplace(*this, num_descs);
+        desc_heap_.emplace(*this, num_descs, loc);
     }
 
     VkBufferCreateInfo error_buffer_ci = vku::InitStructHelper();

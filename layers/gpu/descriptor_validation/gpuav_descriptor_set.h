@@ -26,6 +26,26 @@ namespace gpuav {
 
 class Validator;
 
+// TODO - This probably could be used elsewhere and a more universal object for creating buffers.
+struct AddressBuffer {
+    const Validator &gpuav;
+    VmaAllocation allocation{nullptr};
+    VkBuffer buffer{VK_NULL_HANDLE};
+    VkDeviceAddress device_addr{0};
+
+    AddressBuffer(Validator &gpuav) : gpuav(gpuav) {}
+
+    // Warps VMA calls so we can report (unlikely) errors if found while making the usages of these clean
+    void MapMemory(const Location &loc, void **data) const;
+    void UnmapMemory() const;
+    void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+    void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+
+    void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                      const VmaAllocationCreateInfo *allocation_create_info);
+    void DestroyBuffer();
+};
+
 class DescriptorSet : public vvl::DescriptorSet {
   public:
     DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
@@ -34,17 +54,15 @@ class DescriptorSet : public vvl::DescriptorSet {
     virtual ~DescriptorSet();
     void Destroy() override { last_used_state_.reset(); };
     struct State {
-        State(VkDescriptorSet set, uint32_t version, VmaAllocator allocator) : set(set), version(version), allocator(allocator) {}
+        State(VkDescriptorSet set, uint32_t version, Validator &gpuav) : set(set), version(version), buffer(gpuav) {}
         ~State();
 
         const VkDescriptorSet set;
         const uint32_t version;
-        const VmaAllocator allocator;
-        VmaAllocation allocation{nullptr};
-        VkBuffer buffer{VK_NULL_HANDLE};
-        VkDeviceAddress device_addr{0};
+        AddressBuffer buffer;
 
-        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const DescriptorSet &set, uint32_t shader_set) const;
+        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, const DescriptorSet &set,
+                                                                  uint32_t shader_set) const;
     };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
@@ -58,14 +76,9 @@ class DescriptorSet : public vvl::DescriptorSet {
     bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }
 
   private:
-    struct Layout {
-        VmaAllocation allocation{nullptr};
-        VkBuffer buffer{VK_NULL_HANDLE};
-        VkDeviceAddress device_addr{0};
-    };
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
-    Layout layout_;
+    AddressBuffer layout_;
     std::atomic<uint32_t> current_version_{0};
     std::shared_ptr<State> last_used_state_;
     std::shared_ptr<State> output_state_;
@@ -75,12 +88,12 @@ class DescriptorSet : public vvl::DescriptorSet {
 typedef uint32_t DescriptorId;
 class DescriptorHeap {
   public:
-    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors);
+    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc);
     ~DescriptorHeap();
     DescriptorId NextId(const VulkanTypedHandle &handle);
     void DeleteId(DescriptorId id);
 
-    VkDeviceAddress GetDeviceAddress() const { return device_address_; }
+    VkDeviceAddress GetDeviceAddress() const { return buffer_.device_addr; }
 
   private:
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(lock_); }
@@ -91,11 +104,8 @@ class DescriptorHeap {
     DescriptorId next_id_{1};
     vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
 
-    VmaAllocator allocator_{nullptr};
-    VmaAllocation allocation_{nullptr};
-    VkBuffer buffer_{VK_NULL_HANDLE};
+    AddressBuffer buffer_;
     uint32_t *gpu_heap_state_{nullptr};
-    VkDeviceAddress device_address_{0};
 };
 
 }  // namespace gpuav

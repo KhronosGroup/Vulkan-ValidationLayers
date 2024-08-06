@@ -22,9 +22,10 @@
 struct Location;
 
 namespace gpuav {
+class CommandBuffer;
 class Validator;
 
-void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, VkCommandBuffer cmd_buffer,
+void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
                                        const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info);
 
 }  // namespace gpuav
