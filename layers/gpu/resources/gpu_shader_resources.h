@@ -15,12 +15,15 @@
  * limitations under the License.
  */
 
+// This file helps maps the layout of resources that we find in the instrumented shaders
+
 #pragma once
 
 #include <vector>
 
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/resources/gpu_resources.h"
 
 namespace gpuav {
 
@@ -36,8 +39,7 @@ struct DescSetState {
 };
 
 struct DescBindingInfo {
-    VkBuffer bindless_state_buffer;
-    VmaAllocation bindless_state_buffer_allocation;
+    gpu::DeviceMemoryBlock bindless_state;
     // Hold a buffer for each descriptor set
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     std::vector<DescSetState> descriptor_set_buffers;

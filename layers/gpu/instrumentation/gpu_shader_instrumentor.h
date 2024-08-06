@@ -169,6 +169,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                    const RecordObject &record_obj) override;
 
+    VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer);
+
     void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message, bool vma_fail = false) const;
     void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     bool CheckForGpuAvEnabled(const void *pNext);

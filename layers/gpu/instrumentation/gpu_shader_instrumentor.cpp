@@ -1096,6 +1096,19 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     return true;
 }
 
+VkDeviceAddress GpuShaderInstrumentor::GetBufferDeviceAddressHelper(VkBuffer buffer) {
+    VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
+    address_info.buffer = buffer;
+
+    // We cannot rely on device_extensions here, since we may be enabling BDA support even
+    // though the application has not requested it.
+    if (api_version >= VK_API_VERSION_1_2) {
+        return DispatchGetBufferDeviceAddress(device, &address_info);
+    } else {
+        return DispatchGetBufferDeviceAddressKHR(device, &address_info);
+    }
+}
+
 void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message,
                                           bool vma_fail) const {
     aborted_ = true;
