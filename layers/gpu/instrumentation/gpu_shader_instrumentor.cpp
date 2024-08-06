@@ -979,34 +979,37 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // For now, we don't yet support (or have tested) combining GPU-AV and DebugPrintf, so have 2 paths here
     const bool is_debug_printf = container_type == LayerObjectTypeDebugPrintf;
 
+    bool modified = false;
     if (is_debug_printf) {
-        const bool modified = module.RunPassDebugPrintf(debug_printf_binding_slot_);
-        if (!modified) return false;
+        modified |= module.RunPassDebugPrintf(debug_printf_binding_slot_);
     } else {
         // If descriptor indexing is enabled, enable length checks and updated descriptor checks
         if (gpuav_settings.validate_descriptors) {
-            module.RunPassBindlessDescriptor();
+            modified |= module.RunPassBindlessDescriptor();
         }
 
         if (gpuav_settings.validate_bda) {
-            module.RunPassBufferDeviceAddress();
+            modified |= module.RunPassBufferDeviceAddress();
         }
 
         if (gpuav_settings.validate_ray_query) {
-            module.RunPassRayQuery();
+            modified |= module.RunPassRayQuery();
         }
 
-        // If nothing was instrumented, leave early to save time
-        if (!module.IsInstrumented()) {
-            return false;
-        }
-
+        // If there were GLSL written function injected, we will grab them and link them in here
         for (const auto &info : module.link_info_) {
             module.LinkFunction(info);
         }
     }
 
+    // If nothing was instrumented, leave early to save time
+    if (!modified) {
+        return false;
+    }
+
+    // some small cleanup to make sure SPIR-V is legal
     module.PostProcess();
+    // translate internal representation of SPIR-V into legal SPIR-V binary
     module.ToBinary(out_instrumented_spirv);
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {

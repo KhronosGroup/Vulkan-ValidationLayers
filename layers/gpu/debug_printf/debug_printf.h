@@ -19,52 +19,20 @@
 
 #include "gpu/core/gpu_state_tracker.h"
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"
+#include "gpu/resources/gpu_resources.h"
 
 namespace debug_printf {
 
 class Validator;
 
-struct DeviceMemoryBlock {
-    VkBuffer buffer;
-    VmaAllocation allocation;
-};
-
 struct BufferInfo {
-    DeviceMemoryBlock output_mem_block;
+    gpu::DeviceMemoryBlock output_mem_block;
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
-    BufferInfo(DeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
+    BufferInfo(gpu::DeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
                VkPipelineBindPoint pipeline_bind_point)
         : output_mem_block(output_mem_block), desc_set(desc_set), desc_pool(desc_pool), pipeline_bind_point(pipeline_bind_point){};
-};
-
-enum NumericType {
-    NumericTypeUnknown = 0,
-    NumericTypeFloat = 1,
-    NumericTypeSint = 2,
-    NumericTypeUint = 4,
-};
-
-struct Substring {
-    std::string string;
-    bool needs_value = false;  // if value from buffer needed to print arguments
-    NumericType type = NumericTypeUnknown;
-    bool is_64_bit = false;
-};
-
-// The contents each "printf" is writting to the output buffer streams
-struct OutputRecord {
-    uint32_t size;
-    uint32_t shader_id;
-    uint32_t instruction_position;
-    uint32_t format_string_id;
-    uint32_t double_bitmask;  // used to distinguish if float is 1 or 2 dwords
-    uint32_t stage_id;
-    uint32_t stage_info_0;
-    uint32_t stage_info_1;
-    uint32_t stage_info_2;
-    uint32_t values;  // place holder to be casted to get rest of items in record
 };
 
 class CommandBuffer : public gpu_tracker::CommandBuffer {
@@ -101,8 +69,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        const RecordObject& record_obj, chassis::ShaderObject& chassis_state) override;
-    std::vector<Substring> ParseFormatString(const std::string& format_string);
-    std::string FindFormatString(const std::vector<gpu::spirv::Instruction>& instructions, uint32_t string_id);
     void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, uint32_t operation_index,
                                    uint32_t* const debug_output_buffer, const Location& loc);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
