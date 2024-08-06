@@ -98,6 +98,13 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
     }
 }
 
+enum NumericType {
+    NumericTypeUnknown = 0,
+    NumericTypeFloat = 1,
+    NumericTypeSint = 2,
+    NumericTypeUint = 4,
+};
+
 static NumericType NumericTypeLookup(char specifier) {
     switch (specifier) {
         case 'd':
@@ -125,7 +132,14 @@ static NumericType NumericTypeLookup(char specifier) {
     }
 }
 
-std::vector<Substring> Validator::ParseFormatString(const std::string &format_string) {
+struct Substring {
+    std::string string;
+    bool needs_value = false;  // if value from buffer needed to print arguments
+    NumericType type = NumericTypeUnknown;
+    bool is_64_bit = false;
+};
+
+static std::vector<Substring> ParseFormatString(const std::string &format_string) {
     const char types[] = {'d', 'i', 'o', 'u', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', 'v', '\0'};
     std::vector<Substring> parsed_strings;
     size_t pos = 0;
@@ -209,7 +223,7 @@ std::vector<Substring> Validator::ParseFormatString(const std::string &format_st
     return parsed_strings;
 }
 
-std::string Validator::FindFormatString(const std::vector<gpu::spirv::Instruction> &instructions, uint32_t string_id) {
+static std::string FindFormatString(const std::vector<gpu::spirv::Instruction> &instructions, uint32_t string_id) {
     std::string format_string;
     for (const auto &insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Word(1) == string_id) {
@@ -228,6 +242,20 @@ std::string Validator::FindFormatString(const std::vector<gpu::spirv::Instructio
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+
+// The contents each "printf" is writting to the output buffer streams
+struct OutputRecord {
+    uint32_t size;
+    uint32_t shader_id;
+    uint32_t instruction_position;
+    uint32_t format_string_id;
+    uint32_t double_bitmask;  // used to distinguish if float is 1 or 2 dwords
+    uint32_t stage_id;
+    uint32_t stage_info_0;
+    uint32_t stage_info_1;
+    uint32_t stage_info_2;
+    uint32_t values;  // place holder to be casted to get rest of items in record
+};
 
 void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo &buffer_info,
                                           uint32_t operation_index, uint32_t *const debug_output_buffer, const Location &loc) {
@@ -613,7 +641,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     }
 
     // Allocate memory for the output block that the gpu will use to return values for printf
-    DeviceMemoryBlock output_block = {};
+    gpu::DeviceMemoryBlock output_block = {};
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = printf_settings.buffer_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
