@@ -1096,7 +1096,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     return true;
 }
 
-VkDeviceAddress GpuShaderInstrumentor::GetBufferDeviceAddressHelper(VkBuffer buffer) {
+VkDeviceAddress GpuShaderInstrumentor::GetBufferDeviceAddressHelper(VkBuffer buffer) const {
     VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
     address_info.buffer = buffer;
 
