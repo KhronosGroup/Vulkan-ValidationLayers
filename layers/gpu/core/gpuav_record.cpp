@@ -86,34 +86,6 @@ void Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass ren
     BaseClass::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
 }
 
-// Create the instrumented shader data to provide to the driver.
-void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
-    BaseClass::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
-    if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
-    uint32_t shader_id;
-    if (gpuav_settings.cache_instrumented_shaders) {
-        const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
-        if (gpuav_settings.cache_instrumented_shaders && instrumented_shaders_cache_.IsSpirvCached(shader_hash, chassis_state)) {
-            return;
-        }
-        shader_id = shader_hash;
-    } else {
-        shader_id = unique_shader_module_id_++;
-    }
-    const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)), shader_id,
-                                       record_obj.location, chassis_state.instrumented_spirv);
-    if (pass) {
-        chassis_state.instrumented_create_info.pCode = chassis_state.instrumented_spirv.data();
-        chassis_state.instrumented_create_info.codeSize = chassis_state.instrumented_spirv.size() * sizeof(uint32_t);
-        chassis_state.unique_shader_id = shader_id;
-        if (gpuav_settings.cache_instrumented_shaders) {
-            instrumented_shaders_cache_.Add(shader_id, chassis_state.instrumented_spirv);
-        }
-    }
-}
-
 void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                               const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {

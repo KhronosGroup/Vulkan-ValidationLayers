@@ -79,21 +79,6 @@ void Validator::DestroyBuffer(BufferInfo &buffer_info) {
     }
 }
 
-// Create the instrumented shader data to provide to the driver.
-void Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
-    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
-                                                            chassis_state);
-    chassis_state.unique_shader_id = unique_shader_module_id_++;
-    const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       chassis_state.unique_shader_id, record_obj.location, chassis_state.instrumented_spirv);
-    if (pass) {
-        chassis_state.instrumented_create_info.pCode = chassis_state.instrumented_spirv.data();
-        chassis_state.instrumented_create_info.codeSize = chassis_state.instrumented_spirv.size() * sizeof(uint32_t);
-    }
-}
-
 void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                               const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
