@@ -26,16 +26,15 @@
 
 namespace gpuav {
 
-void BindValidationCmdsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard> &cmd_buffer_state,
-                                     VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
-                                     uint32_t error_logger_index) {
+void BindValidationCmdsCommonDescSet(CommandBuffer &cb_state, VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
+                                     uint32_t cmd_index, uint32_t error_logger_index) {
     assert(cmd_index < cst::indices_count);
     assert(error_logger_index < cst::indices_count);
     std::array<uint32_t, 2> dynamic_offsets = {
         {cmd_index * static_cast<uint32_t>(sizeof(uint32_t)), error_logger_index * static_cast<uint32_t>(sizeof(uint32_t))}};
-    DispatchCmdBindDescriptorSets(cmd_buffer_state->VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
-                                  &cmd_buffer_state->GetValidationCmdCommonDescriptorSet(),
-                                  static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
+                                  &cb_state.GetValidationCmdCommonDescriptorSet(), static_cast<uint32_t>(dynamic_offsets.size()),
+                                  dynamic_offsets.data());
 }
 
 void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point) {

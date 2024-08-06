@@ -318,10 +318,11 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Vk
     // Insert diagnostic dispatch
     DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline);
 
-    BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline_layout, 0,
+    BindValidationCmdsCommonDescSet(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline_layout, 0,
                                     static_cast<uint32_t>(cb_state->per_command_error_loggers.size()));
-    DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline_layout,
-                                  glsl::kDiagPerCmdDescriptorSet, 1, &validation_desc_set, 0, nullptr);
+    DispatchCmdBindDescriptorSets(cb_state->VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
+                                  shared_copy_validation_resources.pipeline_layout, glsl::kDiagPerCmdDescriptorSet, 1,
+                                  &validation_desc_set, 0, nullptr);
     // correct_count == max texelsCount?
     const uint32_t group_count_x = max_texels_count_in_regions / 64 + uint32_t(max_texels_count_in_regions % 64 > 0);
     DispatchCmdDispatch(cmd_buffer, group_count_x, 1, 1);

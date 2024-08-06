@@ -141,15 +141,9 @@ struct SharedDispatchValidationResources final {
     }
 };
 
-void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer,
+void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
                                       VkDeviceSize indirect_offset) {
     if (!gpuav.gpuav_settings.validate_indirect_dispatches_buffers) {
-        return;
-    }
-
-    auto cb_state = gpuav.GetWrite<CommandBuffer>(cmd_buffer);
-    if (!cb_state) {
-        gpuav.InternalError(cmd_buffer, loc, "Unrecognized command buffer.");
         return;
     }
 
@@ -159,12 +153,12 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkC
     // or DEVICE_LOST resulting from the invalid call will prevent preceding validation errors from being reported.
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
-    auto const &last_bound = cb_state->lastBound[lv_bind_point];
+    auto const &last_bound = cb_state.lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
     const bool use_shader_objects = pipeline_state == nullptr;
 
     auto &shared_dispatch_resources = gpuav.shared_resources_manager.Get<SharedDispatchValidationResources>(
-        gpuav, cb_state->GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
+        gpuav, cb_state.GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
 
     assert(shared_dispatch_resources.IsValid());
     if (!shared_dispatch_resources.IsValid()) {
@@ -172,9 +166,9 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkC
     }
 
     VkDescriptorSet indirect_buffer_desc_set =
-        cb_state->gpu_resources_manager.GetManagedDescriptorSet(shared_dispatch_resources.ds_layout);
+        cb_state.gpu_resources_manager.GetManagedDescriptorSet(shared_dispatch_resources.ds_layout);
     if (indirect_buffer_desc_set == VK_NULL_HANDLE) {
-        gpuav.InternalError(cmd_buffer, loc, "Unable to allocate descriptor set.");
+        gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to allocate descriptor set.");
         return;
     }
 
@@ -195,27 +189,27 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkC
     DispatchUpdateDescriptorSets(gpuav.device, 1, &desc_write, 0, nullptr);
 
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Insert diagnostic dispatch
     if (use_shader_objects) {
         VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        DispatchCmdBindShadersEXT(cmd_buffer, 1u, &stage, &shared_dispatch_resources.shader_object);
+        DispatchCmdBindShadersEXT(cb_state.VkHandle(), 1u, &stage, &shared_dispatch_resources.shader_object);
     } else {
-        DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline);
+        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline);
     }
     uint32_t push_constants[kPushConstantDWords] = {};
     push_constants[0] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0];
     push_constants[1] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1];
     push_constants[2] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2];
     push_constants[3] = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
-    DispatchCmdPushConstants(cmd_buffer, shared_dispatch_resources.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
+    DispatchCmdPushConstants(cb_state.VkHandle(), shared_dispatch_resources.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                              sizeof(push_constants), push_constants);
     BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
-                                    cb_state->compute_index, static_cast<uint32_t>(cb_state->per_command_error_loggers.size()));
-    DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
+                                    cb_state.compute_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &indirect_buffer_desc_set, 0, nullptr);
-    DispatchCmdDispatch(cmd_buffer, 1, 1, 1);
+    DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
 
     CommandBuffer::ErrorLoggerFunc error_logger =
         [loc](Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist) {
@@ -258,7 +252,7 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, VkC
             return skip;
         };
 
-    cb_state->per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
 }
 
 }  // namespace gpuav
