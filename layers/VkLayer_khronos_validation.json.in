@@ -1232,6 +1232,7 @@
                                                     "label": "Disable all of GPU-AV",
                                                     "description": "Acts as a VkValidationFeatureDisableEXT to override the VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT passed by the user",
                                                     "type": "BOOL",
+                                                    "view": "HIDDEN",
                                                     "default": false,
                                                     "platforms": [
                                                         "WINDOWS",
