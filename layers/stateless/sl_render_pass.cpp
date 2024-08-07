@@ -35,10 +35,11 @@ bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const Vk
         ~kExcludeStages;
 
     const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
-        if (subpass == VK_SUBPASS_EXTERNAL || subpass >= pCreateInfo->subpassCount)
+        if (subpass == VK_SUBPASS_EXTERNAL || subpass >= pCreateInfo->subpassCount) {
             return false;
-        else
+        } else {
             return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == stage;
+        }
     };
 
     const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
@@ -387,13 +388,16 @@ void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRend
     for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
         bool uses_color = false;
 
-        for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i)
+        for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i) {
             if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
+        }
 
         bool uses_depthstencil = false;
-        if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment)
-            if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)
+        if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment) {
+            if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                 uses_depthstencil = true;
+            }
+        }
 
         if (uses_color) renderpass_state.subpasses_using_color_attachment.insert(subpass);
         if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);

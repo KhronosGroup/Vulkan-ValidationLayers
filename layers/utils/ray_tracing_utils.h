@@ -18,8 +18,6 @@
 
 #include "vulkan/vulkan.h"
 
-#include <functional>
-
 namespace rt {
 
 enum class BuildType { Device, Host };

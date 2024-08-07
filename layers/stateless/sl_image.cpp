@@ -340,16 +340,16 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     }
 
     if (format_list_info) {
-        const uint32_t viewFormatCount = format_list_info->viewFormatCount;
+        const uint32_t view_format_count = format_list_info->viewFormatCount;
         const bool mutable_image = (image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) != 0;
-        if (!mutable_image && viewFormatCount > 1) {
+        if (!mutable_image && view_format_count > 1) {
             skip |= LogError("VUID-VkImageCreateInfo-flags-04738", device,
                              create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
-                             "is %" PRIu32 " but flag (%s) does not include VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.", viewFormatCount,
+                             "is %" PRIu32 " but flag (%s) does not include VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.", view_format_count,
                              string_VkImageCreateFlags(image_flags).c_str());
         }
         // Check if viewFormatCount is not zero that it is all compatible
-        for (uint32_t i = 0; i < viewFormatCount; i++) {
+        for (uint32_t i = 0; i < view_format_count; i++) {
             const VkFormat view_format = format_list_info->pViewFormats[i];
             const Location format_loc = create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i);
             const bool class_compatible = vkuFormatCompatibilityClass(view_format) == vkuFormatCompatibilityClass(image_format);

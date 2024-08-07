@@ -397,11 +397,13 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
         if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
             descriptorBufferAddressSpaceSize += pCreateInfo->size;
 
-            if ((buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
+            if ((buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
                 resourceDescriptorBufferAddressSpaceSize += pCreateInfo->size;
+            }
 
-            if ((buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
+            if ((buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
                 samplerDescriptorBufferAddressSpaceSize += pCreateInfo->size;
+            }
         }
     }
     Add(std::move(buffer_state));
@@ -521,11 +523,13 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
         if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
             descriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
 
-            if (buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)
+            if (buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
                 resourceDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
+            }
 
-            if (buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)
+            if (buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
                 samplerDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
+            }
         }
 
         if (buffer_state->deviceAddress != 0) {
@@ -758,8 +762,9 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     if (dev_ext.vk_feature_version_1_2 || dev_ext.vk_feature_version_1_3) {
         GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_2, &phys_dev_props_core11);
         GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_2, &phys_dev_props_core12);
-        if (dev_ext.vk_feature_version_1_3)
+        if (dev_ext.vk_feature_version_1_3) {
             GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_3, &phys_dev_props_core13);
+        }
     } else {
         // VkPhysicalDeviceVulkan11Properties
         //
@@ -2268,14 +2273,14 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         if (!has_dynamic_viewport_count) {
             cb_state->trashedViewportCount = true;
             if (viewport_state && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT))) {
-                cb_state->trashedViewportMask |= (uint32_t(1) << viewport_state->viewportCount) - 1u;
+                cb_state->trashedViewportMask |= (1u << viewport_state->viewportCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
         if (!has_dynamic_scissor_count) {
             cb_state->trashedScissorCount = true;
             if (viewport_state && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR))) {
-                cb_state->trashedScissorMask |= (uint32_t(1) << viewport_state->scissorCount) - 1u;
+                cb_state->trashedScissorMask |= (1u << viewport_state->scissorCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }

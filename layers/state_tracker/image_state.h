@@ -99,10 +99,10 @@ class Image : public Bindable {
     const VkFormatFeatureFlags2KHR format_features;
     // Need to memory requirments for each plane if image is disjoint
     const bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
-    static constexpr int MAX_PLANES = 3;
-    using MemoryReqs = std::array<VkMemoryRequirements, MAX_PLANES>;
+    static constexpr int kMaxPlanes = 3;
+    using MemoryReqs = std::array<VkMemoryRequirements, kMaxPlanes>;
     const MemoryReqs requirements;
-    std::array<bool, MAX_PLANES> memory_requirements_checked = {};
+    std::array<bool, kMaxPlanes> memory_requirements_checked = {};
 
     const bool sparse_residency;
     using SparseReqs = std::vector<VkSparseImageMemoryRequirements>;

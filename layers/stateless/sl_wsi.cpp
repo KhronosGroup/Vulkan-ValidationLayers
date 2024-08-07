@@ -70,16 +70,16 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
     // Validate VK_KHR_image_format_list VkImageFormatListCreateInfo
     const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(create_info.pNext);
     if (format_list_info) {
-        const uint32_t viewFormatCount = format_list_info->viewFormatCount;
-        if (((create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (viewFormatCount > 1)) {
+        const uint32_t view_format_count = format_list_info->viewFormatCount;
+        if (((create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (view_format_count > 1)) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
                              loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
                              "is %" PRIu32 " but flag (%s) does not includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
-                             viewFormatCount, string_VkImageCreateFlags(create_info.flags).c_str());
+                             view_format_count, string_VkImageCreateFlags(create_info.flags).c_str());
         }
 
         // Using the first format, compare the rest of the formats against it that they are compatible
-        for (uint32_t i = 1; i < viewFormatCount; i++) {
+        for (uint32_t i = 1; i < view_format_count; i++) {
             if (vkuFormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
                 vkuFormatCompatibilityClass(format_list_info->pViewFormats[i])) {
                 skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-04099", device,

@@ -20,9 +20,7 @@
 
 #include <cassert>
 #include <cctype>
-#include <cstddef>
 #include <cstring>
-#include <functional>
 #include <string>
 #include <vector>
 #include <bitset>
@@ -31,7 +29,6 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_concurrent_unordered_map.hpp>
 
-#include "cast_utils.h"
 #include "generated/vk_extension_helper.h"
 #include "error_message/logging.h"
 

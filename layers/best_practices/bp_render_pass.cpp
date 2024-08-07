@@ -65,10 +65,10 @@ static inline bool RenderPassUsesAttachmentAsImageOnly(const vku::safe_VkRenderP
     }
 
     for (uint32_t subpass = 0; subpass < create_info.subpassCount; subpass++) {
-        const auto& subpassInfo = create_info.pSubpasses[subpass];
+        const auto& subpass_info = create_info.pSubpasses[subpass];
 
-        for (uint32_t i = 0; i < subpassInfo.inputAttachmentCount; i++) {
-            if (subpassInfo.pInputAttachments[i].attachment == attachment) {
+        for (uint32_t i = 0; i < subpass_info.inputAttachmentCount; i++) {
+            if (subpass_info.pInputAttachments[i].attachment == attachment) {
                 return true;
             }
         }
