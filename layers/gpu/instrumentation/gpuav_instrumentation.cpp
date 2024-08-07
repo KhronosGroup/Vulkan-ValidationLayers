@@ -216,9 +216,9 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     cb_state.per_command_error_loggers.emplace_back(error_logger);
 }
 
-bool LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
-                                      const std::vector<DescSetState> &descriptor_sets, const Location &loc,
-                                      bool uses_shader_object, bool &out_oob_access) {
+bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
+                                      std::string &out_vuid_msg, const std::vector<DescSetState> &descriptor_sets,
+                                      const Location &loc, bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -276,9 +276,15 @@ bool LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string 
             }
 
             switch (desc_class) {
-                case vvl::DescriptorClass::GeneralBuffer:
+                case vvl::DescriptorClass::GeneralBuffer: {
+                    const vvl::Buffer *buffer_state =
+                        static_cast<const vvl::BufferBinding *>(binding_state)->descriptors[desc_index].GetBufferState();
+                    assert(buffer_state);
+
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
-                         << " access out of bounds. Descriptor size is " << size << " and highest byte accessed was " << offset;
+                         << " access out of bounds. The descriptor buffer (" << gpuav.FormatHandle(buffer_state->Handle())
+                         << ") size is " << buffer_state->create_info.size << " bytes, " << size
+                         << " bytes were bound, and the highest out of bounds access was at [" << offset << "] bytes";
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
                         binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
                         out_vuid_msg = uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
@@ -287,6 +293,7 @@ bool LogMessageInstBindlessDescriptor(const uint32_t *error_record, std::string 
                     }
                     error_found = true;
                     break;
+                }
                 case vvl::DescriptorClass::TexelBuffer:
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
                          << " access out of bounds. Descriptor size is " << size << " texels and highest texel accessed was "
@@ -422,7 +429,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
     bool error_found = false;
     switch (error_record[glsl::kHeaderErrorGroupOffset]) {
         case glsl::kErrorGroupInstBindlessDescriptor:
-            error_found = LogMessageInstBindlessDescriptor(error_record, error_msg, vuid_msg, descriptor_sets, loc,
+            error_found = LogMessageInstBindlessDescriptor(gpuav, error_record, error_msg, vuid_msg, descriptor_sets, loc,
                                                            uses_shader_object, oob_access);
             break;
         case glsl::kErrorGroupInstBufferDeviceAddress:

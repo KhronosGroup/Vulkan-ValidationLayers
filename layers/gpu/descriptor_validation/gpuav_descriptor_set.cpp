@@ -146,8 +146,7 @@ static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
     if (!buffer_state) {
         return glsl::DescriptorState(DescriptorClass::GeneralBuffer, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
     }
-    return glsl::DescriptorState(DescriptorClass::GeneralBuffer, buffer_state->id,
-                                 static_cast<uint32_t>(buffer_state->create_info.size));
+    return glsl::DescriptorState(DescriptorClass::GeneralBuffer, buffer_state->id, static_cast<uint32_t>(desc.GetEffectiveRange()));
 }
 
 static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {

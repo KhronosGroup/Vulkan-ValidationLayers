@@ -942,6 +942,17 @@ void vvl::BufferDescriptor::RemoveParent(StateObject *state_object) {
 }
 bool vvl::BufferDescriptor::Invalid() const { return !buffer_state_ || buffer_state_->Invalid(); }
 
+VkDeviceSize vvl::BufferDescriptor::GetEffectiveRange() const {
+    // The buffer can be null if using nullDescriptors, if that is the case, the size/range will not be accessed
+    if (range_ == VK_WHOLE_SIZE && buffer_state_) {
+        // When range is VK_WHOLE_SIZE the effective range is calculated at vkUpdateDescriptorSets is by taking the size of buffer
+        // minus the offset.
+        return buffer_state_->create_info.size - offset_;
+    } else {
+        return range_;
+    }
+}
+
 void vvl::TexelDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                    const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
     auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
@@ -1089,6 +1100,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             const auto &buffer_info = update.pBufferInfo[index];
             offset_ = buffer_info.offset;
             range_ = buffer_info.range;
+            // can be null if using nullDescriptors
             const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(update.pBufferInfo->buffer);
             if (buffer_state) {
                 buffer_size = buffer_state->create_info.size;
@@ -1097,6 +1109,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             break;
         }
         case DescriptorClass::TexelBuffer: {
+            // can be null if using nullDescriptors
             const auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
             if (buffer_view) {
                 buffer_size = buffer_view->buffer_state->create_info.size;
@@ -1243,6 +1256,17 @@ void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType src_type, const 
         buffer_size_ = descriptor->GetBufferSize();
     } else {
         buffer_size_ = 0;
+    }
+}
+
+VkDeviceSize vvl::MutableDescriptor::GetEffectiveRange() const {
+    // The buffer can be null if using nullDescriptors, if that is the case, the size/range will not be accessed
+    if (range_ == VK_WHOLE_SIZE && buffer_state_) {
+        // When range is VK_WHOLE_SIZE the effective range is calculated at vkUpdateDescriptorSets is by taking the size of buffer
+        // minus the offset.
+        return buffer_state_->create_info.size - offset_;
+    } else {
+        return range_;
     }
 }
 
