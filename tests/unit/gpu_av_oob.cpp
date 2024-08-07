@@ -273,6 +273,27 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmall) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors);
 }
 
+TEST_F(NegativeGpuAVOOB, UniformBufferTooSmall2) {
+    TEST_DESCRIPTION("Buffer is correct size, but only updating half of it.");
+    char const *fsSource = R"glsl(
+        #version 450
+
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=0) uniform readonly foo {
+            int x; // Bound
+            int y; // Not bound, illegal to use
+        } bar;
+        void main() {
+           x = vec4(bar.x, bar.y, 0, 1);
+        }
+        )glsl";
+    std::vector<const char *> expected_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-uniformBuffers-06935");
+    ShaderBufferSizeTest(8,  // buffer size
+                         0,  // binding offset
+                         4,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors);
+}
+
 TEST_F(NegativeGpuAVOOB, StorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
 
@@ -1470,6 +1491,60 @@ TEST_F(NegativeGpuAVOOB, VertexFragmentMultiEntrypoint) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-uniformBuffers-06935", 3);  // vertex
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);  // fragment
 
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVOOB, PartialBoundDescriptorCopy) {
+    TEST_DESCRIPTION("Copy the partial bound buffer the descriptor that is used");
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer foo {
+            vec4 a;
+            vec4 b[4];
+        };
+
+        void main() {
+            a = b[3];
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    OneOffDescriptorSet descriptor_set_src(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set_src.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set_src.UpdateDescriptorSets();
+
+    OneOffDescriptorSet descriptor_set_dst(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_dst.layout_});
+
+    VkCopyDescriptorSet descriptor_copy = vku::InitStructHelper();
+    descriptor_copy.srcSet = descriptor_set_src.set_;
+    descriptor_copy.srcBinding = 0;
+    descriptor_copy.dstSet = descriptor_set_dst.set_;
+    descriptor_copy.dstBinding = 0;
+    descriptor_copy.dstArrayElement = 0;
+    descriptor_copy.descriptorCount = 1;
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &descriptor_copy);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set_dst.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
