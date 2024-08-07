@@ -3076,12 +3076,11 @@ void BestPractices::PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     }
 }
 
-void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                               VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                               const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
-                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                               const RecordObject& record_obj, PipelineStates& pipeline_states,
-                                                               chassis::CreateRayTracingPipelinesKHR& chassis_state) {
+void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+    const RecordObject& record_obj, PipelineStates& pipeline_states,
+    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                        pCreateInfos, pAllocator, pPipelines, record_obj,
                                                                        pipeline_states, chassis_state);

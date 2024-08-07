@@ -1436,7 +1436,8 @@ void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOpera
                                                 VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                 const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                const RecordObject& record_obj) override;
+                                                const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) override;
 bool PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                                     uint32_t groupCount, size_t dataSize, void* pData,
                                                                     const ErrorObject& error_obj) const override;
