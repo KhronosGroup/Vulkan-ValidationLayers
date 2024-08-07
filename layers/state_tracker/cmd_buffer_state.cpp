@@ -1710,10 +1710,10 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
 }
 
 void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
-    auto &lastBoundState = lastBound[ConvertToPipelineBindPoint(shader_stage)];
+    auto &last_bound_state = lastBound[ConvertToPipelineBindPoint(shader_stage)];
     const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
-    lastBoundState.shader_object_bound[stage_index] = true;
-    lastBoundState.shader_object_states[stage_index] = shader_object_state;
+    last_bound_state.shader_object_bound[stage_index] = true;
+    last_bound_state.shader_object_states[stage_index] = shader_object_state;
 }
 
 void CommandBuffer::UnbindResources() {

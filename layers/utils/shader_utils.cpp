@@ -68,35 +68,35 @@ void ValidationCache::Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
 }
 
 void ValidationCache::Write(size_t *pDataSize, void *pData) {
-    const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
+    const auto header_size = 2 * sizeof(uint32_t) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
     if (!pData) {
-        *pDataSize = headerSize + good_shader_hashes_.size() * sizeof(uint32_t);
+        *pDataSize = header_size + good_shader_hashes_.size() * sizeof(uint32_t);
         return;
     }
 
-    if (*pDataSize < headerSize) {
+    if (*pDataSize < header_size) {
         *pDataSize = 0;
         return;  // Too small for even the header!
     }
 
     uint32_t *out = (uint32_t *)pData;
-    size_t actualSize = headerSize;
+    size_t actual_size = header_size;
 
     // Write the header
-    *out++ = headerSize;
+    *out++ = header_size;
     *out++ = VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT;
     GetUUID(reinterpret_cast<uint8_t *>(out));
     out = (uint32_t *)(reinterpret_cast<uint8_t *>(out) + VK_UUID_SIZE);
 
     {
         auto guard = ReadLock();
-        for (auto it = good_shader_hashes_.begin(); it != good_shader_hashes_.end() && actualSize < *pDataSize;
-             it++, out++, actualSize += sizeof(uint32_t)) {
+        for (auto it = good_shader_hashes_.begin(); it != good_shader_hashes_.end() && actual_size < *pDataSize;
+             it++, out++, actual_size += sizeof(uint32_t)) {
             *out = *it;
         }
     }
 
-    *pDataSize = actualSize;
+    *pDataSize = actual_size;
 }
 
 void ValidationCache::Merge(ValidationCache const *other) {

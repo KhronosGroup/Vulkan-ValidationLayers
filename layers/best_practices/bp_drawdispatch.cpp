@@ -109,12 +109,13 @@ void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_state, uint
     auto& render_pass_state = cb_state.render_pass_state;
     // Each TBDR vendor requires a depth pre-pass draw call to have a minimum number of vertices/indices before it counts towards
     // depth prepass warnings First find the lowest enabled draw count
-    uint32_t lowestEnabledMinDrawCount = 0;
-    lowestEnabledMinDrawCount = VendorCheckEnabled(kBPVendorArm) * kDepthPrePassMinDrawCountArm;
-    if (VendorCheckEnabled(kBPVendorIMG) && kDepthPrePassMinDrawCountIMG < lowestEnabledMinDrawCount)
-        lowestEnabledMinDrawCount = kDepthPrePassMinDrawCountIMG;
+    uint32_t lowest_enabled_min_draw_count = 0;
+    lowest_enabled_min_draw_count = VendorCheckEnabled(kBPVendorArm) * kDepthPrePassMinDrawCountArm;
+    if (VendorCheckEnabled(kBPVendorIMG) && kDepthPrePassMinDrawCountIMG < lowest_enabled_min_draw_count) {
+        lowest_enabled_min_draw_count = kDepthPrePassMinDrawCountIMG;
+    }
 
-    if (draw_count >= lowestEnabledMinDrawCount) {
+    if (draw_count >= lowest_enabled_min_draw_count) {
         if (render_pass_state.depthOnly) render_pass_state.numDrawCallsDepthOnly++;
         if (render_pass_state.depthEqualComparison) render_pass_state.numDrawCallsDepthEqualCompare++;
     }

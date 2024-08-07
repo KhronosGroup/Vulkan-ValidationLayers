@@ -76,8 +76,8 @@ class Sampler : public StateObject {
 
   private:
     static inline VkSamplerYcbcrConversion GetConversion(const VkSamplerCreateInfo *pCreateInfo) {
-        auto *conversionInfo = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
-        return conversionInfo ? conversionInfo->conversion : VK_NULL_HANDLE;
+        auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+        return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;
     }
     static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo *pCreateInfo) {
         VkSamplerCustomBorderColorCreateInfoEXT result{};

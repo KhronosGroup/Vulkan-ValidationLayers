@@ -935,17 +935,17 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
         vvl::span<const VkDescriptorType> first_types, second_types;
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > i) {
-            const uint32_t descriptorTypeCount = mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount;
-            auto *pDescriptorTypes = mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes;
-            first_types = vvl::make_span(pDescriptorTypes, descriptorTypeCount);
+            const uint32_t descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount;
+            auto *descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes;
+            first_types = vvl::make_span(descriptor_types, descriptor_type_count);
         } else {
             first_types = vvl::make_span(all_descriptor_types.data(), all_descriptor_types.size());
         }
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > j) {
-            const uint32_t descriptorTypeCount = mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount;
-            auto *pDescriptorTypes = mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes;
-            second_types = vvl::make_span(pDescriptorTypes, descriptorTypeCount);
+            const uint32_t descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount;
+            auto *descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes;
+            second_types = vvl::make_span(descriptor_types, descriptor_type_count);
         } else {
             second_types = vvl::make_span(all_descriptor_types.data(), all_descriptor_types.size());
         }

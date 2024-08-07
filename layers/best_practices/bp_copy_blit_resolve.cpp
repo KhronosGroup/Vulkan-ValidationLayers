@@ -403,9 +403,9 @@ void BestPractices::PostCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer
     auto& funcs = cb_state->queue_submit_functions;
     auto src = Get<bp_state::Image>(pResolveImageInfo->srcImage);
     auto dst = Get<bp_state::Image>(pResolveImageInfo->dstImage);
-    uint32_t regionCount = pResolveImageInfo->regionCount;
+    uint32_t region_count = pResolveImageInfo->regionCount;
 
-    for (uint32_t i = 0; i < regionCount; i++) {
+    for (uint32_t i = 0; i < region_count; i++) {
         QueueValidateImage(funcs, record_obj.location.function, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
                            pResolveImageInfo->pRegions[i].srcSubresource);
         QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
@@ -602,9 +602,9 @@ bool BestPractices::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
         auto dst_state = Get<vvl::Image>(dstImage);
 
         if (src_state && dst_state) {
-            VkImageTiling src_Tiling = src_state->create_info.tiling;
-            VkImageTiling dst_Tiling = dst_state->create_info.tiling;
-            if (src_Tiling != dst_Tiling && (src_Tiling == VK_IMAGE_TILING_LINEAR || dst_Tiling == VK_IMAGE_TILING_LINEAR)) {
+            VkImageTiling src_tiling = src_state->create_info.tiling;
+            VkImageTiling dst_tiling = dst_state->create_info.tiling;
+            if (src_tiling != dst_tiling && (src_tiling == VK_IMAGE_TILING_LINEAR || dst_tiling == VK_IMAGE_TILING_LINEAR)) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                 skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-AvoidImageToImageCopy", objlist, error_obj.location,
                                               "%s srcImage (%s) and dstImage (%s) have differing tilings. Use buffer to "

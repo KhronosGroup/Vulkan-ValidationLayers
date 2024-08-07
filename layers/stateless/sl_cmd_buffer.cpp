@@ -228,17 +228,18 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     // Check VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength
     // This is a special case and generator currently skips it
     {
-        const bool vuidCondition = (pSizes != nullptr) || (pStrides != nullptr);
-        const bool vuidExpectation = bindingCount > 0;
-        if (vuidCondition) {
-            if (!vuidExpectation) {
+        const bool vuid_condition = (pSizes != nullptr) || (pStrides != nullptr);
+        const bool vuid_expectation = bindingCount > 0;
+        if (vuid_condition) {
+            if (!vuid_expectation) {
                 const char *not_null_msg = "";
-                if ((pSizes != nullptr) && (pStrides != nullptr))
+                if ((pSizes != nullptr) && (pStrides != nullptr)) {
                     not_null_msg = "pSizes and pStrides are not NULL";
-                else if (pSizes != nullptr)
+                } else if (pSizes != nullptr) {
                     not_null_msg = "pSizes is not NULL";
-                else
+                } else {
                     not_null_msg = "pStrides is not NULL";
+                }
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", commandBuffer, error_obj.location,
                                  "%s, so bindingCount must be greater than 0.", not_null_msg);
             }
