@@ -124,7 +124,26 @@ bool InjectConditionalFunctionPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
+                if (!AnalyzeInstruction(*function, *(inst_it->get()))) {
+                    // TODO - This should be cleaned up then having it injected here
+                    // we can have a situation where the incoming SPIR-V looks like
+                    // %a = OpSampledImage %type %image %sampler
+                    // ... other stuff we inject a
+                    // function around
+                    // %b = OpImageSampleExplicitLod %type2 %a %3893 Lod %3918
+                    // and we get an error "All OpSampledImage instructions must be in the same block in which their Result <id> are
+                    // consumed" to get around this we inject a OpCopyObject right after the OpSampledImage
+                    if ((*inst_it)->Opcode() == spv::OpSampledImage) {
+                        const uint32_t result_id = (*inst_it)->ResultId();
+                        const uint32_t type_id = (*inst_it)->TypeId();
+                        const uint32_t copy_id = module_.TakeNextId();
+                        function->ReplaceAllUsesWith(result_id, copy_id);
+                        inst_it++;
+                        (*block_it)->CreateInstruction(spv::OpCopyObject, {type_id, copy_id, result_id}, &inst_it);
+                        inst_it--;
+                    }
+                    continue;
+                }
 
                 if (module_.max_instrumented_count_ != 0 && instrumented_count_ >= module_.max_instrumented_count_) {
                     return true;  // hit limit
