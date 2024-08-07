@@ -55,10 +55,7 @@ class Validator : public gpu::GpuShaderInstrumentor {
     using Field = vvl::Field;
 
   public:
-    Validator() {
-        container_type = LayerObjectTypeGpuAssisted;
-        force_buffer_device_address_ = true;
-    }
+    Validator() { container_type = LayerObjectTypeGpuAssisted; }
 
     // gpuav_setup.cpp
     // -------------
@@ -83,6 +80,9 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
                                    vku::safe_VkDeviceCreateInfo* modified_create_info) final;
     void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
+
+  private:
+    void InitSettings(const Location& loc);
 
     // gpuav_record.cpp
     // --------------
@@ -325,7 +325,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
     gpu::SharedResourcesManager shared_resources_manager;
-    bool bda_validation_possible = false;
 
   private:
     std::string instrumented_shader_cache_path_{};
