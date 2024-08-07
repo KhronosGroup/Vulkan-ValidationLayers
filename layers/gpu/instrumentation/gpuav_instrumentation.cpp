@@ -294,10 +294,13 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
                     error_found = true;
                     break;
                 }
-                case vvl::DescriptorClass::TexelBuffer:
+                case vvl::DescriptorClass::TexelBuffer: {
+                    const vvl::BufferView *buffer_view_state =
+                        static_cast<const vvl::TexelBinding *>(binding_state)->descriptors[desc_index].GetBufferViewState();
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
-                         << " access out of bounds. Descriptor size is " << size << " texels and highest texel accessed was "
-                         << offset;
+                         << " access out of bounds. The descriptor texel buffer ("
+                         << gpuav.FormatHandle(buffer_view_state->Handle()) << ") size is " << size
+                         << " texels and highest out of bounds access was at [" << offset << "]";
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
                         out_vuid_msg = uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
                     } else {
@@ -305,6 +308,7 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
                     }
                     error_found = true;
                     break;
+                }
                 default:
                     // other OOB checks are not implemented yet
                     assert(false);
