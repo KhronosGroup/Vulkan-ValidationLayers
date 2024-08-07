@@ -295,6 +295,7 @@ struct TraceRaysSbt {
 class Pipeline {
   public:
     Pipeline(VkLayerTest& test, vkt::Device* device);
+    ~Pipeline();
 
     // Build settings
     // --------------
@@ -319,6 +320,7 @@ class Pipeline {
     void Build();
     void BuildPipeline();
     void BuildSbt();
+    void DeferBuild();
 
     // Get
     // ---
@@ -347,6 +349,7 @@ class Pipeline {
     std::vector<std::unique_ptr<VkShaderObj>> closest_hit_shaders_ {};
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_group_cis_{};
     vkt::Pipeline rt_pipeline_{};
+    VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;
     vkt::Buffer sbt_buffer_{};
     VkRayTracingPipelineInterfaceCreateInfoKHR rt_pipeline_interface_info_{};
     VkPipelineLibraryCreateInfoKHR pipeline_lib_info_{};

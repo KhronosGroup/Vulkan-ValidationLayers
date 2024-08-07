@@ -91,6 +91,7 @@ template <typename T>
 class Handle {
   public:
     const T &handle() const noexcept { return handle_; }
+    T &handle() noexcept { return handle_; }
     bool initialized() const noexcept { return (handle_ != T{}); }
 
     operator T() const noexcept { return handle(); }
@@ -154,6 +155,8 @@ class NonDispHandle : public Handle<T> {
         Handle<T>::init(handle);
         dev_handle_ = dev;
     }
+
+    void set_device(VkDevice device) { dev_handle_ = device; }
 
     void destroy() noexcept { dev_handle_ = VK_NULL_HANDLE; }
 
@@ -907,6 +910,8 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     void init(const Device &dev, const VkComputePipelineCreateInfo &info);
     // vkCreateRayTracingPipelinesKHR
     void init(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info);
+    // vkCreateRayTracingPipelinesKHR with deferredOperation
+    void InitDeferred(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info, VkDeferredOperationKHR deferred_op);
     // vkLoadPipeline()
     void init(const Device &dev, size_t size, const void *data);
     // vkLoadPipelineDerivative()
