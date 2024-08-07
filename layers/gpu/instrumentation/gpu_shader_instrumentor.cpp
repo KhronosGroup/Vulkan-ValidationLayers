@@ -582,8 +582,12 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                  chassis::CreateGraphicsPipelines &chassis_state) {
     std::vector<vku::safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
-                                   record_obj, chassis_state);
+    PreCallRecordPipelineCreations(
+        count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
+        [](const std::shared_ptr<vvl::Pipeline> &pipe) {
+            return std::get<vku::safe_VkGraphicsPipelineCreateInfo>(pipe->create_info);
+        },
+        record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
@@ -594,8 +598,12 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                 chassis::CreateComputePipelines &chassis_state) {
     std::vector<vku::safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
-                                   record_obj, chassis_state);
+    PreCallRecordPipelineCreations(
+        count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
+        [](const std::shared_ptr<vvl::Pipeline> &pipe) {
+            return std::get<vku::safe_VkComputePipelineCreateInfo>(pipe->create_info);
+        },
+        record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
@@ -607,8 +615,12 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice de
                                                                      PipelineStates &pipeline_states,
                                                                      chassis::CreateRayTracingPipelinesNV &chassis_state) {
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
-                                   record_obj, chassis_state);
+    PreCallRecordPipelineCreations(
+        count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
+        [](const std::shared_ptr<vvl::Pipeline> &pipe) {
+            return std::get<vku::safe_VkRayTracingPipelineCreateInfoCommon>(pipe->create_info);
+        },
+        record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(chassis_state.modified_create_infos.data());
 }
@@ -617,9 +629,16 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
-    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
-                                   record_obj, chassis_state);
+    BaseClass::PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
+                                                         pPipelines, record_obj, pipeline_states, chassis_state);
+
+    std::vector<vku::safe_VkRayTracingPipelineCreateInfoKHR> new_pipeline_create_infos;
+    PreCallRecordPipelineCreations(
+        count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
+        [](const std::shared_ptr<vvl::Pipeline> &pipe) -> const vku::safe_VkRayTracingPipelineCreateInfoKHR & {
+            return std::get<vku::safe_VkRayTracingPipelineCreateInfoCommon>(pipe->create_info);
+        },
+        record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoKHR *>(chassis_state.modified_create_infos.data());
 }
@@ -676,12 +695,14 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesNV(
 void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-    const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
+    const RecordObject &record_obj, PipelineStates &pipeline_states,
+    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, pipeline_states, chassis_state);
-    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data(),
-                                    chassis_state.passed_in_shader_stage_ci);
+
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state->modified_create_infos.data());
+    PostCallRecordPipelineCreationsRT(record_obj.result, deferredOperation, count, pCreateInfos, pAllocator, pPipelines,
+                                      chassis_state);
 }
 
 // Remove all the shader trackers associated with this destroyed pipeline.
@@ -810,11 +831,12 @@ bool GpuShaderInstrumentor::CheckForGpuAvEnabled(const void *pNext) {
 // Examine the pipelines to see if they use the debug descriptor set binding index.
 // If any do, create new non-instrumented shader modules and use them to replace the instrumented
 // shaders in the pipeline.  Return the (possibly) modified create infos to the caller.
-template <typename CreateInfo, typename SafeCreateInfo, typename ChassisState>
+template <typename CreateInfo, typename SafeCreateInfo, typename ChassisState, typename PipelineCreateInfoAccessor>
 void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                            PipelineStates &pipeline_states,
                                                            std::vector<SafeCreateInfo> *new_pipeline_create_infos,
+                                                           PipelineCreateInfoAccessor pipe_ci_accessor,
                                                            const RecordObject &record_obj, ChassisState &chassis_state) {
     chassis_state.passed_in_shader_stage_ci = false;
     // Walk through all the pipelines, make a copy of each and flag each pipeline that contains a shader that uses the debug
@@ -822,7 +844,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreations(uint32_t count, const
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         const auto &pipe = pipeline_states[pipeline];
         // NOTE: since these are "safe" CreateInfos, this will create a deep copy via the safe copy constructor
-        auto new_pipeline_ci = std::get<SafeCreateInfo>(pipe->create_info);
+        auto new_pipeline_ci = pipe_ci_accessor(pipe);
 
         bool replace_shaders = false;
         if (pipe->active_slots.find(desc_set_bind_index_) != pipe->active_slots.end()) {
@@ -958,6 +980,116 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreations(const uint32_t count
 
                 VkShaderModule shader_module_handle = module_state->VkHandle();
                 if (shader_module_handle == VK_NULL_HANDLE && passed_in_shader_stage_ci) {
+                    shader_module_handle = kPipelineStageInfoHandle;
+                }
+                shader_map_.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->VkHandle(),
+                                             shader_module_handle, VK_NULL_HANDLE, std::move(code));
+            }
+        }
+    }
+}
+
+void GpuShaderInstrumentor::PostCallRecordPipelineCreationsRT(
+    VkResult result, VkDeferredOperationKHR deferredOperation, const uint32_t count,
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
+    const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (is_operation_deferred) {
+        if (wrap_handles) {
+            deferredOperation = layer_data->Unwrap(deferredOperation);
+        }
+        auto found = layer_data->deferred_operation_post_check.pop(deferredOperation);
+        std::vector<std::function<void(const std::vector<VkPipeline> &)>> deferred_op_post_checks;
+        if (found->first) {
+            deferred_op_post_checks = std::move(found->second);
+        } else {
+            // ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR should have added a lambda in
+            // deferred_operation_post_check for the current deferredOperation.
+            // This lambda is responsible for initializing the pipeline state we maintain,
+            // this state will be accessed in the following lambda.
+            // Given how PostCallRecordPipelineCreationsRT is called in
+            // GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR
+            // conditions holds as of writing. But it is something we need to be aware of.
+            assert(false);
+        }
+
+        // From the Vulkan spec, section "Deferred Host Operations":
+        // ===`
+        // Parameters to the command requesting a deferred operation may be accessed by the implementation at any time
+        // until the deferred operation enters the complete state.
+        // The application must obey the following rules while a deferred operation is pending:
+        // - Externally synchronized parameters must not be accessed.
+        // - Pointer parameters must not be modified (e.g. reallocated/freed).
+        // - The contents of pointer parameters which may be read by the command must not be modified.
+        // - The contents of pointer parameters which may be written by the command must not be read.
+        // - Vulkan object parameters must not be passed as externally synchronized parameters to any other command.
+        //
+        // => Need to hold onto `chassis_state` until deferred operation completion
+        // ==> Done by copying it into lambda. It will be released after `deferred_operation_post_check` is processed
+        deferred_op_post_checks.emplace_back([&state_tracker = std::as_const(*this), pAllocator,
+                                              held_chassis_state = chassis_state](const std::vector<VkPipeline> &vk_pipelines) {
+            for (size_t vk_pipeline_i = 0; vk_pipeline_i < vk_pipelines.size(); ++vk_pipeline_i) {
+                const VkPipeline vk_pipeline = vk_pipelines[vk_pipeline_i];
+                // This code assumes that a previous function inserted by the ValidationStateTracker in
+                // deferred_operation_post_check has ran, as this function is in charge of initializing pipeline state
+                const auto pipeline_state = state_tracker.Get<vvl::Pipeline>(vk_pipeline);
+                // Per explanation above, we expect a pipeline state.
+                ASSERT_AND_CONTINUE(pipeline_state);
+
+                if (!pipeline_state->stage_states.empty() && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
+                    const auto pipeline_layout = pipeline_state->PipelineLayoutState();
+                    for (auto &stage_state : pipeline_state->stage_states) {
+                        // If user is asking for the descriptor slot used by instrumentation,
+                        // cannot run GPU-AV, so destroy instrumented shaders
+                        if (pipeline_state->active_slots.find(state_tracker.desc_set_bind_index_) !=
+                                pipeline_state->active_slots.end() ||
+                            (pipeline_layout->set_layouts.size() > state_tracker.desc_set_bind_index_)) {
+                            auto *modified_ci = reinterpret_cast<const VkRayTracingPipelineCreateInfoKHR *>(
+                                held_chassis_state->modified_create_infos[vk_pipeline_i].ptr());
+                            auto instrumented_module = GetShaderModule(*modified_ci, stage_state.GetStage());
+                            assert(instrumented_module != stage_state.module_state->VkHandle());
+                            DispatchDestroyShaderModule(state_tracker.device, instrumented_module, pAllocator);
+                        }
+                    }
+                }
+            }
+        });
+        layer_data->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
+    }
+
+    for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
+        auto pipeline_state = Get<vvl::Pipeline>(pPipelines[pipeline]);
+        if (!pipeline_state) continue;
+
+        if (!pipeline_state->stage_states.empty() && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
+            const auto pipeline_layout = pipeline_state->PipelineLayoutState();
+            for (auto &stage_state : pipeline_state->stage_states) {
+                auto &module_state = stage_state.module_state;
+
+                if (!is_operation_deferred) {
+                    // If user is asking for the descriptor slot used by instrumentation,
+                    // abort and destroy shaders
+                    if (pipeline_state->active_slots.find(desc_set_bind_index_) != pipeline_state->active_slots.end() ||
+                        (pipeline_layout->set_layouts.size() > desc_set_bind_index_)) {
+                        auto *modified_ci = reinterpret_cast<const VkRayTracingPipelineCreateInfoKHR *>(
+                            chassis_state->modified_create_infos[pipeline].ptr());
+                        auto instrumented_module = GetShaderModule(*modified_ci, stage_state.GetStage());
+                        assert(instrumented_module != module_state->VkHandle());
+                        DispatchDestroyShaderModule(device, instrumented_module, pAllocator);
+                    }
+                }
+
+                std::vector<unsigned int> code;
+                // Save the shader binary
+                // The core_validation ShaderModule tracker saves the binary too, but discards it when the ShaderModule
+                // is destroyed.  Applications may destroy ShaderModules after they are placed in a pipeline and before
+                // the pipeline is used, so we have to keep another copy.
+                if (module_state && module_state->spirv) code = module_state->spirv->words_;
+
+                VkShaderModule shader_module_handle = module_state->VkHandle();
+                if (shader_module_handle == VK_NULL_HANDLE && chassis_state->passed_in_shader_stage_ci) {
                     shader_module_handle = kPipelineStageInfoHandle;
                 }
                 shader_map_.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->VkHandle(),

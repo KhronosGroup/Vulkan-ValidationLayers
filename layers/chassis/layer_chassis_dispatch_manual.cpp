@@ -1132,10 +1132,42 @@ VkResult DispatchCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperati
             }
         }
     }
+
+    // For deferred pipeline creation, if handle wrapping is ON:
+    // VVL will return wrapped handles when vkCreateRayTracingPipelinesKHR returns.
+    // Even though the pipelines are not yet created, this is our only chance to return wrapped handles to the user
+    // But when performing the deferred operation, if we do nothing the driver will read the pPipelines paramater,
+    // thus will read wrapped handles
+    // => we need to give the driver the list of unwrapped handles,
+    // AND make sure this list has not been freed/reallocated before the driver is done.
+    // Done with this shared unwrapped_pipelines pointer
+    VkPipeline *returned_pipelines = pPipelines;
+    std::shared_ptr<std::vector<VkPipeline>> unwrapped_pipelines;
+    // Operation may be deffered, will know when looking at dispatch VkResult,
+    // still we need to prepare
+    if (deferredOperation != VK_NULL_HANDLE) {
+        unwrapped_pipelines = std::make_shared<std::vector<VkPipeline>>(createInfoCount);
+        returned_pipelines = unwrapped_pipelines->data();
+    }
+
     VkResult result = layer_data->device_dispatch_table.CreateRayTracingPipelinesKHR(
         device, deferredOperation, pipelineCache, createInfoCount, (const VkRayTracingPipelineCreateInfoKHR *)local_pCreateInfos,
-        pAllocator, pPipelines);
+        pAllocator, returned_pipelines);
+
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (deferredOperation != VK_NULL_HANDLE) {
+            // Need to copy back returned pipeline handles in app provided array
+            pPipelines[i] = unwrapped_pipelines->at(i);
+        }
+    }
+
     if (wrap_handles) {
+        for (uint32_t i = 0; i < createInfoCount; i++) {
+            if (pPipelines[i] != VK_NULL_HANDLE) {
+                pPipelines[i] = layer_data->WrapNew(pPipelines[i]);
+            }
+        }
+
         for (uint32_t i = 0; i < createInfoCount; ++i) {
             if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
                 CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
@@ -1152,42 +1184,34 @@ VkResult DispatchCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperati
         if (completion_find->first) {
             post_completion_fns = std::move(completion_find->second);
         }
+
         if (wrap_handles) {
-            auto cleanup_fn = [local_pCreateInfos, deferredOperation, pPipelines, createInfoCount, layer_data]() {
+            std::vector<VkPipeline> copied_wrapped_pipelines(createInfoCount);
+            for (uint32_t i = 0; i < createInfoCount; ++i) {
+                copied_wrapped_pipelines[i] = pPipelines[i];
+            }
+            auto cleanup_fn = [local_pCreateInfos, captured_copied_wrapped_pipelines = std::move(copied_wrapped_pipelines),
+                               deferredOperation, layer_data, unwrapped_pipelines]() {
+                (void)unwrapped_pipelines;
                 if (local_pCreateInfos) {
                     delete[] local_pCreateInfos;
                 }
-                std::vector<VkPipeline> pipes_wrapped;
-                for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
-                    if (pPipelines[index0] != VK_NULL_HANDLE) {
-                        pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
-                        pipes_wrapped.emplace_back(pPipelines[index0]);
-                    }
-                }
-                layer_data->deferred_operation_pipelines.insert(deferredOperation, std::move(pipes_wrapped));
+                layer_data->deferred_operation_pipelines.insert(deferredOperation, std::move(captured_copied_wrapped_pipelines));
             };
             post_completion_fns.emplace_back(cleanup_fn);
         } else {
-            auto cleanup_fn = [deferredOperation, pPipelines, createInfoCount, layer_data]() {
-                std::vector<VkPipeline> pipes;
-                for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
-                    if (pPipelines[index0] != VK_NULL_HANDLE) {
-                        pipes.emplace_back(pPipelines[index0]);
-                    }
-                }
-                layer_data->deferred_operation_pipelines.insert(deferredOperation, std::move(pipes));
+            auto cleanup_fn = [deferredOperation, layer_data, unwrapped_pipelines]() {
+                layer_data->deferred_operation_pipelines.insert(deferredOperation, std::move(*unwrapped_pipelines));
             };
             post_completion_fns.emplace_back(cleanup_fn);
         }
         layer_data->deferred_operation_post_completion.insert(deferredOperation, std::move(post_completion_fns));
-    } else if (wrap_handles) {
+    }
+
+    // If operation is deferred, local resources free is postponed
+    if (!is_operation_deferred && wrap_handles) {
         if (local_pCreateInfos) {
             delete[] local_pCreateInfos;
-        }
-        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
-            if (pPipelines[index0] != VK_NULL_HANDLE) {
-                pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
-            }
         }
     }
 
@@ -1203,10 +1227,10 @@ VkResult DispatchDeferredOperationJoinKHR(VkDevice device, VkDeferredOperationKH
 
     // If this thread completed the operation, free any retained memory.
     if (result == VK_SUCCESS) {
-        auto iter = layer_data->deferred_operation_post_completion.pop(operation);
-        if (iter != layer_data->deferred_operation_post_completion.end()) {
-            for (auto &cleanup_fn : iter->second) {
-                cleanup_fn();
+        auto post_op_completion_fns = layer_data->deferred_operation_post_completion.pop(operation);
+        if (post_op_completion_fns != layer_data->deferred_operation_post_completion.end()) {
+            for (auto &post_op_completion_fn : post_op_completion_fns->second) {
+                post_op_completion_fn();
             }
         }
     }
@@ -1220,14 +1244,23 @@ VkResult DispatchGetDeferredOperationResultKHR(VkDevice device, VkDeferredOperat
         operation = layer_data->Unwrap(operation);
     }
     VkResult result = layer_data->device_dispatch_table.GetDeferredOperationResultKHR(device, operation);
-
     // Add created pipelines if successful
     if (result == VK_SUCCESS) {
-        auto iter_fn = layer_data->deferred_operation_post_check.pop(operation);
-        auto iter_pipes = layer_data->deferred_operation_pipelines.pop(operation);
-        if (iter_fn->first && iter_pipes->first) {
-            for (auto &cleanup_fn : iter_fn->second) {
-                cleanup_fn(iter_pipes->second);
+        // Perfectly valid to never call vkDeferredOperationJoin before getting the result,
+        // so we need to make sure functions associated to the current operation and
+        // stored in deferred_operation_post_completion have been called
+        auto post_op_completion_fns = layer_data->deferred_operation_post_completion.pop(operation);
+        if (post_op_completion_fns != layer_data->deferred_operation_post_completion.end()) {
+            for (auto &post_op__completion_fn : post_op_completion_fns->second) {
+                post_op__completion_fn();
+            }
+        }
+
+        auto post_check_fns = layer_data->deferred_operation_post_check.pop(operation);
+        auto pipelines_to_updates = layer_data->deferred_operation_pipelines.pop(operation);
+        if (post_check_fns->first && pipelines_to_updates->first) {
+            for (auto &post_check_fn : post_check_fns->second) {
+                post_check_fn(pipelines_to_updates->second);
             }
         }
     }

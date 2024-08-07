@@ -837,7 +837,7 @@ class ValidationStateTracker : public ValidationObject {
                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     const RecordObject& record_obj, PipelineStates& pipeline_states,
-                                                    chassis::CreateRayTracingPipelinesKHR& chassis_state) override;
+                                                    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) override;
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                         const RecordObject& record_obj) override;

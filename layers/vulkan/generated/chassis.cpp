@@ -962,7 +962,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
     PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
-    chassis::CreateRayTracingPipelinesKHR chassis_state(pCreateInfos);
+    auto chassis_state = std::make_shared<chassis::CreateRayTracingPipelinesKHR>(pCreateInfos);
 
     {
         VVL_ZoneScopedN("PreCallValidate");
@@ -970,7 +970,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
             auto lock = intercept->ReadLock();
             skip |= intercept->PreCallValidateCreateRayTracingPipelinesKHR(
                 device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, error_obj,
-                pipeline_states[intercept->container_type], chassis_state);
+                pipeline_states[intercept->container_type], *chassis_state);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
     }
@@ -982,7 +982,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
             auto lock = intercept->WriteLock();
             intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                  pCreateInfos, pAllocator, pPipelines, record_obj,
-                                                                 pipeline_states[intercept->container_type], chassis_state);
+                                                                 pipeline_states[intercept->container_type], *chassis_state);
         }
     }
 
@@ -990,7 +990,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     {
         VVL_ZoneScopedN("Dispatch");
         result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
-                                                      chassis_state.pCreateInfos, pAllocator, pPipelines);
+                                                      chassis_state->pCreateInfos, pAllocator, pPipelines);
     }
     record_obj.result = result;
 
