@@ -58,7 +58,7 @@ struct ShaderObject {
     std::vector<uint32_t> unique_shader_ids;
 
     // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
-    VkShaderCreateInfoEXT* instrumented_create_info;
+    VkShaderCreateInfoEXT* instrumented_create_info = nullptr;
     std::vector<std::vector<uint32_t>> instrumented_spirv;
 
     std::vector<VkDescriptorSetLayout> new_layouts;
@@ -80,7 +80,7 @@ using ShaderModuleUniqueIds = std::unordered_map<VkShaderStageFlagBits, uint32_t
 struct CreateGraphicsPipelines {
     std::vector<vku::safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;
-    const VkGraphicsPipelineCreateInfo* pCreateInfos;
+    const VkGraphicsPipelineCreateInfo* pCreateInfos = nullptr;
     // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
     bool passed_in_shader_stage_ci = false;
     spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages];
@@ -91,7 +91,7 @@ struct CreateGraphicsPipelines {
 struct CreateComputePipelines {
     std::vector<vku::safe_VkComputePipelineCreateInfo> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
-    const VkComputePipelineCreateInfo* pCreateInfos;
+    const VkComputePipelineCreateInfo* pCreateInfos = nullptr;
     // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
     bool passed_in_shader_stage_ci = false;
     spirv::StatelessData stateless_data;
@@ -102,16 +102,16 @@ struct CreateComputePipelines {
 struct CreateRayTracingPipelinesNV {
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
-    const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
+    const VkRayTracingPipelineCreateInfoNV* pCreateInfos = nullptr;
     bool passed_in_shader_stage_ci = false;
 
     CreateRayTracingPipelinesNV(const VkRayTracingPipelineCreateInfoNV* create_info) { pCreateInfos = create_info; }
 };
 
 struct CreateRayTracingPipelinesKHR {
-    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
+    std::vector<vku::safe_VkRayTracingPipelineCreateInfoKHR> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
-    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
+    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos = nullptr;
     bool passed_in_shader_stage_ci = false;
 
     CreateRayTracingPipelinesKHR(const VkRayTracingPipelineCreateInfoKHR* create_info) { pCreateInfos = create_info; }

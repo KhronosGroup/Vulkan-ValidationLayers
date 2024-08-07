@@ -2028,11 +2028,12 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
 void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-    const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
-    const bool operation_is_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
+    const RecordObject &record_obj, PipelineStates &pipeline_states,
+    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
+    const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
     // This API may create pipelines regardless of the return value
 
-    if (!operation_is_deferred) {
+    if (!is_operation_deferred) {
         for (uint32_t i = 0; i < count; i++) {
             if (pPipelines[i] != VK_NULL_HANDLE) {
                 pipeline_states[i]->SetHandle(pPipelines[i]);
@@ -2040,6 +2041,12 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
             }
         }
     } else {
+        // Deferred creation: pipelines will be considered created once the defferedOperation object
+        // signals it, via usage of vkDeferredOperationJoinKHR and then vkGetDeferredOperationResultKHR
+        // Hence pipeline state tracking needs to be deferred to the corresponding call to
+        // vkGetDeferredOperationResultKHR => Store the deferred logic to do that in
+        // `deferred_operation_post_check`.
+
         auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
         if (wrap_handles) {
             deferredOperation = layer_data->Unwrap(deferredOperation);
@@ -2050,7 +2057,10 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
             cleanup_fn = std::move(find_res->second);
         }
         // Mutable lambda because we want to move the shared pointer contained in the copied vector
-        cleanup_fn.emplace_back([this, pipeline_states](const std::vector<VkPipeline> &pipelines) mutable {
+        cleanup_fn.emplace_back([this, chassis_state, pipeline_states](const std::vector<VkPipeline> &pipelines) mutable {
+            // Just need to capture chassis state to maintain pipeline creations parameters alive, see
+            // https://vkdoc.net/chapters/deferred-host-operations#deferred-host-operations-requesting
+            (void)chassis_state;
             for (size_t i = 0; i < pipeline_states.size(); ++i) {
                 pipeline_states[i]->SetHandle(pipelines[i]);
                 this->Add(std::move(pipeline_states[i]));
@@ -2058,7 +2068,6 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
         });
         layer_data->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
     }
-    pipeline_states.clear();
 }
 
 std::shared_ptr<vvl::Sampler> ValidationStateTracker::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *create_info) {
