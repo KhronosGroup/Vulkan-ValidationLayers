@@ -82,8 +82,8 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     *data = 0;
     uniform_buffer.memory().unmap();
     // normally VUID-vkCmdDraw-uniformBuffers-06935
-    m_errorMonitor->SetDesiredWarning(
-        "Descriptor index 0 access out of bounds. Descriptor size is 4 and highest byte accessed was 19", 3);
+    m_errorMonitor->SetDesiredWarning("size is 4 bytes, 4 bytes were bound, and the highest out of bounds access was at [19] bytes",
+                                      3);
 
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
@@ -93,7 +93,8 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     uniform_buffer.memory().unmap();
     // normally VUID-vkCmdDraw-storageBuffers-06936
     m_errorMonitor->SetDesiredWarning(
-        "Descriptor index 0 access out of bounds. Descriptor size is 16 and highest byte accessed was 35", 3);
+        "size is 16 bytes, 16 bytes were bound, and the highest out of bounds access was at [35] bytes", 3);
+
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -377,8 +378,7 @@ TEST_F(NegativeGpuAVOOB, ObjectUniformBufferTooSmall) {
         }
         )glsl";
 
-    std::vector<const char *> expecetd_errors(gpuav::glsl::kMaxErrorsPerCmd,
-                                              "Descriptor size is 4 and highest byte accessed was 7");
+    std::vector<const char *> expecetd_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-None-08612");
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
