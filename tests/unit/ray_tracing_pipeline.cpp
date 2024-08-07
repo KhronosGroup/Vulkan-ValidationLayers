@@ -819,8 +819,6 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     TEST_DESCRIPTION(
         "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     if (IsPlatformMockICD()) {

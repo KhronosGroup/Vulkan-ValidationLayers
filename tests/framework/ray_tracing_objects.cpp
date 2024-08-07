@@ -1188,6 +1188,12 @@ namespace rt {
 
 Pipeline::Pipeline(VkLayerTest &test, vkt::Device *device) : test_(test), device_(device) {}
 
+Pipeline::~Pipeline() {
+    if (deferred_op_ != VK_NULL_HANDLE) {
+        vk::DestroyDeferredOperationKHR(device_->handle(), deferred_op_, nullptr);
+    }
+}
+
 void Pipeline::AddCreateInfoFlags(VkPipelineCreateFlags flags) { vk_info_.flags |= flags; }
 
 void Pipeline::InitLibraryInfo() {
@@ -1338,7 +1344,23 @@ void Pipeline::BuildPipeline() {
     vk_info_.maxPipelineRayRecursionDepth = 1;
     vk_info_.pDynamicState = &dynamic_state_ci;
     vk_info_.layout = pipeline_layout_;
-    rt_pipeline_.init(*device_, vk_info_);
+
+    if (deferred_op_ == VK_NULL_HANDLE) {
+        rt_pipeline_.init(*device_, vk_info_);
+    } else {
+        rt_pipeline_.InitDeferred(*device_, vk_info_, deferred_op_);
+
+        VkResult result = vk::DeferredOperationJoinKHR(device_->handle(), deferred_op_);
+        if (result != VK_SUCCESS) {
+            ADD_FAILURE() << "vk::DeferredOperationJoinKHR returned " << string_VkResult(result);
+            return;
+        }
+        result = vk::GetDeferredOperationResultKHR(device_->handle(), deferred_op_);
+        if (result != VK_SUCCESS) {
+            ADD_FAILURE() << "vk::GetDeferredOperationResultKHR returned " << string_VkResult(result);
+            return;
+        }
+    }
 }
 
 void Pipeline::BuildSbt() {
@@ -1395,6 +1417,15 @@ void Pipeline::BuildSbt() {
     sbt_host_storage_offseted_ptr += closest_hit_shaders_.size() * handle_size_aligned;
 
     sbt_buffer_.memory().unmap();
+}
+
+void Pipeline::DeferBuild() {
+    assert(deferred_op_ == VK_NULL_HANDLE);
+    const VkResult result = vk::CreateDeferredOperationKHR(device_->handle(), nullptr, &deferred_op_);
+    if (result != VK_SUCCESS) {
+        ADD_FAILURE() << "vk::CreateDeferredOperationKHR returned " << string_VkResult(result);
+        return;
+    }
 }
 
 vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt() {
