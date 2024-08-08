@@ -61,7 +61,7 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
 
 void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location &loc) {
-    if (!gpuav.gpuav_settings.validate_descriptors || !gpuav.force_buffer_device_address_) {
+    if (!gpuav.gpuav_settings.validate_descriptors) {
         return;
     }
 

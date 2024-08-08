@@ -290,7 +290,7 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
         return;
     }
 
-    VkResult result = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address_, &vma_allocator_);
+    VkResult result = UtilInitializeVma(instance, physical_device, device, enabled_features.bufferDeviceAddress, &vma_allocator_);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Could not initialize VMA", true);
         return;
@@ -1100,8 +1100,6 @@ VkDeviceAddress GpuShaderInstrumentor::GetBufferDeviceAddressHelper(VkBuffer buf
     VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
     address_info.buffer = buffer;
 
-    // We cannot rely on device_extensions here, since we may be enabling BDA support even
-    // though the application has not requested it.
     if (api_version >= VK_API_VERSION_1_2) {
         return DispatchGetBufferDeviceAddress(device, &address_info);
     } else {
