@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <vector>
 #include "link.h"
-#include "instruction.h"
 #include "function_basic_block.h"
 #include "type_manager.h"
 #include "containers/custom_containers.h"
@@ -35,12 +34,18 @@ struct ModuleHeader {
     uint32_t schema;
 };
 
+struct Settings {
+    uint32_t shader_id;
+    uint32_t output_buffer_descriptor_set;
+    bool print_debug_info;
+    uint32_t max_instrumented_count;
+};
+
 // This is the "brain" of SPIR-V logic, it stores the memory of all the Instructions and is the main context.
 // There are other helper classes that are charge of handling the various parts of the module.
 class Module {
   public:
-    Module(vvl::span<const uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
-           uint32_t max_instrumented_count, DebugReport* debug_report);
+    Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
