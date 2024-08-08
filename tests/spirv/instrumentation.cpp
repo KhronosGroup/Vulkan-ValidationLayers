@@ -132,12 +132,13 @@ int main(int argc, char** argv) {
         start_time = std::chrono::high_resolution_clock::now();
     }
 
-    gpu::spirv::Settings module_settings{
-        .shader_id = kDefaultShaderId,
-        .output_buffer_descriptor_set = kInstDefaultDescriptorSet,
-        .print_debug_info = print_debug_info,
-        .max_instrumented_count = 0,
-    };
+    gpu::spirv::Settings module_settings{};
+    module_settings.shader_id = kDefaultShaderId;
+    module_settings.output_buffer_descriptor_set = kInstDefaultDescriptorSet;
+    module_settings.print_debug_info = print_debug_info;
+    module_settings.max_instrumented_count = 0;
+    module_settings.support_int64 = true;
+    module_settings.support_memory_model_device_scope = true;
 
     gpu::spirv::Module module(spirv_data, nullptr, module_settings);
     if (all_passes || bindless_descriptor_pass) {

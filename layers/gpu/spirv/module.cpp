@@ -33,6 +33,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
       max_instrumented_count_(settings.max_instrumented_count),
       shader_id_(settings.shader_id),
       output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
+      support_int64_(settings.support_int64),
+      support_memory_model_device_scope_(settings.support_memory_model_device_scope),
       print_debug_info_(settings.print_debug_info),
       debug_report_(debug_report) {
     uint32_t instruction_count = 0;
@@ -626,7 +628,11 @@ void Module::PostProcess() {
     // The instrumentation code has atomicAdd() to update the output buffer
     // If the incoming code only has VulkanMemoryModel it will need to support device scope
     if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
-        // TODO - Add warning if device doesn't support feature
+        if (!support_memory_model_device_scope_) {
+            InternalError(
+                "GPU-SHADER-INSTRUMENT-SUPPORT",
+                "vulkanMemoryModelDeviceScope feature is not supported, but need to let us call atomicAdd to the output buffer");
+        }
         AddCapability(spv::CapabilityVulkanMemoryModelDeviceScope);
     }
 
