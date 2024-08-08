@@ -39,6 +39,8 @@ struct Settings {
     uint32_t output_buffer_descriptor_set;
     bool print_debug_info;
     uint32_t max_instrumented_count;
+    bool support_int64;
+    bool support_memory_model_device_scope;
 };
 
 // This is the "brain" of SPIR-V logic, it stores the memory of all the Instructions and is the main context.
@@ -102,6 +104,9 @@ class Module {
     // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
     // This allows anything to be set in the GLSL for the set value, as we change it at runtime
     const uint32_t output_buffer_descriptor_set_;
+
+    const bool support_int64_;
+    const bool support_memory_model_device_scope_;
 
     // Used to help debug
     const bool print_debug_info_;
