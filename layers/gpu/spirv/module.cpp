@@ -28,13 +28,14 @@
 namespace gpu {
 namespace spirv {
 
-Module::Module(vvl::span<const uint32_t> words, uint32_t shader_id, uint32_t output_buffer_descriptor_set, bool print_debug_info,
-               uint32_t max_instrumented_count, DebugReport* debug_report)
+Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings)
     : type_manager_(*this),
-      max_instrumented_count_(max_instrumented_count),
-      shader_id_(shader_id),
-      output_buffer_descriptor_set_(output_buffer_descriptor_set),
-      print_debug_info_(print_debug_info),
+      max_instrumented_count_(settings.max_instrumented_count),
+      shader_id_(settings.shader_id),
+      output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
+      support_int64_(settings.support_int64),
+      support_memory_model_device_scope_(settings.support_memory_model_device_scope),
+      print_debug_info_(settings.print_debug_info),
       debug_report_(debug_report) {
     uint32_t instruction_count = 0;
     spirv_iterator it = words.begin();
@@ -627,7 +628,11 @@ void Module::PostProcess() {
     // The instrumentation code has atomicAdd() to update the output buffer
     // If the incoming code only has VulkanMemoryModel it will need to support device scope
     if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
-        // TODO - Add warning if device doesn't support feature
+        if (!support_memory_model_device_scope_) {
+            InternalError(
+                "GPU-SHADER-INSTRUMENT-SUPPORT",
+                "vulkanMemoryModelDeviceScope feature is not supported, but need to let us call atomicAdd to the output buffer");
+        }
         AddCapability(spv::CapabilityVulkanMemoryModelDeviceScope);
     }
 

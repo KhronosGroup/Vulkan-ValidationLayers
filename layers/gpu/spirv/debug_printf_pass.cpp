@@ -149,7 +149,11 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                     double_bitmask_ |= 1 << expanded_parameter_count_;
                 }
 
-                // TODO (Also in GPU-AV) need to detect if shaderInt64 is supported or not before forcing this on
+                if (!module_.support_int64_) {
+                    module_.InternalError("DEBUG-PRINTF-INT64-SUPPORT",
+                                          "shaderInt64 feature is not supported, but need it to cast 64-bit float to a 64-bit int "
+                                          "to write to the output buffer");
+                }
                 module_.AddCapability(spv::CapabilityInt64);
 
                 const uint32_t uint64_type_id = module_.type_manager_.GetTypeInt(64, false).Id();

@@ -993,9 +993,16 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                          static_cast<std::streamsize>(input_spirv.size() * sizeof(uint32_t)));
     }
 
+    gpu::spirv::Settings module_settings{};
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
-    gpu::spirv::Module module(input_spirv, unique_shader_id, desc_set_bind_index_, gpuav_settings.debug_print_instrumentation_info,
-                              gpuav_settings.debug_max_instrumented_count, debug_report);
+    module_settings.shader_id = unique_shader_id;
+    module_settings.output_buffer_descriptor_set = desc_set_bind_index_;
+    module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
+    module_settings.max_instrumented_count = gpuav_settings.debug_max_instrumented_count;
+    module_settings.support_int64 = enabled_features.shaderInt64;
+    module_settings.support_memory_model_device_scope = enabled_features.vulkanMemoryModelDeviceScope;
+
+    gpu::spirv::Module module(input_spirv, debug_report, module_settings);
 
     // For now, we don't yet support (or have tested) combining GPU-AV and DebugPrintf, so have 2 paths here
     const bool is_debug_printf = container_type == LayerObjectTypeDebugPrintf;
