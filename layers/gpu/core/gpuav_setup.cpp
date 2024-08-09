@@ -27,6 +27,7 @@
 #include "gpu/shaders/gpu_error_header.h"
 #include "gpu/shaders/gpu_shaders_constants.h"
 #include "generated/chassis.h"
+#include "gpu/core/gpu_shader_cache_hash.h"
 
 namespace gpuav {
 
