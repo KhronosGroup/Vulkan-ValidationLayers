@@ -218,6 +218,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.h
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.cpp
     gpu/core/gpu_settings.h
+    gpu/core/gpu_shader_cache_hash.h
     gpu/core/gpuav_constants.h
     gpu/cmd_validation/gpuav_cmd_validation_common.h
     gpu/cmd_validation/gpuav_cmd_validation_common.cpp
