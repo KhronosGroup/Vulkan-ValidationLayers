@@ -687,7 +687,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         virtual void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, const RecordObject& record_obj, PipelineStates& pipeline_states, chassis::CreateRayTracingPipelinesKHR& chassis_state) {
             PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
         };
-        virtual void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, const RecordObject& record_obj, PipelineStates& pipeline_states, chassis::CreateRayTracingPipelinesKHR& chassis_state) {
+        virtual void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, const RecordObject& record_obj, PipelineStates& pipeline_states, std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
             PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
         };
 
@@ -1580,7 +1580,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
                 PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
-                chassis::CreateRayTracingPipelinesKHR chassis_state(pCreateInfos);
+                auto chassis_state = std::make_shared<chassis::CreateRayTracingPipelinesKHR>(pCreateInfos);
 
                 {
                     VVL_ZoneScopedN("PreCallValidate");
@@ -1588,7 +1588,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                         auto lock = intercept->ReadLock();
                         skip |= intercept->PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                                     pCreateInfos, pAllocator, pPipelines, error_obj,
-                                                                                    pipeline_states[intercept->container_type], chassis_state);
+                                                                                    pipeline_states[intercept->container_type], *chassis_state);
                         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
                     }
                 }
@@ -1600,7 +1600,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                         auto lock = intercept->WriteLock();
                         intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                             pCreateInfos, pAllocator, pPipelines, record_obj,
-                                                                            pipeline_states[intercept->container_type], chassis_state);
+                                                                            pipeline_states[intercept->container_type], *chassis_state);
                     }
                 }
 
@@ -1609,7 +1609,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 {
                     VVL_ZoneScopedN("Dispatch");
                     result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
-                                                                       chassis_state.pCreateInfos, pAllocator, pPipelines);
+                                                                       chassis_state->pCreateInfos, pAllocator, pPipelines);
                 }
                 record_obj.result = result;
 

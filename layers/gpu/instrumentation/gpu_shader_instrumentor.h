@@ -158,7 +158,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                     const RecordObject &record_obj, PipelineStates &pipeline_states,
-                                                    chassis::CreateRayTracingPipelinesKHR &chassis_state) override;
+                                                    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) override;
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
 
@@ -185,15 +185,20 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                             VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties &queueFamilyProperties) override;
 
-    template <typename CreateInfo, typename SafeCreateInfo, typename ChassisState>
+    template <typename CreateInfo, typename SafeCreateInfo, typename ChassisState, typename PipelineCreateInfoAccessor>
     void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                         VkPipeline *pPipelines, PipelineStates &pipeline_states,
-                                        std::vector<SafeCreateInfo> *new_pipeline_create_infos, const RecordObject &record_obj,
+                                        std::vector<SafeCreateInfo> *new_pipeline_create_infos,
+                                        PipelineCreateInfoAccessor pipe_ci_accessor, const RecordObject &record_obj,
                                         ChassisState &chassis_state);
     template <typename CreateInfo, typename SafeCreateInfo>
     void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                          const SafeCreateInfo &modified_create_infos, bool passed_in_shader_stage_ci);
+    void PostCallRecordPipelineCreationsRT(VkResult result, VkDeferredOperationKHR deferredOperation, const uint32_t count,
+                                           const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                           std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state);
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not

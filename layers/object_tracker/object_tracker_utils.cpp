@@ -1340,17 +1340,19 @@ bool ObjectLifetimes::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice devic
     return skip;
 }
 
-void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                                 VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                                 const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
-                                                                 const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                 const RecordObject &record_obj) {
+void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    const RecordObject &record_obj, PipelineStates &pipeline_states,
+    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         if (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR) {
-            auto register_fn = [this, pAllocator, record_obj](const std::vector<VkPipeline> &pipelines) {
-                for (auto pipe : pipelines) {
-                    if (!pipe) continue;
+            auto register_fn = [this, pAllocator, record_obj, chassis_state](const std::vector<VkPipeline> &pipelines) {
+                // Just need to capture chassis state to maintain pipeline creations parameters alive, see
+                // https://vkdoc.net/chapters/deferred-host-operations#deferred-host-operations-requesting
+                (void)chassis_state;
+                for (VkPipeline pipe : pipelines) {
                     this->CreateObject(pipe, kVulkanObjectTypePipeline, pAllocator, record_obj.location);
                 }
             };
