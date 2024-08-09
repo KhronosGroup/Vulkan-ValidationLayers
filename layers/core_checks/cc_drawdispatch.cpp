@@ -237,7 +237,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
     skip |= ValidateGraphicsIndexedCmd(cb_state, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     skip |= ValidateCmdDrawIndexedBufferSize(cb_state, indexCount, firstIndex, error_obj.location,
-                                             "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+                                             "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798");
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
     return skip;
 }
@@ -283,7 +283,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
             const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(info_bytes + i * stride);
             skip |= ValidateCmdDrawIndexedBufferSize(cb_state, info_ptr->indexCount, info_ptr->firstIndex,
                                                      error_obj.location.dot(Field::pIndexInfo, i),
-                                                     "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+                                                     "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798");
         }
     }
     return skip;
