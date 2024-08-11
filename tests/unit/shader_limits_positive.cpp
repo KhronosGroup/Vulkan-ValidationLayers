@@ -194,7 +194,9 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
         shared int a[)glsl";
     task_source << (max_shared_ints);
     task_source << R"glsl(];
-        void main(){}
+        void main(){
+            EmitMeshTasksEXT(32u, 1u, 1u);
+        }
     )glsl";
 
     VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
