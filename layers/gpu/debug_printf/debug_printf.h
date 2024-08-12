@@ -66,9 +66,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
                                    vku::safe_VkDeviceCreateInfo* modified_create_info) final;
     void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-    void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                       const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                       const RecordObject& record_obj, chassis::ShaderObject& chassis_state) override;
     void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, uint32_t operation_index,
                                    uint32_t* const debug_output_buffer, const Location& loc);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,

@@ -4795,7 +4795,7 @@ void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uin
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pShaders[i] != VK_NULL_HANDLE) {
             Add(std::make_shared<vvl::ShaderObject>(*this, pCreateInfos[i], pShaders[i], chassis_state.module_states[i],
-                                                    createInfoCount, pShaders, chassis_state.unique_shader_ids[i]));
+                                                    createInfoCount, pShaders));
         }
     }
 }

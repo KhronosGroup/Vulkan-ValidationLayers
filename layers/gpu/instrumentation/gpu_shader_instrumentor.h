@@ -31,6 +31,7 @@ class Validator;
 
 namespace chassis {
 struct ShaderInstrumentationMetadata;
+struct ShaderObjectInstrumentationMetadata;
 }
 
 namespace gpu {
@@ -52,7 +53,6 @@ class SpirvCache {
     void Add(uint32_t hash, std::vector<uint32_t> spirv);
     std::vector<uint32_t> *Get(uint32_t spirv_hash);
     bool IsEmpty() { return spirv_shaders_.empty(); }
-    bool IsSpirvCached(uint32_t index, uint32_t spirv_hash, chassis::ShaderObject &chassis_state) const;
 
   private:
     friend class gpuav::Validator;
@@ -111,6 +111,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                           const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
+    void PreCallRecordShaderObjectInstrumentation(const VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
+                                                  VkShaderCreateInfoEXT &instrumented_create_info,
+                                                  chassis::ShaderObjectInstrumentationMetadata &shader_instrumentation_metadata);
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                        const RecordObject &record_obj, chassis::ShaderObject &chassis_state) override;

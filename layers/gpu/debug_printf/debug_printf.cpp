@@ -66,25 +66,6 @@ void Validator::DestroyBuffer(BufferInfo &buffer_info) {
     }
 }
 
-void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
-                                              const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                              const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
-    ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
-                                                          chassis_state);
-    BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
-                                             chassis_state);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
-        chassis_state.unique_shader_ids[i] = unique_shader_module_id_++;
-        const bool pass = InstrumentShader(
-            vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            chassis_state.unique_shader_ids[i], record_obj.location, chassis_state.instrumented_spirv[i]);
-        if (pass) {
-            chassis_state.instrumented_create_info[i].pCode = chassis_state.instrumented_spirv[i].data();
-            chassis_state.instrumented_create_info[i].codeSize = chassis_state.instrumented_spirv[i].size() * sizeof(uint32_t);
-        }
-    }
-}
-
 enum NumericType {
     NumericTypeUnknown = 0,
     NumericTypeFloat = 1,
