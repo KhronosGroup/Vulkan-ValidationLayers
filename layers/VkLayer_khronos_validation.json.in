@@ -1597,6 +1597,7 @@
                     "label": "Disables",
                     "description": "Specify areas of validation to be disabled",
                     "type": "FLAGS",
+                    "view": "HIDDEN",
                     "env": "VK_LAYER_DISABLES",
                     "flags": [
                         {
@@ -1670,6 +1671,7 @@
                     "label": "Enables",
                     "description": "Setting an option here will enable specialized areas of validation",
                     "type": "FLAGS",
+                    "view": "HIDDEN",
                     "env": "VK_LAYER_ENABLES",
                     "flags": [
                         {
