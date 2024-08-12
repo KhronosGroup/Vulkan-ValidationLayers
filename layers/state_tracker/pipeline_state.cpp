@@ -57,8 +57,7 @@ static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGra
 
 // static
 std::vector<ShaderStageState> Pipeline::GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
-                                                       spirv::StatelessData *stateless_data,
-                                                       ShaderModuleUniqueIds *shader_unique_id_map) {
+                                                       spirv::StatelessData *stateless_data) {
     std::vector<ShaderStageState> stage_states;
 
     // stages such as VK_SHADER_STAGE_ALL are find as this code is only looking for exact matches, not bool logic
@@ -89,17 +88,16 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const ValidationStateTrac
                     // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                     // module is part of a library and the state must be created
                     // This support was also added in VK_KHR_maintenance5
-                    const uint32_t unique_shader_id = (shader_unique_id_map) ? (*shader_unique_id_map)[stage] : 0;
                     if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                         // don't need to worry about GroupDecoration in GPL
                         auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data);
-                        module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, unique_shader_id);
+                        module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
                         if (stateless_data) {
                             stateless_data->pipeline_pnext_module = spirv_module;
                         }
                     } else {
                         // VK_EXT_shader_module_identifier could legally provide a null module handle
-                        module_state = std::make_shared<vvl::ShaderModule>(unique_shader_id);
+                        module_state = std::make_shared<vvl::ShaderModule>();
                     }
                 }
 
@@ -682,7 +680,7 @@ std::shared_ptr<const vvl::ShaderModule> Pipeline::GetSubStateShader(VkShaderSta
 Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                    std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
                    std::shared_ptr<const vvl::PipelineLayout> &&layout,
-                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages], ShaderModuleUniqueIds *shader_unique_id_map)
+                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages])
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(MakeGraphicsCreateInfo(*pCreateInfo, rpstate, state_data)),
@@ -699,7 +697,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPip
       fragment_shader_state(
           CreateFragmentShaderState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate, stateless_data)),
       fragment_output_state(CreateFragmentOutputState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate)),
-      stage_states(GetStageStates(state_data, *this, stateless_data, shader_unique_id_map)),
+      stage_states(GetStageStates(state_data, *this, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       linking_shaders(GetLinkingShaders(library_create_info, state_data)),
       active_shaders(create_info_shaders | linking_shaders),
@@ -747,7 +745,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkComputePipe
       create_flags(GetPipelineCreateFlags(ComputeCreateInfo().pNext, ComputeCreateInfo().flags)),
       shader_stages_ci(&ComputeCreateInfo().stage, 1),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, stateless_data, nullptr)),
+      stage_states(GetStageStates(state_data, *this, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // compute has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -772,7 +770,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, stateless_data, nullptr)),
+      stage_states(GetStageStates(state_data, *this, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -797,7 +795,7 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, stateless_data, nullptr)),
+      stage_states(GetStageStates(state_data, *this, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),

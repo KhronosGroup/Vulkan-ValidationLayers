@@ -29,6 +29,10 @@ namespace gpuav {
 class Validator;
 }
 
+namespace chassis {
+struct ShaderInstrumentationMetadata;
+}
+
 namespace gpu {
 
 // There are 3 ways to have a null VkShaderModule
@@ -48,7 +52,6 @@ class SpirvCache {
     void Add(uint32_t hash, std::vector<uint32_t> spirv);
     std::vector<uint32_t> *Get(uint32_t spirv_hash);
     bool IsEmpty() { return spirv_shaders_.empty(); }
-    bool IsSpirvCached(uint32_t spirv_hash, chassis::CreateShaderModule &chassis_state) const;
     bool IsSpirvCached(uint32_t index, uint32_t spirv_hash, chassis::ShaderObject &chassis_state) const;
 
   private:
@@ -105,9 +108,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                             const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                             const RecordObject &record_obj) override;
 
-    void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                         const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                         const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
+    void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                          const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                          const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                        const RecordObject &record_obj, chassis::ShaderObject &chassis_state) override;
@@ -173,7 +176,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message, bool vma_fail = false) const;
     void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
-    bool CheckForGpuAvEnabled(const void *pNext);
+
+    bool IsSelectiveInstrumentationEnabled(const void *pNext);
 
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
                                          uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
@@ -185,19 +189,14 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                             VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties &queueFamilyProperties) override;
 
-    template <typename CreateInfo, typename SafeCreateInfo, typename ChassisState, typename PipelineCreateInfoAccessor>
-    void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
-                                        VkPipeline *pPipelines, PipelineStates &pipeline_states,
-                                        std::vector<SafeCreateInfo> *new_pipeline_create_infos,
-                                        PipelineCreateInfoAccessor pipe_ci_accessor, const RecordObject &record_obj,
-                                        ChassisState &chassis_state);
-    template <typename CreateInfo, typename SafeCreateInfo>
-    void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
-                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                         const SafeCreateInfo &modified_create_infos, bool passed_in_shader_stage_ci);
-    void PostCallRecordPipelineCreationsRT(VkResult result, VkDeferredOperationKHR deferredOperation, const uint32_t count,
-                                           const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
-                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    template <typename SafeCreateInfo>
+    void PreCallRecordPipelineCreationShaderInstrumentation(
+        const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state, SafeCreateInfo &new_pipeline_ci,
+        const Location &loc, chassis::ShaderInstrumentationMetadata &shader_instrumentation_metadata);
+    void PostCallRecordPipelineCreationShaderInstrumentation(
+        vvl::Pipeline &pipeline_state, chassis::ShaderInstrumentationMetadata &shader_instrumentation_metadata);
+    void PostCallRecordPipelineCreationsRT(VkResult result, VkDeferredOperationKHR deferredOperation,
+                                           const VkAllocationCallbacks *pAllocator,
                                            std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state);
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
@@ -240,6 +239,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     VkPipelineLayout debug_pipeline_layout_ = VK_NULL_HANDLE;
     // Make sure we call the right versions of any timeline semaphore functions.
     bool timeline_khr_{false};
+
+    // Pass select_instrumented_shaders from vkCreateShaderModule to CreatePipeline time
+    vvl::unordered_set<VkShaderModule> selected_instrumented_shaders;
 };
 
 }  // namespace gpu

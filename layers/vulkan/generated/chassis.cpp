@@ -1073,7 +1073,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     }
 
     chassis::CreateShaderModule chassis_state{};
-    chassis_state.instrumented_create_info = *pCreateInfo;
 
     RecordObject record_obj(vvl::Func::vkCreateShaderModule);
     {
@@ -1089,7 +1088,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     VkResult result;
     {
         VVL_ZoneScopedN("Dispatch");
-        result = DispatchCreateShaderModule(device, &chassis_state.instrumented_create_info, pAllocator, pShaderModule);
+        result = DispatchCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
     }
     record_obj.result = result;
     {

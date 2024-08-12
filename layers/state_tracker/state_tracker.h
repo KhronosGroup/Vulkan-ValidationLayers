@@ -79,10 +79,6 @@ namespace spirv {
 struct StatelessData;
 }  // namespace spirv
 
-// This is duplicated here because Best Practice pipeline is a derivative of vvl::Pipeline and we have a virtual function that needs
-// to know this. Idealy this will probably never need to change often, so likely won't cause issues
-using ShaderModuleUniqueIds = std::unordered_map<VkShaderStageFlagBits, uint32_t>;
-
 #define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \
     vvl::concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;               \
     template <typename Dummy>                                                                         \
@@ -751,7 +747,7 @@ class ValidationStateTracker : public ValidationObject {
     virtual std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(
         const VkGraphicsPipelineCreateInfo* create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
         std::shared_ptr<const vvl::RenderPass>&& render_pass, std::shared_ptr<const vvl::PipelineLayout>&& layout,
-        spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages], ShaderModuleUniqueIds* shader_unique_id_map) const;
+        spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const;
 
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,

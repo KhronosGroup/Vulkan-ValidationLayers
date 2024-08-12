@@ -130,12 +130,14 @@ class Pipeline : public StateObject {
     const bool uses_pipeline_vertex_robustness;
     bool ignore_color_attachments;
 
+    // We create a VkShaderModule that is instrumented and need to delete before leaving the pipeline call
+    std::vector<VkShaderModule> instrumented_shader_module;
+
     // Executable or legacy pipeline
     Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
              std::shared_ptr<const vvl::PipelineLayout> &&layout,
-             spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages],
-             ShaderModuleUniqueIds *shader_unique_id_map = nullptr);
+             spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
 
     // Compute pipeline
     Pipeline(const ValidationStateTracker &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
@@ -408,8 +410,7 @@ class Pipeline : public StateObject {
     const VkPipelineRenderingCreateInfo *GetPipelineRenderingCreateInfo() const { return rendering_create_info; }
 
     static std::vector<ShaderStageState> GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
-                                                        spirv::StatelessData *stateless_data,
-                                                        ShaderModuleUniqueIds *shader_unique_id_map);
+                                                        spirv::StatelessData *stateless_data);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const CBDynamicState state) const { return dynamic_state[state]; }
