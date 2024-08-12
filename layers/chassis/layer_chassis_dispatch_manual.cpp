@@ -91,7 +91,7 @@ void DispatchExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT 
     {
         if (pMetalObjectsInfo) {
             local_pMetalObjectsInfo.initialize(pMetalObjectsInfo);
-            WrapPnextChainHandles(layer_data, local_pMetalObjectsInfo.pNext);
+            UnwrapPnextChainHandles(layer_data, local_pMetalObjectsInfo.pNext);
         }
     }
     layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, (VkExportMetalObjectsInfoEXT *)&local_pMetalObjectsInfo);
@@ -403,7 +403,7 @@ VkResult DispatchQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresent
                     local_pPresentInfo->pSwapchains[index1] = layer_data->Unwrap(pPresentInfo->pSwapchains[index1]);
                 }
             }
-            WrapPnextChainHandles(layer_data, local_pPresentInfo->pNext);
+            UnwrapPnextChainHandles(layer_data, local_pPresentInfo->pNext);
         }
     }
     VkResult result = layer_data->device_dispatch_table.QueuePresentKHR(queue, local_pPresentInfo->ptr());
@@ -1360,7 +1360,7 @@ void DispatchGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerati
                     local_pBuildInfo.pGeometries != nullptr ? local_pBuildInfo.pGeometries[geometry_index]
                                                             : *(local_pBuildInfo.ppGeometries[geometry_index]);
                 if (geometry_info.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-                    WrapPnextChainHandles(layer_data, geometry_info.geometry.triangles.pNext);
+                    UnwrapPnextChainHandles(layer_data, geometry_info.geometry.triangles.pNext);
                 }
             }
         }
@@ -1482,11 +1482,11 @@ VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelin
             local_pCreateInfos = new vku::safe_VkComputePipelineCreateInfo[createInfoCount];
             for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
-                WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pNext);
+                UnwrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pNext);
                 if (pCreateInfos[index0].stage.module) {
                     local_pCreateInfos[index0].stage.module = layer_data->Unwrap(pCreateInfos[index0].stage.module);
                 }
-                WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].stage.pNext);
+                UnwrapPnextChainHandles(layer_data, local_pCreateInfos[index0].stage.pNext);
                 if (pCreateInfos[index0].layout) {
                     local_pCreateInfos[index0].layout = layer_data->Unwrap(pCreateInfos[index0].layout);
                 }
