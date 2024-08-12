@@ -154,7 +154,7 @@ inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
     return ((query1.pool == query2.pool) && (query1.slot == query2.slot) && (query1.perf_pass == query2.perf_pass));
 }
 
-typedef std::map<QueryObject, QueryState> QueryMap;
+using QueryMap = vvl::unordered_map<QueryObject, QueryState>;
 
 enum QueryResultType {
     QUERYRESULT_UNKNOWN,
