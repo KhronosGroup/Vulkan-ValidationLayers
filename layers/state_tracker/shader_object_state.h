@@ -29,8 +29,7 @@ namespace vvl {
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
 struct ShaderObject : public StateObject {
     ShaderObject(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
-                 std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders,
-                 uint32_t unique_shader_id = 0);
+                 std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders);
 
     const vku::safe_VkShaderCreateInfoEXT safe_create_info;
     const VkShaderCreateInfoEXT &create_info;
@@ -38,9 +37,6 @@ struct ShaderObject : public StateObject {
     std::shared_ptr<const spirv::Module> spirv;
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
     std::vector<VkShaderEXT> linked_shaders;
-
-    // Used as way to match instrumented GPU-AV shader to a VkShaderEXT handle
-    uint32_t gpu_validation_shader_id = 0;
 
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map

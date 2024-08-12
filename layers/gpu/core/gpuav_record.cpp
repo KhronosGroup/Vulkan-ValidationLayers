@@ -87,35 +87,6 @@ void Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass ren
     BaseClass::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
 }
 
-void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
-                                              const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                              const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
-    BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
-                                             chassis_state);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(pCreateInfos[i].pNext)) continue;
-        if (gpuav_settings.cache_instrumented_shaders) {
-            const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
-            if (instrumented_shaders_cache_.IsSpirvCached(i, chassis_state.unique_shader_ids[i], chassis_state)) {
-                continue;
-            }
-            chassis_state.unique_shader_ids[i] = shader_hash;
-        } else {
-            chassis_state.unique_shader_ids[i] = unique_shader_module_id_++;
-        }
-        const bool pass = InstrumentShader(
-            vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            chassis_state.unique_shader_ids[i], record_obj.location, chassis_state.instrumented_spirv[i]);
-        if (pass) {
-            chassis_state.instrumented_create_info[i].pCode = chassis_state.instrumented_spirv[i].data();
-            chassis_state.instrumented_create_info[i].codeSize = chassis_state.instrumented_spirv[i].size() * sizeof(uint32_t);
-            if (gpuav_settings.cache_instrumented_shaders) {
-                instrumented_shaders_cache_.Add(chassis_state.unique_shader_ids[i], chassis_state.instrumented_spirv[i]);
-            }
-        }
-    }
-}
-
 // Clean up device-related resources
 void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                            const RecordObject &record_obj) {
