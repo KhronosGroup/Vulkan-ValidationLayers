@@ -144,10 +144,6 @@ struct QueryObject {
           end_command_index(obj.end_command_index),
           inside_render_pass(obj.inside_render_pass),
           subpass(obj.subpass) {}
-
-    bool operator<(const QueryObject &rhs) const {
-        return (pool == rhs.pool) ? ((slot == rhs.slot) ? (perf_pass < rhs.perf_pass) : (slot < rhs.slot)) : pool < rhs.pool;
-    }
 };
 
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
