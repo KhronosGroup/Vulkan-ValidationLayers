@@ -86,7 +86,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
                 spirv::StatelessData *stateless_data_stage =
                     (stateless_data && i < kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
                 auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
-                module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
+                module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
                 if (stateless_data_stage) {
                     stateless_data_stage->pipeline_pnext_module = spirv_module;
                 }
@@ -202,7 +202,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                         (stateless_data && i < kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
                     auto spirv_module =
                         std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
-                    module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module, 0);
+                    module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
                     if (stateless_data_stage) {
                         stateless_data_stage->pipeline_pnext_module = spirv_module;
                     }

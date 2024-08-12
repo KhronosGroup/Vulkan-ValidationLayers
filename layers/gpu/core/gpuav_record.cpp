@@ -93,7 +93,7 @@ void Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createIn
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                              chassis_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;
+        if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(pCreateInfos[i].pNext)) continue;
         if (gpuav_settings.cache_instrumented_shaders) {
             const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
             if (instrumented_shaders_cache_.IsSpirvCached(i, chassis_state.unique_shader_ids[i], chassis_state)) {

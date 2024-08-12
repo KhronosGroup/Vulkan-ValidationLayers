@@ -2644,7 +2644,9 @@ void NegativeDebugPrintf::BasicFormattingTest(const char *shader, bool warning) 
     RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(warning ? kWarningBit : kErrorBit, "DEBUG-PRINTF-FORMATTING");
-    VkShaderObj cs(this, shader, VK_SHADER_STAGE_COMPUTE_BIT);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
 

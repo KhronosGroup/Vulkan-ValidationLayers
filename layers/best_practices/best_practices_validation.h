@@ -845,12 +845,10 @@ class BestPractices : public ValidationStateTracker {
                                                                std::optional<vvl::DedicatedBinding>&& dedicated_binding,
                                                                uint32_t physical_device_count) final;
 
-    std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* create_info,
-                                                               std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-                                                               std::shared_ptr<const vvl::RenderPass>&& render_pass,
-                                                               std::shared_ptr<const vvl::PipelineLayout>&& layout,
-                                                               spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages],
-                                                               ShaderModuleUniqueIds* shader_unique_id_map) const final;
+    std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(
+        const VkGraphicsPipelineCreateInfo* create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+        std::shared_ptr<const vvl::RenderPass>&& render_pass, std::shared_ptr<const vvl::PipelineLayout>&& layout,
+        spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const final;
 
   private:
     // CacheEntry and PostTransformLRUCacheModel are used on the stack
