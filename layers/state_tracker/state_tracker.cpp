@@ -2259,8 +2259,8 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
         if (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
             !pipe_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipe_state->vertex_input_state) {
-            for (const auto &description : pipe_state->vertex_input_state->binding_descriptions) {
-                cb_state->current_vertex_buffer_binding_info[description.binding].stride = description.stride;
+            for (const auto &binding_state : pipe_state->vertex_input_state->bindings) {
+                cb_state->current_vertex_buffer_binding_info[binding_state.first].stride = binding_state.second.desc.stride;
             }
         }
 
@@ -5201,17 +5201,17 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
     if (pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
         cb_state->RecordDynamicState(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
+    auto &vertex_bindings = cb_state->dynamic_state_value.vertex_bindings;
+    for (const auto [i, bd] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
+        vertex_bindings.emplace(bd->binding, VertexBindingState(i, bd));
 
-    cb_state->dynamic_state_value.vertex_binding_descriptions_divisor.resize(vertexBindingDescriptionCount);
-    for (const auto [i, description] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
-        cb_state->dynamic_state_value.vertex_binding_descriptions_divisor[i] = description->divisor;
-
-        cb_state->current_vertex_buffer_binding_info[description->binding].stride = description->stride;
+        cb_state->current_vertex_buffer_binding_info[bd->binding].stride = bd->stride;
     }
 
-    cb_state->dynamic_state_value.vertex_attribute_descriptions.resize(vertexAttributeDescriptionCount);
-    for (const auto [i, description] : vvl::enumerate(pVertexAttributeDescriptions, vertexAttributeDescriptionCount)) {
-        cb_state->dynamic_state_value.vertex_attribute_descriptions[i] = *description;
+    for (const auto [i, ad] : vvl::enumerate(pVertexAttributeDescriptions, vertexAttributeDescriptionCount)) {
+        if (auto *binding_state = vvl::Find(vertex_bindings, ad->binding)) {
+            binding_state->locations.emplace(ad->location, VertexAttrState(i, ad));
+        }
     }
 }
 

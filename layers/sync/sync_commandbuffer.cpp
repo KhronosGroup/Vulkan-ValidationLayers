@@ -574,21 +574,18 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
         return skip;
     }
 
-    // TODO - doesn't consider dynamic vertex binding input
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5281
     const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info;
-    const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pipe->vertex_input_state->binding_descriptions.size();
+    const auto &vertex_bindings = pipe->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+                                      ? cb_state_->dynamic_state_value.vertex_bindings
+                                      : pipe->vertex_input_state->bindings;
 
-    for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pipe->vertex_input_state->binding_descriptions[i];
-        if (binding_description.binding < binding_buffers_size) {
-            const auto &binding_buffer = binding_buffers.at(binding_description.binding);
-
-            const auto buf_state = sync_state_->Get<vvl::Buffer>(binding_buffer.buffer);
+    for (const auto &binding_state : vertex_bindings) {
+        const auto &binding_desc = binding_state.second.desc;
+        if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
+            const auto buf_state = sync_state_->Get<vvl::Buffer>(vertex_buffer->buffer);
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
-            const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
+            const ResourceAccessRange range = MakeRange(*vertex_buffer, firstVertex, vertexCount, binding_desc.stride);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
                 skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
@@ -607,21 +604,18 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
     if (!pipe) {
         return;
     }
-    // TODO - doesn't consider dynamic vertex binding input
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5281
     const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info;
-    const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pipe->vertex_input_state->binding_descriptions.size();
+    const auto &vertex_bindings = pipe->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+                                      ? cb_state_->dynamic_state_value.vertex_bindings
+                                      : pipe->vertex_input_state->bindings;
 
-    for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pipe->vertex_input_state->binding_descriptions[i];
-        if (binding_description.binding < binding_buffers_size) {
-            const auto &binding_buffer = binding_buffers.at(binding_description.binding);
-
-            const auto buf_state = sync_state_->Get<vvl::Buffer>(binding_buffer.buffer);
+    for (const auto &binding_state : vertex_bindings) {
+        const auto &binding_desc = binding_state.second.desc;
+        if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
+            const auto buf_state = sync_state_->Get<vvl::Buffer>(vertex_buffer->buffer);
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
-            const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
+            const ResourceAccessRange range = MakeRange(*vertex_buffer, firstVertex, vertexCount, binding_desc.stride);
             const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
             current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ,
                                                 SyncOrdering::kNonAttachment, range, tag_ex);

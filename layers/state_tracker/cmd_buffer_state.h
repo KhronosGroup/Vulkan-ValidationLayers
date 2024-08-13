@@ -282,9 +282,8 @@ class CommandBuffer : public RefcountedStateObject {
         std::vector<VkColorBlendEquationEXT> color_blend_equations;  // VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT
         std::vector<VkColorComponentFlags> color_write_masks;        // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
 
-        // VK_DYNAMIC_STATE_VERTEX_INPUT_EXT
-        std::vector<uint32_t> vertex_binding_descriptions_divisor;
-        std::vector<VkVertexInputAttributeDescription2EXT> vertex_attribute_descriptions;
+        // VK_DYNAMIC_STATE_VERTEX_INPUT_EXT, key is binding number
+        vvl::unordered_map<uint32_t, VertexBindingState> vertex_bindings;
 
         // VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT
         VkConservativeRasterizationModeEXT conservative_rasterization_mode;
@@ -351,8 +350,7 @@ class CommandBuffer : public RefcountedStateObject {
                 color_write_enable_attachment_count = 0u;
             }
             if (mask[CB_DYNAMIC_STATE_VERTEX_INPUT_EXT]) {
-                vertex_binding_descriptions_divisor.clear();
-                vertex_attribute_descriptions.clear();
+                vertex_bindings.clear();
             }
             if (mask[CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV]) {
                 viewport_w_scalings.clear();

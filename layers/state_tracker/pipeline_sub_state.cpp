@@ -36,21 +36,28 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
 
     if (input_state) {
         if (input_state->vertexBindingDescriptionCount) {
-            const uint32_t count = input_state->vertexBindingDescriptionCount;
-            binding_descriptions.reserve(count);
-            binding_to_index_map.reserve(count);
-
-            for (uint32_t i = 0; i < count; i++) {
-                binding_descriptions.emplace_back(input_state->pVertexBindingDescriptions[i]);
-                binding_to_index_map[binding_descriptions.back().binding] = i;
+            for (const auto [i, bd] :
+                 vvl::enumerate(input_state->pVertexBindingDescriptions, input_state->vertexBindingDescriptionCount)) {
+                bindings.emplace(bd->binding, VertexBindingState(i, bd));
+            }
+            const auto *divisor_info =
+                vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(input_state->pNext);
+            if (divisor_info) {
+                for (const auto [i, di] :
+                     vvl::enumerate(divisor_info->pVertexBindingDivisors, divisor_info->vertexBindingDivisorCount)) {
+                    if (auto *binding_state = vvl::Find(bindings, di->binding)) {
+                        binding_state->desc.divisor = di->divisor;
+                    }
+                }
             }
         }
-
-        vertex_attribute_descriptions.reserve(input_state->vertexAttributeDescriptionCount);
-        for (const auto [i, description] :
+        for (const auto [i, ad] :
              vvl::enumerate(input_state->pVertexAttributeDescriptions, input_state->vertexAttributeDescriptionCount)) {
-            vertex_attribute_descriptions.emplace_back(vku::InitStruct<VkVertexInputAttributeDescription2EXT>(
-                nullptr, description->location, description->binding, description->format, description->offset));
+            auto *binding_state = vvl::Find(bindings, ad->binding);
+            if (!binding_state) {
+                continue;
+            }
+            binding_state->locations.emplace(ad->location, VertexAttrState(i, ad));
         }
     }
 }
