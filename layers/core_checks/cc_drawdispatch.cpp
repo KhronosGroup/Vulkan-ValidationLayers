@@ -80,16 +80,18 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
             phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
-            for (uint32_t i = 0; i < (uint32_t)cb_state.dynamic_state_value.vertex_binding_descriptions_divisor.size(); ++i) {
-                if (cb_state.dynamic_state_value.vertex_binding_descriptions_divisor[i] != 1u) {
+            for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
+                const auto &desc = binding_state.second.desc;
+                if (desc.divisor != 1u) {
                     LogObjectList objlist(cb_state.Handle());
                     if (pipeline_state) {
                         objlist.add(pipeline_state->Handle());
                     }
                     skip |= LogError(vuid.vertex_input_09462, objlist, loc,
-                                     "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "].divisor as %" PRIu32
-                                     ", but firstInstance is %" PRIu32 " and supportsNonZeroFirstInstance is VK_FALSE.",
-                                     i, cb_state.dynamic_state_value.vertex_binding_descriptions_divisor[i], firstInstance);
+                                     "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "] (binding %" PRIu32
+                                     ") divisor as %" PRIu32 ", but firstInstance is %" PRIu32
+                                     " and supportsNonZeroFirstInstance is VK_FALSE.",
+                                     binding_state.second.index, desc.binding, desc.divisor, firstInstance);
                     break;
                 }
             }

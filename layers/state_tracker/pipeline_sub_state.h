@@ -52,17 +52,45 @@ struct PipelineSubState {
     VkPipelineLayoutCreateFlags PipelineLayoutCreateFlags() const;
 };
 
+struct VertexAttrState {
+    VertexAttrState(uint32_t index_, const VkVertexInputAttributeDescription *desc_) : index(index_) {
+        desc.location = desc_->location;
+        desc.binding = desc_->binding;
+        desc.format = desc_->format;
+        desc.offset = desc_->offset;
+    }
+
+    VertexAttrState(uint32_t index_, const VkVertexInputAttributeDescription2EXT *desc_) : index(index_), desc(desc_) {}
+
+    uint32_t index;  // Original index into the caller's pVertexAttributeDescriptions
+    vku::safe_VkVertexInputAttributeDescription2EXT desc;
+};
+
+struct VertexBindingState {
+    VertexBindingState(uint32_t index_, const VkVertexInputBindingDescription *desc_) : index(index_) {
+        desc.binding = desc_->binding;
+        desc.stride = desc_->stride;
+        desc.inputRate = desc_->inputRate;
+        desc.divisor = 1;
+    }
+
+    VertexBindingState(uint32_t index_, const VkVertexInputBindingDescription2EXT *desc_) : index(index_), desc(desc_) {}
+
+    // Original index into the caller's pVertexBindingDescriptions
+    uint32_t index;
+    vku::safe_VkVertexInputBindingDescription2EXT desc;
+    // Attributes for this binding, key is the location
+    vvl::unordered_map<uint32_t, VertexAttrState> locations;
+};
+
 struct VertexInputState : public PipelineSubState {
     VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGraphicsPipelineCreateInfo &create_info);
 
     vku::safe_VkPipelineVertexInputStateCreateInfo *input_state = nullptr;
     vku::safe_VkPipelineInputAssemblyStateCreateInfo *input_assembly_state = nullptr;
 
-    std::vector<VkVertexInputBindingDescription> binding_descriptions;
-
-    vvl::unordered_map<uint32_t, uint32_t> binding_to_index_map;
-
-    std::vector<VkVertexInputAttributeDescription2EXT> vertex_attribute_descriptions;
+    // key is binding number
+    vvl::unordered_map<uint32_t, VertexBindingState> bindings;
 
     std::shared_ptr<VertexInputState> FromCreateInfo(const ValidationStateTracker &state,
                                                      const vku::safe_VkGraphicsPipelineCreateInfo &create_info);
