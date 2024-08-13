@@ -482,13 +482,13 @@ void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, co
 }
 
 void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
-    const VkShaderCreateInfoEXT &create_info, const Location &create_info_loc, VkShaderCreateInfoEXT &instrumented_create_info,
-    chassis::ShaderObjectInstrumentationMetadata &shader_instrumentation_metadata) {
+    VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
+    chassis::ShaderObjectInstrumentationData &instrumentation_data) {
     if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(create_info.pNext)) return;
     uint32_t unique_shader_id = 0;
     bool cached = false;
     bool pass = false;
-    std::vector<uint32_t> &instrumented_spirv = shader_instrumentation_metadata.instrumented_spirv;
+    std::vector<uint32_t> &instrumented_spirv = instrumentation_data.instrumented_spirv;
     if (gpuav_settings.cache_instrumented_shaders) {
         unique_shader_id = hash_util::ShaderHash(create_info.pCode, create_info.codeSize);
         if (const auto spirv = instrumented_shaders_cache_.Get(unique_shader_id)) {
@@ -506,9 +506,9 @@ void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     }
 
     if (cached || pass) {
-        shader_instrumentation_metadata.unique_shader_ids = unique_shader_id;
-        instrumented_create_info.pCode = instrumented_spirv.data();
-        instrumented_create_info.codeSize = instrumented_spirv.size() * sizeof(uint32_t);
+        instrumentation_data.unique_shader_id = unique_shader_id;
+        create_info.pCode = instrumented_spirv.data();
+        create_info.codeSize = instrumented_spirv.size() * sizeof(uint32_t);
         if (gpuav_settings.cache_instrumented_shaders) {
             instrumented_shaders_cache_.Add(unique_shader_id, instrumented_spirv);
         }
@@ -522,14 +522,18 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                              chassis_state);
 
+    chassis_state.modified_create_infos.reserve(createInfoCount);
+
     // Resize here so if using just CoreCheck we don't waste time allocating this
-    chassis_state.shader_instrumentations_metadata.resize(createInfoCount);
+    chassis_state.instrumentations_data.resize(createInfoCount);
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        // TODO - Should check descriptor set layout per-createInfoCount
-        if (chassis_state.instrumented_create_info[i].setLayoutCount > desc_set_bind_index_) {
+        VkShaderCreateInfoEXT new_create_info = pCreateInfos[i];
+        auto &instrumentation_data = chassis_state.instrumentations_data[i];
+
+        if (new_create_info.setLayoutCount > desc_set_bind_index_) {
             std::ostringstream strm;
-            strm << "pCreateInfos[" << i << "]::setLayoutCount (" << chassis_state.instrumented_create_info[i].setLayoutCount
+            strm << "pCreateInfos[" << i << "]::setLayoutCount (" << new_create_info.setLayoutCount
                  << ") will conflicts with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
                  << "This Shader Object has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
                     "for VkShaderEXT created with it, therefor no validation error will be repored for them by GPU-AV at "
@@ -540,21 +544,24 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             // 1. Copying the caller's descriptor set desc_layouts
             // 2. Fill in dummy descriptor layouts up to the max binding
             // 3. Fill in with the debug descriptor layout at the max binding slot
-            chassis_state.new_layouts.reserve(desc_set_bind_index_ + 1);
-            chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), pCreateInfos[i].pSetLayouts,
-                                             &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
+            instrumentation_data.new_layouts.reserve(desc_set_bind_index_ + 1);
+            instrumentation_data.new_layouts.insert(instrumentation_data.new_layouts.end(), pCreateInfos[i].pSetLayouts,
+                                                    &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
             for (uint32_t j = pCreateInfos[i].setLayoutCount; j < desc_set_bind_index_; ++j) {
-                chassis_state.new_layouts.push_back(dummy_desc_layout_);
+                instrumentation_data.new_layouts.push_back(dummy_desc_layout_);
             }
-            chassis_state.new_layouts.push_back(debug_desc_layout_);
-            chassis_state.instrumented_create_info[i].pSetLayouts = chassis_state.new_layouts.data();
-            chassis_state.instrumented_create_info[i].setLayoutCount = desc_set_bind_index_ + 1;
+            instrumentation_data.new_layouts.push_back(debug_desc_layout_);
+            new_create_info.pSetLayouts = instrumentation_data.new_layouts.data();
+            new_create_info.setLayoutCount = desc_set_bind_index_ + 1;
         }
 
-        PreCallRecordShaderObjectInstrumentation(pCreateInfos[i], record_obj.location.dot(vvl::Field::pCreateInfos, i),
-                                                 chassis_state.instrumented_create_info[i],
-                                                 chassis_state.shader_instrumentations_metadata[i]);
+        PreCallRecordShaderObjectInstrumentation(new_create_info, record_obj.location.dot(vvl::Field::pCreateInfos, i),
+                                                 instrumentation_data);
+
+        chassis_state.modified_create_infos.emplace_back(std::move(new_create_info));
     }
+
+    chassis_state.pCreateInfos = reinterpret_cast<VkShaderCreateInfoEXT *>(chassis_state.modified_create_infos.data());
 }
 
 void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
@@ -565,9 +572,9 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
                                               chassis_state);
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
-        shader_map_.insert_or_assign(shader_instrumentation_metadata.unique_shader_ids, VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
-                                     shader_instrumentation_metadata.instrumented_spirv);
+        auto &instrumentation_data = chassis_state.instrumentations_data[i];
+        shader_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
+                                     instrumentation_data.instrumented_spirv);
     }
 }
 

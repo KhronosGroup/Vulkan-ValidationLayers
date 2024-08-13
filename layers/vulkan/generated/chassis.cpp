@@ -1110,12 +1110,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShadersEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    std::vector<VkShaderCreateInfoEXT> new_shader_create_infos;
-    new_shader_create_infos.reserve(createInfoCount);
-    for (uint32_t i = 0; i < createInfoCount; i++) {
-        new_shader_create_infos.emplace_back(pCreateInfos[i]);
-    }
-    chassis::ShaderObject chassis_state(createInfoCount, new_shader_create_infos.data());
+    chassis::ShaderObject chassis_state(createInfoCount, pCreateInfos);
 
     {
         VVL_ZoneScopedN("PreCallValidate");
@@ -1143,7 +1138,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     VkResult result;
     {
         VVL_ZoneScopedN("Dispatch");
-        result = DispatchCreateShadersEXT(device, createInfoCount, new_shader_create_infos.data(), pAllocator, pShaders);
+        result = DispatchCreateShadersEXT(device, createInfoCount, chassis_state.pCreateInfos, pAllocator, pShaders);
     }
     record_obj.result = result;
 

@@ -31,7 +31,7 @@ class Validator;
 
 namespace chassis {
 struct ShaderInstrumentationMetadata;
-struct ShaderObjectInstrumentationMetadata;
+struct ShaderObjectInstrumentationData;
 }
 
 namespace gpu {
@@ -111,9 +111,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                           const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
-    void PreCallRecordShaderObjectInstrumentation(const VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
-                                                  VkShaderCreateInfoEXT &instrumented_create_info,
-                                                  chassis::ShaderObjectInstrumentationMetadata &shader_instrumentation_metadata);
+    void PreCallRecordShaderObjectInstrumentation(VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
+                                                  chassis::ShaderObjectInstrumentationData &shader_instrumentation_data);
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                        const RecordObject &record_obj, chassis::ShaderObject &chassis_state) override;
