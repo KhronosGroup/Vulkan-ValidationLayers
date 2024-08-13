@@ -67,8 +67,10 @@ struct ShaderObject {
 };
 
 struct ShaderInstrumentationMetadata {
-    // Maps the SPIR-V to a specific VkShaderModule/VkPipeline/VkShaderObject/etc
+    // We need one for each stage (Vertex, Fragment, etc) and the index is VkGraphicsPipelineCreateInfo::pStages[i]
+    // Maps the SPIR-V to a specific VkShaderModule/VkPipeline/etc handle
     std::vector<uint32_t> spirv_unique_id_map;
+
     // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
     bool passed_in_shader_stage_ci = false;
 };

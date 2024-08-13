@@ -551,22 +551,25 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                  chassis::CreateGraphicsPipelines &chassis_state) {
-    std::vector<vku::safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
+    BaseClass::PreCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
+                                                    pipeline_states, chassis_state);
     chassis_state.shader_instrumentations_metadata.resize(count);
+    chassis_state.modified_create_infos.resize(count);
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
-        auto &new_pipeline_ci = pipeline_state->GraphicsCreateInfo();  // will create a deep copy
+
+        // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
+        auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
+        new_pipeline_ci.initialize(&pipeline_state->GraphicsCreateInfo());
+
         const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, create_info_loc,
                                                            shader_instrumentation_metadata);
-
-        new_pipeline_create_infos.emplace_back(std::move(new_pipeline_ci));
     }
 
-    chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
 
@@ -575,22 +578,25 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                 const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                 chassis::CreateComputePipelines &chassis_state) {
-    std::vector<vku::safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
+    BaseClass::PreCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
+                                                   pipeline_states, chassis_state);
     chassis_state.shader_instrumentations_metadata.resize(count);
+    chassis_state.modified_create_infos.resize(count);
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
-        auto new_pipeline_ci = pipeline_state->ComputeCreateInfo();  // will create a deep copy
+
+        // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
+        auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
+        new_pipeline_ci.initialize(&pipeline_state->ComputeCreateInfo());
+
         const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, create_info_loc,
                                                            shader_instrumentation_metadata);
-
-        new_pipeline_create_infos.emplace_back(std::move(new_pipeline_ci));
     }
 
-    chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
 
@@ -600,22 +606,25 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice de
                                                                      VkPipeline *pPipelines, const RecordObject &record_obj,
                                                                      PipelineStates &pipeline_states,
                                                                      chassis::CreateRayTracingPipelinesNV &chassis_state) {
-    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
+    BaseClass::PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
+                                                        record_obj, pipeline_states, chassis_state);
     chassis_state.shader_instrumentations_metadata.resize(count);
+    chassis_state.modified_create_infos.resize(count);
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
-        auto new_pipeline_ci = pipeline_state->RayTracingCreateInfo();  // will create a deep copy
+
+        // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
+        auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
+        new_pipeline_ci = pipeline_state->RayTracingCreateInfo();  // use copy operation to fight the Common vs NV
+
         const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, create_info_loc,
                                                            shader_instrumentation_metadata);
-
-        new_pipeline_create_infos.emplace_back(std::move(new_pipeline_ci));
     }
 
-    chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(chassis_state.modified_create_infos.data());
 }
 
@@ -625,23 +634,23 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     BaseClass::PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                          pPipelines, record_obj, pipeline_states, chassis_state);
-
-    std::vector<vku::safe_VkRayTracingPipelineCreateInfoKHR> new_pipeline_create_infos;
     chassis_state.shader_instrumentations_metadata.resize(count);
+    chassis_state.modified_create_infos.resize(count);
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
-        auto new_pipeline_ci = pipeline_state->RayTracingCreateInfo();  // will create a deep copy
+
+        // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
+        auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
+        new_pipeline_ci.initialize(&pipeline_state->RayTracingCreateInfo());
+
         const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, create_info_loc,
                                                            shader_instrumentation_metadata);
-
-        new_pipeline_create_infos.emplace_back(std::move(new_pipeline_ci));
     }
 
-    chassis_state.modified_create_infos = new_pipeline_create_infos;
     chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoKHR *>(chassis_state.modified_create_infos.data());
 }
 
@@ -872,8 +881,9 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
     if (pipeline_state.stage_states.empty()) return;  // will hit with GPL without shaders in them
 
     // Init here instead of in chassis so we don't pay cost when GPU-AV is not used
+    const size_t total_stages = pipeline_state.stage_states.size();
     shader_instrumentation_metadata.passed_in_shader_stage_ci = false;
-    shader_instrumentation_metadata.spirv_unique_id_map.resize(pipeline_state.stage_states.size(), 0);
+    shader_instrumentation_metadata.spirv_unique_id_map.resize(total_stages, 0);
 
     bool instrument_shader = true;
     // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
@@ -949,7 +959,11 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
             } else if (sm_ci) {
                 // The user is inlining the Shader Module into the pipeline, so just need to update the spirv
                 shader_instrumentation_metadata.passed_in_shader_stage_ci = true;
-                // TODO - This makes a copy, but could save on Chassis stack instead (then remove function from VUL)
+                // TODO - This makes a copy, but could save on Chassis stack instead (then remove function from VUL).
+                // The core issue is we always use std::vector<uint32_t> but Safe Struct manages its own version of the pCode
+                // memory. It would be much harder to change everything from std::vector and instead to adjust Safe Struct to not
+                // double-free the memory on us. If making any changes, we have to consider a case where the user inlines the
+                // fragment shader, but use a normal VkShaderModule in the vertex shader.
                 sm_ci->SetCode(instrumented_spirv);
             } else {
                 assert(false);
