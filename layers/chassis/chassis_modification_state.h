@@ -42,11 +42,13 @@ struct CreateShaderModule {
     spirv::StatelessData stateless_data;
 };
 
-struct ShaderObjectInstrumentationMetadata {
+struct ShaderObjectInstrumentationData {
     // Need to hold this in memory between the PreCallRecord and the Dispatch
     std::vector<uint32_t> instrumented_spirv;
     // Need to hold this in memory between the PreCallRecord and the PostCallRecord
-    uint32_t unique_shader_ids;
+    uint32_t unique_shader_id;
+
+    std::vector<VkDescriptorSetLayout> new_layouts;
 };
 
 // VkShaderEXT (VK_EXT_shader_object)
@@ -57,13 +59,14 @@ struct ShaderObject {
     std::vector<std::shared_ptr<spirv::Module>> module_states;  // contains SPIR-V to validate
     std::vector<spirv::StatelessData> stateless_data;
 
-    // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
-    VkShaderCreateInfoEXT* instrumented_create_info = nullptr;
-    std::vector<ShaderObjectInstrumentationMetadata> shader_instrumentations_metadata;
-    std::vector<VkDescriptorSetLayout> new_layouts;
+    std::vector<VkShaderCreateInfoEXT> modified_create_infos;
+    const VkShaderCreateInfoEXT* pCreateInfos = nullptr;
 
-    ShaderObject(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos) {
-        instrumented_create_info = const_cast<VkShaderCreateInfoEXT*>(pCreateInfos);
+    // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
+    std::vector<ShaderObjectInstrumentationData> instrumentations_data;
+
+    ShaderObject(uint32_t createInfoCount, const VkShaderCreateInfoEXT* create_info) {
+        pCreateInfos = create_info;
         module_states.resize(createInfoCount);
         stateless_data.resize(createInfoCount);
     }
