@@ -1380,6 +1380,7 @@ void CoreChecks::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
             QueryObject query_obj = {queryPool, firstQuery + i, perfPass};
             skip |= VerifyQueryIsReset(cb_state_arg, query_obj, Func::vkCmdWriteAccelerationStructuresPropertiesKHR,
                                        firstPerfQueryPool, perfPass, localQueryToStateMap);
+            (*localQueryToStateMap)[query_obj] = QUERYSTATE_ENDED;
         }
         return skip;
     });
