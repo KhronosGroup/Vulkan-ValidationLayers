@@ -785,9 +785,9 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     // Makes sure topology is compatible (in same topology class)
     // see vkspec.html#drawing-primitive-topology-class
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
-        !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
+        !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted && pipeline.InputAssemblyState()) {
         bool compatible_topology = false;
-        const VkPrimitiveTopology pipeline_topology = pipeline.topology_at_rasterizer;
+        const VkPrimitiveTopology pipeline_topology = pipeline.InputAssemblyState()->topology;
         const VkPrimitiveTopology dynamic_topology = cb_state.dynamic_state_value.primitive_topology;
         switch (pipeline_topology) {
             case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:

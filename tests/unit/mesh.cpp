@@ -853,19 +853,12 @@ TEST_F(NegativeMesh, DrawCmds) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance4Features maintenance4 = vku::InitStructHelper();
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance4);
-    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (mesh_shader_features.meshShader != VK_TRUE) {
-        GTEST_SKIP() << "Mesh shader feature not supported";
-    }
-    features2.features.multiDrawIndirect = VK_FALSE;
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddDisabledFeature(vkt::Feature::multiDrawIndirect);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
@@ -996,18 +989,11 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance4Features maintenance4 = vku::InitStructHelper();
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance4);
-    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (mesh_shader_features.meshShader != VK_TRUE) {
-        GTEST_SKIP() << "Mesh shader feature not supported";
-    }
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
@@ -1310,20 +1296,12 @@ TEST_F(NegativeMesh, MeshShaderConservativeRasterization) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance_4_features);
-    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (maintenance_4_features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported";
-    }
-    if (mesh_shader_features.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported";
-    }
-    features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddDisabledFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     static const char meshShaderText[] = R"glsl(
@@ -1365,28 +1343,14 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT pgq_features = vku::InitStructHelper();
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT xfb_features = vku::InitStructHelper(&pgq_features);
-    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper(&xfb_features);
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&maintenance_4_features);
-    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (pgq_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery not supported";
-    }
-    if (xfb_features.transformFeedback == VK_FALSE) {
-        GTEST_SKIP() << "transformFeedback not supported";
-    }
-    if (maintenance_4_features.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported";
-    }
-    if (mesh_shader_features.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported";
-    }
-    features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddDisabledFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkShaderObj ms(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);

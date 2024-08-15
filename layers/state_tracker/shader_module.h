@@ -710,6 +710,7 @@ struct Module {
     std::string DescribeType(uint32_t type) const;
     std::string DescribeVariable(uint32_t id) const;
 
+    // Note that some shaders can have an input and output topology
     std::optional<VkPrimitiveTopology> GetTopology(const EntryPoint &entrypoint) const;
 
     std::shared_ptr<const EntryPoint> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;

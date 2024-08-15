@@ -84,12 +84,58 @@ TEST_F(PositiveGeometryTessellation, IncompatibleDynamicPrimitiveTopology) {
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        helper.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    CreatePipelineHelper pipe(*this);
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveGeometryTessellation, DrawDynamicPrimitiveTopology) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8319");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    static const char *gsSource = R"glsl(
+        #version 450
+        layout (points) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 3) out;
+        in gl_PerVertex
+        {
+            vec4 gl_Position;
+            float gl_PointSize;
+        } gl_in[];
+        void main()
+        {
+            gl_Position = gl_in[0].gl_Position;
+            gl_PointSize = gl_in[0].gl_PointSize;
+            EmitVertex();
+        }
+    )glsl";
+
+    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
