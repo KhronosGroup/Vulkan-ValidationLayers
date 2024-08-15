@@ -286,18 +286,15 @@ void vvl::Semaphore::NotifyAndWait(const Location &loc, uint64_t payload) {
                                " completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
                                completed_.payload, payload);
         }
-    } else {
+    } else {  // TODO: ensure atomicity of this entire else branch
         // For external timeline semaphores we should bump the completed payload to whatever the driver
-        // tells us. That value may originate from an external process that imported the semaphore and
-        // might not be signaled through the application queues.
-        //
-        // However, there is one exception. The current process can still signal the semaphore, even if
-        // it was imported. The queue's semaphore signal should not be overwritten by a potentially
-        // external signal. Otherwise, queue information (queue/seq) can be lost, which may prevent the
-        // advancement of the queue simulation.
-        const auto it = timeline_.find(payload);
-        const bool already_signaled = it != timeline_.end() && it->second.signal_submit.has_value();
-        if (!already_signaled) {
+        // tells us. That value may originate from an external process and is not trackable by vvl.
+        // There is one exception, though. If the current program signaled the imported semaphore,
+        // then this signal should not be overwritten by a potential external signal. Otherwise, signal's
+        // queue information (queue/seq) can be lost and this may block queue forward progress simulation.
+        const TimePoint *timepoint = vvl::Find(timeline_, payload);
+        const bool already_signaled = timepoint && timepoint->signal_submit.has_value();
+        if (!already_signaled && CurrentPayload() < payload) {
             EnqueueSignal(SubmissionReference{}, payload);
         }
         Retire(nullptr, loc, payload);
