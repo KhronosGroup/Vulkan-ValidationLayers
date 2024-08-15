@@ -70,7 +70,7 @@ struct DescriptorSetRecord {
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer BindlessStateBuffer {
     GlobalState global_state;
-    DescriptorSetRecord desc_sets[32];
+    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
 bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const uint desc_set,
@@ -79,18 +79,7 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
     uint param_0 = 0u;
     uint param_1 = 0u;
     do {
-        if (desc_set >= 32u) {
-            error = kErrorSubCodeBindlessDescriptorBounds;
-            param_0 = desc_set;
-            break;
-        }
         DescriptorLayoutData layout_data = bindless_state_buffer.desc_sets[desc_set].layout_data;
-        // Check for null pointer like this to not enforce needing Int64 support
-        uvec2 ptr_check = uvec2(layout_data);
-        if ((ptr_check.x == 0u) && (ptr_check.y == 0u)) {
-            error = kErrorSubCodeBindlessDescriptorNullPointer;
-            break;
-        }
         if (binding >= layout_data.num_bindings) {
             error = kErrorSubCodeBindlessDescriptorBounds;
             break;
@@ -104,11 +93,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         }
 
         DescriptorSetInData in_data = bindless_state_buffer.desc_sets[desc_set].in_data;
-        ptr_check = uvec2(in_data);
-        if ((ptr_check.x == 0u) && (ptr_check.y == 0u)) {
-            error = kErrorSubCodeBindlessDescriptorNullPointer;
-            break;
-        }
 
         // check if the descriptor was ever initialized
         uint state_index = binding_state.y + desc_index;
@@ -165,10 +149,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         }
 
         DescriptorSetOutData out_data = bindless_state_buffer.desc_sets[desc_set].out_data;
-        ptr_check = uvec2(out_data);
-        if ((ptr_check.x == 0u) && (ptr_check.y == 0u)) {
-            break;
-        }
         // The index has been accessed, write out for post processing
         //
         // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
