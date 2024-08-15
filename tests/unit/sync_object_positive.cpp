@@ -2013,3 +2013,76 @@ TEST_F(PositiveSyncObject, IgnoreReleaseOpDstStage) {
     vk::CmdPipelineBarrier2(release_cb.handle(), &dep_info);
     release_cb.end();
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8212
+    TEST_DESCRIPTION("Getting counter value of exported semaphore should not introduce orphaned signals");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    // Create exportable timeline semaphore
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    semaphore_type_create_info.initialValue = 0;
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_create_info);
+    export_info.handleTypes = handle_type;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
+    HANDLE win32_handle = NULL;
+    semaphore.export_handle(win32_handle, handle_type);
+
+    // The problem was that GetSemaphoreCounterValue creates temporary signal to make forward progress,
+    // but the code path for external semaphore failed to retire that signal. Being stuck that signal
+    // conflicted with other signals.
+    uint64_t counter = 0;
+    vk::GetSemaphoreCounterValue(device(), semaphore, &counter);
+
+    // Test that there are no leftovers from GetSemaphoreCounterValue, this signal should just work.
+    semaphore.Signal(1);
+}
+
+TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore2) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8212
+    TEST_DESCRIPTION("Getting counter value of exported semaphore should not introduce orphaned signals");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    // Create exportable timeline semaphore
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    semaphore_type_create_info.initialValue = 0;
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_create_info);
+    export_info.handleTypes = handle_type;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
+    HANDLE win32_handle = NULL;
+    semaphore.export_handle(win32_handle, handle_type);
+
+    // Slight variation of the previous test to ensure that issue was not related to semaphore initial value
+    semaphore.Signal(1);
+    uint64_t counter = 0;
+    vk::GetSemaphoreCounterValue(device(), semaphore, &counter);
+    semaphore.Signal(2);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
