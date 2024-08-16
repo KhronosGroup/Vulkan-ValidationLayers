@@ -34,8 +34,10 @@ class Swapchain;
 // with submissions presented in one of the previous frames.
 // More common scheme is to use QueueSubmit fence for frame synchronization.
 struct PresentSync {
+    using SubmissionReferences = small_vector<SubmissionReference, 2>;
+
     // Queue submissions that will be notified when WaitForFences is called.
-    small_vector<SubmissionReference, 2, uint32_t> submissions;
+    SubmissionReferences submissions;
 
     // Swapchain associated with this PresentSync.
     std::shared_ptr<vvl::Swapchain> swapchain;
