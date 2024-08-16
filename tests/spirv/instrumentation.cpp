@@ -24,6 +24,7 @@ static bool timer = false;
 static bool print_debug_info = false;
 static bool all_passes = false;
 static bool bindless_descriptor_pass = false;
+static bool non_bindless_oob_buffer_pass = false;
 static bool buffer_device_address_pass = false;
 static bool ray_query_pass = false;
 static bool debug_printf_pass = false;
@@ -41,6 +42,8 @@ USAGE: %s <input> -o <output> <passes>
                Runs all passes together
   --bindless-descriptor
                Runs BindlessDescriptorPass
+  --non-bindless-oob-buffer
+               Runs NonBindlessOOBBufferPass
   --buffer-device-address
                Runs BufferDeviceAddressPass
   --ray-query
@@ -78,6 +81,8 @@ bool ParseFlags(int argc, char** argv, const char** out_file) {
             all_passes = true;
         } else if (0 == strcmp(cur_arg, "--bindless-descriptor")) {
             bindless_descriptor_pass = true;
+        } else if (0 == strcmp(cur_arg, "--non-bindless-oob-buffer")) {
+            non_bindless_oob_buffer_pass = true;
         } else if (0 == strcmp(cur_arg, "--buffer-device-address")) {
             buffer_device_address_pass = true;
         } else if (0 == strcmp(cur_arg, "--ray-query")) {
@@ -139,10 +144,15 @@ int main(int argc, char** argv) {
     module_settings.max_instrumented_count = 0;
     module_settings.support_int64 = true;
     module_settings.support_memory_model_device_scope = true;
+    // for all passes, test worst case of using bindless
+    module_settings.has_bindless_descriptors = all_passes || bindless_descriptor_pass;
 
     gpu::spirv::Module module(spirv_data, nullptr, module_settings);
     if (all_passes || bindless_descriptor_pass) {
         module.RunPassBindlessDescriptor();
+    }
+    if (all_passes || non_bindless_oob_buffer_pass) {
+        module.RunPassNonBindlessOOBBuffer();
     }
     if (all_passes || buffer_device_address_pass) {
         module.RunPassBufferDeviceAddress();

@@ -36,6 +36,9 @@ bool LogInstrumentationError(Validator& gpuav, VkCommandBuffer cmd_buffer, const
 bool LogMessageInstBindlessDescriptor(Validator& gpuav, const uint32_t* error_record, std::string& out_error_msg,
                                       std::string& out_vuid_msg, const std::vector<DescSetState>& descriptor_sets,
                                       const Location& loc, bool uses_shader_object, bool& out_oob_access);
+bool LogMessageInstNonBindlessOOB(Validator& gpuav, const uint32_t* error_record, std::string& out_error_msg,
+                                  std::string& out_vuid_msg, const std::vector<DescSetState>& descriptor_sets, const Location& loc,
+                                  bool uses_shader_object, bool& out_oob_access);
 bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
                                        bool& out_oob_access);
 bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);

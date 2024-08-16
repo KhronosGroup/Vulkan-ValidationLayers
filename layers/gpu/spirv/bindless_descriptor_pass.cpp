@@ -37,190 +37,6 @@ uint32_t BindlessDescriptorPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t BindlessDescriptorPass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool col_major, bool in_matrix) {
-    const Type& type = *module_.type_manager_.FindTypeById(type_id);
-    switch (type.spv_type_) {
-        case SpvType::kPointer:
-            return 8;  // Assuming PhysicalStorageBuffer pointer
-            break;
-        case SpvType::kMatrix: {
-            if (matrix_stride == 0) {
-                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize is missing matrix stride");
-            }
-            if (col_major) {
-                return type.inst_.Word(3) * matrix_stride;
-            } else {
-                const Type* vector_type = module_.type_manager_.FindTypeById(type.inst_.Word(2));
-                return vector_type->inst_.Word(3) * matrix_stride;
-            }
-        }
-        case SpvType::kVector: {
-            uint32_t size = type.inst_.Word(3);
-            const Type* component_type = module_.type_manager_.FindTypeById(type.inst_.Word(2));
-            // if vector in row major matrix, the vector is strided so return the number of bytes spanned by the vector
-            if (in_matrix && !col_major && matrix_stride > 0) {
-                return (size - 1) * matrix_stride + FindTypeByteSize(component_type->Id());
-            } else if (component_type->spv_type_ == SpvType::kFloat || component_type->spv_type_ == SpvType::kInt) {
-                const uint32_t width = component_type->inst_.Word(2);
-                size *= width;
-            } else {
-                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize has unexpected vector type");
-            }
-            return size / 8;
-        }
-        case SpvType::kFloat:
-        case SpvType::kInt: {
-            const uint32_t width = type.inst_.Word(2);
-            return width / 8;
-        }
-        default:
-            break;
-    }
-    return 1;
-}
-
-// Find outermost buffer type and its access chain index.
-// Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
-// the indexing
-uint32_t BindlessDescriptorPass::GetLastByte(BasicBlock& block, InstructionIt* inst_it) {
-    const Type* pointer_type = module_.type_manager_.FindTypeById(var_inst_->TypeId());
-    const Type* descriptor_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
-
-    uint32_t current_type_id = 0;
-    uint32_t ac_word_index = 4;
-
-    if (descriptor_type->spv_type_ == SpvType::kArray || descriptor_type->spv_type_ == SpvType::kRuntimeArray) {
-        current_type_id = descriptor_type->inst_.Operand(0);
-        ac_word_index++;
-    } else if (descriptor_type->spv_type_ == SpvType::kStruct) {
-        current_type_id = descriptor_type->Id();
-    } else {
-        module_.InternalError("BindlessDescriptorPass", "GetLastByte has unexpected descriptor type");
-        return 0;
-    }
-
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
-
-    // instruction that will have calculated the sum of the byte offset
-    uint32_t sum_id = 0;
-
-    uint32_t matrix_stride = 0;
-    bool col_major = false;
-    uint32_t matrix_stride_id = 0;
-    bool in_matrix = false;
-
-    while (ac_word_index < access_chain_inst_->Length()) {
-        const uint32_t ac_index_id = access_chain_inst_->Word(ac_word_index);
-        uint32_t current_offset_id = 0;
-
-        const Type* current_type = module_.type_manager_.FindTypeById(current_type_id);
-        switch (current_type->spv_type_) {
-            case SpvType::kArray:
-            case SpvType::kRuntimeArray: {
-                // Get array stride and multiply by current index
-                uint32_t arr_stride = GetDecoration(current_type_id, spv::DecorationArrayStride)->Word(3);
-                const uint32_t arr_stride_id = module_.type_manager_.GetConstantUInt32(arr_stride).Id();
-                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
-
-                current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, arr_stride_id, ac_index_id_32}, inst_it);
-
-                // Get element type for next step
-                current_type_id = current_type->inst_.Operand(0);
-            } break;
-            case SpvType::kMatrix: {
-                if (matrix_stride == 0) {
-                    module_.InternalError("BindlessDescriptorPass", "GetLastByte is missing matrix stride");
-                }
-                matrix_stride_id = module_.type_manager_.GetConstantUInt32(matrix_stride).Id();
-                uint32_t vec_type_id = current_type->inst_.Operand(0);
-
-                // If column major, multiply column index by matrix stride, otherwise by vector component size and save matrix
-                // stride for vector (row) index
-                uint32_t col_stride_id = 0;
-                if (col_major) {
-                    col_stride_id = matrix_stride_id;
-                } else {
-                    const uint32_t component_type_id = module_.type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
-                    const uint32_t col_stride = FindTypeByteSize(component_type_id);
-                    col_stride_id = module_.type_manager_.GetConstantUInt32(col_stride).Id();
-                }
-
-                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
-                current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, col_stride_id, ac_index_id_32}, inst_it);
-
-                // Get element type for next step
-                current_type_id = vec_type_id;
-                in_matrix = true;
-            } break;
-            case SpvType::kVector: {
-                // If inside a row major matrix type, multiply index by matrix stride,
-                // else multiply by component size
-                const uint32_t component_type_id = current_type->inst_.Operand(0);
-                const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
-                if (in_matrix && !col_major) {
-                    current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, matrix_stride_id, ac_index_id_32},
-                                            inst_it);
-                } else {
-                    const uint32_t component_type_size = FindTypeByteSize(component_type_id);
-                    const uint32_t size_id = module_.type_manager_.GetConstantUInt32(component_type_size).Id();
-
-                    current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, size_id, ac_index_id_32}, inst_it);
-                }
-                // Get element type for next step
-                current_type_id = component_type_id;
-            } break;
-            case SpvType::kStruct: {
-                // Get buffer byte offset for the referenced member
-                const Constant* member_constant = module_.type_manager_.FindConstantById(ac_index_id);
-                uint32_t member_index = member_constant->inst_.Operand(0);
-                uint32_t member_offset = GetMemeberDecoration(current_type_id, member_index, spv::DecorationOffset)->Word(4);
-                current_offset_id = module_.type_manager_.GetConstantUInt32(member_offset).Id();
-
-                // Look for matrix stride for this member if there is one. The matrix
-                // stride is not on the matrix type, but in a OpMemberDecorate on the
-                // enclosing struct type at the member index. If none found, reset
-                // stride to 0.
-                const Instruction* decoration_matrix_stride =
-                    GetMemeberDecoration(current_type_id, member_index, spv::DecorationMatrixStride);
-                matrix_stride = decoration_matrix_stride ? decoration_matrix_stride->Word(4) : 0;
-
-                const Instruction* decoration_col_major =
-                    GetMemeberDecoration(current_type_id, member_index, spv::DecorationColMajor);
-                col_major = decoration_col_major != nullptr;
-
-                // Get element type for next step
-                current_type_id = current_type->inst_.Operand(member_index);
-            } break;
-            default: {
-                module_.InternalError("BindlessDescriptorPass", "GetLastByte has unexpected non-composite type");
-            } break;
-        }
-
-        if (sum_id == 0) {
-            sum_id = current_offset_id;
-        } else {
-            const uint32_t new_sum_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, current_offset_id}, inst_it);
-            sum_id = new_sum_id;
-        }
-        ac_word_index++;
-    }
-
-    // Add in offset of last byte of referenced object
-    uint32_t bsize = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
-    uint32_t last = bsize - 1;
-
-    const uint32_t last_id = module_.type_manager_.GetConstantUInt32(last).Id();
-
-    const uint32_t new_sum_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, last_id}, inst_it);
-    return new_sum_id;
-}
-
 uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
                                                     const InjectionData& injection_data) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
@@ -281,7 +97,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
         const Type* pointee_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
         if (pointee_type && pointee_type->spv_type_ != SpvType::kArray && pointee_type->spv_type_ != SpvType::kRuntimeArray &&
             pointee_type->spv_type_ != SpvType::kStruct) {
-            descriptor_offset_id_ = GetLastByte(block, inst_it);  // Get Last Byte Index
+            descriptor_offset_id_ = GetLastByte(*var_inst_, *access_chain_inst_, block, inst_it);  // Get Last Byte Index
         }
     }
 
@@ -317,6 +133,9 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
     const uint32_t opcode = inst.Opcode();
 
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
+        // For now only have non-bindless support for buffers
+        if (!module_.has_bindless_descriptors_) return false;
+
         // TODO - Should have loop to walk Load/Store to the Pointer,
         // this case will not cover things such as OpCopyObject or double OpAccessChains
         access_chain_inst_ = function.FindInstruction(inst.Operand(0));

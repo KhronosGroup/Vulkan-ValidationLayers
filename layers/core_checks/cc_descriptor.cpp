@@ -1813,7 +1813,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
     }
 
     const auto *used_handle = dst_set.InUse();
-    if (used_handle && !(dest->IsBindless())) {
+    if (used_handle && !vvl::IsBindless(dest->binding_flags)) {
         skip |= LogError("VUID-vkUpdateDescriptorSets-None-03047", objlist, dst_binding_loc,
                          "(%" PRIu32 ") was created with %s, but %s is in use by %s.", update.dstBinding,
                          string_VkDescriptorBindingFlags(dest->binding_flags).c_str(), FormatHandle(update.dstSet).c_str(),

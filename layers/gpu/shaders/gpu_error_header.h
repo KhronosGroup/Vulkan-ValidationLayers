@@ -111,6 +111,15 @@ const int kInstBindlessBuffOOBDescIndexOffset = kInstBindlessDescIndexOffset;
 const int kInstBindlessBuffOOBBuffOffOffset = kInstBindlessCustomOffset_0;
 const int kInstBindlessBuffOOBBuffSizeOffset = kInstBindlessCustomOffset_1;
 
+// Non-Bindless OOB
+// ---
+
+const int kInstNonBindlessOOBDescSetOffset = kHeaderSize;
+const int kInstNonBindlessOOBDescBindingOffset = kHeaderSize + 1;
+const int kInstNonBindlessOOBDescIndexOffset = kHeaderSize + 2;
+const int kInstNonBindlessOOBParamOffset0 = kHeaderSize + 3;
+const int kInstNonBindlessOOBParamOffset1 = kHeaderSize + 4;
+
 // Buffer device addresses
 // ---
 // A buffer address unalloc error will output the 64-bit pointer in

@@ -48,6 +48,8 @@ class Pass {
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration);
     const Instruction* GetMemeberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration);
 
+    uint32_t GetLastByte(const Instruction& var_inst, const Instruction& access_chain_inst, BasicBlock& block,
+                         InstructionIt* inst_it);
     // Generate SPIR-V needed to help convert things to be uniformly uint32_t
     // If no inst_it is passed in, any new instructions will be added to end of the Block
     uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it);

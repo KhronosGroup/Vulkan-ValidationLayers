@@ -630,7 +630,7 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
         if (iter.AtEnd() || !orig_binding.IsConsistent(iter.CurrentBinding())) {
             break;
         }
-        iter->WriteUpdate(*this, *state_data_, update, i, iter.CurrentBinding().IsBindless());
+        iter->WriteUpdate(*this, *state_data_, update, i, IsBindless(iter.CurrentBinding().binding_flags));
         iter.updated(true);
     }
     if (update.descriptorCount) {
@@ -657,7 +657,7 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
                 const auto &mutable_src = static_cast<const MutableDescriptor &>(src);
                 type = mutable_src.ActiveType();
             }
-            dst.CopyUpdate(*this, *state_data_, src, src_iter.CurrentBinding().IsBindless(), type);
+            dst.CopyUpdate(*this, *state_data_, src, IsBindless(src_iter.CurrentBinding().binding_flags), type);
             some_update_ = true;
             ++change_count_;
             dst_iter.updated(true);

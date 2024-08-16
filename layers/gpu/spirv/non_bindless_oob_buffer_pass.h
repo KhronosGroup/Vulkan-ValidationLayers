@@ -15,23 +15,22 @@
 #pragma once
 
 #include <stdint.h>
-#include "inject_conditional_function_pass.h"
+#include "pass.h"
 
 namespace gpu {
 namespace spirv {
 
-// Create a pass to instrument bindless descriptor checking
-// This pass instruments all bindless references to check that descriptor
-// array indices are inbounds, and if the descriptor indexing extension is
-// enabled, that the descriptor has been initialized.
-class BindlessDescriptorPass : public InjectConditionalFunctionPass {
+// Will make sure Buffers (Storage and Uniform Buffers) that are non bindless are not OOB Uses robustBufferAccess to ensure if we
+// are OOB that it won't crash and we will return the error safely
+class NonBindlessOOBBufferPass : public Pass {
   public:
-    BindlessDescriptorPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    NonBindlessOOBBufferPass(Module& module);
     void PrintDebugInfo() final;
+    bool Run() final;
 
   private:
-    bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
+    bool AnalyzeInstruction(const Function& function, const Instruction& inst);
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data);
     void Reset() final;
 
     uint32_t link_function_id = 0;
@@ -39,15 +38,12 @@ class BindlessDescriptorPass : public InjectConditionalFunctionPass {
 
     const Instruction* access_chain_inst_ = nullptr;
     const Instruction* var_inst_ = nullptr;
-    const Instruction* image_inst_ = nullptr;
 
+    uint32_t descriptor_array_size_id_ = 0;  // the size of the descriptor array (size is 1 if no array)
     uint32_t descriptor_set_ = 0;
     uint32_t descriptor_binding_ = 0;
-    uint32_t descriptor_index_id_ = 0;
+    uint32_t descriptor_index_id_ = 0;  // index input the descriptor array
     uint32_t descriptor_offset_id_ = 0;
-
-    // < original ID, new CopyObject ID >
-    vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
 };
 
 }  // namespace spirv

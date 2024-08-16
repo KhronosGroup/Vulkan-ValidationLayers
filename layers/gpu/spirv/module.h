@@ -41,6 +41,7 @@ struct Settings {
     uint32_t max_instrumented_count;
     bool support_int64;
     bool support_memory_model_device_scope;
+    bool has_bindless_descriptors;
 };
 
 // This is the "brain" of SPIR-V logic, it stores the memory of all the Instructions and is the main context.
@@ -83,6 +84,7 @@ class Module {
     // Passes that can be ran
     // Return true if code was instrumented
     bool RunPassBindlessDescriptor();
+    bool RunPassNonBindlessOOBBuffer();
     bool RunPassBufferDeviceAddress();
     bool RunPassRayQuery();
     bool RunPassDebugPrintf(uint32_t binding_slot = 0);
@@ -107,6 +109,12 @@ class Module {
 
     const bool support_int64_;
     const bool support_memory_model_device_scope_;
+
+    // TODO - To make things simple to start, decide if the whole shader has anything bindless or not. The next step will be a
+    // system to pass in the information from the descriptor set layout to build a LUT of which OpVariable point to bindless
+    // descriptors. This will require special consideration as it will break a simple way to test standalone version of the
+    // instrumentation
+    bool has_bindless_descriptors_ = false;
 
     // Used to help debug
     const bool print_debug_info_;
