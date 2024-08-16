@@ -1520,6 +1520,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderRawAccessChains |= enabled->shaderRawAccessChains == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMMAND_BUFFER_INHERITANCE_FEATURES_NV: {
+                const VkPhysicalDeviceCommandBufferInheritanceFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCommandBufferInheritanceFeaturesNV *>(pNext);
+                features->commandBufferInheritance |= enabled->commandBufferInheritance == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV: {
                 const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *>(pNext);

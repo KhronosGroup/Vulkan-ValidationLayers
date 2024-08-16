@@ -610,6 +610,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->colorWriteEnable, "VkPhysicalDeviceColorWriteEnableFeaturesEXT::colorWriteEnable"};
         }
+        case Feature::commandBufferInheritance: {
+            auto vk_struct = const_cast<VkPhysicalDeviceCommandBufferInheritanceFeaturesNV *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceCommandBufferInheritanceFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceCommandBufferInheritanceFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->commandBufferInheritance,
+                    "VkPhysicalDeviceCommandBufferInheritanceFeaturesNV::commandBufferInheritance"};
+        }
         case Feature::computeDerivativeGroupLinear: {
             auto vk_struct = const_cast<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(*inout_pnext_chain));

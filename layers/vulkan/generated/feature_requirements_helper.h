@@ -88,6 +88,8 @@ enum class Feature {
     deviceCoherentMemory,
     // VkPhysicalDeviceColorWriteEnableFeaturesEXT
     colorWriteEnable,
+    // VkPhysicalDeviceCommandBufferInheritanceFeaturesNV
+    commandBufferInheritance,
     // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV
     computeDerivativeGroupLinear,
     // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV

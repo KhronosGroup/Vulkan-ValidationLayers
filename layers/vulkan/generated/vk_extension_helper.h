@@ -609,6 +609,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_msft_layered_driver{kNotEnabled};
     ExtEnabled vk_nv_descriptor_pool_overallocation{kNotEnabled};
     ExtEnabled vk_nv_raw_access_chains{kNotEnabled};
+    ExtEnabled vk_nv_command_buffer_inheritance{kNotEnabled};
     ExtEnabled vk_nv_shader_atomic_float16_vector{kNotEnabled};
     ExtEnabled vk_ext_shader_replicated_composites{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_validation{kNotEnabled};
@@ -1652,6 +1653,7 @@ struct DeviceExtensions : public InstanceExtensions {
              Info(&DeviceExtensions::vk_nv_descriptor_pool_overallocation,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {vvl::Extension::_VK_NV_raw_access_chains, Info(&DeviceExtensions::vk_nv_raw_access_chains, {})},
+            {vvl::Extension::_VK_NV_command_buffer_inheritance, Info(&DeviceExtensions::vk_nv_command_buffer_inheritance, {})},
             {vvl::Extension::_VK_NV_shader_atomic_float16_vector, Info(&DeviceExtensions::vk_nv_shader_atomic_float16_vector, {})},
             {vvl::Extension::_VK_EXT_shader_replicated_composites,
              Info(&DeviceExtensions::vk_ext_shader_replicated_composites, {})},
@@ -2076,6 +2078,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_MSFT_layered_driver:
         case vvl::Extension::_VK_NV_descriptor_pool_overallocation:
         case vvl::Extension::_VK_NV_raw_access_chains:
+        case vvl::Extension::_VK_NV_command_buffer_inheritance:
         case vvl::Extension::_VK_NV_shader_atomic_float16_vector:
         case vvl::Extension::_VK_EXT_shader_replicated_composites:
         case vvl::Extension::_VK_NV_ray_tracing_validation:

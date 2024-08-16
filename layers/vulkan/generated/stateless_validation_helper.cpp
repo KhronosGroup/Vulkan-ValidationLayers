@@ -4010,6 +4010,23 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceCommandBufferInheritanceFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMMAND_BUFFER_INHERITANCE_FEATURES_NV: {  // Covers
+                                                                                          // VUID-VkPhysicalDeviceCommandBufferInheritanceFeaturesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCommandBufferInheritanceFeaturesNV);
+                if (!IsExtEnabled(device_extensions.vk_nv_command_buffer_inheritance)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceCommandBufferInheritanceFeaturesNV, but when "
+                                     "creating VkDevice, the parent extension "
+                                     "(VK_NV_command_buffer_inheritance) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceCommandBufferInheritanceFeaturesNV* structure =
+                    (VkPhysicalDeviceCommandBufferInheritanceFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::commandBufferInheritance), structure->commandBufferInheritance);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV-sType-sType
@@ -9334,11 +9351,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                         skip |=
                             ValidateRangedEnum(pSettings_loc.dot(Field::type), vvl::Enum::VkLayerSettingTypeEXT,
                                                structure->pSettings[settingIndex].type, "VUID-VkLayerSettingEXT-type-parameter");
-
-                        skip |= ValidateArray(pSettings_loc.dot(Field::valueCount), pSettings_loc.dot(Field::pValues),
-                                              structure->pSettings[settingIndex].valueCount,
-                                              &structure->pSettings[settingIndex].pValues, false, true, kVUIDUndefined,
-                                              "VUID-VkLayerSettingEXT-pValues-parameter");
                     }
                 }
             }
@@ -9703,6 +9715,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMMAND_BUFFER_INHERITANCE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR,
