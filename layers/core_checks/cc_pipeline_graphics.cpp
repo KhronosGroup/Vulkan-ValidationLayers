@@ -1198,7 +1198,8 @@ bool CoreChecks::ValidateGraphicsPipelineMeshTask(const vvl::Pipeline &pipeline,
     const bool has_task = (pipeline.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
     if (has_mesh && has_task) {
         for (const auto &stage : pipeline.stage_states) {
-            if (stage.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT && stage.spirv_state->static_data_.has_builtin_draw_index) {
+            if (stage.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT && stage.spirv_state &&
+                stage.spirv_state->static_data_.has_builtin_draw_index) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09631", device, create_info_loc,
                                  "The pipeline is being created with a Task and Mesh shader bound, but the Mesh Shader "
                                  "uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
