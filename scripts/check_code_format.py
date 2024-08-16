@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2023 Valve Corporation
-# Copyright (c) 2020-2023 LunarG, Inc.
+# Copyright (c) 2020-2024 Valve Corporation
+# Copyright (c) 2020-2024 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,6 +35,9 @@ import subprocess
 from subprocess import check_output
 from argparse import RawDescriptionHelpFormatter
 
+def repo_relative(path):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
+
 #
 #
 # Color print routine, takes a string matching a txtcolor above and the output string, resets color upon exit
@@ -57,7 +60,7 @@ def VerifyClangFormatSource(commit, target_files):
     retval = 0
     if diff_files != '':
         git_diff = subprocess.Popen(('git', 'diff', '-U0', target_refspec, '--', diff_files), stdout=subprocess.PIPE)
-        diff_files_data = subprocess.check_output(('python3', './scripts/clang-format-diff.py', '-p1', '-style=file'), stdin=git_diff.stdout)
+        diff_files_data = subprocess.check_output(('python3', repo_relative('scripts/clang-format-diff.py'), '-p1', '-style=file'), stdin=git_diff.stdout)
         diff_files_data = diff_files_data.decode('utf-8')
         if diff_files_data != '':
             CPrint('ERR_MSG', "\nFound formatting errors!")
@@ -100,14 +103,14 @@ def VerifyCopyrights(commit, target_files):
             if copyright_match:
                 copyright_year = copyright_match.group(1)
                 if int(commit_year) > int(copyright_year):
-                    msg = 'Change written in {} but copyright ends in {}.'.format(commit_year, copyright_year)
-                    CPrint('ERR_MSG', '\n' + file + ' has an out-of-date ' + company + ' copyright notice. ' + msg)
+                    msg = f'Change written in {commit_year} but copyright ends in {copyright_year}.'
+                    CPrint('ERR_MSG', f'\n{file} has an out-of-date {company} copyright notice. {msg}')
                     retval = 1
     return retval
 #
 #
 # Check commit message formats for commits in this PR/Branch
-def VerifyCommitMessageFormat(commit, target_files):
+def VerifyCommitMessageFormat(commit):
     retval = 0
 
     # Construct correct commit list
@@ -125,12 +128,12 @@ def VerifyCommitMessageFormat(commit, target_files):
             # Enforce subject line must be 64 chars or less
             if line_length > 64:
                 CPrint('ERR_MSG', "The following subject line exceeds 64 characters in length.")
-                CPrint('CONTENT', "     '" + msg_line_text + "'\n")
+                CPrint('CONTENT', f"     '{msg_line_text}'\n")
                 retval = 1
             # Output error if last char of subject line is not alpha-numeric
             if msg_line_text[-1] in '.,':
                 CPrint('ERR_MSG', "For the following commit, the last character of the subject line must not be a period or comma.")
-                CPrint('CONTENT', "     '" + msg_line_text + "'\n")
+                CPrint('CONTENT',  f"     '{msg_line_text}'\n")
                 retval = 1
             # Output error if subject line doesn't start with 'module: '
             if 'Revert' not in msg_line_text:
@@ -139,31 +142,31 @@ def VerifyCommitMessageFormat(commit, target_files):
                     CPrint('ERR_MSG', "The following subject line must start with a single word specifying the functional area of the change, followed by a colon and space.")
                     CPrint('ERR_MSG', "e.g., 'layers: Subject line here' or 'corechecks: Fix off-by-one error in ValidateFences'.")
                     CPrint('ERR_MSG', "Other common module names include layers, build, cmake, tests, docs, scripts, stateless, gpu, syncval, practices, etc.")
-                    CPrint('CONTENT', "     '" + msg_line_text + "'\n")
+                    CPrint('CONTENT',  f"     '{msg_line_text}'\n")
                     retval = 1
                 else:
                     # Check if first character after the colon is lower-case
                     subject_body = msg_line_text.split(': ')[1]
                     if not subject_body[0].isupper():
                         CPrint('ERR_MSG', "The first word of the subject line after the ':' character must be capitalized.")
-                        CPrint('CONTENT', "     '" + msg_line_text + "'\n")
+                        CPrint('CONTENT',  f"     '{msg_line_text}'\n")
                         retval = 1
             # Check that first character of subject line is not capitalized
             if msg_line_text[0].isupper():
                 CPrint('ERR_MSG', "The first word of the subject line must be lower case.")
-                CPrint('CONTENT', "     '" + msg_line_text + "'\n")
+                CPrint('CONTENT', f"     '{msg_line_text}'\n")
                 retval = 1
         elif msg_cur_line == 2:
             # Commit message must have a blank line between subject and body
             if line_length != 0:
                 CPrint('ERR_MSG', "The following subject line must be followed by a blank line.")
-                CPrint('CONTENT', "     '" + msg_prev_line + "'\n")
+                CPrint('CONTENT', f"     '{msg_prev_line}'\n")
                 retval = 1
         else:
             # Lines in a commit message body must be less than 72 characters in length (but give some slack)
             if line_length > 76:
                 CPrint('ERR_MSG', "The following commit message body line exceeds the 72 character limit.")
-                CPrint('CONTENT', "     '" + msg_line_text + "'\n")
+                CPrint('CONTENT', f"     '{msg_line_text}'\n")
                 retval = 1
         msg_prev_line = msg_line_text
     if retval != 0:
@@ -289,7 +292,7 @@ def main():
 
         failure |= VerifyClangFormatSource(commit, target_files)
         failure |= VerifyCopyrights(commit, target_files)
-        failure |= VerifyCommitMessageFormat(commit, target_files)
+        failure |= VerifyCommitMessageFormat(commit)
         failure |= VerifyTypeAssign(commit, target_files)
 
     subprocess.run(['git', 'checkout', '-q', orig_branch])
