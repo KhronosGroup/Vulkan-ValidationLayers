@@ -3737,11 +3737,17 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     auto queue_state = Get<vvl::Queue>(queue);
     const Location present_loc = record_obj.location.dot(vvl::Field::pPresentInfo);
 
-    // Add submission record per swapchain. Each swapchain can have its own fence to wait for.
-    std::vector<vvl::QueueSubmission> present_submissions;
-    present_submissions.reserve(pPresentInfo->swapchainCount);
+    // Create present QueueSubmission objects
+    std::vector<vvl::QueueSubmission> present_submissions;  // TODO: use small_vector. Need to update interfaces to use vvl::span
+    small_vector<std::shared_ptr<vvl::Fence>, 1> present_fences;
+    const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         present_submissions.emplace_back(present_loc.dot(vvl::Field::pSwapchains, i));
+        if (present_fence_info) {
+            present_fences.emplace_back(Get<vvl::Fence>(present_fence_info->pFences[i]));
+            auto moveable_fence = present_fences.back();
+            present_submissions.back().AddFence(std::move(moveable_fence));
+        }
     }
     // Get wait semaphores information
     vvl::PresentSync::SubmissionReferences wait_submission_refs;
@@ -3751,8 +3757,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
                 wait_submission_refs.emplace_back(submission_ref.value());
             }
             for (auto &submission : present_submissions) {
-                auto movable_semaphore_state = semaphore_state;
-                submission.AddWaitSemaphore(std::move(movable_semaphore_state), 0);
+                auto movable_semaphore = semaphore_state;
+                submission.AddWaitSemaphore(std::move(movable_semaphore), 0);
             }
         }
     }
@@ -3784,13 +3790,13 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
 
-    if (const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
+    if (present_fence_info) {
         for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
             auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
             if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
 
             if (auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i])) {
-                if (auto present_fence = Get<vvl::Fence>(present_fence_info->pFences[i])) {
+                if (present_fences[i]) {
                     vvl::PresentSync present_sync;
                     present_sync.submissions = wait_submission_refs;
 
@@ -3800,8 +3806,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
                     present_sync.submissions.emplace_back(vvl::SubmissionReference(queue_state.get(), present_submission_seq));
 
                     present_sync.swapchain = swapchain_data;
-                    present_fence->SetPresentSync(present_sync);
-                    present_fence->EnqueueSignal(nullptr, 0);
+                    present_fences[i]->SetPresentSync(present_sync);
+                    present_fences[i]->EnqueueSignal(nullptr, 0);
                 }
             }
         }
