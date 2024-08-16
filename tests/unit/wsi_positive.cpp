@@ -1506,6 +1506,105 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8376
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3962
+    TEST_DESCRIPTION("QueueWaitIdle waits for present fence");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
+
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+    const auto present_transition = TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
+
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &present_transition);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
+
+    vkt::Fence present_fence(*m_device);
+    VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+    present_fence_info.swapchainCount = 1;
+    present_fence_info.pFences = &present_fence.handle();
+
+    VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &submit_semaphore.handle();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    vk::QueuePresentKHR(*m_default_queue, &present);
+
+    // QueueWaitIdle (and also DeviceWaitIdle) can wait for present fences.
+    m_default_queue->Wait();
+
+    // This should not report in-use error
+    present_fence.reset();
+}
+
+TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
+    TEST_DESCRIPTION("QueueWaitIdle waits for present fence");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    SurfaceContext surface_context;
+    VkSurfaceKHR surface2;
+    CreateSurface(surface_context, surface2);
+    VkSwapchainKHR swapchain2{};
+    CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2);
+
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+
+    const vkt::Semaphore acquire_semaphore2(*m_device);
+    const auto swapchain_images2 = GetSwapchainImages(swapchain2);
+    uint32_t image_index2 = 0;
+    vk::AcquireNextImageKHR(device(), swapchain2, kWaitTimeout, acquire_semaphore2, VK_NULL_HANDLE, &image_index2);
+
+    SetImageLayoutPresentSrc(swapchain_images[image_index]);
+    SetImageLayoutPresentSrc(swapchain_images2[image_index2]);
+
+    vkt::Fence present_fence(*m_device);
+    vkt::Fence present_fence2(*m_device);
+    const VkFence present_fences[2] = {present_fence.handle(), present_fence2.handle()};
+    VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+    present_fence_info.swapchainCount = 2;
+    present_fence_info.pFences = present_fences;
+
+    const VkSemaphore wait_semaphores[2] = {acquire_semaphore.handle(), acquire_semaphore2.handle()};
+    const VkSwapchainKHR swapchains[2] = {m_swapchain, swapchain2};
+    const uint32_t image_indices[2]{image_index, image_index2};
+    VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
+    present.waitSemaphoreCount = 2;
+    present.pWaitSemaphores = wait_semaphores;
+    present.swapchainCount = 2;
+    present.pSwapchains = swapchains;
+    present.pImageIndices = image_indices;
+    vk::QueuePresentKHR(*m_default_queue, &present);
+
+    m_default_queue->Wait();
+
+    present_fence.reset();
+    present_fence2.reset();
+
+    vk::DestroySwapchainKHR(device(), swapchain2, nullptr);
+    DestroySurface(surface2);
+    DestroySurfaceContext(surface_context);
+}
+
 TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     TEST_DESCRIPTION("Create swapchain with per present mode minImageCount that is less than surface's general minImageCount");
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
