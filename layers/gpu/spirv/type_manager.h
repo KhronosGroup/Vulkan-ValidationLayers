@@ -126,6 +126,8 @@ class TypeManager {
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;
 
+    uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false);
+
   private:
     Module& module_;
 

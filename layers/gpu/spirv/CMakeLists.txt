@@ -19,6 +19,8 @@ target_sources(gpu_av_spirv PRIVATE
     # Passes
     bindless_descriptor_pass.h
     bindless_descriptor_pass.cpp
+    non_bindless_oob_buffer_pass.h
+    non_bindless_oob_buffer_pass.cpp
     buffer_device_address_pass.h
     buffer_device_address_pass.cpp
     ray_query_pass.h
@@ -46,6 +48,8 @@ target_sources(gpu_av_spirv PRIVATE
 
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_bindless_descriptor_comp.h
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_bindless_descriptor_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_non_bindless_oob_buffer_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_non_bindless_oob_buffer_comp.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_buffer_device_address_comp.h
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_buffer_device_address_comp.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_ray_query_comp.h

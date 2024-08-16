@@ -20,6 +20,7 @@
 
 #include "buffer_device_address_pass.h"
 #include "bindless_descriptor_pass.h"
+#include "non_bindless_oob_buffer_pass.h"
 #include "ray_query_pass.h"
 #include "debug_printf_pass.h"
 
@@ -35,6 +36,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
       output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
       support_int64_(settings.support_int64),
       support_memory_model_device_scope_(settings.support_memory_model_device_scope),
+      has_bindless_descriptors_(settings.has_bindless_descriptors),
       print_debug_info_(settings.print_debug_info),
       debug_report_(debug_report) {
     uint32_t instruction_count = 0;
@@ -118,7 +120,22 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             }
             case spv::OpVariable: {
                 const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
-                type_manager_.AddVariable(std::move(new_inst), *type);
+                const Variable& new_var = type_manager_.AddVariable(std::move(new_inst), *type);
+
+                // While adding the global variables, detect if descriptors is bindless or not
+                spv::StorageClass storage_class = new_var.StorageClass();
+                // These are the only storage classes that interface with a descriptor
+                // see vkspec.html#interfaces-resources-descset
+                if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
+                    storage_class == spv::StorageClassStorageBuffer) {
+                    const Type* ptr_type = new_var.PointerType(type_manager_);
+                    // The shader will also have OpCapability RuntimeDescriptorArray
+                    if (ptr_type->spv_type_ == SpvType::kRuntimeArray) {
+                        // TODO - This might not actually need to be marked as bindless
+                        has_bindless_descriptors_ = true;
+                    }
+                }
+
                 break;
             }
             default: {
@@ -260,6 +277,15 @@ void Module::AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decora
 
 bool Module::RunPassBindlessDescriptor() {
     BindlessDescriptorPass pass(*this);
+    const bool changed = pass.Run();
+    if (print_debug_info_) {
+        pass.PrintDebugInfo();
+    }
+    return changed;
+}
+
+bool Module::RunPassNonBindlessOOBBuffer() {
+    NonBindlessOOBBufferPass pass(*this);
     const bool changed = pass.Run();
     if (print_debug_info_) {
         pass.PrintDebugInfo();

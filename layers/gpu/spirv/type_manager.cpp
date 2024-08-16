@@ -526,5 +526,47 @@ const Variable* TypeManager::FindVariableById(uint32_t id) const {
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();
 }
 
+uint32_t TypeManager::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool col_major, bool in_matrix) {
+    const Type& type = *FindTypeById(type_id);
+    switch (type.spv_type_) {
+        case SpvType::kPointer:
+            return 8;  // Assuming PhysicalStorageBuffer pointer
+            break;
+        case SpvType::kMatrix: {
+            if (matrix_stride == 0) {
+                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize is missing matrix stride");
+            }
+            if (col_major) {
+                return type.inst_.Word(3) * matrix_stride;
+            } else {
+                const Type* vector_type = FindTypeById(type.inst_.Word(2));
+                return vector_type->inst_.Word(3) * matrix_stride;
+            }
+        }
+        case SpvType::kVector: {
+            uint32_t size = type.inst_.Word(3);
+            const Type* component_type = FindTypeById(type.inst_.Word(2));
+            // if vector in row major matrix, the vector is strided so return the number of bytes spanned by the vector
+            if (in_matrix && !col_major && matrix_stride > 0) {
+                return (size - 1) * matrix_stride + FindTypeByteSize(component_type->Id());
+            } else if (component_type->spv_type_ == SpvType::kFloat || component_type->spv_type_ == SpvType::kInt) {
+                const uint32_t width = component_type->inst_.Word(2);
+                size *= width;
+            } else {
+                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize has unexpected vector type");
+            }
+            return size / 8;
+        }
+        case SpvType::kFloat:
+        case SpvType::kInt: {
+            const uint32_t width = type.inst_.Word(2);
+            return width / 8;
+        }
+        default:
+            break;
+    }
+    return 1;
+}
+
 }  // namespace spirv
 }  // namespace gpu

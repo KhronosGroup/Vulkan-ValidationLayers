@@ -203,8 +203,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not
-    bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id, const Location &loc,
-                          std::vector<uint32_t> &out_instrumented_spirv);
+    bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id, bool has_bindless_descriptors,
+                          const Location &loc, std::vector<uint32_t> &out_instrumented_spirv);
 
     VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
 

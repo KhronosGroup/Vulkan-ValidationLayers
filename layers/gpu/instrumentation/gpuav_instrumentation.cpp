@@ -333,6 +333,58 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
     return error_found;
 }
 
+bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
+                                  std::string &out_vuid_msg, const std::vector<DescSetState> &descriptor_sets, const Location &loc,
+                                  bool uses_shader_object, bool &out_oob_access) {
+    using namespace glsl;
+    bool error_found = true;
+    out_oob_access = true;
+    std::ostringstream strm;
+    const GpuVuid &vuid = GetGpuVuid(loc.function);
+
+    const uint32_t set_num = error_record[kInstNonBindlessOOBDescSetOffset];
+    const uint32_t binding_num = error_record[kInstNonBindlessOOBDescBindingOffset];
+    const uint32_t desc_index = error_record[kInstNonBindlessOOBDescIndexOffset];
+
+    strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
+    switch (error_record[kHeaderErrorSubCodeOffset]) {
+        case kErrorSubCodeNonBindlessOOBBufferArrays: {
+            const uint32_t desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
+            strm << " access out of bounds. The descriptor buffer array is " << desc_array_size
+                 << " large, but as accessed at index [" << desc_index << "]";
+            out_vuid_msg = "UNASSIGNED-Descriptor Buffer index out of bounds";
+        } break;
+
+        case kErrorSubCodeNonBindlessOOBBufferBounds: {
+            const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
+            const vvl::Buffer *buffer_state =
+                static_cast<const vvl::BufferBinding *>(binding_state)->descriptors[desc_index].GetBufferState();
+            assert(buffer_state);
+            const uint32_t byte_offset = error_record[kInstNonBindlessOOBParamOffset0];
+            const uint32_t resource_size = error_record[kInstNonBindlessOOBParamOffset1];
+
+            strm << " access out of bounds. The descriptor buffer (" << gpuav.FormatHandle(buffer_state->Handle()) << ") size is "
+                 << buffer_state->create_info.size << " bytes, " << resource_size
+                 << " bytes were bound, and the highest out of bounds access was at [" << byte_offset << "] bytes";
+
+            if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+                out_vuid_msg = uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
+            } else {
+                out_vuid_msg = uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
+            }
+        } break;
+
+        default:
+            error_found = false;
+            out_oob_access = false;
+            assert(false);  // other OOB checks are not implemented yet
+    }
+
+    out_error_msg = strm.str();
+    return error_found;
+}
+
 bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
                                        bool &out_oob_access) {
     using namespace glsl;
@@ -449,6 +501,10 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         case glsl::kErrorGroupInstBindlessDescriptor:
             error_found = LogMessageInstBindlessDescriptor(gpuav, error_record, error_msg, vuid_msg, descriptor_sets, loc,
                                                            uses_shader_object, oob_access);
+            break;
+        case glsl::kErrorGroupInstNonBindlessOOB:
+            error_found = LogMessageInstNonBindlessOOB(gpuav, error_record, error_msg, vuid_msg, descriptor_sets, loc,
+                                                       uses_shader_object, oob_access);
             break;
         case glsl::kErrorGroupInstBufferDeviceAddress:
             error_found = LogMessageInstBufferDeviceAddress(error_record, error_msg, vuid_msg, oob_access);

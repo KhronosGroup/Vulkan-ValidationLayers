@@ -1549,3 +1549,57 @@ TEST_F(NegativeGpuAVOOB, PartialBoundDescriptorCopy) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVOOB, ConstantArrayOOB) {
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
+    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char vs_source[] = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform ufoo { uint index; };
+        layout(set = 0, binding = 1) buffer StorageBuffer { uint data; } Data[2];
+        void main() {
+            Data[index].data = 0xdeadca71;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    *data = 8;
+    offset_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Buffer index out of bounds", 3);
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

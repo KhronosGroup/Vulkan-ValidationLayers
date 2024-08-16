@@ -379,6 +379,8 @@ def main(argv):
         'instrumentation_buffer_device_address_comp.cpp',
         'instrumentation_bindless_descriptor_comp.h',
         'instrumentation_bindless_descriptor_comp.cpp',
+        'instrumentation_non_bindless_oob_buffer_comp.h',
+        'instrumentation_non_bindless_oob_buffer_comp.cpp',
         'instrumentation_ray_query_comp.h',
         'instrumentation_ray_query_comp.cpp',
         'gpu_av_shader_hash.h'
