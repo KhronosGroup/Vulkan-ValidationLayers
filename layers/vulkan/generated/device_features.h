@@ -93,6 +93,8 @@ struct DeviceFeatures {
     bool deviceCoherentMemory;
     // VkPhysicalDeviceColorWriteEnableFeaturesEXT
     bool colorWriteEnable;
+    // VkPhysicalDeviceCommandBufferInheritanceFeaturesNV
+    bool commandBufferInheritance;
     // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV
     bool computeDerivativeGroupLinear;
     // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV

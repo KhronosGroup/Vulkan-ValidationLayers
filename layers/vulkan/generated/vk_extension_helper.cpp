@@ -395,6 +395,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_MSFT_layered_driver", vvl::Extension::_VK_MSFT_layered_driver},
         {"VK_NV_descriptor_pool_overallocation", vvl::Extension::_VK_NV_descriptor_pool_overallocation},
         {"VK_NV_raw_access_chains", vvl::Extension::_VK_NV_raw_access_chains},
+        {"VK_NV_command_buffer_inheritance", vvl::Extension::_VK_NV_command_buffer_inheritance},
         {"VK_NV_shader_atomic_float16_vector", vvl::Extension::_VK_NV_shader_atomic_float16_vector},
         {"VK_EXT_shader_replicated_composites", vvl::Extension::_VK_EXT_shader_replicated_composites},
         {"VK_NV_ray_tracing_validation", vvl::Extension::_VK_NV_ray_tracing_validation},
