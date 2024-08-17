@@ -797,7 +797,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 if (!has_dynamic_scissor && !has_dynamic_scissor_with_count && viewport_state.scissorCount > 0 &&
                     viewport_state.pScissors == nullptr) {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131", device,
-                                     viewport_loc.dot(Field::pScissors), "is NULL, but the scissor state is is not dynamic.");
+                                     viewport_loc.dot(Field::pScissors), "is NULL, but the scissor state is not dynamic.");
                 }
 
                 if (!has_dynamic_exclusive_scissor_nv && exclusive_scissor_struct &&
