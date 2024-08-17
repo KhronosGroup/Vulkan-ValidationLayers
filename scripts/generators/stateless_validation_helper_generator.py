@@ -209,6 +209,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetDeviceGroupSurfacePresentModes2EXT'
             ]
 
+        # Very rare case when structs are needed prior to setting up everything
+        self.structs_with_manual_checks = [
+            'VkLayerSettingsCreateInfoEXT'
+        ]
+
         # Validation conditions for some special case struct members that are conditionally validated
         self.structMemberValidationConditions = [
             {
@@ -377,7 +382,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         extended_structs = [x for x in self.vk.structs.values() if x.extends]
         feature_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceFeatures2", "VkDeviceCreateInfo"]]
         property_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceProperties2"]]
-        other_structs = [x for x in extended_structs if x not in feature_structs and x not in property_structs]
+        other_structs = [x for x in extended_structs if x not in feature_structs and x not in property_structs and x.name not in self.structs_with_manual_checks]
 
         out.append('''
             bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc,

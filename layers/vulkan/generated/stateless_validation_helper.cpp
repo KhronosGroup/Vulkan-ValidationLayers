@@ -9328,34 +9328,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkAmigoProfilingSubmitInfoSEC structure members  -- Covers
         // VUID-VkAmigoProfilingSubmitInfoSEC-sType-sType
 
-        // Validation code for VkLayerSettingsCreateInfoEXT structure members
-        case VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT: {  // Covers VUID-VkLayerSettingsCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkLayerSettingsCreateInfoEXT);
-                VkLayerSettingsCreateInfoEXT* structure = (VkLayerSettingsCreateInfoEXT*)header;
-                skip |= ValidateArray(pNext_loc.dot(Field::settingCount), pNext_loc.dot(Field::pSettings), structure->settingCount,
-                                      &structure->pSettings, false, true, kVUIDUndefined,
-                                      "VUID-VkLayerSettingsCreateInfoEXT-pSettings-parameter");
-
-                if (structure->pSettings != nullptr) {
-                    for (uint32_t settingIndex = 0; settingIndex < structure->settingCount; ++settingIndex) {
-                        [[maybe_unused]] const Location pSettings_loc = pNext_loc.dot(Field::pSettings, settingIndex);
-                        skip |= ValidateRequiredPointer(pSettings_loc.dot(Field::pLayerName),
-                                                        structure->pSettings[settingIndex].pLayerName,
-                                                        "VUID-VkLayerSettingEXT-pLayerName-parameter");
-
-                        skip |= ValidateRequiredPointer(pSettings_loc.dot(Field::pSettingName),
-                                                        structure->pSettings[settingIndex].pSettingName,
-                                                        "VUID-VkLayerSettingEXT-pSettingName-parameter");
-
-                        skip |=
-                            ValidateRangedEnum(pSettings_loc.dot(Field::type), vvl::Enum::VkLayerSettingTypeEXT,
-                                               structure->pSettings[settingIndex].type, "VUID-VkLayerSettingEXT-type-parameter");
-                    }
-                }
-            }
-        } break;
-
         // No Validation code for VkLatencySubmissionPresentIdNV structure members  -- Covers
         // VUID-VkLatencySubmissionPresentIdNV-sType-sType
 
