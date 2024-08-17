@@ -484,6 +484,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     auto debug_report = new DebugReport{};
     debug_report->instance_pnext_chain = vku::SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(debug_report);
+    LayerDebugMessengerActions(debug_report, OBJECT_LAYER_DESCRIPTION);
 
     // Set up enable and disable features flags
     CHECK_ENABLED local_enables{};
@@ -492,19 +493,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     GpuAVSettings local_gpuav_settings = {};
     DebugPrintfSettings local_printf_settings = {};
     SyncValSettings local_syncval_settings = {};
-    ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION,
-                                                      pCreateInfo,
-                                                      local_enables,
-                                                      local_disables,
-                                                      debug_report->filter_message_ids,
-                                                      &debug_report->duplicate_message_limit,
-                                                      &debug_report->message_format_settings,
-                                                      &local_global_settings,
-                                                      &local_gpuav_settings,
-                                                      &local_printf_settings,
-                                                      &local_syncval_settings};
+    ConfigAndEnvSettings config_and_env_settings_data{
+        OBJECT_LAYER_DESCRIPTION, pCreateInfo, local_enables, local_disables, debug_report,
+        // All settings for various internal layers
+        &local_global_settings, &local_gpuav_settings, &local_printf_settings, &local_syncval_settings};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
-    LayerDebugMessengerActions(debug_report, OBJECT_LAYER_DESCRIPTION);
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(local_enables, local_disables);

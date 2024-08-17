@@ -17,6 +17,7 @@
  */
 
 #include "layer_options.h"
+#include "generated/error_location_helper.h"
 #include "utils/hash_util.h"
 #include <vulkan/layer/vk_layer_settings.hpp>
 
@@ -435,6 +436,44 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
     }
 }
 
+// Because VkLayerSettingsCreateInfoEXT/VkLayerSettingEXT are passed in and used before everything else, need to do the stateless
+// validation here as a special exception
+//
+// Returns if valid
+static bool ValidateLayerSettings(const VkLayerSettingsCreateInfoEXT *layer_settings, DebugReport *debug_report) {
+    bool valid = true;
+    if (!layer_settings) return valid;
+    const Location loc(vvl::Func::vkCreateInstance, vvl::Field::pCreateInfo);
+    const Location create_info_loc = loc.pNext(vvl::Struct::VkLayerSettingsCreateInfoEXT);
+    std::stringstream ss;
+
+    if (layer_settings->pSettings) {
+        for (const auto [i, setting] : vvl::enumerate(layer_settings->pSettings, layer_settings->settingCount)) {
+            const Location setting_loc = create_info_loc.dot(vvl::Field::pSettings, i);
+            if (setting->valueCount > 0 && !setting->pValues) {
+                ss << setting_loc.dot(vvl::Field::pValues).Message() << " is NULL";
+                debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingEXT-valueCount-10070");
+                valid = false;
+            }
+            if (!setting->pLayerName) {
+                ss << setting_loc.dot(vvl::Field::pLayerName).Message() << " is NULL";
+                debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingEXT-pLayerName-parameter");
+                valid = false;
+            }
+            if (!setting->pSettingName) {
+                ss << setting_loc.dot(vvl::Field::pSettingName).Message() << " is NULL";
+                debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingEXT-pSettingName-parameter");
+                valid = false;
+            }
+        }
+    } else if (layer_settings->settingCount > 0) {
+        ss << create_info_loc.dot(vvl::Field::pSettings).Message() << " is NULL";
+        debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingsCreateInfoEXT-pSettings-parameter");
+        valid = false;
+    }
+    return valid;
+}
+
 #if !defined(BUILD_SELF_VVL)
 static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
                                  const DisableFlags feature_disable, const char *setting) {
@@ -474,7 +513,8 @@ static const char *GetDefaultPrefix() {
     return "LAYER";
 #endif
 }
-#endif
+#endif  // !defined(BUILD_SELF_VVL)
+
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // When compiling a build for self validation, ProcessConfigAndEnvSettings immediately returns,
@@ -488,8 +528,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     GetCustomStypeInfo().clear();
 
     VkuLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
-    vkuCreateLayerSettingSet(OBJECT_LAYER_NAME, vkuFindLayerSettingsCreateInfo(settings_data->create_info), nullptr, nullptr,
-                             &layer_setting_set);
+    auto layer_setting_create_info = vkuFindLayerSettingsCreateInfo(settings_data->create_info);
+    if (!ValidateLayerSettings(layer_setting_create_info, settings_data->debug_report)) {
+        return;  // nullptr will crash things
+    }
+    vkuCreateLayerSettingSet(OBJECT_LAYER_NAME, layer_setting_create_info, nullptr, nullptr, &layer_setting_set);
 
     vkuSetLayerSettingCompatibilityNamespace(layer_setting_set, GetDefaultPrefix());
 
@@ -524,14 +567,14 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER, message_id_filter);
     }
     const std::string string_message_id_filter = Merge(message_id_filter);
-    CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->message_filter_list);
+    CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->debug_report->filter_message_ids);
 
     // Duplicate message limit
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT)) {
         uint32_t config_limit_setting = 0;
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
         if (config_limit_setting != 0) {
-            *settings_data->duplicate_message_limit = config_limit_setting;
+            settings_data->debug_report->duplicate_message_limit = config_limit_setting;
         }
     }
 
@@ -698,11 +741,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME,
-                                settings_data->message_format_settings->display_application_name);
+                                settings_data->debug_report->message_format_settings.display_application_name);
     }
     // Grab application name here while we have access to it and know if to save it or not
-    if (settings_data->message_format_settings->display_application_name) {
-        settings_data->message_format_settings->application_name =
+    if (settings_data->debug_report->message_format_settings.display_application_name) {
+        settings_data->debug_report->message_format_settings.application_name =
             settings_data->create_info->pApplicationInfo ? settings_data->create_info->pApplicationInfo->pApplicationName : "";
     }
 
@@ -762,5 +805,5 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     vkuDestroyLayerSettingSet(layer_setting_set, nullptr);
-#endif
+#endif  // !BUILD_SELF_VVL
 }

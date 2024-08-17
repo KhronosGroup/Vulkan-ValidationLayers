@@ -85,6 +85,7 @@ struct GlobalSettings {
     bool debug_disable_spirv_val = false;
 };
 
+class DebugReport;
 struct GpuAVSettings;
 struct DebugPrintfSettings;
 struct SyncValSettings;
@@ -101,9 +102,7 @@ struct ConfigAndEnvSettings {
     CHECK_DISABLED &disables;
 
     // Settings for DebugReport
-    vvl::unordered_set<uint32_t> &message_filter_list;
-    uint32_t *duplicate_message_limit;
-    MessageFormatSettings *message_format_settings;
+    DebugReport *debug_report;
 
     GlobalSettings* global_settings;
 
