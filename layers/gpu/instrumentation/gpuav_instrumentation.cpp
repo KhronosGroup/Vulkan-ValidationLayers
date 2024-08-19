@@ -174,11 +174,14 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.per_command_error_loggers.size());
     const std::array<uint32_t, 2> dynamic_offsets = {
         {operation_index * static_cast<uint32_t>(sizeof(uint32_t)), error_logger_i * static_cast<uint32_t>(sizeof(uint32_t))}};
-    if ((pipeline_layout && pipeline_layout->set_layouts.size() <= gpuav.desc_set_bind_index_) &&
-        pipeline_layout_handle != VK_NULL_HANDLE) {
-        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
-                                      &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
-                                      dynamic_offsets.data());
+    if (pipeline_layout && pipeline_layout_handle != VK_NULL_HANDLE) {
+        // If we were unable to use the layout because it overlaps with the instrumented set, don't dispatch anything or we will
+        // disturb the original bound set
+        if (pipeline_layout->set_layouts.size() <= gpuav.desc_set_bind_index_) {
+            DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
+                                          &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
+                                          dynamic_offsets.data());
+        }
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
