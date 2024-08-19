@@ -41,7 +41,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         const auto &stage_state = pipeline->stage_states[0];
         skip |= ValidateShaderStage(stage_state, pipeline, stage_info);
         if (stage_state.pipeline_create_info) {
-            skip |= ValidatePipelineShaderStage(*pipeline, *stage_state.pipeline_create_info, stage_info);
+            skip |= ValidatePipelineShaderStage(*pipeline, *stage_state.pipeline_create_info, pCreateInfos[i].pNext, stage_info);
         }
 
         skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),

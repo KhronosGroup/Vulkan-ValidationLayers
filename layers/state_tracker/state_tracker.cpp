@@ -964,6 +964,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_map_memory_placed, &phys_dev_props->map_memory_placed_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_pipeline_binary, &phys_dev_props->pipeline_binary_props);
     if ((phys_dev_props->host_image_copy_props.copySrcLayoutCount > 0) ||
         (phys_dev_props->host_image_copy_props.copyDstLayoutCount > 0)) {
         // Have to allocate memory for the layout lists
@@ -1078,6 +1079,10 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
 
         DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(physical_device, &queue_family_count, props.data());
     }
+
+    // internal pipeline cache control
+    const auto *cache_control = vku::FindStructInPNextChain<VkDevicePipelineBinaryInternalCacheControlKHR>(pCreateInfo->pNext);
+    disable_internal_pipeline_cache = cache_control && cache_control->disableInternalCache;
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,

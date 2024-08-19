@@ -130,6 +130,8 @@ class Pipeline : public StateObject {
     const bool uses_pipeline_vertex_robustness;
     bool ignore_color_attachments;
 
+    mutable bool binary_data_released = false;
+
     // We create a VkShaderModule that is instrumented and need to delete before leaving the pipeline call
     std::vector<VkShaderModule> instrumented_shader_module;
 

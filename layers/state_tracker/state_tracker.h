@@ -1769,6 +1769,7 @@ class ValidationStateTracker : public ValidationObject {
     VkDeviceGroupDeviceCreateInfo device_group_create_info = {};
     uint32_t physical_device_count;
     uint32_t custom_border_color_sampler_count = 0;
+    bool disable_internal_pipeline_cache;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     std::vector<VkExportMetalObjectTypeFlagBitsEXT> export_metal_flags;
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -1824,6 +1825,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props;
         VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT descriptor_buffer_density_props;
         VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_copy_props;
+        VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props;
         VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_memory_placed_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};

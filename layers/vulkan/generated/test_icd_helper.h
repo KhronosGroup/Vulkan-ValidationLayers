@@ -3990,12 +3990,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineKeyKHR(VkDevice device, const V
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
-                                                               VkPipelineBinaryKeyKHR* pPipelineBinaryKey,
-                                                               size_t* pPipelineBinaryDataSize, void* pPipelineBinaryData) {
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(VkDevice device,
                                                                      const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
                                                                      const VkAllocationCallbacks* pAllocator) {

@@ -424,6 +424,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
                 }
             }
         }
+
+        skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
     }
 
     return skip;
@@ -645,6 +647,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                 }
             }
         }
+
+        skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
     }
 
     return skip;

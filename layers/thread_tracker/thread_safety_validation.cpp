@@ -804,3 +804,24 @@ void ThreadSafety::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainK
                                                    const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
 }
+
+void ThreadSafety::PreCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkPipelineBinaryHandlesInfoKHR* pBinaries,
+                                                          const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void ThreadSafety::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkPipelineBinaryHandlesInfoKHR* pBinaries,
+                                                           const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        for (uint32_t i = 0; i < pBinaries->pipelineBinaryCount; ++i) {
+            if (pBinaries->pPipelineBinaries != nullptr) {
+                CreateObject(pBinaries->pPipelineBinaries[i]);
+            }
+        }
+    }
+}

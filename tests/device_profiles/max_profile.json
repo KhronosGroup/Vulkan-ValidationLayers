@@ -898,6 +898,9 @@
                 },
                 "VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR": {
                     "dynamicRenderingLocalRead": true
+                },
+                "VkPhysicalDevicePipelineBinaryFeaturesKHR": {
+                    "pipelineBinaries": true
                 }
             },
             "properties": {
@@ -1823,6 +1826,13 @@
                         "height": 64
                     },
                     "maxRenderPassStripes": 32
+                },
+                "VkPhysicalDevicePipelineBinaryPropertiesKHR": {
+                    "pipelineBinaryInternalCache": true,
+                    "pipelineBinaryInternalCacheControl": true,
+                    "pipelineBinaryPrefersInternalCache": true,
+                    "pipelineBinaryPrecompiledInternalCache": true,
+                    "pipelineBinaryCompressedData": true
                 }
             },
             "extensions": {
@@ -2056,6 +2066,7 @@
                 "VK_KHR_maintenance7": 1,
                 "VK_KHR_multiview": 1,
                 "VK_KHR_performance_query": 1,
+                "VK_KHR_pipeline_binary": 1,
                 "VK_KHR_pipeline_executable_properties": 1,
                 "VK_KHR_pipeline_library": 1,
                 "VK_KHR_portability_enumeration": 1,

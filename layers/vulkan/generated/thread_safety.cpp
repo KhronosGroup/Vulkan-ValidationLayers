@@ -4057,20 +4057,6 @@ void ThreadSafety::PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, 
     FinishReadObject(image, record_obj.location);
 }
 
-void ThreadSafety::PreCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
-                                                          const VkAllocationCallbacks* pAllocator,
-                                                          VkPipelineBinaryHandlesInfoKHR* pBinaries,
-                                                          const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
-}
-
-void ThreadSafety::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
-                                                           const VkAllocationCallbacks* pAllocator,
-                                                           VkPipelineBinaryHandlesInfoKHR* pBinaries,
-                                                           const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
-}
-
 void ThreadSafety::PreCallRecordDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
                                                          const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);

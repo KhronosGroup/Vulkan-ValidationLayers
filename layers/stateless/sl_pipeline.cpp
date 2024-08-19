@@ -19,6 +19,7 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/layer_chassis_dispatch.h"
+#include "stateless/sl_vuid_maps.h"
 
 bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
@@ -117,6 +118,65 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfoCommon(const VkPi
                              string_VkPipelineShaderStageCreateFlags(create_info.flags).c_str());
         }
     }
+    return skip;
+}
+
+// Called from graphics, compute, raytracing, etc
+bool StatelessValidation::ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
+                                                     const Location &loc) const {
+    bool skip = false;
+    const auto *temp_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(next);
+    const VkPipelineCreateFlags2KHR create_flags_2 =
+        temp_flags_2 ? temp_flags_2->flags : static_cast<VkPipelineCreateFlags2KHR>(flags);
+    const Location flag_loc =
+        temp_flags_2 ? loc.pNext(Struct::VkPipelineCreateFlags2CreateInfoKHR, Field::flags) : loc.dot(Field::flags);
+
+    if (temp_flags_2 && (create_flags_2 & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR) && (pipelineCache != VK_NULL_HANDLE)) {
+        skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09617), device, flag_loc,
+                         "(%s) includes VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR while "
+                         "pipelineCache is not VK_NULL_HANDLE.",
+                         string_VkPipelineCreateFlags2KHR(flags).c_str());
+    }
+
+    const auto binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(next);
+
+    if (binary_info && (binary_info->binaryCount > 0)) {
+        if (pipelineCache != VK_NULL_HANDLE) {
+            skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09616), device, loc.pNext(Struct::VkPipelineBinaryInfoKHR, Field::binaryCount),
+                             "(%" PRIu32 ") is greated than zero while  "
+                             "pipelineCache is not VK_NULL_HANDLE.",
+                             binary_info->binaryCount);
+        }
+
+        const auto creation_feedback = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(next);
+        if (creation_feedback) {
+            if (creation_feedback->pPipelineCreationFeedback->flags &
+                VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT) {
+                skip |=
+                    LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::BinaryCount_09620), device, loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pPipelineCreationFeedback).dot(Field::flags),
+                             "(%s) includes VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT while "
+                             "binaryCount is greater than zero.",
+                             string_VkPipelineCreateFlags2KHR(creation_feedback->pPipelineCreationFeedback->flags).c_str());
+            }
+
+            if (creation_feedback->pPipelineCreationFeedback->flags &
+                VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT) {
+                skip |=
+                    LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::BinaryCount_09621), device, loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pPipelineCreationFeedback).dot(Field::flags),
+                             "(%s) includes VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT while "
+                             "binaryCount is greater than zero.",
+                             string_VkPipelineCreateFlags2KHR(creation_feedback->pPipelineCreationFeedback->flags).c_str());
+            }
+        }
+
+        if (create_flags_2 & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT) {
+            skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::BinaryCount_09622), device, flag_loc,
+                             "(%s) includes VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT while "
+                             "binaryCount is greater than zero.",
+                             string_VkPipelineCreateFlags2KHR(flags).c_str());
+        }
+    }
+
     return skip;
 }
 
@@ -1119,6 +1179,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                              create_info.basePipelineIndex, createInfoCount);
             }
         }
+
+        skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
     }
 
     return skip;
@@ -1246,6 +1308,8 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         }
 
         skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.stage, create_info_loc.dot(Field::stage));
+
+        skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
     }
     return skip;
 }

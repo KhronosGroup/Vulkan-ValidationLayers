@@ -106,6 +106,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkSetDebugUtilsObjectTagEXT',
             'vkGetPrivateData',
             'vkSetPrivateData',
+            'vkReleaseCapturedPipelineDataKHR',
             # Need to check the VkDescriptorType
             'vkCreateDescriptorSetLayout',
             'vkGetDescriptorSetLayoutSupport',
@@ -138,6 +139,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkGetSwapchainImagesKHR',
             # For tracking lifetime of linked GPL libraries
             'vkCreateGraphicsPipelines',
+            'vkCreatePipelineBinariesKHR',
         ]
 
         # These VUIDS are not implicit, but are best handled in this layer. Codegen for vkDestroy calls will generate a key
@@ -208,6 +210,8 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "validationCache-nullalloc": '"VUID-vkDestroyValidationCacheEXT-validationCache-01538"',
             "swapchain-compatalloc": '"VUID-vkDestroySwapchainKHR-swapchain-01283"',
             "swapchain-nullalloc": '"VUID-vkDestroySwapchainKHR-swapchain-01284"',
+            "pipelineBinary-compatalloc": '"VUID-vkDestroyPipelineBinaryKHR-pipelineBinary-09614"',
+            "pipelineBinary-nullalloc": '"VUID-vkDestroyPipelineBinaryKHR-pipelineBinary-09615"',
            }
 
         # Structures that do not define parent/commonparent VUIDs for vulkan handles.
