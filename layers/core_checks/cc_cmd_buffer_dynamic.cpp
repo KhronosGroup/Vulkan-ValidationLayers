@@ -21,6 +21,7 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "generated/vk_extension_helper.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_object_state.h"
@@ -248,7 +249,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_FRONT_FACE, vuid);
         }
 
-        if (last_bound_state.IsSampleLocationsEnable()) {
+        if (last_bound_state.IsSampleLocationsEnable() && IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, vuid);
         }
 

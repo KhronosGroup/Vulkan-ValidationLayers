@@ -649,7 +649,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         if commandName == 'vkCmdBindDescriptorBuffersEXT' and memberName == 'buffer':
             return '"UNASSIGNED-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-buffer-parent"'
         if commandName == 'vkReleaseSwapchainImagesEXT' and memberName == 'swapchain':
-            return '"VUID-VkReleaseSwapchainImagesInfoEXT-swapchain-parent"'
+            return '"UNASSIGNED-VkReleaseSwapchainImagesInfoEXT-swapchain-parent"'
         if commandName == 'vkCmdBeginConditionalRenderingEXT' and memberName == 'buffer':
             return '"UNASSIGNED-VkConditionalRenderingBeginInfoEXT-buffer-parent"'
         if commandName == 'vkMapMemory2KHR' and memberName == 'memory':
@@ -691,7 +691,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
         # Same as above, but memberName has naming collision so need to use struct name as well
         if commandName == 'vkCreateGraphicsPipelines' and structName == 'VkGraphicsPipelineShaderGroupsCreateInfoNV' and memberName == 'pPipelines':
-            return '"VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent"'
+            return '"UNASSIGNED-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent"'
 
         # These are cases where multiple commands call the struct
         if structName == 'VkPipelineExecutableInfoKHR' and memberName == 'pipeline':
@@ -724,15 +724,15 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         if structName == 'VkGeometryAABBNV' and memberName == 'aabbData':
             return '"UNASSIGNED-VkGeometryAABBNV-aabbData-parent"'
         if structName == 'VkPipelineLibraryCreateInfoKHR' and memberName == 'pLibraries':
-            return '"VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parent"'
+            return '"UNASSIGNED-VkPipelineLibraryCreateInfoKHR-pLibraries-parent"'
         if structName == 'VkCopyMicromapToMemoryInfoEXT' and memberName == 'src':
-            return '"VUID-VkCopyMicromapToMemoryInfoEXT-src-parent"'
+            return '"UNASSIGNED-VkCopyMicromapToMemoryInfoEXT-src-parent"'
         if structName == 'VkCopyMemoryToMicromapInfoEXT' and memberName == 'dst':
-            return '"VUID-VkCopyMemoryToMicromapInfoEXT-dst-parent"'
+            return '"UNASSIGNED-VkCopyMemoryToMicromapInfoEXT-dst-parent"'
         if structName == 'VkCopyAccelerationStructureToMemoryInfoKHR' and memberName == 'src':
-            return '"VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-parent"'
+            return '"UNASSIGNED-VkCopyAccelerationStructureToMemoryInfoKHR-src-parent"'
         if structName == 'VkCopyMemoryToAccelerationStructureInfoKHR' and memberName == 'dst':
-            return '"VUID-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parent"'
+            return '"UNASSIGNED-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parent"'
         if structName == 'VkSamplerYcbcrConversionInfo' and memberName == 'conversion':
             return '"UNASSIGNED-VkSamplerYcbcrConversionInfo-conversion-parent"'
         if structName == 'VkShaderModuleValidationCacheCreateInfoEXT' and memberName == 'validationCache':
