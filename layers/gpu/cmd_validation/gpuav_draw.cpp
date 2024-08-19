@@ -80,8 +80,8 @@ struct SharedDrawValidationResources final {
             shader_ci.codeSize = cmd_validation_draw_vert_size * sizeof(uint32_t);
             shader_ci.pCode = cmd_validation_draw_vert;
             shader_ci.pName = "main";
-            shader_ci.setLayoutCount = 1u;
-            shader_ci.pSetLayouts = &ds_layout;
+            shader_ci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+            shader_ci.pSetLayouts = set_layouts.data();
             shader_ci.pushConstantRangeCount = 1;
             shader_ci.pPushConstantRanges = &push_constant_range;
             result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &shader_object);
@@ -125,10 +125,7 @@ struct SharedDrawValidationResources final {
         }
     }
 
-    bool IsValid() const {
-        return (shader_module != VK_NULL_HANDLE || shader_object != VK_NULL_HANDLE) && ds_layout != VK_NULL_HANDLE &&
-               pipeline_layout != VK_NULL_HANDLE && device != VK_NULL_HANDLE;
-    }
+    bool IsValid() const { return shader_module != VK_NULL_HANDLE || shader_object != VK_NULL_HANDLE; }
 };
 
 // This function will add the returned VkPipeline handle to another object incharge of destroying it. Caller does NOT have to
@@ -341,8 +338,17 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
 
     // Insert diagnostic draw
     if (use_shader_objects) {
-        VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
-        DispatchCmdBindShadersEXT(cb_state.VkHandle(), 1u, &stage, &shared_draw_resources.shader_object);
+        std::array<VkShaderStageFlagBits, 5> stages{{VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                                     VK_SHADER_STAGE_FRAGMENT_BIT}};
+        std::array<VkShaderEXT, 5> shaders{{
+            shared_draw_resources.shader_object,
+            VK_NULL_HANDLE,
+            VK_NULL_HANDLE,
+            VK_NULL_HANDLE,
+            VK_NULL_HANDLE,
+        }};
+        DispatchCmdBindShadersEXT(cb_state.VkHandle(), static_cast<uint32_t>(stages.size()), stages.data(), shaders.data());
     } else {
         DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);
     }
