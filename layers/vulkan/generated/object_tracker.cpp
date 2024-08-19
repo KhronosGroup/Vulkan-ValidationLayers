@@ -1110,7 +1110,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                     for (uint32_t index2 = 0; index2 < pNext->pipelineCount; ++index2) {
                         skip |= ValidateObject(pNext->pPipelines[index2], kVulkanObjectTypePipeline, false,
                                                "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parameter",
-                                               "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent",
+                                               "UNASSIGNED-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent",
                                                pNext_loc.dot(Field::pPipelines, index2));
                     }
                 }
@@ -1123,7 +1123,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                     for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
                         skip |= ValidateObject(pNext->pLibraries[index2], kVulkanObjectTypePipeline, false,
                                                "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter",
-                                               "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parent",
+                                               "UNASSIGNED-VkPipelineLibraryCreateInfoKHR-pLibraries-parent",
                                                pNext_loc.dot(Field::pLibraries, index2));
                     }
                 }
@@ -5141,7 +5141,7 @@ bool ObjectLifetimes::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice 
                     for (uint32_t index2 = 0; index2 < pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
                         skip |= ValidateObject(pCreateInfos[index0].pLibraryInfo->pLibraries[index2], kVulkanObjectTypePipeline,
                                                false, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter",
-                                               "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parent",
+                                               "UNASSIGNED-VkPipelineLibraryCreateInfoKHR-pLibraries-parent",
                                                pLibraryInfo_loc.dot(Field::pLibraries, index2));
                     }
                 }
@@ -5998,9 +5998,10 @@ bool ObjectLifetimes::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, 
     // Checked by chassis: device: "VUID-vkReleaseSwapchainImagesEXT-device-parameter"
     if (pReleaseInfo) {
         [[maybe_unused]] const Location pReleaseInfo_loc = error_obj.location.dot(Field::pReleaseInfo);
-        skip |= ValidateObject(pReleaseInfo->swapchain, kVulkanObjectTypeSwapchainKHR, false,
-                               "VUID-VkReleaseSwapchainImagesInfoEXT-swapchain-parameter",
-                               "VUID-VkReleaseSwapchainImagesInfoEXT-swapchain-parent", pReleaseInfo_loc.dot(Field::swapchain));
+        skip |=
+            ValidateObject(pReleaseInfo->swapchain, kVulkanObjectTypeSwapchainKHR, false,
+                           "VUID-VkReleaseSwapchainImagesInfoEXT-swapchain-parameter",
+                           "UNASSIGNED-VkReleaseSwapchainImagesInfoEXT-swapchain-parent", pReleaseInfo_loc.dot(Field::swapchain));
     }
 
     return skip;
@@ -6847,7 +6848,7 @@ bool ObjectLifetimes::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, Vk
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->src, kVulkanObjectTypeMicromapEXT, false, "VUID-VkCopyMicromapToMemoryInfoEXT-src-parameter",
-                               "VUID-VkCopyMicromapToMemoryInfoEXT-src-parent", pInfo_loc.dot(Field::src));
+                               "UNASSIGNED-VkCopyMicromapToMemoryInfoEXT-src-parent", pInfo_loc.dot(Field::src));
     }
 
     return skip;
@@ -6865,7 +6866,7 @@ bool ObjectLifetimes::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, Vk
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->dst, kVulkanObjectTypeMicromapEXT, false, "VUID-VkCopyMemoryToMicromapInfoEXT-dst-parameter",
-                               "VUID-VkCopyMemoryToMicromapInfoEXT-dst-parent", pInfo_loc.dot(Field::dst));
+                               "UNASSIGNED-VkCopyMemoryToMicromapInfoEXT-dst-parent", pInfo_loc.dot(Field::dst));
     }
 
     return skip;
@@ -6912,7 +6913,7 @@ bool ObjectLifetimes::PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer 
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->src, kVulkanObjectTypeMicromapEXT, false, "VUID-VkCopyMicromapToMemoryInfoEXT-src-parameter",
-                               "VUID-VkCopyMicromapToMemoryInfoEXT-src-parent", pInfo_loc.dot(Field::src));
+                               "UNASSIGNED-VkCopyMicromapToMemoryInfoEXT-src-parent", pInfo_loc.dot(Field::src));
     }
 
     return skip;
@@ -6926,7 +6927,7 @@ bool ObjectLifetimes::PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer 
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->dst, kVulkanObjectTypeMicromapEXT, false, "VUID-VkCopyMemoryToMicromapInfoEXT-dst-parameter",
-                               "VUID-VkCopyMemoryToMicromapInfoEXT-dst-parent", pInfo_loc.dot(Field::dst));
+                               "UNASSIGNED-VkCopyMemoryToMicromapInfoEXT-dst-parent", pInfo_loc.dot(Field::dst));
     }
 
     return skip;
@@ -7610,7 +7611,7 @@ bool ObjectLifetimes::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevi
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->src, kVulkanObjectTypeAccelerationStructureKHR, false,
                                "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-parameter",
-                               "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-parent", pInfo_loc.dot(Field::src));
+                               "UNASSIGNED-VkCopyAccelerationStructureToMemoryInfoKHR-src-parent", pInfo_loc.dot(Field::src));
     }
 
     return skip;
@@ -7629,7 +7630,7 @@ bool ObjectLifetimes::PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevi
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->dst, kVulkanObjectTypeAccelerationStructureKHR, false,
                                "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parameter",
-                               "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parent", pInfo_loc.dot(Field::dst));
+                               "UNASSIGNED-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parent", pInfo_loc.dot(Field::dst));
     }
 
     return skip;
@@ -7679,7 +7680,7 @@ bool ObjectLifetimes::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->src, kVulkanObjectTypeAccelerationStructureKHR, false,
                                "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-parameter",
-                               "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-parent", pInfo_loc.dot(Field::src));
+                               "UNASSIGNED-VkCopyAccelerationStructureToMemoryInfoKHR-src-parent", pInfo_loc.dot(Field::src));
     }
 
     return skip;
@@ -7693,7 +7694,7 @@ bool ObjectLifetimes::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->dst, kVulkanObjectTypeAccelerationStructureKHR, false,
                                "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parameter",
-                               "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parent", pInfo_loc.dot(Field::dst));
+                               "UNASSIGNED-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parent", pInfo_loc.dot(Field::dst));
     }
 
     return skip;
