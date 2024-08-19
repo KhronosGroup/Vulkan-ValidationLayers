@@ -644,8 +644,15 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
 }
 
 bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
-                                             const vku::safe_VkPipelineShaderStageCreateInfo &stage_ci, const Location &loc) const {
+                                             const vku::safe_VkPipelineShaderStageCreateInfo &stage_ci, const void *pipeline_ci_pnext,
+                                             const Location &loc) const {
     bool skip = false;
+    const auto binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(pipeline_ci_pnext);
+
+    if (binary_info && binary_info->binaryCount != 0)
+    {
+        return skip;
+    }
 
     const auto module_create_info = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
     if (const auto module_identifier =
@@ -704,4 +711,68 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
         }
     }
     return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR *pPipelineCreateInfo,
+                                                  VkPipelineBinaryKeyKHR *pPipelineKey, const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    const VkBaseOutStructure *pipeline_create_info = reinterpret_cast<const VkBaseOutStructure *>(pPipelineCreateInfo->pNext);
+    if (pipeline_create_info) {
+        if (pipeline_create_info->sType != VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX &&
+            pipeline_create_info->sType != VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO &&
+            pipeline_create_info->sType != VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV &&
+            pipeline_create_info->sType != VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR &&
+            pipeline_create_info->sType != VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO) {
+            skip |= LogError("VUID-VkPipelineCreateInfoKHR-pNext-09604", device,
+                             error_obj.location.dot(Field::pPipelineCreateInfo).dot(Field::pNext),
+                             "contains an invalid struct (%s).",
+                             string_VkStructureType(pipeline_create_info->sType));
+        }
+    }
+
+    const auto *binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(pPipelineCreateInfo->pNext);
+    if (binary_info && (binary_info->binaryCount > 0)) {
+        skip |=
+            LogError("VUID-vkGetPipelineKeyKHR-pNext-09605", device,
+                     error_obj.location.dot(Field::pPipelineCreateInfo).pNext(Struct::VkPipelineBinaryInfoKHR, Field::binaryCount),
+                     "(%" PRIu32 ") is greater than zero", binary_info->binaryCount);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               const ErrorObject &error_obj) const {
+    auto pipeline_state = Get<vvl::Pipeline>(pInfo->pipeline);
+    bool skip = false;
+
+    ASSERT_AND_RETURN_SKIP(pipeline_state);
+
+    if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR)) {
+        skip |= LogError("VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-09613", pInfo->pipeline, error_obj.location.dot(Field::pInfo).dot(Field::pipeline),
+                         "called on a pipeline created without the "
+                         "VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR flag set. (Make sure you set it with VkPipelineCreateFlags2CreateInfoKHR)");
+    }
+
+    if (pipeline_state->binary_data_released) {
+        skip |= LogError("VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-09618", pInfo->pipeline, error_obj.location.dot(Field::pInfo).dot(Field::pipeline),
+                         "has been called multiple times.");
+    }
+
+    return skip;
+}
+
+void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+
+    StateTracker::PostCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
+
+    auto pipeline_state = Get<vvl::Pipeline>(pInfo->pipeline);
+    if (pipeline_state) {
+        pipeline_state->binary_data_released = true;
+    }
 }

@@ -2125,9 +2125,25 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkPipelineBinaryHandlesInfoKHR* pBinaries) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < pBinaries->pipelineBinaryCount; ++i) {
-        pBinaries->pPipelineBinaries[i] = (VkPipelineBinaryKHR)global_unique_handle++;
+    
+    pBinaries->pipelineBinaryCount = 1;
+
+    if (pBinaries->pPipelineBinaries != nullptr) {
+        pBinaries->pPipelineBinaries[0] = (VkPipelineBinaryKHR)global_unique_handle++;
     }
+
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                                               VkPipelineBinaryKeyKHR* pPipelineBinaryKey,
+                                                               size_t* pPipelineBinaryDataSize, void* pPipelineBinaryData) {
+    *pPipelineBinaryDataSize = 1;
+
+    if (pPipelineBinaryData != nullptr) {
+        *reinterpret_cast<uint8_t*>(pPipelineBinaryData) = 0x01;
+    }
+
     return VK_SUCCESS;
 }
 

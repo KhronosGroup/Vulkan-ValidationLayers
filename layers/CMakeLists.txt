@@ -321,6 +321,8 @@ target_sources(vvl PRIVATE
     stateless/sl_shader_object.cpp
     stateless/sl_synchronization.cpp
     stateless/sl_utils.cpp
+    stateless/sl_vuid_maps.cpp
+    stateless/sl_vuid_maps.h
     stateless/sl_wsi.cpp
     stateless/stateless_validation.h
     sync/sync_access_context.cpp

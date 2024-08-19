@@ -98,6 +98,8 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkGetDisplayModePropertiesKHR',
             'vkGetDisplayModeProperties2KHR',
             'vkGetDisplayPlaneSupportedDisplaysKHR',
+            # need to handle binaries in VkPipelineBinaryHandlesInfoKHR as output, not input.
+            'vkCreatePipelineBinariesKHR',
             ]
 
         # List of all extension structs strings containing handles

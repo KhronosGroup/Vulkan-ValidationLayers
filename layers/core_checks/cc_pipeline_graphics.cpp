@@ -44,7 +44,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        skip |= ValidateGraphicsPipeline(*pipeline_states[i].get(), create_info_loc);
+        skip |= ValidateGraphicsPipeline(*pipeline_states[i].get(), pCreateInfos[i].pNext, create_info_loc);
         skip |= ValidateGraphicsPipelineDerivatives(pipeline_states, i, create_info_loc);
 
         // From dumping traces, we found almost all apps only create one pipeline at a time. To greatly simplify the logic, only
@@ -64,7 +64,8 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const void *pipeline_ci_pnext,
+                                          const Location &create_info_loc) const {
     bool skip = false;
     // It would be ideal to split all pipeline checks into Dynamic and Non-Dynamic renderpasses, but with GPL it gets a bit tricky.
     // Also you might be deep in a function and it is easier to do a if/else check if it is dynamic rendering or not there.
@@ -139,7 +140,8 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     if (pipeline.OwnsSubState(pipeline.fragment_shader_state) || pipeline.OwnsSubState(pipeline.pre_raster_state)) {
         uint32_t stage_index = 0;
         for (const auto &stage_ci : pipeline.shader_stages_ci) {
-            skip |= ValidatePipelineShaderStage(pipeline, stage_ci, create_info_loc.dot(Field::pStages, stage_index++));
+            skip |= ValidatePipelineShaderStage(pipeline, stage_ci, pipeline_ci_pnext,
+                                                create_info_loc.dot(Field::pStages, stage_index++));
         }
     }
 

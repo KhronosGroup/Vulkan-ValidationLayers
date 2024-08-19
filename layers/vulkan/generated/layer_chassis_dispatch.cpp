@@ -5291,44 +5291,6 @@ void DispatchGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const
     layer_data->device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
 }
 
-VkResult DispatchCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles)
-        return layer_data->device_dispatch_table.CreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries);
-    vku::safe_VkPipelineBinaryCreateInfoKHR var_local_pCreateInfo;
-    vku::safe_VkPipelineBinaryCreateInfoKHR* local_pCreateInfo = nullptr;
-    vku::safe_VkPipelineBinaryHandlesInfoKHR var_local_pBinaries;
-    vku::safe_VkPipelineBinaryHandlesInfoKHR* local_pBinaries = nullptr;
-    {
-        if (pCreateInfo) {
-            local_pCreateInfo = &var_local_pCreateInfo;
-            local_pCreateInfo->initialize(pCreateInfo);
-
-            if (pCreateInfo->pipeline) {
-                local_pCreateInfo->pipeline = layer_data->Unwrap(pCreateInfo->pipeline);
-            }
-            if (local_pCreateInfo->pPipelineCreateInfo) {
-                UnwrapPnextChainHandles(layer_data, local_pCreateInfo->pPipelineCreateInfo->pNext);
-            }
-        }
-        if (pBinaries) {
-            local_pBinaries = &var_local_pBinaries;
-            local_pBinaries->initialize(pBinaries);
-            if (local_pBinaries->pPipelineBinaries) {
-                for (uint32_t index1 = 0; index1 < local_pBinaries->pipelineBinaryCount; ++index1) {
-                    local_pBinaries->pPipelineBinaries[index1] = layer_data->Unwrap(local_pBinaries->pPipelineBinaries[index1]);
-                }
-            }
-        }
-    }
-    VkResult result =
-        layer_data->device_dispatch_table.CreatePipelineBinariesKHR(device, (const VkPipelineBinaryCreateInfoKHR*)local_pCreateInfo,
-                                                                    pAllocator, (VkPipelineBinaryHandlesInfoKHR*)local_pBinaries);
-
-    return result;
-}
-
 void DispatchDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
                                       const VkAllocationCallbacks* pAllocator) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);

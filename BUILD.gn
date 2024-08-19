@@ -280,6 +280,8 @@ vvl_sources = [
   "layers/stateless/sl_shader_object.cpp",
   "layers/stateless/sl_synchronization.cpp",
   "layers/stateless/sl_utils.cpp",
+  "layers/stateless/sl_vuid_maps.cpp",
+  "layers/stateless/sl_vuid_maps.h",
   "layers/stateless/sl_wsi.cpp",
   "layers/stateless/stateless_validation.h",
   "layers/sync/sync_access_context.cpp",

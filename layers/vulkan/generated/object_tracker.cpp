@@ -4437,8 +4437,9 @@ bool ObjectLifetimes::PreCallValidateDestroyPipelineBinaryKHR(VkDevice device, V
     skip |= ValidateObject(pipelineBinary, kVulkanObjectTypePipelineBinaryKHR, true,
                            "VUID-vkDestroyPipelineBinaryKHR-pipelineBinary-parameter",
                            "VUID-vkDestroyPipelineBinaryKHR-pipelineBinary-parent", error_obj.location.dot(Field::pipelineBinary));
-    skip |= ValidateDestroyObject(pipelineBinary, kVulkanObjectTypePipelineBinaryKHR, pAllocator, kVUIDUndefined, kVUIDUndefined,
-                                  error_obj.location);
+    skip |= ValidateDestroyObject(pipelineBinary, kVulkanObjectTypePipelineBinaryKHR, pAllocator,
+                                  "VUID-vkDestroyPipelineBinaryKHR-pipelineBinary-09614",
+                                  "VUID-vkDestroyPipelineBinaryKHR-pipelineBinary-09615", error_obj.location);
 
     return skip;
 }
@@ -4524,22 +4525,6 @@ bool ObjectLifetimes::PreCallValidateGetPipelineBinaryDataKHR(VkDevice device, c
             ValidateObject(pInfo->pipelineBinary, kVulkanObjectTypePipelineBinaryKHR, false,
                            "VUID-VkPipelineBinaryDataInfoKHR-pipelineBinary-parameter",
                            "UNASSIGNED-VkPipelineBinaryDataInfoKHR-pipelineBinary-parent", pInfo_loc.dot(Field::pipelineBinary));
-    }
-
-    return skip;
-}
-
-bool ObjectLifetimes::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device,
-                                                                    const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
-                                                                    const VkAllocationCallbacks* pAllocator,
-                                                                    const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkReleaseCapturedPipelineDataKHR-device-parameter"
-    if (pInfo) {
-        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
-        skip |= ValidateObject(pInfo->pipeline, kVulkanObjectTypePipeline, false,
-                               "VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-parameter",
-                               "UNASSIGNED-VkReleaseCapturedPipelineDataInfoKHR-pipeline-parent", pInfo_loc.dot(Field::pipeline));
     }
 
     return skip;

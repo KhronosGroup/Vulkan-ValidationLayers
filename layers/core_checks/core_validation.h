@@ -81,7 +81,8 @@ class CoreChecks : public ValidationStateTracker {
                                   bool dynamic_rendering) const;
     bool ValidateDrawPipelineVertexAttribute(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
                                              const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const void* pipeline_ci_pnext,
+                                  const Location& create_info_loc) const;
     bool ValidImageBufferQueue(const vvl::CommandBuffer& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices, const Location& loc) const;
     bool ValidateFenceForSubmit(const vvl::Fence& fence_state, const char* inflight_vuid, const char* retired_vuid,
@@ -763,7 +764,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateTransformFeedbackEmitStreams(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                               const spirv::StatelessData& stateless_data, const Location& loc) const;
     virtual bool ValidatePipelineShaderStage(const vvl::Pipeline& pipeline,
-                                             const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci, const Location& loc) const;
+                                             const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci,
+                                             const void* pipeline_ci_pnext, const Location& loc) const;
     bool ValidateShaderClock(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
                              const Location& loc) const;
     bool ValidateImageWrite(const spirv::Module& module_state, const Location& loc) const;
@@ -2510,6 +2512,19 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
                                               VkDeviceFaultInfoEXT* pFaultInfo, const ErrorObject& error_obj) const override;
+
+    bool PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                          VkPipelineBinaryKeyKHR* pPipelineKey, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator,
+                                                  VkPipelineBinaryHandlesInfoKHR* pBinaries,
+                                                  const ErrorObject& error_obj) const override;
+    bool PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       const ErrorObject& error_obj) const override;
+    void PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      const RecordObject& record_obj) override;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,

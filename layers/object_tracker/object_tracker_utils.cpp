@@ -1529,3 +1529,37 @@ void ObjectLifetimes::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline p
 
     linked_graphics_pipeline_map.erase(HandleToUint64(pipeline));
 }
+
+bool ObjectLifetimes::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device,
+                                                                    const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
+                                                                    const VkAllocationCallbacks *pAllocator,
+                                                                    const ErrorObject &error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkReleaseCapturedPipelineDataKHR-device-parameter"
+
+    if (pInfo) {
+        const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateObject(pInfo->pipeline, kVulkanObjectTypePipeline, false,
+                               "VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-parameter",
+                               "UNASSIGNED-VkReleaseCapturedPipelineDataInfoKHR-pipeline-parent", pInfo_loc.dot(Field::pipeline));
+
+        skip |= ValidateDestroyObject(pInfo->pipeline, kVulkanObjectTypePipeline, pAllocator,
+                                      "VUID-vkReleaseCapturedPipelineDataKHR-pipeline-09611",
+                                      "VUID-vkReleaseCapturedPipelineDataKHR-pipeline-09612", pInfo_loc.dot(Field::pipeline));
+    }
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkPipelineBinaryHandlesInfoKHR *pBinaries,
+                                                              const RecordObject &record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+
+    if (pBinaries->pPipelineBinaries) {
+        for (uint32_t index = 0; index < pBinaries->pipelineBinaryCount; index++) {
+            CreateObject(pBinaries->pPipelineBinaries[index], kVulkanObjectTypePipelineBinaryKHR, pAllocator, record_obj.location);
+        }
+    }
+}

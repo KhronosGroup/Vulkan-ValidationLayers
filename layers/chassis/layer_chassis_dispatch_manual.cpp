@@ -202,6 +202,14 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                     unwrapped_pipelines[idx1] = layer_data->Unwrap(device_generated_commands->pPipelines[idx1]);
                 }
             }
+
+            auto *binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(local_pCreateInfos[idx0].pNext);
+            if (binary_info) {
+                auto *unwrapped_binaries = const_cast<VkPipelineBinaryKHR *>(binary_info->pPipelineBinaries);
+                for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
+                    unwrapped_binaries[idx1] = layer_data->Unwrap(binary_info->pPipelineBinaries[idx1]);
+                }
+            }
         }
     }
     if (pipelineCache) {
@@ -1129,6 +1137,14 @@ VkResult DispatchCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperati
                 if (pCreateInfos[index0].basePipelineHandle) {
                     local_pCreateInfos[index0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[index0].basePipelineHandle);
                 }
+
+                auto *binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(local_pCreateInfos[index0].pNext);
+                if (binary_info) {
+                    auto *unwrapped_binaries = const_cast<VkPipelineBinaryKHR *>(binary_info->pPipelineBinaries);
+                    for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
+                        unwrapped_binaries[idx1] = layer_data->Unwrap(binary_info->pPipelineBinaries[idx1]);
+                    }
+                }
             }
         }
     }
@@ -1545,6 +1561,14 @@ VkResult DispatchCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pi
                 if (pCreateInfos[index0].basePipelineHandle) {
                     local_pCreateInfos[index0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[index0].basePipelineHandle);
                 }
+
+                auto *binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(local_pCreateInfos[index0].pNext);
+                if (binary_info) {
+                    auto *unwrapped_binaries = const_cast<VkPipelineBinaryKHR *>(binary_info->pPipelineBinaries);
+                    for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
+                        unwrapped_binaries[idx1] = layer_data->Unwrap(binary_info->pPipelineBinaries[idx1]);
+                    }
+                }
             }
         }
     }
@@ -1575,6 +1599,42 @@ VkResult DispatchReleasePerformanceConfigurationINTEL(VkDevice device, VkPerform
     if (!wrap_handles) return layer_data->device_dispatch_table.ReleasePerformanceConfigurationINTEL(device, configuration);
     { configuration = layer_data->Unwrap(configuration); }
     VkResult result = layer_data->device_dispatch_table.ReleasePerformanceConfigurationINTEL(device, configuration);
+
+    return result;
+}
+
+VkResult DispatchCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries);
+    vku::safe_VkPipelineBinaryCreateInfoKHR var_local_pCreateInfo;
+    vku::safe_VkPipelineBinaryCreateInfoKHR* local_pCreateInfo = nullptr;
+    const uint32_t array_size = pBinaries->pipelineBinaryCount;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->pipeline) {
+                local_pCreateInfo->pipeline = layer_data->Unwrap(pCreateInfo->pipeline);
+            }
+            if (local_pCreateInfo->pPipelineCreateInfo) {
+                UnwrapPnextChainHandles(layer_data, local_pCreateInfo->pPipelineCreateInfo->pNext);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreatePipelineBinariesKHR(
+        device, (const VkPipelineBinaryCreateInfoKHR *)local_pCreateInfo, pAllocator, (VkPipelineBinaryHandlesInfoKHR *)pBinaries);
+
+    if (pBinaries->pPipelineBinaries)
+    {
+        for (uint32_t index0 = 0; index0 < array_size; index0++) {
+            if (pBinaries->pPipelineBinaries[index0] != VK_NULL_HANDLE) {
+                pBinaries->pPipelineBinaries[index0] = layer_data->WrapNew(pBinaries->pPipelineBinaries[index0]);
+            }
+        }
+    }
 
     return result;
 }
