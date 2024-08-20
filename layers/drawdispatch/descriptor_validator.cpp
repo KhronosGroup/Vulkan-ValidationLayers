@@ -537,8 +537,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             const LogObjectList objlist(set, image_view);
             return dev_state.LogError(vuids.depth_compare_sample_06479, objlist, loc,
                                       "the descriptor %s has %s with format of %s which doesn't support "
-                                      "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT in.\n"
-                                      "i(supported features: %s)",
+                                      "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT.\n"
+                                      "(supported features: %s).",
                                       DescribeDescriptor(binding_info, index).c_str(), FormatHandle(image_view).c_str(),
                                       string_VkFormat(image_view_ci.format), string_VkFormatFeatureFlags2(format_features).c_str());
         }
