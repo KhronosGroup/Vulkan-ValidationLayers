@@ -387,7 +387,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
                 !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-None-04896", pd_state->Handle(), error_obj.location,
-                                 "if shaderImageInt64Atomics feature is enabled then sparseImageInt64Atomics "
+                                 "if sparseImageInt64Atomics feature is enabled then shaderImageInt64Atomics "
                                  "feature must also be enabled.");
             }
         }
