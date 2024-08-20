@@ -25,8 +25,16 @@
 // or a GPUAV shader changes.
 #pragma pack(push, 1)
 struct ShaderCacheHash {
-    ShaderCacheHash(const GpuAVSettings& gpuav_settings) : gpuav_settings(gpuav_settings) {}
-    GpuAVSettings gpuav_settings{};
+    ShaderCacheHash(const GpuAVSettings& gpuav_settings)
+        : validate_descriptors_(gpuav_settings.validate_descriptors),
+          warn_on_robust_oob_(gpuav_settings.warn_on_robust_oob),
+          validate_bda_(gpuav_settings.validate_bda),
+          validate_ray_query_(gpuav_settings.validate_ray_query) {}
+    // Settings that are part of shader instrumentation that would need us to invalidate the cache
+    bool validate_descriptors_;
+    bool warn_on_robust_oob_;
+    bool validate_bda_;
+    bool validate_ray_query_;
     const char gpu_av_shader_git_hash[sizeof(GPU_AV_SHADER_GIT_HASH)] = GPU_AV_SHADER_GIT_HASH;
 };
 #pragma pack(pop)
