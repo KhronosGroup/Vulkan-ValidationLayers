@@ -509,7 +509,7 @@ void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
         instrumentation_data.unique_shader_id = unique_shader_id;
         create_info.pCode = instrumented_spirv.data();
         create_info.codeSize = instrumented_spirv.size() * sizeof(uint32_t);
-        if (gpuav_settings.cache_instrumented_shaders) {
+        if (gpuav_settings.cache_instrumented_shaders && !cached) {
             instrumented_shaders_cache_.Add(unique_shader_id, instrumented_spirv);
         }
     }
@@ -970,7 +970,8 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         bool pass = false;
         std::vector<uint32_t> instrumented_spirv;
         if (gpuav_settings.cache_instrumented_shaders) {
-            unique_shader_id = hash_util::ShaderHash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
+            unique_shader_id =
+                hash_util::ShaderHash(module_state->spirv->words_.data(), module_state->spirv->words_.size() * sizeof(uint32_t));
             if (const auto spirv = instrumented_shaders_cache_.Get(unique_shader_id)) {
                 instrumented_spirv = *spirv;
                 cached = true;
