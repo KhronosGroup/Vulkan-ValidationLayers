@@ -67,7 +67,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state
         } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
             const LogObjectList objlist(module_state.handle(), rp_state->Handle());
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                             "SPIR-V consumes input attachment index %" PRIu32 " but that is greater than the pSubpasses[%" PRIu32
+                             "SPIR-V consumes input attachment index %" PRIu32 " but that is not less than the pSubpasses[%" PRIu32
                              "].inputAttachmentCount (%" PRIu32 ").",
                              input_attachment_index, subpass, subpass_description.inputAttachmentCount);
         } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
