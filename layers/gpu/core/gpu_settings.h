@@ -19,12 +19,8 @@
 // Default values for those settings should match layers/VkLayer_khronos_validation.json.in
 
 struct GpuAVSettings {
-    bool shader_instrumentation_enabled = true;
-    bool validate_descriptors = true;
     bool warn_on_robust_oob = true;
-    bool validate_bda = true;
     uint32_t max_bda_in_use = 10000;
-    bool validate_ray_query = true;
     bool cache_instrumented_shaders = true;
     bool select_instrumented_shaders = false;
 
@@ -41,13 +37,22 @@ struct GpuAVSettings {
     uint32_t debug_max_instrumented_count = 0;  // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
 
-    bool IsShaderInstrumentationEnabled() const { return validate_descriptors || validate_bda || validate_ray_query; }
+    bool shader_instrumentation_enabled = true;
+    struct ShaderInstrumentation {
+        bool bindless_descriptor = true;
+        bool buffer_device_address = true;
+        bool ray_query = true;
+    } shader_instrumentation;
+
+    bool IsShaderInstrumentationEnabled() const {
+        return shader_instrumentation.bindless_descriptor || shader_instrumentation.buffer_device_address ||
+               shader_instrumentation.ray_query;
+    }
     // Also disables shader caching and select shader instrumentation
     void DisableShaderInstrumentationAndOptions() {
-        validate_descriptors = false;
-        warn_on_robust_oob = false;
-        validate_bda = false;
-        validate_ray_query = false;
+        shader_instrumentation.bindless_descriptor = false;
+        shader_instrumentation.buffer_device_address = false;
+        shader_instrumentation.ray_query = false;
         // Because of those 2 settings, cannot really have an "enabled" parameter to pass to this method
         cache_instrumented_shaders = false;
         select_instrumented_shaders = false;

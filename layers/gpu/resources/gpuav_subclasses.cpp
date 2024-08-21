@@ -146,7 +146,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, gpu::DeviceMemoryBlock &er
     result = vmaMapMemory(gpuav.vma_allocator_, error_logs_mem.allocation, reinterpret_cast<void **>(&output_buffer_ptr));
     if (result == VK_SUCCESS) {
         memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
-        if (gpuav.gpuav_settings.validate_descriptors) {
+        if (gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) {
             output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
         }
         vmaUnmapMemory(gpuav.vma_allocator_, error_logs_mem.allocation);
@@ -202,7 +202,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
     }
 
     // BDA snapshot
-    if (gpuav->gpuav_settings.validate_bda) {
+    if (gpuav->gpuav_settings.shader_instrumentation.buffer_device_address) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
@@ -307,7 +307,8 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // By supplying a "date"
-    if (!gpuav->gpuav_settings.validate_bda || bda_ranges_snapshot_version_ == gpuav->buffer_device_address_ranges_version) {
+    if (!gpuav->gpuav_settings.shader_instrumentation.buffer_device_address ||
+        bda_ranges_snapshot_version_ == gpuav->buffer_device_address_ranges_version) {
         return true;
     }
 

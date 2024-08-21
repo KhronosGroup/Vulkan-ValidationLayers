@@ -1163,16 +1163,17 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     if (is_debug_printf) {
         modified |= module.RunPassDebugPrintf(debug_printf_binding_slot_);
     } else {
+        GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
         // If descriptor indexing is enabled, enable length checks and updated descriptor checks
-        if (gpuav_settings.validate_descriptors) {
+        if (shader_instrumentation.bindless_descriptor) {
             modified |= module.RunPassBindlessDescriptor();
         }
 
-        if (gpuav_settings.validate_bda) {
+        if (shader_instrumentation.buffer_device_address) {
             modified |= module.RunPassBufferDeviceAddress();
         }
 
-        if (gpuav_settings.validate_ray_query) {
+        if (shader_instrumentation.ray_query) {
             modified |= module.RunPassRayQuery();
         }
 

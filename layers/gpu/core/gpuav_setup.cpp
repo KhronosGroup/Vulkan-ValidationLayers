@@ -144,7 +144,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     // Need the device to be created before we can query features for settings
     InitSettings(loc);
 
-    if (gpuav_settings.validate_descriptors) {
+    if (gpuav_settings.shader_instrumentation.bindless_descriptor) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);
         DispatchGetPhysicalDeviceProperties2Helper(physical_device, &props2);
@@ -191,7 +191,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
 
         std::ifstream file_stream(instrumented_shader_cache_path_, std::ifstream::in | std::ifstream::binary);
         if (file_stream) {
-            ShaderCacheHash shader_cache_hash(gpuav_settings);
+            ShaderCacheHash shader_cache_hash(gpuav_settings.shader_instrumentation);
             char inst_shader_hash[sizeof(shader_cache_hash)];
             file_stream.read(inst_shader_hash, sizeof(inst_shader_hash));
             if (std::memcmp(inst_shader_hash, reinterpret_cast<char *>(&shader_cache_hash), sizeof(shader_cache_hash)) == 0) {
@@ -249,21 +249,22 @@ void Validator::InitSettings(const Location &loc) {
     VkPhysicalDeviceFeatures supported_features{};
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
 
-    if (gpuav_settings.validate_descriptors) {
+    GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
+    if (shader_instrumentation.bindless_descriptor) {
         if (!enabled_features.bufferDeviceAddress) {
-            gpuav_settings.validate_descriptors = false;
+            shader_instrumentation.bindless_descriptor = false;
             InternalWarning(device, loc,
                             "Descriptors Indexing validaiton optin was enabled. but the bufferDeviceAddress was not enabled "
                             "[Disabling gpuav_descriptor_checks]");
         }
     }
 
-    if (gpuav_settings.validate_bda) {
+    if (shader_instrumentation.buffer_device_address) {
         const bool bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
                                                IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
                                               supported_features.shaderInt64 && enabled_features.bufferDeviceAddress);
         if (!bda_validation_possible) {
-            gpuav_settings.validate_bda = false;
+            shader_instrumentation.buffer_device_address = false;
             if (!supported_features.shaderInt64) {
                 InternalWarning(device, loc,
                                 "Buffer device address validation option was enabled, but the shaderInt64 feature is not enabled. "
@@ -276,9 +277,9 @@ void Validator::InitSettings(const Location &loc) {
         }
     }
 
-    if (gpuav_settings.validate_ray_query) {
+    if (shader_instrumentation.ray_query) {
         if (!enabled_features.rayQuery) {
-            gpuav_settings.validate_ray_query = false;
+            shader_instrumentation.ray_query = false;
             InternalWarning(device, loc,
                             "Ray Query validation option was enabled, but the rayQuery feature is not enabled. "
                             "[Disabling gpuav_validate_ray_query]");

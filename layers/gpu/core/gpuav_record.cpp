@@ -97,7 +97,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders_cache_.IsEmpty()) {
         std::ofstream file_stream(instrumented_shader_cache_path_, std::ofstream::out | std::ofstream::binary);
         if (file_stream) {
-            ShaderCacheHash shader_cache_hash(gpuav_settings);
+            ShaderCacheHash shader_cache_hash(gpuav_settings.shader_instrumentation);
             file_stream.write(reinterpret_cast<const char *>(&shader_cache_hash), sizeof(shader_cache_hash));
             uint32_t datasize = static_cast<uint32_t>(instrumented_shaders_cache_.spirv_shaders_.size());
             file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
@@ -278,7 +278,7 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
                                                          const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                          const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
-    gpuav_settings.validate_descriptors = false;
+    gpuav_settings.shader_instrumentation.bindless_descriptor = false;
 }
 
 void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
@@ -286,7 +286,7 @@ void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkComman
                                                                         VkPipelineLayout layout, uint32_t set,
                                                                         const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set, record_obj);
-    gpuav_settings.validate_descriptors = false;
+    gpuav_settings.shader_instrumentation.bindless_descriptor = false;
 }
 
 void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
@@ -294,7 +294,7 @@ void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(commandBuffer, pBindDescriptorBufferEmbeddedSamplersInfo,
                                                                         record_obj);
-    gpuav_settings.validate_descriptors = false;
+    gpuav_settings.shader_instrumentation.bindless_descriptor = false;
 }
 
 void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
