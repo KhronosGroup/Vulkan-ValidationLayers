@@ -19,4 +19,5 @@ This directory contains more detailed information about how each part of the Val
     - [Synchronization Validation Design Documentation](./synchronization.md)
         - [Synchronization Validation Usage](./synchronization_usage.md)
     - [Thread Safety Validation](./thread_safety.md)
+    - [Limitations](./limitations.md)
 - [Creating Tests](./creating_tests.md)
