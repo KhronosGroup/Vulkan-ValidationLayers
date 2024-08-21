@@ -214,9 +214,10 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
 
     // Create command indices buffer
     {
+        indices_buffer_alignment_ = sizeof(uint32_t) * static_cast<uint32_t>(phys_dev_props.limits.minStorageBufferOffsetAlignment);
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        buffer_info.size = cst::indices_count * sizeof(uint32_t);
+        buffer_info.size = cst::indices_count * indices_buffer_alignment_;
         VmaAllocationCreateInfo alloc_info = {};
         assert(output_buffer_pool_);
         alloc_info.pool = output_buffer_pool_;
@@ -235,8 +236,8 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             return;
         }
 
-        for (uint32_t i = 0; i < cst::indices_count; ++i) {
-            indices_ptr[i] = i;
+        for (uint32_t i = 0; i < buffer_info.size / sizeof(uint32_t); ++i) {
+            indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(uint32_t));
         }
 
         vmaUnmapMemory(vma_allocator_, indices_buffer_.allocation);

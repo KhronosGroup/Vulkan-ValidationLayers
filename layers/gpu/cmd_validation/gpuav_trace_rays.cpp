@@ -235,8 +235,9 @@ void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, Co
     push_constants[4] = static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
 
     DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_trace_rays_resources.pipeline);
-    BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_trace_rays_resources.pipeline_layout,
-                                    cb_state.trace_rays_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                                    shared_trace_rays_resources.pipeline_layout, cb_state.trace_rays_index,
+                                    static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_trace_rays_resources.pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0,
                              sizeof(push_constants), push_constants);
     VkStridedDeviceAddressRegionKHR ray_gen_sbt{};
