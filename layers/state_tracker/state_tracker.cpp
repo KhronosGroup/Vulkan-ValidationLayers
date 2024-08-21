@@ -2844,6 +2844,19 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     ASSERT_AND_RETURN(cb_state);
 
+    LvlBindPoint bind_point = BindPoint_Count;
+    if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        bind_point = BindPoint_Graphics;
+    } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        bind_point = BindPoint_Compute;
+    } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        bind_point = BindPoint_Ray_Tracing;
+    } else {
+        // Need to handle new binding point
+        assert(false);
+    }
+    cb_state->push_constant_latest_used_layout[bind_point] = layout;
+
     cb_state->RecordCmd(record_obj.location.function);
     auto layout_state = Get<vvl::PipelineLayout>(layout);
     cb_state->ResetPushConstantRangesLayoutIfIncompatible(*layout_state);

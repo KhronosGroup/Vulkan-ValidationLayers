@@ -142,12 +142,12 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
         VkDeviceAddress storage_buffer_ptr_1;
         int32_t integers_1[int_count / 2];
         // Fragment shader
-        VkDeviceAddress storage_buffer__ptr_2;
+        VkDeviceAddress storage_buffer_ptr_2;
         int32_t integers_2[int_count / 2];
     } push_constants;
 
     push_constants.storage_buffer_ptr_1 = storage_buffer.address();
-    push_constants.storage_buffer__ptr_2 = storage_buffer.address() + sizeof(int32_t) * (int_count / 2);
+    push_constants.storage_buffer_ptr_2 = storage_buffer.address() + sizeof(int32_t) * (int_count / 2);
     for (int32_t i = 0; i < int_count / 2; ++i) {
         push_constants.integers_1[i] = i;
         push_constants.integers_2[i] = (int_count / 2) + i;
@@ -232,12 +232,12 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
                          &push_constants);
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
-                         shader_pcr_byte_size, &push_constants.storage_buffer__ptr_2);
+                         shader_pcr_byte_size, &push_constants.storage_buffer_ptr_2);
     // Make sure pushing the same push constants twice does not break internal management
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
                          &push_constants);
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
-                         shader_pcr_byte_size, &push_constants.storage_buffer__ptr_2);
+                         shader_pcr_byte_size, &push_constants.storage_buffer_ptr_2);
     // Vertex shader will write 8 values to storage buffer, fragment shader another 8
     vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRendering();
@@ -403,7 +403,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     }
 
     VkShaderCreateInfoEXT cs_ci =
-        ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
+        ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 0, nullptr, 1, &compute_push_constant_ranges);
 
     const vkt::Shader cs(*m_device, cs_ci);
 
@@ -419,8 +419,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     // Submit commands
     // ---
 
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
