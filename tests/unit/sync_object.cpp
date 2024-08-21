@@ -1772,7 +1772,6 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -1818,13 +1817,6 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03906");
     vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
-
-    if (DeviceExtensionSupported(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME)) {
-        mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
-        mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
-        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-07272");
-        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
-    }
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
@@ -1909,12 +1901,6 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03906");
     vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
-    if (DeviceExtensionSupported(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME)) {
-        mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
-        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-07272");
-        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
-    }
-
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03907");
     vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
@@ -1961,6 +1947,76 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
 
     m_commandBuffer->end();
 
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync2RtxMaintenance1) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::rayTracingMaintenance1);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &mem_barrier;
+
+    m_commandBuffer->begin();
+
+    mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-07272");
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    mem_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-07272");
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &mem_barrier;
+
+    m_commandBuffer->begin();
+
+    mem_barrier.srcAccessMask = VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-08118");
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    mem_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-08118");
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
 }
 
