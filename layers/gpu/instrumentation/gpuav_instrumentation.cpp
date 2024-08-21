@@ -148,7 +148,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     }
 
     const auto pipeline_layout = pipeline_state ? pipeline_state->PipelineLayoutState()
-                                                : gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
+                                          : gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
     // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
     // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
     // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
@@ -173,7 +173,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     // parameter
     const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.per_command_error_loggers.size());
     const std::array<uint32_t, 2> dynamic_offsets = {
-        {operation_index * static_cast<uint32_t>(sizeof(uint32_t)), error_logger_i * static_cast<uint32_t>(sizeof(uint32_t))}};
+        {operation_index * gpuav.indices_buffer_alignment_, error_logger_i * gpuav.indices_buffer_alignment_}};
     if (pipeline_layout && pipeline_layout_handle != VK_NULL_HANDLE) {
         // If we were unable to use the layout because it overlaps with the instrumented set, don't dispatch anything or we will
         // disturb the original bound set

@@ -46,7 +46,7 @@ class RestorablePipelineState {
     std::vector<vvl::ShaderObject*> shader_objects_;
 };
 
-void BindValidationCmdsCommonDescSet(CommandBuffer& cb_state, VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout,
-                                     uint32_t cmd_index, uint32_t error_logger_index);
+void BindValidationCmdsCommonDescSet(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
+                                     VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index);
 
 }  // namespace gpuav

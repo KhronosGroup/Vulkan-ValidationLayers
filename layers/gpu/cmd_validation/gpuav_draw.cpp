@@ -355,7 +355,7 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
     static_assert(sizeof(push_constants) <= 128, "push_constants buffer size >128, need to consider maxPushConstantsSize.");
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_draw_resources.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                              static_cast<uint32_t>(sizeof(push_constants)), push_constants);
-    BindValidationCmdsCommonDescSet(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
+    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
                                     cb_state.draw_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &draw_validation_desc_set, 0, nullptr);
