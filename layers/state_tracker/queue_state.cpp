@@ -87,6 +87,7 @@ vvl::SubmitResult vvl::Queue::PostSubmit(std::vector<vvl::QueueSubmission> &&sub
         }
         {
             auto guard = Lock();
+            result.last_submission_seq = submission.seq;
             PostSubmit(submission);
             submissions_.emplace_back(std::move(submission));
             if (!thread_) {
