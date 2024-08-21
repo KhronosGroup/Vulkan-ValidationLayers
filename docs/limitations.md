@@ -20,7 +20,7 @@ If an app is trying to use `VkBindImageMemoryInfo`, but is setting the `sType` a
 
 The Validation Layers (as well as any other layer or driver) uses the `sType` to know how to cast the `void* pNext`, so if it is wrong, there is no way a Vulkan Layer could know.
 
-There are VUID such as `VUID-VkBufferCreateInfo-pNext-pNext` that limit which `sType` can appear in the pNext chain, but something the 2 `sType` being mixed up both might be valid to use in that case.
+There are VUID such as `VUID-VkBufferCreateInfo-pNext-pNext` that limit which `sType` can appear in the pNext chain, but something the 2 mixed up `sType` can both be valid by chance, and there will be no validation error.
 
 ### Dereferencing Pointers
 
