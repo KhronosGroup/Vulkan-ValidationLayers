@@ -77,6 +77,8 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
 }
 
 struct SubmitResult {
+    uint64_t last_submission_seq = 0;
+
     bool has_external_fence = false;
     uint64_t submission_with_external_fence_seq = 0;
 };
