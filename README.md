@@ -36,6 +36,12 @@ These resources can be helpful to refine your issue, work out an application/dri
     * [./tests](./tests) - Information about testing the Validation Layers.
     * [GOVERNANCE.md](GOVERNANCE.md) - Repository management details.
 
+### Internals
+
+The Validation Layers are broken up as many smaller internal "Validation Objects" each tasked with own job.
+[Core Checks](./docs/core_checks.md) is what is on by default, but there are other validation such as [Synchronization Validation](./docs/synchronization.md), [GPU Assisted Validation](./docs/gpu_validation.md), and [more](./docs/README.md).
+There are also a few [limitations](./docs/limitations.md) that the Validation Layers can not handle due the nature of being a Vulkan Layer.
+
 ## Version Tagging Scheme
 
 Updates to this repository which correspond to a new Vulkan specification release are tagged using the following format: `v<`_`version`_`>` (e.g., `v1.3.266`).
