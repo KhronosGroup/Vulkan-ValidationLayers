@@ -130,7 +130,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
 
         // BDA snapshot buffer
         VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-        if (gpuav.gpuav_settings.validate_bda) {
+        if (gpuav.gpuav_settings.shader_instrumentation.buffer_device_address) {
             bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
             bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().buffer;
             bda_input_desc_buffer_info.offset = 0;
