@@ -109,11 +109,11 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfoCommon(const VkPi
         skip |= ValidateString(loc.dot(Field::pName), "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", create_info.pName);
     }
 
-    if (vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(create_info.pNext)) {
+    if (vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo>(create_info.pNext)) {
         if ((create_info.flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02754", device, loc.dot(Field::flags),
                              "(%s) includes VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT while "
-                             "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT is included in the pNext chain.",
+                             "VkPipelineShaderStageRequiredSubgroupSizeCreateInfo is included in the pNext chain.",
                              string_VkPipelineShaderStageCreateFlags(create_info.flags).c_str());
         }
     }

@@ -2084,9 +2084,8 @@ class CoreChecks : public ValidationStateTracker {
                                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue,
                                                  const ErrorObject& error_obj) const override;
-    bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const ShaderStageState& stage_state,
-                                      const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT& required_subgroup_size,
-                                      uint64_t invocations, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z,
+    bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const ShaderStageState& stage_state, uint64_t invocations,
+                                      uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z,
                                       const Location& loc) const;
     bool ValidateComputeWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                        const ShaderStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
