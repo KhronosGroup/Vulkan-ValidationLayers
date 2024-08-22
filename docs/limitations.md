@@ -1,18 +1,17 @@
 # Limitations
 
-While the Validation Layers thrive to catch all undefined behavior, because the checking is done at a Vulkan Layer level, not everything is possible to validate.
+While the Validation Layers thrive to catch all undefined behavior, because the checking is done at a Vulkan Layer level, it is not possible to validate everything.
 
-This documentation is not served as an "errata" or a "list of all known limitations", but rather just a general outline so people are aware there are some limitations.
+This documentation is not an exhaustive list of known limitations, but rather a general outline so people are aware of some them.
 
 ## Unimplementable Validation
 
-The Validation Layers use the [VUID](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/validation_overview.adoc#valid-usage-id-vuid) to know what validation is [covered](https://vulkan.lunarg.com/doc/sdk/latest/windows/validation_error_database.html). There are times, for various reasons, we are unable to validate the VUID, but don't want it to marked as "yet to do" as there is nothing for us to actually do. The [unimplementable_validation.h](../layers/error_message/unimplementable_validation.h) file was created to list those.
+The Validation Layers use the [VUID](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/validation_overview.adoc#valid-usage-id-vuid) to know what validation is [covered](https://vulkan.lunarg.com/doc/sdk/latest/windows/validation_error_database.html). There are times where we are unable to validate some VUID, for various reasons. But we don't want to mark it as "yet to do" as there is nothing for us to actually do. The [unimplementable_validation.h](../layers/error_message/unimplementable_validation.h) file was created to list those. It lists all such VUIDs, and the reason why we cannot validate them.
 
-This file breaks down all VUID with a reason why the Validation Layers are not able to actually validate them.
 
 ## Source Code
 
-There are things that are invalid, that could only be caught by the source language.
+There are things that are invalid, that can only be caught by the source language.
 
 ### pNext and sType
 
