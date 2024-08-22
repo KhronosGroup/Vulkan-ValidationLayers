@@ -82,7 +82,6 @@ void NonBindlessOOBBufferPass::Reset() {
 }
 
 bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
-    if (module_.has_bindless_descriptors_) return false;
     const uint32_t opcode = inst.Opcode();
 
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
@@ -110,7 +109,7 @@ bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, cons
 
     const Type* pointer_type = variable->PointerType(module_.type_manager_);
     if (pointer_type->inst_.Opcode() == spv::OpTypeRuntimeArray) {
-        return false;  // Currently we mark these are "bindless"
+        return false;  // Currently we mark these as "bindless"
     }
 
     const bool is_descriptor_array = pointer_type->inst_.Opcode() == spv::OpTypeArray;
@@ -175,6 +174,7 @@ void NonBindlessOOBBufferPass::PrintDebugInfo() {
 
 // Created own Run() because need to control finding the largest offset in a given block
 bool NonBindlessOOBBufferPass::Run() {
+    if (module_.has_bindless_descriptors_) return false;
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {

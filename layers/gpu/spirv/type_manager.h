@@ -94,6 +94,7 @@ class TypeManager {
 
     const Type& AddType(std::unique_ptr<Instruction> new_inst, SpvType spv_type);
     const Type* FindTypeById(uint32_t id) const;
+    const Type* FindFunctionType(const Instruction& inst) const;
     // There shouldn't be a case where we need to query for a specific type, but then not add it if not found.
     const Type& GetTypeVoid();
     const Type& GetTypeBool();

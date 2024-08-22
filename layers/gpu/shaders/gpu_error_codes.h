@@ -52,6 +52,9 @@ const int kErrorSubCodeBindlessDescriptorNullPointer = 5;
 // Buffers
 const int kErrorSubCodeNonBindlessOOBBufferArrays = 1;
 const int kErrorSubCodeNonBindlessOOBBufferBounds = 2;
+// Texel Buffers
+const int kErrorSubCodeNonBindlessOOBTexelBufferArrays = 3;
+const int kErrorSubCodeNonBindlessOOBTexelBufferBounds = 4;
 
 // Buffer Device Address
 //

@@ -60,8 +60,8 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
             if (dim == spv::DimBuffer) {
                 const uint32_t depth = image_type->inst_.Operand(2);
                 const uint32_t arrayed = image_type->inst_.Operand(3);
-                const uint32_t ms = image_type->inst_.Operand(4);
-                if (depth == 0 && arrayed == 0 && ms == 0) {
+                const uint32_t multi_sampling = image_type->inst_.Operand(4);
+                if (depth == 0 && arrayed == 0 && multi_sampling == 0) {
                     descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
                 }
             }
@@ -186,6 +186,12 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
         }
 
     } else {
+        // TODO - Once all non-bindless passes are added, this check can be places at top of Run()
+        if (!module_.has_bindless_descriptors_ &&
+            (opcode == spv::OpImageFetch || opcode == spv::OpImageRead || opcode == spv::OpImageWrite)) {
+            return false;
+        }
+
         // Reference is not load or store, so ifi it isn't a image-based reference, move on
         const uint32_t image_word = OpcodeImageAccessPosition(opcode);
         if (image_word == 0) {
