@@ -85,6 +85,7 @@ class Module {
     // Return true if code was instrumented
     bool RunPassBindlessDescriptor();
     bool RunPassNonBindlessOOBBuffer();
+    bool RunPassNonBindlessOOBTexelBuffer();
     bool RunPassBufferDeviceAddress();
     bool RunPassRayQuery();
     bool RunPassDebugPrintf(uint32_t binding_slot = 0);

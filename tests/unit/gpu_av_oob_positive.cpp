@@ -110,7 +110,7 @@ TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const *cs_source = R"glsl(
         #version 450
 
         layout(set = 0, binding = 0) uniform samplerBuffer u_buffer; // texel_buffer[5]
@@ -126,7 +126,7 @@ TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                           {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -170,7 +170,7 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
         GTEST_SKIP() << "No atomic texel buffer support";
     }
 
-    char const *shader_source = R"glsl(
+    char const *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_atomic_float : enable
@@ -185,7 +185,7 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -445,7 +445,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorSSBO) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -468,7 +468,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorSSBO) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout.handle();
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
@@ -488,7 +488,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorBuffer) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -512,7 +512,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorBuffer) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout.handle();
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
@@ -532,7 +532,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorCopy) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -566,13 +566,73 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorCopy) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout.handle();
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                               &descriptor_set_dst.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAVOOB, TexelFetchArray) {
+    TEST_DESCRIPTION("index into texelFetch OOB for an array of TexelBuffers");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 0, std430) buffer foo {
+            vec4 a;
+            vec4 b;
+        } out_buffer;
+
+        layout(set = 0, binding = 1) uniform samplerBuffer u_buffer[2];
+
+        void main() {
+            out_buffer.a = texelFetch(u_buffer[0], 4); // valid
+            // Will not ever get into this check
+            if (gl_WorkGroupID.x == 987) {
+                out_buffer.b = texelFetch(u_buffer[1], 4); // invalid
+            }
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer out_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    vkt::Buffer uniform_texel_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, mem_props);
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
+    bvci.buffer = uniform_texel_buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+    vkt::BufferView full_buffer_view(*m_device, bvci);
+    bvci.range = 16;  // only fills 4, but are accessing index[4]
+    vkt::BufferView partial_buffer_view(*m_device, bvci);
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, out_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferView(1, full_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 0);
+    pipe.descriptor_set_->WriteDescriptorBufferView(1, partial_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 

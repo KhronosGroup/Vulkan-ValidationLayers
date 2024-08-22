@@ -25,6 +25,7 @@ static bool print_debug_info = false;
 static bool all_passes = false;
 static bool bindless_descriptor_pass = false;
 static bool non_bindless_oob_buffer_pass = false;
+static bool non_bindless_oob_texel_buffer_pass = false;
 static bool buffer_device_address_pass = false;
 static bool ray_query_pass = false;
 static bool debug_printf_pass = false;
@@ -44,6 +45,8 @@ USAGE: %s <input> -o <output> <passes>
                Runs BindlessDescriptorPass
   --non-bindless-oob-buffer
                Runs NonBindlessOOBBufferPass
+  --non-bindless-oob-texel-buffer
+               Runs NonBindlessOOBTexelBufferPass
   --buffer-device-address
                Runs BufferDeviceAddressPass
   --ray-query
@@ -83,6 +86,8 @@ bool ParseFlags(int argc, char** argv, const char** out_file) {
             bindless_descriptor_pass = true;
         } else if (0 == strcmp(cur_arg, "--non-bindless-oob-buffer")) {
             non_bindless_oob_buffer_pass = true;
+        } else if (0 == strcmp(cur_arg, "--non-bindless-oob-texel-buffer")) {
+            non_bindless_oob_texel_buffer_pass = true;
         } else if (0 == strcmp(cur_arg, "--buffer-device-address")) {
             buffer_device_address_pass = true;
         } else if (0 == strcmp(cur_arg, "--ray-query")) {
@@ -153,6 +158,9 @@ int main(int argc, char** argv) {
     }
     if (all_passes || non_bindless_oob_buffer_pass) {
         module.RunPassNonBindlessOOBBuffer();
+    }
+    if (all_passes || non_bindless_oob_texel_buffer_pass) {
+        module.RunPassNonBindlessOOBTexelBuffer();
     }
     if (all_passes || buffer_device_address_pass) {
         module.RunPassBufferDeviceAddress();

@@ -375,6 +375,29 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
             }
         } break;
 
+        case kErrorSubCodeNonBindlessOOBTexelBufferArrays: {
+            const uint32_t desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
+            strm << " access out of bounds. The descriptor texel buffer array is " << desc_array_size
+                 << " large, but as accessed at index [" << desc_index << "]";
+            out_vuid_msg = "UNASSIGNED-Descriptor Texel Buffer index out of bounds";
+        } break;
+
+        case kErrorSubCodeNonBindlessOOBTexelBufferBounds: {
+            const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
+            const vvl::BufferView *buffer_view_state =
+                static_cast<const vvl::TexelBinding *>(binding_state)->descriptors[desc_index].GetBufferViewState();
+            assert(buffer_view_state);
+            const uint32_t byte_offset = error_record[kInstNonBindlessOOBParamOffset0];
+            const uint32_t resource_size = error_record[kInstNonBindlessOOBParamOffset1];
+
+            strm << " access out of bounds. The descriptor texel buffer (" << gpuav.FormatHandle(buffer_view_state->Handle())
+                 << ") size is " << resource_size << " texels and the highest out of bounds access was at [" << byte_offset
+                 << "] bytes";
+
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977
+            out_vuid_msg = "UNASSIGNED-Descriptor Texel Buffer texel out of bounds";
+        } break;
+
         default:
             error_found = false;
             out_oob_access = false;

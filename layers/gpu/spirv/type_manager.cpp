@@ -113,6 +113,27 @@ const Type* TypeManager::FindTypeById(uint32_t id) const {
     return (type == id_to_type_.end()) ? nullptr : type->second.get();
 }
 
+const Type* TypeManager::FindFunctionType(const Instruction& inst) const {
+    const uint32_t inst_length = inst.Length();
+    for (const auto& type : function_types_) {
+        if (type->inst_.Length() != inst_length) {
+            continue;
+        }
+        // Start at the Result Type ID (skip ResultID and the base word)
+        bool found = true;
+        for (uint32_t i = 2; i < inst_length; i++) {
+            if (type->inst_.Word(i) != inst.Word(i)) {
+                found = false;
+                break;
+            }
+        }
+        if (found) {
+            return type;
+        }
+    }
+    return nullptr;
+}
+
 const Type& TypeManager::GetTypeVoid() {
     if (void_type) {
         return *void_type;

@@ -502,9 +502,9 @@ void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
 
     bool has_bindless_descriptors = false;
     for (const auto [layout_i, set_layout] : vvl::enumerate(create_info.pSetLayouts, create_info.setLayoutCount)) {
-        if (auto descriptor_set = Get<vvl::DescriptorSetLayout>(*set_layout)) {
-            for (uint32_t i = 0; i < descriptor_set->GetBindingCount(); i++) {
-                const VkDescriptorBindingFlags flags = descriptor_set->GetDescriptorBindingFlagsFromIndex(i);
+        if (auto set_layout_state = Get<vvl::DescriptorSetLayout>(*set_layout)) {
+            for (uint32_t i = 0; i < set_layout_state->GetBindingCount(); i++) {
+                const VkDescriptorBindingFlags flags = set_layout_state->GetDescriptorBindingFlagsFromIndex(i);
                 if (vvl::IsBindless(flags)) {
                     has_bindless_descriptors = true;
                     break;
@@ -958,10 +958,10 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
     // (not sure how much pipeline layout re-usage there is)
     bool has_bindless_descriptors = false;
     if (pipeline_layout) {
-        for (const auto &descriptor_set : pipeline_layout->set_layouts) {
-            if (descriptor_set) {
-                for (uint32_t i = 0; i < descriptor_set->GetBindingCount(); i++) {
-                    const VkDescriptorBindingFlags flags = descriptor_set->GetDescriptorBindingFlagsFromIndex(i);
+        for (const auto &set_layout : pipeline_layout->set_layouts) {
+            if (set_layout) {
+                for (uint32_t i = 0; i < set_layout->GetBindingCount(); i++) {
+                    const VkDescriptorBindingFlags flags = set_layout->GetDescriptorBindingFlagsFromIndex(i);
                     if (vvl::IsBindless(flags)) {
                         has_bindless_descriptors = true;
                         break;
@@ -1204,6 +1204,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         if (shader_instrumentation.bindless_descriptor) {
             modified |= module.RunPassBindlessDescriptor();
             modified |= module.RunPassNonBindlessOOBBuffer();
+            modified |= module.RunPassNonBindlessOOBTexelBuffer();
         }
 
         if (shader_instrumentation.buffer_device_address) {

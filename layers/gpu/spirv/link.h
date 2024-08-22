@@ -24,6 +24,7 @@ enum class LinkFunctions {
     inst_buffer_device_address,
     inst_bindless_descriptor,
     inst_non_bindless_oob_buffer,
+    inst_non_bindless_oob_texel_buffer,
     inst_ray_query,
 };
 

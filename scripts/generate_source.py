@@ -381,6 +381,8 @@ def main(argv):
         'instrumentation_bindless_descriptor_comp.cpp',
         'instrumentation_non_bindless_oob_buffer_comp.h',
         'instrumentation_non_bindless_oob_buffer_comp.cpp',
+        'instrumentation_non_bindless_oob_texel_buffer_comp.h',
+        'instrumentation_non_bindless_oob_texel_buffer_comp.cpp',
         'instrumentation_ray_query_comp.h',
         'instrumentation_ray_query_comp.cpp',
         'gpu_av_shader_hash.h'

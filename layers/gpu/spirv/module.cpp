@@ -21,6 +21,7 @@
 #include "buffer_device_address_pass.h"
 #include "bindless_descriptor_pass.h"
 #include "non_bindless_oob_buffer_pass.h"
+#include "non_bindless_oob_texel_buffer_pass.h"
 #include "ray_query_pass.h"
 #include "debug_printf_pass.h"
 
@@ -293,6 +294,15 @@ bool Module::RunPassNonBindlessOOBBuffer() {
     return changed;
 }
 
+bool Module::RunPassNonBindlessOOBTexelBuffer() {
+    NonBindlessOOBTexelBufferPass pass(*this);
+    const bool changed = pass.Run();
+    if (print_debug_info_) {
+        pass.PrintDebugInfo();
+    }
+    return changed;
+}
+
 bool Module::RunPassBufferDeviceAddress() {
     BufferDeviceAddressPass pass(*this);
     const bool changed = pass.Run();
@@ -393,7 +403,7 @@ void Module::LinkFunction(const LinkInfo& info) {
     // track the incoming SSA IDs with what they are in the module
     // < old_id, new_id >
     vvl::unordered_map<uint32_t, uint32_t> id_swap_map;
-    const uint32_t function_type_id = TakeNextId();
+    uint32_t function_type_id = 0;
 
     // Track all decorations and add after when have full id_swap_map
     InstructionList decorations;
@@ -493,15 +503,29 @@ void Module::LinkFunction(const LinkInfo& info) {
                     type_manager_.AddType(std::move(new_inst), spv_type);
                     break;
                 }
-                case SpvType::kStruct:
-                case SpvType::kFunction: {
+                case SpvType::kStruct: {
                     // For OpTypeStruct, we just add it regardless since low chance to find for the amount of time to search all
-                    // struct (which there can be quite a bit of) For OpTypeFunction, we will only have one and custom function
-                    // likely won't match anything neither
-                    type_id = (spv_type == SpvType::kFunction) ? function_type_id : TakeNextId();
+                    // struct (which there can be quite a bit of)
+                    type_id = TakeNextId();
                     new_inst->ReplaceResultId(type_id);
                     new_inst->ReplaceLinkedId(id_swap_map);
                     type_manager_.AddType(std::move(new_inst), spv_type).Id();
+                    break;
+                }
+                case SpvType::kFunction: {
+                    // It is not valid to have duplicate OpTypeFunction and some linked in functions will have the same signature
+                    new_inst->ReplaceLinkedId(id_swap_map);
+                    // First swap out IDs so comparison will be the same
+                    const Type* function_type = type_manager_.FindFunctionType(*new_inst.get());
+                    if (function_type) {
+                        // Just reuse non-unique OpTypeFunction
+                        function_type_id = function_type->Id();
+                    } else {
+                        function_type_id = TakeNextId();
+                        type_id = function_type_id;
+                        new_inst->ReplaceResultId(type_id);
+                        type_manager_.AddType(std::move(new_inst), spv_type).Id();
+                    }
                     break;
                 }
                 default:
