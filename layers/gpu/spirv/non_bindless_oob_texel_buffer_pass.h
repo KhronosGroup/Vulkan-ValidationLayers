@@ -26,6 +26,7 @@ class NonBindlessOOBTexelBufferPass : public Pass {
   public:
     NonBindlessOOBTexelBufferPass(Module& module);
     void PrintDebugInfo() final;
+    const char* Name() const final { return "NonBindlessOOBTexelBufferPass"; }
     bool Run() final;
 
   private:

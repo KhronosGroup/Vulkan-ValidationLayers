@@ -26,6 +26,7 @@ namespace spirv {
 class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
   public:
     BufferDeviceAddressPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    const char* Name() const final { return "BufferDeviceAddressPass"; }
     void PrintDebugInfo() final;
 
   private:

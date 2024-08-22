@@ -26,6 +26,7 @@ class NonBindlessOOBBufferPass : public Pass {
   public:
     NonBindlessOOBBufferPass(Module& module);
     void PrintDebugInfo() final;
+    const char* Name() const final { return "NonBindlessOOBBufferPass"; }
     bool Run() final;
 
   private:
