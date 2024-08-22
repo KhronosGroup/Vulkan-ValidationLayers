@@ -161,7 +161,7 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
                 }
             } break;
             default:
-                module_.InternalError("Passs", "GetStageInfo has unsupported stage");
+                module_.InternalError(Name(), "GetStageInfo has unsupported stage");
                 break;
         }
     }
@@ -222,8 +222,7 @@ uint32_t Pass::GetLastByte(const Instruction& var_inst, const Instruction& acces
     } else if (descriptor_type->spv_type_ == SpvType::kStruct) {
         current_type_id = descriptor_type->Id();
     } else {
-        // TODO - Add a GetPassName() helper
-        module_.InternalError("Pass", "GetLastByte has unexpected descriptor type");
+        module_.InternalError(Name(), "GetLastByte has unexpected descriptor type");
         return 0;
     }
 
@@ -258,7 +257,7 @@ uint32_t Pass::GetLastByte(const Instruction& var_inst, const Instruction& acces
             } break;
             case SpvType::kMatrix: {
                 if (matrix_stride == 0) {
-                    module_.InternalError("Pass", "GetLastByte is missing matrix stride");
+                    module_.InternalError(Name(), "GetLastByte is missing matrix stride");
                 }
                 matrix_stride_id = module_.type_manager_.GetConstantUInt32(matrix_stride).Id();
                 uint32_t vec_type_id = current_type->inst_.Operand(0);
@@ -324,7 +323,7 @@ uint32_t Pass::GetLastByte(const Instruction& var_inst, const Instruction& acces
                 current_type_id = current_type->inst_.Operand(member_index);
             } break;
             default: {
-                module_.InternalError("Pass", "GetLastByte has unexpected non-composite type");
+                module_.InternalError(Name(), "GetLastByte has unexpected non-composite type");
             } break;
         }
 
@@ -419,7 +418,7 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
         }
     }
 
-    module_.InternalError("FindTargetInstruction", "failed to find instruction");
+    module_.InternalError(Name(), "failed to find instruction");
     return block.instructions_.end();
 }
 

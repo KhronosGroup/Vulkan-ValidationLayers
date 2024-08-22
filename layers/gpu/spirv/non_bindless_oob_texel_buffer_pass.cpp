@@ -136,14 +136,13 @@ bool NonBindlessOOBTexelBufferPass::AnalyzeInstruction(const Function& function,
         descriptor_index_id_ = var_inst_->Operand(1);
 
         if (var_inst_->Length() > 5) {
-            module_.InternalError("NonBindlessOOBTexelBufferPass",
-                                  "OpAccessChain has more than 1 indexes. 2D Texel Buffers not supported");
+            module_.InternalError(Name(), "OpAccessChain has more than 1 indexes. 2D Texel Buffers not supported");
             return false;
         }
 
         const Variable* variable = module_.type_manager_.FindVariableById(var_inst_->Operand(0));
         if (!variable) {
-            module_.InternalError("NonBindlessOOBTexelBufferPass", "OpAccessChain base is not a variable");
+            module_.InternalError(Name(), "OpAccessChain base is not a variable");
             return false;
         }
         var_inst_ = &variable->inst_;
@@ -158,7 +157,7 @@ bool NonBindlessOOBTexelBufferPass::AnalyzeInstruction(const Function& function,
             }
             descriptor_array_size_id_ = array_size_const->Id();
         } else {
-            module_.InternalError("NonBindlessOOBTexelBufferPass", "OpAccessChain has no array in it");
+            module_.InternalError(Name(), "OpAccessChain has no array in it");
             return false;
         }
 
@@ -180,7 +179,7 @@ bool NonBindlessOOBTexelBufferPass::AnalyzeInstruction(const Function& function,
     }
 
     if (descriptor_set_ >= gpuav::glsl::kDebugInputBindlessMaxDescSets) {
-        module_.InternalWarning("NonBindlessOOBTexelBufferPass", "Tried to use a descriptor slot over the current max limit");
+        module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
 

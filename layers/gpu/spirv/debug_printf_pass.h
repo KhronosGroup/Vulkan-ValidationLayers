@@ -26,6 +26,8 @@ struct Type;
 class DebugPrintfPass : public Pass {
   public:
     DebugPrintfPass(Module& module, uint32_t binding_slot = 0) : Pass(module), binding_slot_(binding_slot) {}
+    const char* Name() const final { return "DebugPrintfPass"; }
+
     bool Run() final;
     void PrintDebugInfo() final;
 

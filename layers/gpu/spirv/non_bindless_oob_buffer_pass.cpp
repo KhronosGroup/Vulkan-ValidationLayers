@@ -158,7 +158,7 @@ bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, cons
     }
 
     if (descriptor_set_ >= gpuav::glsl::kDebugInputBindlessMaxDescSets) {
-        module_.InternalWarning("BindlessDescriptorPass", "Tried to use a descriptor slot over the current max limit");
+        module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
 

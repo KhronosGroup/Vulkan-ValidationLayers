@@ -27,6 +27,7 @@ namespace spirv {
 class BindlessDescriptorPass : public InjectConditionalFunctionPass {
   public:
     BindlessDescriptorPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    const char* Name() const final { return "BindlessDescriptorPass"; }
     void PrintDebugInfo() final;
 
   private:

@@ -160,7 +160,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
         if (storage_class == spv::StorageClassUniform) {
             const uint32_t block_type_id = (pointer_type->inst_.IsArray()) ? pointer_type->inst_.Operand(0) : pointer_type->Id();
             if (module_.type_manager_.FindTypeById(block_type_id)->spv_type_ != SpvType::kStruct) {
-                module_.InternalError("BindlessDescriptorPass", "Uniform variable block type is not OpTypeStruct");
+                module_.InternalError(Name(), "Uniform variable block type is not OpTypeStruct");
                 return false;
             }
 
@@ -169,7 +169,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
             // If block decoration not found, verify deprecated form of SSBO
             if (!block_found) {
                 if (GetDecoration(block_type_id, spv::DecorationBufferBlock) == nullptr) {
-                    module_.InternalError("BindlessDescriptorPass", "Uniform variable block decoration not found");
+                    module_.InternalError(Name(), "Uniform variable block decoration not found");
                     return false;
                 }
                 storage_class = spv::StorageClassStorageBuffer;
@@ -227,13 +227,13 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
             descriptor_index_id_ = var_inst_->Operand(1);
 
             if (var_inst_->Length() > 5) {
-                module_.InternalError("BindlessDescriptorPass", "OpAccessChain has more than 1 indexes");
+                module_.InternalError(Name(), "OpAccessChain has more than 1 indexes");
                 return false;
             }
 
             const Variable* variable = module_.type_manager_.FindVariableById(var_inst_->Operand(0));
             if (!variable) {
-                module_.InternalError("BindlessDescriptorPass", "OpAccessChain base is not a variable");
+                module_.InternalError(Name(), "OpAccessChain base is not a variable");
                 return false;
             }
             var_inst_ = &variable->inst_;
@@ -255,7 +255,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
     }
 
     if (descriptor_set_ >= gpuav::glsl::kDebugInputBindlessMaxDescSets) {
-        module_.InternalWarning("BindlessDescriptorPass", "Tried to use a descriptor slot over the current max limit");
+        module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
 

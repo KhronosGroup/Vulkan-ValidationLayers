@@ -34,6 +34,7 @@ struct InjectionData {
 // Common helpers for all passes
 class Pass {
   public:
+    virtual const char* Name() const = 0;
     // Return false if nothing was changed
     virtual bool Run() { return false; }
 

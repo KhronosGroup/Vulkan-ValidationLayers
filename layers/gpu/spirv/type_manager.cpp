@@ -555,7 +555,7 @@ uint32_t TypeManager::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride,
             break;
         case SpvType::kMatrix: {
             if (matrix_stride == 0) {
-                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize is missing matrix stride");
+                module_.InternalError("FindTypeByteSize", "missing matrix stride");
             }
             if (col_major) {
                 return type.inst_.Word(3) * matrix_stride;
@@ -574,7 +574,7 @@ uint32_t TypeManager::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride,
                 const uint32_t width = component_type->inst_.Word(2);
                 size *= width;
             } else {
-                module_.InternalError("BindlessDescriptorPass", "FindTypeByteSize has unexpected vector type");
+                module_.InternalError("FindTypeByteSize", "unexpected vector type");
             }
             return size / 8;
         }

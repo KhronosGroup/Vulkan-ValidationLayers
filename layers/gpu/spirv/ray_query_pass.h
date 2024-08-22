@@ -24,6 +24,7 @@ namespace spirv {
 class RayQueryPass : public InjectConditionalFunctionPass {
   public:
     RayQueryPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    const char* Name() const final { return "RayQueryPass"; }
     void PrintDebugInfo() final;
 
   private:
