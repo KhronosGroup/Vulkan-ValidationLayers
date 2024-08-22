@@ -510,7 +510,7 @@ class CommandBuffer : public RefcountedStateObject {
         std::vector<std::byte> values{};
     };
     std::vector<PushConstantData> push_constant_data_chunks;
-    std::array<VkPipelineLayout, BindPoint_Count> push_constant_latest_used_layout;
+    std::array<VkPipelineLayout, BindPoint_Count> push_constant_latest_used_layout{};
     PushConstantRangesId push_constant_ranges_layout;
 
     // Video coding related state tracking
