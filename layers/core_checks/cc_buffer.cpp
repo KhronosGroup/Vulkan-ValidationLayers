@@ -20,6 +20,7 @@
 #include <string>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include "error_message/error_location.h"
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "state_tracker/buffer_state.h"
@@ -126,14 +127,12 @@ bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                             const ErrorObject &error_obj) const {
+bool CoreChecks::ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo &create_info,
+                                                         const Location &create_info_loc) const {
     bool skip = false;
-    skip |= ValidateDeviceQueueSupport(error_obj.location);
-    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    if (auto chained_devaddr_struct = vku::FindStructInPNextChain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext)) {
-        if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
+
+    if (auto chained_devaddr_struct = vku::FindStructInPNextChain<VkBufferDeviceAddressCreateInfoEXT>(create_info.pNext)) {
+        if (!(create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_devaddr_struct->deviceAddress != 0) {
             skip |= LogError("VUID-VkBufferCreateInfo-deviceAddress-02604", device,
                              create_info_loc.pNext(Struct::VkBufferDeviceAddressCreateInfoEXT, Field::deviceAddress),
@@ -142,8 +141,8 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    if (auto chained_opaqueaddr_struct = vku::FindStructInPNextChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext)) {
-        if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
+    if (auto chained_opaqueaddr_struct = vku::FindStructInPNextChain<VkBufferOpaqueCaptureAddressCreateInfo>(create_info.pNext)) {
+        if (!(create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_opaqueaddr_struct->opaqueCaptureAddress != 0) {
             skip |= LogError("VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337", device,
                              create_info_loc.pNext(Struct::VkBufferOpaqueCaptureAddressCreateInfo, Field::opaqueCaptureAddress),
@@ -151,6 +150,103 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                              chained_opaqueaddr_struct->opaqueCaptureAddress);
         }
     }
+
+    if ((create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
+        !enabled_features.bufferDeviceAddressCaptureReplay && !enabled_features.bufferDeviceAddressCaptureReplayEXT) {
+        skip |= LogError("VUID-VkBufferCreateInfo-flags-03338", device, create_info_loc.dot(Field::flags),
+                         "has VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set but the bufferDeviceAddressCaptureReplay "
+                         "device feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &create_info, const VkBufferUsageFlags2KHR &usage,
+                                                      const Location &create_info_loc) const {
+    bool skip = false;
+
+    if (usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
+        if (create_info.size + samplerDescriptorBufferAddressSpaceSize >
+            phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize) {
+            skip |= LogError(
+                "VUID-VkBufferCreateInfo-usage-08097", device, create_info_loc.dot(Field::size),
+                "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
+                ") is greater than specified in properties field samplerDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
+                create_info.size, samplerDescriptorBufferAddressSpaceSize.load(),
+                phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize);
+        } else if (create_info.size + descriptorBufferAddressSpaceSize >
+                   phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
+            skip |= LogError("VUID-VkBufferCreateInfo-usage-08097", device, create_info_loc.dot(Field::size),
+                             "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
+                             ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ")",
+                             create_info.size, descriptorBufferAddressSpaceSize.load(),
+                             phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize);
+        }
+    }
+
+    if (usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
+        if (create_info.size + resourceDescriptorBufferAddressSpaceSize >
+            phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize) {
+            skip |= LogError(
+                "VUID-VkBufferCreateInfo-usage-08098", device, create_info_loc.dot(Field::size),
+                "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
+                ") is greater than specified in properties field resourceDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
+                create_info.size, resourceDescriptorBufferAddressSpaceSize.load(),
+                phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize);
+        } else if (create_info.size + descriptorBufferAddressSpaceSize >
+                   phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
+            skip |= LogError("VUID-VkBufferCreateInfo-usage-08098", device, create_info_loc.dot(Field::size),
+                             "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
+                             ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
+                             create_info.size, descriptorBufferAddressSpaceSize.load(),
+                             phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize);
+        }
+    }
+
+    if ((create_info.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
+        !enabled_features.descriptorBufferCaptureReplay) {
+        skip |= LogError("VUID-VkBufferCreateInfo-flags-08099", device, create_info_loc.dot(Field::flags),
+                         "has VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT set but the descriptorBufferCaptureReplay "
+                         "device feature is not enabled.");
+    }
+
+    if (vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(create_info.pNext)) {
+        if (!(create_info.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+            skip |= LogError("VUID-VkBufferCreateInfo-pNext-08100", device, create_info_loc.dot(Field::flags),
+                             "(%s) is missing VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but "
+                             "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
+                             string_VkBufferCreateFlags(create_info.flags).c_str());
+        }
+    }
+
+    if (usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
+        if (!enabled_features.descriptorBufferPushDescriptors) {
+            skip |= LogError("VUID-VkBufferCreateInfo-usage-08101", device, create_info_loc.dot(Field::usage),
+                             "has VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the "
+                             "descriptorBufferPushDescriptors device feature is not enabled.");
+        }
+
+        if (phys_dev_ext_props.descriptor_buffer_props.bufferlessPushDescriptors) {
+            skip |= LogError("VUID-VkBufferCreateInfo-usage-08102", device, create_info_loc.dot(Field::usage),
+                             "has VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the bufferlessPushDescriptors "
+                             "device feature is enabled.");
+        }
+
+        if (!(usage & (VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT))) {
+            skip |= LogError("VUID-VkBufferCreateInfo-usage-08103", device, create_info_loc.dot(Field::usage), "is (%s).",
+                             string_VkBufferUsageFlags2KHR(usage).c_str());
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                             const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateDeviceQueueSupport(error_obj.location);
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     auto dedicated_allocation_buffer = vku::FindStructInPNextChain<VkDedicatedAllocationBufferCreateInfoNV>(pCreateInfo->pNext);
     if (dedicated_allocation_buffer && dedicated_allocation_buffer->dedicatedAllocation == VK_TRUE) {
@@ -160,13 +256,6 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                              "%s when VkDedicatedAllocationBufferCreateInfoNV::dedicatedAllocation is VK_TRUE.",
                              string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
         }
-    }
-
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
-        !enabled_features.bufferDeviceAddressCaptureReplay && !enabled_features.bufferDeviceAddressCaptureReplayEXT) {
-        skip |= LogError("VUID-VkBufferCreateInfo-flags-03338", device, create_info_loc.dot(Field::flags),
-                         "has VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set but the bufferDeviceAddressCaptureReplay "
-                         "device feature is not enabled.");
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
@@ -211,78 +300,6 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                                              "VUID-VkBufferCreateInfo-usage-04814");
     }
 
-    if (usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
-        if (pCreateInfo->size + samplerDescriptorBufferAddressSpaceSize >
-            phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize) {
-            skip |= LogError(
-                "VUID-VkBufferCreateInfo-usage-08097", device, create_info_loc.dot(Field::size),
-                "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
-                ") is greater than specified in properties field samplerDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
-                pCreateInfo->size, samplerDescriptorBufferAddressSpaceSize.load(),
-                phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize);
-        } else if (pCreateInfo->size + descriptorBufferAddressSpaceSize >
-                   phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
-            skip |= LogError("VUID-VkBufferCreateInfo-usage-08097", device, create_info_loc.dot(Field::size),
-                             "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
-                             ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ")",
-                             pCreateInfo->size, descriptorBufferAddressSpaceSize.load(),
-                             phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize);
-        }
-    }
-
-    if (usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-        if (pCreateInfo->size + resourceDescriptorBufferAddressSpaceSize >
-            phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize) {
-            skip |= LogError(
-                "VUID-VkBufferCreateInfo-usage-08098", device, create_info_loc.dot(Field::size),
-                "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
-                ") is greater than specified in properties field resourceDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
-                pCreateInfo->size, resourceDescriptorBufferAddressSpaceSize.load(),
-                phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize);
-        } else if (pCreateInfo->size + descriptorBufferAddressSpaceSize >
-                   phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
-            skip |= LogError("VUID-VkBufferCreateInfo-usage-08098", device, create_info_loc.dot(Field::size),
-                             "(%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
-                             ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
-                             pCreateInfo->size, descriptorBufferAddressSpaceSize.load(),
-                             phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize);
-        }
-    }
-
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
-        !enabled_features.descriptorBufferCaptureReplay) {
-        skip |= LogError("VUID-VkBufferCreateInfo-flags-08099", device, create_info_loc.dot(Field::flags),
-                         "has VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT set but the descriptorBufferCaptureReplay "
-                         "device feature is not enabled.");
-    }
-
-    auto opaque_capture_descriptor_buffer = vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
-    if (opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-        skip |= LogError("VUID-VkBufferCreateInfo-pNext-08100", device, create_info_loc.dot(Field::flags),
-                         "(%s) is missing VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but "
-                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
-                         string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
-    }
-
-    if (usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
-        if (!enabled_features.descriptorBufferPushDescriptors) {
-            skip |= LogError("VUID-VkBufferCreateInfo-usage-08101", device, create_info_loc.dot(Field::usage),
-                             "has VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the "
-                             "descriptorBufferPushDescriptors device feature is not enabled.");
-        }
-
-        if (phys_dev_ext_props.descriptor_buffer_props.bufferlessPushDescriptors) {
-            skip |= LogError("VUID-VkBufferCreateInfo-usage-08102", device, create_info_loc.dot(Field::usage),
-                             "has VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the bufferlessPushDescriptors "
-                             "device feature is enabled.");
-        }
-
-        if (!(usage & (VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT))) {
-            skip |= LogError("VUID-VkBufferCreateInfo-usage-08103", device, create_info_loc.dot(Field::usage), "is (%s).",
-                             string_VkBufferUsageFlags2KHR(usage).c_str());
-        }
-    }
-
     auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
     if (external_memory_info && external_memory_info->handleTypes) {
         const uint32_t any_type = 1u << MostSignificantBit(external_memory_info->handleTypes);
@@ -302,6 +319,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                              string_VkExternalMemoryHandleTypeFlags(external_memory_info->handleTypes).c_str());
         }
     }
+
+    skip |= ValidateCreateBufferBufferDeviceAddress(*pCreateInfo, create_info_loc);
+    skip |= ValidateCreateBufferDescriptorBuffer(*pCreateInfo, usage, create_info_loc);
 
     return skip;
 }
