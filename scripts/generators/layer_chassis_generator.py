@@ -930,7 +930,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                         layer_data->LogWarning(kVUIDUndefined, layer_data->instance,
                                             loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                             "%s is not supported by this layer.  Using this extension may adversely affect validation "
-                                            "results and/or produce undefined behavior.", String(extension));
+                                            "results and/or produce undefined behavior.", pCreateInfo->ppEnabledExtensionNames[i]);
                     }
                 }
             }
@@ -945,7 +945,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                         layer_data->LogWarning(kVUIDUndefined, layer_data->device,
                                             loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                             "%s is not supported by this layer.  Using this extension may adversely affect validation "
-                                            "results and/or produce undefined behavior.", String(extension));
+                                            "results and/or produce undefined behavior.", pCreateInfo->ppEnabledExtensionNames[i]);
                     }
                 }
             }
