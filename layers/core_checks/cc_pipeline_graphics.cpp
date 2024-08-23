@@ -4063,7 +4063,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
                                              : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047";
         skip |= LogError(vuid, device, multiview_loc,
                          "is %" PRIu32
-                         " and pStages contains tesselation shaders, but the multiviewTessellationShader feature was not enabled.",
+                         " and pStages contains tessellation shaders, but the multiviewTessellationShader feature was not enabled.",
                          view_mask);
     }
 

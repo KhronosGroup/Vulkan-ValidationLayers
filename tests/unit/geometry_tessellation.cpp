@@ -20,8 +20,8 @@ class NegativeGeometryTessellation : public VkLayerTest {};
 
 TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     TEST_DESCRIPTION(
-        "Attempt to use a stageMask w/ geometry shader and tesselation shader bits enabled when those features are disabled on the "
-        "device.");
+        "Attempt to use a stageMask w/ geometry shader and tessellation shader bits enabled when those features are disabled on "
+        "the device.");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
