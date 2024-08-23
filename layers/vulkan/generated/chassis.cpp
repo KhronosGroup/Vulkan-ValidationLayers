@@ -299,7 +299,7 @@ static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkIns
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                    "%s is not supported by this layer.  Using this extension may adversely affect validation "
                                    "results and/or produce undefined behavior.",
-                                   String(extension));
+                                   pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
@@ -315,7 +315,7 @@ static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDevic
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                    "%s is not supported by this layer.  Using this extension may adversely affect validation "
                                    "results and/or produce undefined behavior.",
-                                   String(extension));
+                                   pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
