@@ -952,6 +952,19 @@ bool PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDevice device, const Vk
                                                        const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                   VkSubresourceLayout2KHR* pLayout, const ErrorObject& error_obj) const override;
+bool PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries,
+                                              const ErrorObject& error_obj) const override;
+bool PreCallValidateDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
+                                             const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                      VkPipelineBinaryKeyKHR* pPipelineKey, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                             VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
+                                             void* pPipelineBinaryData, const ErrorObject& error_obj) const override;
+bool PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                     VkCooperativeMatrixPropertiesKHR* pProperties,
                                                                     const ErrorObject& error_obj) const override;

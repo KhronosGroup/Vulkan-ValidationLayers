@@ -199,6 +199,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME, VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_SPEC_VERSION},
     {VK_KHR_MAINTENANCE_5_EXTENSION_NAME, VK_KHR_MAINTENANCE_5_SPEC_VERSION},
     {VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME, VK_KHR_RAY_TRACING_POSITION_FETCH_SPEC_VERSION},
+    {VK_KHR_PIPELINE_BINARY_EXTENSION_NAME, VK_KHR_PIPELINE_BINARY_SPEC_VERSION},
     {VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, VK_KHR_COOPERATIVE_MATRIX_SPEC_VERSION},
     {VK_KHR_VIDEO_DECODE_AV1_EXTENSION_NAME, VK_KHR_VIDEO_DECODE_AV1_SPEC_VERSION},
     {VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME, VK_KHR_VIDEO_MAINTENANCE_1_SPEC_VERSION},
@@ -1243,6 +1244,19 @@ static VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice de
 static VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImage image,
                                                                 const VkImageSubresource2KHR* pSubresource,
                                                                 VkSubresourceLayout2KHR* pLayout);
+static VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                                const VkAllocationCallbacks* pAllocator,
+                                                                VkPipelineBinaryHandlesInfoKHR* pBinaries);
+static VKAPI_ATTR void VKAPI_CALL DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
+                                                           const VkAllocationCallbacks* pAllocator);
+static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                                        VkPipelineBinaryKeyKHR* pPipelineKey);
+static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                                               VkPipelineBinaryKeyKHR* pPipelineBinaryKey,
+                                                               size_t* pPipelineBinaryDataSize, void* pPipelineBinaryData);
+static VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(VkDevice device,
+                                                                     const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                                     const VkAllocationCallbacks* pAllocator);
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixPropertiesKHR* pProperties);
 static VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
@@ -2357,6 +2371,11 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkGetRenderingAreaGranularityKHR", (void*)GetRenderingAreaGranularityKHR},
     {"vkGetDeviceImageSubresourceLayoutKHR", (void*)GetDeviceImageSubresourceLayoutKHR},
     {"vkGetImageSubresourceLayout2KHR", (void*)GetImageSubresourceLayout2KHR},
+    {"vkCreatePipelineBinariesKHR", (void*)CreatePipelineBinariesKHR},
+    {"vkDestroyPipelineBinaryKHR", (void*)DestroyPipelineBinaryKHR},
+    {"vkGetPipelineKeyKHR", (void*)GetPipelineKeyKHR},
+    {"vkGetPipelineBinaryDataKHR", (void*)GetPipelineBinaryDataKHR},
+    {"vkReleaseCapturedPipelineDataKHR", (void*)ReleaseCapturedPipelineDataKHR},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", (void*)GetPhysicalDeviceCooperativeMatrixPropertiesKHR},
     {"vkCmdSetLineStippleKHR", (void*)CmdSetLineStippleKHR},
     {"vkGetPhysicalDeviceCalibrateableTimeDomainsKHR", (void*)GetPhysicalDeviceCalibrateableTimeDomainsKHR},
@@ -3962,6 +3981,26 @@ static VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice de
 static VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImage image,
                                                                 const VkImageSubresource2KHR* pSubresource,
                                                                 VkSubresourceLayout2KHR* pLayout) {}
+
+static VKAPI_ATTR void VKAPI_CALL DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
+                                                           const VkAllocationCallbacks* pAllocator) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                                        VkPipelineBinaryKeyKHR* pPipelineKey) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                                               VkPipelineBinaryKeyKHR* pPipelineBinaryKey,
+                                                               size_t* pPipelineBinaryDataSize, void* pPipelineBinaryData) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(VkDevice device,
+                                                                     const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                                     const VkAllocationCallbacks* pAllocator) {
+    return VK_SUCCESS;
+}
 
 static VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                        uint16_t lineStipplePattern) {}

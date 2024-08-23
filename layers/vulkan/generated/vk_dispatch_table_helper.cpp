@@ -542,6 +542,22 @@ static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSubresourceLayoutKHR(VkDevic
                                                                          VkSubresourceLayout2KHR*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2KHR(VkDevice, VkImage, const VkImageSubresource2KHR*,
                                                                     VkSubresourceLayout2KHR*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreatePipelineBinariesKHR(VkDevice, const VkPipelineBinaryCreateInfoKHR*,
+                                                                    const VkAllocationCallbacks*, VkPipelineBinaryHandlesInfoKHR*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyPipelineBinaryKHR(VkDevice, VkPipelineBinaryKHR, const VkAllocationCallbacks*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPipelineKeyKHR(VkDevice, const VkPipelineCreateInfoKHR*, VkPipelineBinaryKeyKHR*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPipelineBinaryDataKHR(VkDevice, const VkPipelineBinaryDataInfoKHR*,
+                                                                   VkPipelineBinaryKeyKHR*, size_t*, void*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseCapturedPipelineDataKHR(VkDevice, const VkReleaseCapturedPipelineDataInfoKHR*,
+                                                                         const VkAllocationCallbacks*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice, uint32_t*,
                                                                                           VkCooperativeMatrixPropertiesKHR*) {
     return VK_SUCCESS;
@@ -1496,6 +1512,11 @@ const auto& GetApiExtensionMap() {
         {"vkGetRenderingAreaGranularityKHR", {vvl::Extension::_VK_KHR_maintenance5}},
         {"vkGetDeviceImageSubresourceLayoutKHR", {vvl::Extension::_VK_KHR_maintenance5}},
         {"vkGetImageSubresourceLayout2KHR", {vvl::Extension::_VK_KHR_maintenance5}},
+        {"vkCreatePipelineBinariesKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
+        {"vkDestroyPipelineBinaryKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
+        {"vkGetPipelineKeyKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
+        {"vkGetPipelineBinaryDataKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
+        {"vkReleaseCapturedPipelineDataKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
         {"vkCmdSetLineStippleKHR", {vvl::Extension::_VK_KHR_line_rasterization}},
         {"vkGetCalibratedTimestampsKHR", {vvl::Extension::_VK_KHR_calibrated_timestamps}},
         {"vkCmdBindDescriptorSets2KHR", {vvl::Extension::_VK_KHR_maintenance6}},
@@ -2713,6 +2734,26 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gpa(device, "vkGetImageSubresourceLayout2KHR");
     if (table->GetImageSubresourceLayout2KHR == nullptr) {
         table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)StubGetImageSubresourceLayout2KHR;
+    }
+    table->CreatePipelineBinariesKHR = (PFN_vkCreatePipelineBinariesKHR)gpa(device, "vkCreatePipelineBinariesKHR");
+    if (table->CreatePipelineBinariesKHR == nullptr) {
+        table->CreatePipelineBinariesKHR = (PFN_vkCreatePipelineBinariesKHR)StubCreatePipelineBinariesKHR;
+    }
+    table->DestroyPipelineBinaryKHR = (PFN_vkDestroyPipelineBinaryKHR)gpa(device, "vkDestroyPipelineBinaryKHR");
+    if (table->DestroyPipelineBinaryKHR == nullptr) {
+        table->DestroyPipelineBinaryKHR = (PFN_vkDestroyPipelineBinaryKHR)StubDestroyPipelineBinaryKHR;
+    }
+    table->GetPipelineKeyKHR = (PFN_vkGetPipelineKeyKHR)gpa(device, "vkGetPipelineKeyKHR");
+    if (table->GetPipelineKeyKHR == nullptr) {
+        table->GetPipelineKeyKHR = (PFN_vkGetPipelineKeyKHR)StubGetPipelineKeyKHR;
+    }
+    table->GetPipelineBinaryDataKHR = (PFN_vkGetPipelineBinaryDataKHR)gpa(device, "vkGetPipelineBinaryDataKHR");
+    if (table->GetPipelineBinaryDataKHR == nullptr) {
+        table->GetPipelineBinaryDataKHR = (PFN_vkGetPipelineBinaryDataKHR)StubGetPipelineBinaryDataKHR;
+    }
+    table->ReleaseCapturedPipelineDataKHR = (PFN_vkReleaseCapturedPipelineDataKHR)gpa(device, "vkReleaseCapturedPipelineDataKHR");
+    if (table->ReleaseCapturedPipelineDataKHR == nullptr) {
+        table->ReleaseCapturedPipelineDataKHR = (PFN_vkReleaseCapturedPipelineDataKHR)StubReleaseCapturedPipelineDataKHR;
     }
     table->CmdSetLineStippleKHR = (PFN_vkCmdSetLineStippleKHR)gpa(device, "vkCmdSetLineStippleKHR");
     if (table->CmdSetLineStippleKHR == nullptr) {

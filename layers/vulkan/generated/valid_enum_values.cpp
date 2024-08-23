@@ -176,6 +176,8 @@ ValidValue StatelessValidation::IsValidEnumValue(VkObjectType value) const {
             return IsExtEnabled(device_extensions.vk_nv_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_SHADER_EXT:
             return IsExtEnabled(device_extensions.vk_ext_shader_object) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
+            return IsExtEnabled(device_extensions.vk_khr_pipeline_binary) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2117,6 +2119,8 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkObjectType value) const
             return {vvl::Extension::_VK_NV_optical_flow};
         case VK_OBJECT_TYPE_SHADER_EXT:
             return {vvl::Extension::_VK_EXT_shader_object};
+        case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
+            return {vvl::Extension::_VK_KHR_pipeline_binary};
         default:
             return {};
     };

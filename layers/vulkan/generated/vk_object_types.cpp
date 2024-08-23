@@ -64,6 +64,7 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeVideoSessionKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeVideoSessionParametersKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeDeferredOperationKHR
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypePipelineBinaryKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT,   // kVulkanObjectTypeDebugReportCallbackEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT,               // kVulkanObjectTypeCuModuleNVX
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_FUNCTION_NVX_EXT,             // kVulkanObjectTypeCuFunctionNVX
@@ -119,6 +120,7 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkVideoSessionKHR",
     "VkVideoSessionParametersKHR",
     "VkDeferredOperationKHR",
+    "VkPipelineBinaryKHR",
     "VkDebugReportCallbackEXT",
     "VkCuModuleNVX",
     "VkCuFunctionNVX",

@@ -582,6 +582,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->rayTracingPositionFetch |= enabled->rayTracingPositionFetch == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_BINARY_FEATURES_KHR: {
+                const VkPhysicalDevicePipelineBinaryFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePipelineBinaryFeaturesKHR *>(pNext);
+                features->pipelineBinaries |= enabled->pipelineBinaries == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR: {
                 const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *>(pNext);

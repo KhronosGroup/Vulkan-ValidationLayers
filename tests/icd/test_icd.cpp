@@ -2121,4 +2121,14 @@ static VKAPI_ATTR VkResult VKAPI_CALL RegisterDisplayEventEXT(VkDevice device, V
     return VK_SUCCESS;
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                                const VkAllocationCallbacks* pAllocator,
+                                                                VkPipelineBinaryHandlesInfoKHR* pBinaries) {
+    unique_lock_t lock(global_lock);
+    for (uint32_t i = 0; i < pBinaries->pipelineBinaryCount; ++i) {
+        pBinaries->pPipelineBinaries[i] = (VkPipelineBinaryKHR)global_unique_handle++;
+    }
+    return VK_SUCCESS;
+}
+
 }  // namespace icd

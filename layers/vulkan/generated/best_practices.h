@@ -545,6 +545,17 @@ void PostCallRecordGetEncodedVideoSessionParametersKHR(VkDevice device,
 void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                    const RecordObject& record_obj) override;
 
+void PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries,
+                                             const RecordObject& record_obj) override;
+
+void PostCallRecordGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                     VkPipelineBinaryKeyKHR* pPipelineKey, const RecordObject& record_obj) override;
+
+void PostCallRecordGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                            VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
+                                            void* pPipelineBinaryData, const RecordObject& record_obj) override;
+
 void PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                    VkCooperativeMatrixPropertiesKHR* pProperties,
                                                                    const RecordObject& record_obj) override;

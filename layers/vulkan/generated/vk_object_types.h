@@ -64,22 +64,23 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeVideoSessionKHR = 33,
     kVulkanObjectTypeVideoSessionParametersKHR = 34,
     kVulkanObjectTypeDeferredOperationKHR = 35,
-    kVulkanObjectTypeDebugReportCallbackEXT = 36,
-    kVulkanObjectTypeCuModuleNVX = 37,
-    kVulkanObjectTypeCuFunctionNVX = 38,
-    kVulkanObjectTypeDebugUtilsMessengerEXT = 39,
-    kVulkanObjectTypeValidationCacheEXT = 40,
-    kVulkanObjectTypeAccelerationStructureNV = 41,
-    kVulkanObjectTypePerformanceConfigurationINTEL = 42,
-    kVulkanObjectTypeIndirectCommandsLayoutNV = 43,
-    kVulkanObjectTypeCudaModuleNV = 44,
-    kVulkanObjectTypeCudaFunctionNV = 45,
-    kVulkanObjectTypeAccelerationStructureKHR = 46,
-    kVulkanObjectTypeBufferCollectionFUCHSIA = 47,
-    kVulkanObjectTypeMicromapEXT = 48,
-    kVulkanObjectTypeOpticalFlowSessionNV = 49,
-    kVulkanObjectTypeShaderEXT = 50,
-    kVulkanObjectTypeMax = 51
+    kVulkanObjectTypePipelineBinaryKHR = 36,
+    kVulkanObjectTypeDebugReportCallbackEXT = 37,
+    kVulkanObjectTypeCuModuleNVX = 38,
+    kVulkanObjectTypeCuFunctionNVX = 39,
+    kVulkanObjectTypeDebugUtilsMessengerEXT = 40,
+    kVulkanObjectTypeValidationCacheEXT = 41,
+    kVulkanObjectTypeAccelerationStructureNV = 42,
+    kVulkanObjectTypePerformanceConfigurationINTEL = 43,
+    kVulkanObjectTypeIndirectCommandsLayoutNV = 44,
+    kVulkanObjectTypeCudaModuleNV = 45,
+    kVulkanObjectTypeCudaFunctionNV = 46,
+    kVulkanObjectTypeAccelerationStructureKHR = 47,
+    kVulkanObjectTypeBufferCollectionFUCHSIA = 48,
+    kVulkanObjectTypeMicromapEXT = 49,
+    kVulkanObjectTypeOpticalFlowSessionNV = 50,
+    kVulkanObjectTypeShaderEXT = 51,
+    kVulkanObjectTypeMax = 52
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -158,6 +159,8 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR;
         case kVulkanObjectTypeDeferredOperationKHR:
             return VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR;
+        case kVulkanObjectTypePipelineBinaryKHR:
+            return VK_OBJECT_TYPE_PIPELINE_BINARY_KHR;
         case kVulkanObjectTypeDebugReportCallbackEXT:
             return VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT;
         case kVulkanObjectTypeCuModuleNVX:
@@ -266,6 +269,8 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeVideoSessionParametersKHR;
         case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR:
             return kVulkanObjectTypeDeferredOperationKHR;
+        case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
+            return kVulkanObjectTypePipelineBinaryKHR;
         case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
             return kVulkanObjectTypeDebugReportCallbackEXT;
         case VK_OBJECT_TYPE_CU_MODULE_NVX:
@@ -940,6 +945,18 @@ struct VkHandleInfo<VkDeferredOperationKHR> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeDeferredOperationKHR> {
     typedef VkDeferredOperationKHR Type;
+};
+
+template <>
+struct VkHandleInfo<VkPipelineBinaryKHR> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypePipelineBinaryKHR;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_PIPELINE_BINARY_KHR;
+    static const char* Typename() { return "VkPipelineBinaryKHR"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypePipelineBinaryKHR> {
+    typedef VkPipelineBinaryKHR Type;
 };
 
 template <>
