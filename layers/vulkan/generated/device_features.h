@@ -569,6 +569,8 @@ struct DeviceFeatures {
     bool performanceCounterMultipleQueryPools;
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
     bool performanceCounterQueryPools;
+    // VkPhysicalDevicePipelineBinaryFeaturesKHR
+    bool pipelineBinaries;
     // VkPhysicalDevicePipelineCreationCacheControlFeatures, VkPhysicalDeviceVulkan13Features
     bool pipelineCreationCacheControl;
     // VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR

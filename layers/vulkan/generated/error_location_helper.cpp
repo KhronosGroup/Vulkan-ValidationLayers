@@ -358,6 +358,7 @@ const char* String(Func func) {
     {"vkCreateMetalSurfaceEXT", 24},
     {"vkCreateMicromapEXT", 20},
     {"vkCreateOpticalFlowSessionNV", 29},
+    {"vkCreatePipelineBinariesKHR", 28},
     {"vkCreatePipelineCache", 22},
     {"vkCreatePipelineLayout", 23},
     {"vkCreatePrivateDataSlot", 24},
@@ -418,6 +419,7 @@ const char* String(Func func) {
     {"vkDestroyMicromapEXT", 21},
     {"vkDestroyOpticalFlowSessionNV", 30},
     {"vkDestroyPipeline", 18},
+    {"vkDestroyPipelineBinaryKHR", 27},
     {"vkDestroyPipelineCache", 23},
     {"vkDestroyPipelineLayout", 24},
     {"vkDestroyPrivateDataSlot", 25},
@@ -608,12 +610,14 @@ const char* String(Func func) {
     {"vkGetPhysicalDeviceWin32PresentationSupportKHR", 47},
     {"vkGetPhysicalDeviceXcbPresentationSupportKHR", 45},
     {"vkGetPhysicalDeviceXlibPresentationSupportKHR", 46},
+    {"vkGetPipelineBinaryDataKHR", 27},
     {"vkGetPipelineCacheData", 23},
     {"vkGetPipelineExecutableInternalRepresentationsKHR", 50},
     {"vkGetPipelineExecutablePropertiesKHR", 37},
     {"vkGetPipelineExecutableStatisticsKHR", 37},
     {"vkGetPipelineIndirectDeviceAddressNV", 37},
     {"vkGetPipelineIndirectMemoryRequirementsNV", 42},
+    {"vkGetPipelineKeyKHR", 20},
     {"vkGetPipelinePropertiesEXT", 27},
     {"vkGetPrivateData", 17},
     {"vkGetPrivateDataEXT", 20},
@@ -670,6 +674,7 @@ const char* String(Func func) {
     {"vkQueueWaitIdle", 16},
     {"vkRegisterDeviceEventEXT", 25},
     {"vkRegisterDisplayEventEXT", 26},
+    {"vkReleaseCapturedPipelineDataKHR", 33},
     {"vkReleaseDisplayEXT", 20},
     {"vkReleaseFullScreenExclusiveModeEXT", 36},
     {"vkReleasePerformanceConfigurationINTEL", 39},
@@ -922,6 +927,7 @@ const char* String(Struct structure) {
     {"VkDeviceOrHostAddressConstAMDX", 31},
     {"VkDeviceOrHostAddressConstKHR", 30},
     {"VkDeviceOrHostAddressKHR", 25},
+    {"VkDevicePipelineBinaryInternalCacheControlKHR", 46},
     {"VkDevicePrivateDataCreateInfo", 30},
     {"VkDeviceQueueCreateInfo", 24},
     {"VkDeviceQueueGlobalPriorityCreateInfoKHR", 41},
@@ -1336,6 +1342,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePerStageDescriptorSetFeaturesNV", 48},
     {"VkPhysicalDevicePerformanceQueryFeaturesKHR", 44},
     {"VkPhysicalDevicePerformanceQueryPropertiesKHR", 46},
+    {"VkPhysicalDevicePipelineBinaryFeaturesKHR", 42},
+    {"VkPhysicalDevicePipelineBinaryPropertiesKHR", 44},
     {"VkPhysicalDevicePipelineCreationCacheControlFeatures", 53},
     {"VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR", 56},
     {"VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT", 55},
@@ -1467,6 +1475,13 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceYcbcrDegammaFeaturesQCOM", 41},
     {"VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", 44},
     {"VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures", 54},
+    {"VkPipelineBinaryCreateInfoKHR", 30},
+    {"VkPipelineBinaryDataInfoKHR", 28},
+    {"VkPipelineBinaryDataKHR", 24},
+    {"VkPipelineBinaryHandlesInfoKHR", 31},
+    {"VkPipelineBinaryInfoKHR", 24},
+    {"VkPipelineBinaryKeyKHR", 23},
+    {"VkPipelineBinaryKeysAndDataKHR", 31},
     {"VkPipelineCacheCreateInfo", 26},
     {"VkPipelineCacheHeaderVersionOne", 32},
     {"VkPipelineColorBlendAdvancedStateCreateInfoEXT", 47},
@@ -1478,6 +1493,7 @@ const char* String(Struct structure) {
     {"VkPipelineCoverageReductionStateCreateInfoNV", 45},
     {"VkPipelineCoverageToColorStateCreateInfoNV", 43},
     {"VkPipelineCreateFlags2CreateInfoKHR", 36},
+    {"VkPipelineCreateInfoKHR", 24},
     {"VkPipelineCreationFeedback", 27},
     {"VkPipelineCreationFeedbackCreateInfo", 37},
     {"VkPipelineDepthStencilStateCreateInfo", 38},
@@ -1556,6 +1572,7 @@ const char* String(Struct structure) {
     {"VkRect2D", 9},
     {"VkRectLayerKHR", 15},
     {"VkRefreshCycleDurationGOOGLE", 29},
+    {"VkReleaseCapturedPipelineDataInfoKHR", 37},
     {"VkReleaseSwapchainImagesInfoEXT", 32},
     {"VkRenderPassAttachmentBeginInfo", 32},
     {"VkRenderPassBeginInfo", 22},
@@ -1868,6 +1885,7 @@ const char* String(Field field) {
     {"basePipelineIndex", 18},
     {"baseTriangle", 13},
     {"bidirectionalFlowSupported", 27},
+    {"binaryCount", 12},
     {"bindCount", 10},
     {"bindInfoCount", 14},
     {"bindSessionMemoryInfoCount", 27},
@@ -2140,6 +2158,7 @@ const char* String(Field field) {
     {"deviceUUID", 11},
     {"dfb", 4},
     {"diagnosticsConfig", 18},
+    {"disableInternalCache", 21},
     {"disabledValidationCheckCount", 29},
     {"disabledValidationFeatureCount", 31},
     {"disallowMerging", 16},
@@ -2590,6 +2609,8 @@ const char* String(Field field) {
     {"ioSurface", 10},
     {"isPreprocessed", 15},
     {"isText", 7},
+    {"key", 4},
+    {"keySize", 8},
     {"largePoints", 12},
     {"latencyModeEnable", 18},
     {"layer", 6},
@@ -3091,6 +3112,7 @@ const char* String(Field field) {
     {"pAttachments", 13},
     {"pAttributes", 12},
     {"pBeginInfo", 11},
+    {"pBinaries", 10},
     {"pBindDescriptorBufferEmbeddedSamplersInfo", 42},
     {"pBindDescriptorSetsInfo", 24},
     {"pBindInfo", 10},
@@ -3306,6 +3328,7 @@ const char* String(Field field) {
     {"pInstance", 10},
     {"pInternalRepresentationCount", 29},
     {"pInternalRepresentations", 25},
+    {"pKeysAndDataInfo", 17},
     {"pLabelInfo", 11},
     {"pLabelName", 11},
     {"pLatencyMarkerInfo", 19},
@@ -3378,9 +3401,16 @@ const char* String(Field field) {
     {"pPhysicalDeviceGroupProperties", 31},
     {"pPhysicalDevices", 17},
     {"pPictureResource", 17},
+    {"pPipelineBinaries", 18},
+    {"pPipelineBinaryData", 20},
+    {"pPipelineBinaryDataSize", 24},
+    {"pPipelineBinaryKey", 19},
+    {"pPipelineBinaryKeys", 20},
     {"pPipelineCache", 15},
+    {"pPipelineCreateInfo", 20},
     {"pPipelineCreationFeedback", 26},
     {"pPipelineInfo", 14},
+    {"pPipelineKey", 13},
     {"pPipelineLayout", 16},
     {"pPipelineProperties", 20},
     {"pPipelineStageCreationFeedbacks", 32},
@@ -3616,6 +3646,14 @@ const char* String(Field field) {
     {"pictureLayout", 14},
     {"pipeline", 9},
     {"pipelineAddress", 16},
+    {"pipelineBinaries", 17},
+    {"pipelineBinary", 15},
+    {"pipelineBinaryCompressedData", 29},
+    {"pipelineBinaryCount", 20},
+    {"pipelineBinaryInternalCache", 28},
+    {"pipelineBinaryInternalCacheControl", 35},
+    {"pipelineBinaryPrecompiledInternalCache", 39},
+    {"pipelineBinaryPrefersInternalCache", 35},
     {"pipelineBindPoint", 18},
     {"pipelineCache", 14},
     {"pipelineCacheUUID", 18},
@@ -4936,6 +4974,7 @@ const char* String(Extension extension) {
     {"VK_KHR_map_memory2", 19},
     {"VK_KHR_multiview", 17},
     {"VK_KHR_performance_query", 25},
+    {"VK_KHR_pipeline_binary", 23},
     {"VK_KHR_pipeline_executable_properties", 38},
     {"VK_KHR_pipeline_library", 24},
     {"VK_KHR_portability_enumeration", 31},
@@ -5110,6 +5149,7 @@ bool IsFieldPointer(Field field) {
     case Field::pAttachments:
     case Field::pAttributes:
     case Field::pBeginInfo:
+    case Field::pBinaries:
     case Field::pBindDescriptorBufferEmbeddedSamplersInfo:
     case Field::pBindDescriptorSetsInfo:
     case Field::pBindInfo:
@@ -5325,6 +5365,7 @@ bool IsFieldPointer(Field field) {
     case Field::pInstance:
     case Field::pInternalRepresentationCount:
     case Field::pInternalRepresentations:
+    case Field::pKeysAndDataInfo:
     case Field::pLabelInfo:
     case Field::pLabelName:
     case Field::pLatencyMarkerInfo:
@@ -5397,9 +5438,16 @@ bool IsFieldPointer(Field field) {
     case Field::pPhysicalDeviceGroupProperties:
     case Field::pPhysicalDevices:
     case Field::pPictureResource:
+    case Field::pPipelineBinaries:
+    case Field::pPipelineBinaryData:
+    case Field::pPipelineBinaryDataSize:
+    case Field::pPipelineBinaryKey:
+    case Field::pPipelineBinaryKeys:
     case Field::pPipelineCache:
+    case Field::pPipelineCreateInfo:
     case Field::pPipelineCreationFeedback:
     case Field::pPipelineInfo:
+    case Field::pPipelineKey:
     case Field::pPipelineLayout:
     case Field::pPipelineProperties:
     case Field::pPipelineStageCreationFeedbacks:

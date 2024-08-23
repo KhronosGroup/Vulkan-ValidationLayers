@@ -53,6 +53,7 @@ counter<VkDisplayModeKHR> c_VkDisplayModeKHR;
 counter<VkVideoSessionKHR> c_VkVideoSessionKHR;
 counter<VkVideoSessionParametersKHR> c_VkVideoSessionParametersKHR;
 counter<VkDeferredOperationKHR> c_VkDeferredOperationKHR;
+counter<VkPipelineBinaryKHR> c_VkPipelineBinaryKHR;
 counter<VkDebugReportCallbackEXT> c_VkDebugReportCallbackEXT;
 counter<VkCuModuleNVX> c_VkCuModuleNVX;
 counter<VkCuFunctionNVX> c_VkCuFunctionNVX;

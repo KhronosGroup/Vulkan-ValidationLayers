@@ -366,6 +366,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_maximal_reconvergence{kNotEnabled};
     ExtEnabled vk_khr_maintenance5{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
+    ExtEnabled vk_khr_pipeline_binary{kNotEnabled};
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
     ExtEnabled vk_khr_video_decode_av1{kNotEnabled};
     ExtEnabled vk_khr_video_maintenance1{kNotEnabled};
@@ -915,6 +916,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_KHR_ray_tracing_position_fetch,
              Info(&DeviceExtensions::vk_khr_ray_tracing_position_fetch,
                   {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_pipeline_binary,
+             Info(&DeviceExtensions::vk_khr_pipeline_binary,
+                  {{{&DeviceExtensions::vk_khr_maintenance5, VK_KHR_MAINTENANCE_5_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_cooperative_matrix,
              Info(&DeviceExtensions::vk_khr_cooperative_matrix, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1835,6 +1839,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_shader_maximal_reconvergence:
         case vvl::Extension::_VK_KHR_maintenance5:
         case vvl::Extension::_VK_KHR_ray_tracing_position_fetch:
+        case vvl::Extension::_VK_KHR_pipeline_binary:
         case vvl::Extension::_VK_KHR_cooperative_matrix:
         case vvl::Extension::_VK_KHR_video_decode_av1:
         case vvl::Extension::_VK_KHR_video_maintenance1:

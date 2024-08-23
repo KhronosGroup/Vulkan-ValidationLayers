@@ -144,6 +144,14 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
                     safe_struct->validationCache = layer_data->Unwrap(safe_struct->validationCache);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkPipelineBinaryInfoKHR*>(cur_pnext);
+                if (safe_struct->pPipelineBinaries) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->binaryCount; ++index0) {
+                        safe_struct->pPipelineBinaries[index0] = layer_data->Unwrap(safe_struct->pPipelineBinaries[index0]);
+                    }
+                }
+            } break;
             case VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkSubpassShadingPipelineCreateInfoHUAWEI*>(cur_pnext);
 
@@ -252,6 +260,118 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
 
                 if (safe_struct->queryPool) {
                     safe_struct->queryPool = layer_data->Unwrap(safe_struct->queryPool);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkComputePipelineCreateInfo*>(cur_pnext);
+
+                if (safe_struct->stage.module) {
+                    safe_struct->stage.module = layer_data->Unwrap(safe_struct->stage.module);
+                }
+                UnwrapPnextChainHandles(layer_data, safe_struct->stage.pNext);
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkExecutionGraphPipelineCreateInfoAMDX*>(cur_pnext);
+                if (safe_struct->pStages) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                        UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
+
+                        if (safe_struct->pStages[index0].module) {
+                            safe_struct->pStages[index0].module = layer_data->Unwrap(safe_struct->pStages[index0].module);
+                        }
+                    }
+                }
+                if (safe_struct->pLibraryInfo) {
+                    if (safe_struct->pLibraryInfo->pLibraries) {
+                        for (uint32_t index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
+                            safe_struct->pLibraryInfo->pLibraries[index1] =
+                                layer_data->Unwrap(safe_struct->pLibraryInfo->pLibraries[index1]);
+                        }
+                    }
+                }
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkGraphicsPipelineCreateInfo*>(cur_pnext);
+                if (safe_struct->pStages) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                        UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
+
+                        if (safe_struct->pStages[index0].module) {
+                            safe_struct->pStages[index0].module = layer_data->Unwrap(safe_struct->pStages[index0].module);
+                        }
+                    }
+                }
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->renderPass) {
+                    safe_struct->renderPass = layer_data->Unwrap(safe_struct->renderPass);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkRayTracingPipelineCreateInfoKHR*>(cur_pnext);
+                if (safe_struct->pStages) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                        UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
+
+                        if (safe_struct->pStages[index0].module) {
+                            safe_struct->pStages[index0].module = layer_data->Unwrap(safe_struct->pStages[index0].module);
+                        }
+                    }
+                }
+                if (safe_struct->pLibraryInfo) {
+                    if (safe_struct->pLibraryInfo->pLibraries) {
+                        for (uint32_t index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
+                            safe_struct->pLibraryInfo->pLibraries[index1] =
+                                layer_data->Unwrap(safe_struct->pLibraryInfo->pLibraries[index1]);
+                        }
+                    }
+                }
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkRayTracingPipelineCreateInfoNV*>(cur_pnext);
+                if (safe_struct->pStages) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                        UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
+
+                        if (safe_struct->pStages[index0].module) {
+                            safe_struct->pStages[index0].module = layer_data->Unwrap(safe_struct->pStages[index0].module);
+                        }
+                    }
+                }
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
                 }
             } break;
             case VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO: {
@@ -5169,6 +5289,125 @@ void DispatchGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
     { image = layer_data->Unwrap(image); }
     layer_data->device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+}
+
+VkResult DispatchCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries);
+    vku::safe_VkPipelineBinaryCreateInfoKHR var_local_pCreateInfo;
+    vku::safe_VkPipelineBinaryCreateInfoKHR* local_pCreateInfo = nullptr;
+    vku::safe_VkPipelineBinaryHandlesInfoKHR var_local_pBinaries;
+    vku::safe_VkPipelineBinaryHandlesInfoKHR* local_pBinaries = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->pipeline) {
+                local_pCreateInfo->pipeline = layer_data->Unwrap(pCreateInfo->pipeline);
+            }
+            if (local_pCreateInfo->pPipelineCreateInfo) {
+                UnwrapPnextChainHandles(layer_data, local_pCreateInfo->pPipelineCreateInfo->pNext);
+            }
+        }
+        if (pBinaries) {
+            local_pBinaries = &var_local_pBinaries;
+            local_pBinaries->initialize(pBinaries);
+            if (local_pBinaries->pPipelineBinaries) {
+                for (uint32_t index1 = 0; index1 < local_pBinaries->pipelineBinaryCount; ++index1) {
+                    local_pBinaries->pPipelineBinaries[index1] = layer_data->Unwrap(local_pBinaries->pPipelineBinaries[index1]);
+                }
+            }
+        }
+    }
+    VkResult result =
+        layer_data->device_dispatch_table.CreatePipelineBinariesKHR(device, (const VkPipelineBinaryCreateInfoKHR*)local_pCreateInfo,
+                                                                    pAllocator, (VkPipelineBinaryHandlesInfoKHR*)local_pBinaries);
+
+    return result;
+}
+
+void DispatchDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
+                                      const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
+
+    uint64_t pipelineBinary_id = CastToUint64(pipelineBinary);
+    auto iter = unique_id_mapping.pop(pipelineBinary_id);
+    if (iter != unique_id_mapping.end()) {
+        pipelineBinary = (VkPipelineBinaryKHR)iter->second;
+    } else {
+        pipelineBinary = (VkPipelineBinaryKHR)0;
+    }
+    layer_data->device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
+}
+
+VkResult DispatchGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                   VkPipelineBinaryKeyKHR* pPipelineKey) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey);
+    vku::safe_VkPipelineCreateInfoKHR var_local_pPipelineCreateInfo;
+    vku::safe_VkPipelineCreateInfoKHR* local_pPipelineCreateInfo = nullptr;
+    {
+        if (pPipelineCreateInfo) {
+            local_pPipelineCreateInfo = &var_local_pPipelineCreateInfo;
+            local_pPipelineCreateInfo->initialize(pPipelineCreateInfo);
+            UnwrapPnextChainHandles(layer_data, local_pPipelineCreateInfo->pNext);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetPipelineKeyKHR(
+        device, (const VkPipelineCreateInfoKHR*)local_pPipelineCreateInfo, pPipelineKey);
+
+    return result;
+}
+
+VkResult DispatchGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                          VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
+                                          void* pPipelineBinaryData) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.GetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey,
+                                                                          pPipelineBinaryDataSize, pPipelineBinaryData);
+    vku::safe_VkPipelineBinaryDataInfoKHR var_local_pInfo;
+    vku::safe_VkPipelineBinaryDataInfoKHR* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->pipelineBinary) {
+                local_pInfo->pipelineBinary = layer_data->Unwrap(pInfo->pipelineBinary);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetPipelineBinaryDataKHR(
+        device, (const VkPipelineBinaryDataInfoKHR*)local_pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize, pPipelineBinaryData);
+
+    return result;
+}
+
+VkResult DispatchReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.ReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator);
+    vku::safe_VkReleaseCapturedPipelineDataInfoKHR var_local_pInfo;
+    vku::safe_VkReleaseCapturedPipelineDataInfoKHR* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->pipeline) {
+                local_pInfo->pipeline = layer_data->Unwrap(pInfo->pipeline);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.ReleaseCapturedPipelineDataKHR(
+        device, (const VkReleaseCapturedPipelineDataInfoKHR*)local_pInfo, pAllocator);
+
+    return result;
 }
 
 VkResult DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,

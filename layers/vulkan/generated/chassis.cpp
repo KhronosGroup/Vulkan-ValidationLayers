@@ -14861,6 +14861,207 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImag
     }
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkPipelineBinaryHandlesInfoKHR* pBinaries) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreatePipelineBinariesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallValidateCreatePipelineBinariesKHR]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateCreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCreatePipelineBinariesKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreatePipelineBinariesKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordCreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchCreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreatePipelineBinariesKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordCreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
+                                                    const VkAllocationCallbacks* pAllocator) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkDestroyPipelineBinaryKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallValidateDestroyPipelineBinaryKHR]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateDestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkDestroyPipelineBinaryKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyPipelineBinaryKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordDestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        DispatchDestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyPipelineBinaryKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordDestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                                 VkPipelineBinaryKeyKHR* pPipelineKey) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPipelineKeyKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetPipelineKeyKHR]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateGetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPipelineKeyKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineKeyKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordGetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchGetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineKeyKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordGetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                                        VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
+                                                        void* pPipelineBinaryData) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPipelineBinaryDataKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallValidateGetPipelineBinaryDataKHR]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateGetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize,
+                                                                       pPipelineBinaryData, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPipelineBinaryDataKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineBinaryDataKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordGetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize,
+                                                             pPipelineBinaryData, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchGetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize, pPipelineBinaryData);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineBinaryDataKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordGetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize,
+                                                              pPipelineBinaryData, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                              const VkAllocationCallbacks* pAllocator) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkReleaseCapturedPipelineDataKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallValidateReleaseCapturedPipelineDataKHR]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkReleaseCapturedPipelineDataKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordReleaseCapturedPipelineDataKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseCapturedPipelineDataKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                uint32_t* pPropertyCount,
                                                                                VkCooperativeMatrixPropertiesKHR* pProperties) {
@@ -27607,6 +27808,11 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
     {"vkGetRenderingAreaGranularityKHR", {kFuncTypeDev, (void*)GetRenderingAreaGranularityKHR}},
     {"vkGetDeviceImageSubresourceLayoutKHR", {kFuncTypeDev, (void*)GetDeviceImageSubresourceLayoutKHR}},
     {"vkGetImageSubresourceLayout2KHR", {kFuncTypeDev, (void*)GetImageSubresourceLayout2KHR}},
+    {"vkCreatePipelineBinariesKHR", {kFuncTypeDev, (void*)CreatePipelineBinariesKHR}},
+    {"vkDestroyPipelineBinaryKHR", {kFuncTypeDev, (void*)DestroyPipelineBinaryKHR}},
+    {"vkGetPipelineKeyKHR", {kFuncTypeDev, (void*)GetPipelineKeyKHR}},
+    {"vkGetPipelineBinaryDataKHR", {kFuncTypeDev, (void*)GetPipelineBinaryDataKHR}},
+    {"vkReleaseCapturedPipelineDataKHR", {kFuncTypeDev, (void*)ReleaseCapturedPipelineDataKHR}},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixPropertiesKHR}},
     {"vkCmdSetLineStippleKHR", {kFuncTypeDev, (void*)CmdSetLineStippleKHR}},
     {"vkGetPhysicalDeviceCalibrateableTimeDomainsKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceCalibrateableTimeDomainsKHR}},

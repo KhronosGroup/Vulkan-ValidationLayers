@@ -472,6 +472,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
     PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
     PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
+    PFN_vkCreatePipelineBinariesKHR CreatePipelineBinariesKHR;
+    PFN_vkDestroyPipelineBinaryKHR DestroyPipelineBinaryKHR;
+    PFN_vkGetPipelineKeyKHR GetPipelineKeyKHR;
+    PFN_vkGetPipelineBinaryDataKHR GetPipelineBinaryDataKHR;
+    PFN_vkReleaseCapturedPipelineDataKHR ReleaseCapturedPipelineDataKHR;
     PFN_vkCmdSetLineStippleKHR CmdSetLineStippleKHR;
     PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
     PFN_vkCmdBindDescriptorSets2KHR CmdBindDescriptorSets2KHR;

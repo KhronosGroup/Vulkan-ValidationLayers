@@ -564,6 +564,8 @@ enum class Feature {
     performanceCounterMultipleQueryPools,
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
     performanceCounterQueryPools,
+    // VkPhysicalDevicePipelineBinaryFeaturesKHR
+    pipelineBinaries,
     // VkPhysicalDevicePipelineCreationCacheControlFeatures, VkPhysicalDeviceVulkan13Features
     pipelineCreationCacheControl,
     // VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR

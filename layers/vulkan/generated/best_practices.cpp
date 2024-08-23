@@ -1777,6 +1777,42 @@ void BestPractices::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submit
     PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
 
+void BestPractices::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkPipelineBinaryHandlesInfoKHR* pBinaries,
+                                                            const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries, record_obj);
+
+    if (record_obj.result > VK_SUCCESS) {
+        LogPositiveSuccessCode(record_obj);
+        return;
+    }
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                                    VkPipelineBinaryKeyKHR* pPipelineKey, const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                                           VkPipelineBinaryKeyKHR* pPipelineBinaryKey,
+                                                           size_t* pPipelineBinaryDataSize, void* pPipelineBinaryData,
+                                                           const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize,
+                                                                   pPipelineBinaryData, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
 void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                   uint32_t* pPropertyCount,
                                                                                   VkCooperativeMatrixPropertiesKHR* pProperties,

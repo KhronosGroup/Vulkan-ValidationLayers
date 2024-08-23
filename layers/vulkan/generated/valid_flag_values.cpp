@@ -982,6 +982,11 @@ vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bi
                     return {vvl::Extension::_VK_EXT_legacy_dithering};
                 }
             }
+            if (value & (VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_pipeline_binary)) {
+                    return {vvl::Extension::_VK_KHR_pipeline_binary};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkBufferUsageFlagBits2KHR:
             if (value & (VK_BUFFER_USAGE_2_EXECUTION_GRAPH_SCRATCH_BIT_AMDX)) {
