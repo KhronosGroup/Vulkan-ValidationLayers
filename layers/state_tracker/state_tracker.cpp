@@ -3747,17 +3747,27 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         return;
     }
 
-    auto queue_state = Get<vvl::Queue>(queue);
-    Location submit_loc = record_obj.location.dot(vvl::Field::pPresentInfo);
-    std::vector<vvl::QueueSubmission> submissions;
-    submissions.emplace_back(submit_loc);
+    const Location present_loc = record_obj.location.dot(vvl::Field::pPresentInfo);
+    const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
+
+    std::vector<vvl::QueueSubmission> present_submissions;  // TODO: use small_vector. Update interfaces to use vvl::span
+    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+        present_submissions.emplace_back(present_loc.dot(vvl::Field::pSwapchains, i));
+        if (present_fence_info) {
+            present_submissions.back().AddFence(Get<vvl::Fence>(present_fence_info->pFences[i]));
+        }
+    }
+
     vvl::PresentSync present_sync;
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         if (auto semaphore_state = Get<vvl::Semaphore>(pPresentInfo->pWaitSemaphores[i])) {
-            if (auto submission = semaphore_state->GetPendingBinarySignalSubmission()) {
-                present_sync.submissions.emplace_back(submission.value());
+            if (auto submission_ref = semaphore_state->GetPendingBinarySignalSubmission()) {
+                present_sync.submissions.emplace_back(submission_ref.value());
             }
-            submissions[0].AddWaitSemaphore(std::move(semaphore_state), 0);
+            for (auto &submission : present_submissions) {
+                auto movable_semaphore = semaphore_state;
+                submission.AddWaitSemaphore(std::move(movable_semaphore), 0);
+            }
         }
     }
 
@@ -3778,29 +3788,11 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         }
     }
 
-    queue_state->SetupSubmissions(submissions);
-    auto result = queue_state->PostSubmit(std::move(submissions));
-
+    auto queue_state = Get<vvl::Queue>(queue);
+    queue_state->SetupSubmissions(present_submissions);
+    auto result = queue_state->PostSubmit(std::move(present_submissions));
     if (result.has_external_fence) {
         queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
-    }
-
-    if (const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
-        // This ensures that waiting on the present fence will retire present queue operation.
-        present_sync.submissions.emplace_back(queue_state.get(), result.last_submission_seq);
-
-        for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-            auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
-            if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
-
-            if (auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i])) {
-                if (auto present_fence = Get<vvl::Fence>(present_fence_info->pFences[i])) {
-                    present_sync.swapchain = swapchain_data;
-                    present_fence->SetPresentSync(present_sync);
-                    present_fence->EnqueueSignal(nullptr, 0);
-                }
-            }
-        }
     }
 }
 
