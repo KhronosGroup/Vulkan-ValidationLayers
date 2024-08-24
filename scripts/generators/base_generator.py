@@ -574,6 +574,11 @@ class BaseGenerator(OutputGenerator):
             allowDuplicate = boolGet(typeElem, 'allowduplicate')
 
             extends = splitIfGet(typeElem, 'structextends')
+            # This is a workaround for https://gitlab.khronos.org/vulkan/vulkan/-/issues/3979
+            # The spec change is done in the XML in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6847
+            # TODO - The 1.3.295 Headers will have this and these 2 lines may be removed
+            if (extends and 'VkPipelineCreateInfoKHR' in extends):
+                extends = None
             extendedBy = self.registry.validextensionstructs[typeName] if len(self.registry.validextensionstructs[typeName]) > 0 else None
 
             membersElem = typeInfo.elem.findall('.//member')
