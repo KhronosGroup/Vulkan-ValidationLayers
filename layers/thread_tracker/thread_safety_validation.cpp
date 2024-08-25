@@ -766,6 +766,11 @@ void ThreadSafety::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             StartWriteObject(pPresentInfo->pSwapchains[index], record_obj.location);
         }
     }
+    if (const auto* present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
+        for (uint32_t index = 0; index < present_fence_info->swapchainCount; index++) {
+            StartWriteObject(present_fence_info->pFences[index], record_obj.location);
+        }
+    }
 }
 
 void ThreadSafety::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
@@ -780,6 +785,11 @@ void ThreadSafety::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentI
     if (pPresentInfo->pSwapchains != nullptr) {
         for (uint32_t index = 0; index < pPresentInfo->swapchainCount; ++index) {
             FinishWriteObject(pPresentInfo->pSwapchains[index], record_obj.location);
+        }
+    }
+    if (const auto* present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
+        for (uint32_t index = 0; index < present_fence_info->swapchainCount; index++) {
+            FinishWriteObject(present_fence_info->pFences[index], record_obj.location);
         }
     }
 }
