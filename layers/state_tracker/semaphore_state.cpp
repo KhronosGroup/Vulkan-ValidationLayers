@@ -20,6 +20,11 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
 
+static VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo) {
+    auto export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
+    return export_info ? export_info->handleTypes : 0;
+}
+
 void vvl::Semaphore::TimePoint::Notify() const {
     if (signal_submit && signal_submit->queue) {
         signal_submit->queue->Notify(signal_submit->seq);
@@ -36,7 +41,7 @@ vvl::Semaphore::Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const
     : RefcountedStateObject(handle, kVulkanObjectTypeSemaphore),
       type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
       flags(pCreateInfo->flags),
-      exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
+      export_handle_types(GetExportHandleTypes(pCreateInfo)),
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_semaphore_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -301,22 +306,6 @@ void vvl::Semaphore::NotifyAndWait(const Location &loc, uint64_t payload) {
     }
 }
 
-VkExternalSemaphoreHandleTypeFlags vvl::Semaphore::GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo) {
-    auto export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
-    return export_info ? export_info->handleTypes : 0;
-}
-
-bool vvl::Semaphore::HasImportedHandleType() const {
-    auto guard = ReadLock();
-    return imported_handle_type_.has_value();
-}
-
-VkExternalSemaphoreHandleTypeFlagBits vvl::Semaphore::ImportedHandleType() const {
-    auto guard = ReadLock();
-    assert(imported_handle_type_.has_value());
-    return imported_handle_type_.value();
-}
-
 void vvl::Semaphore::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
     auto guard = WriteLock();
     if (scope_ != kExternalPermanent) {
@@ -347,6 +336,15 @@ void vvl::Semaphore::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
             EnqueueWait(last_op->submit, last_op->payload);
         }
     }
+}
+
+std::optional<VkExternalSemaphoreHandleTypeFlagBits> vvl::Semaphore::ImportedHandleType() const {
+    auto guard = ReadLock();
+
+    // Sanity check: semaphore imported -> scope is not internal
+    assert(!imported_handle_type_.has_value() || scope_ != kInternal);
+
+    return imported_handle_type_;
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT

@@ -107,14 +107,13 @@ class Semaphore : public RefcountedStateObject {
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
 
-    bool HasImportedHandleType() const;
-    VkExternalSemaphoreHandleTypeFlagBits ImportedHandleType() const;
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
+    std::optional<VkExternalSemaphoreHandleTypeFlagBits> ImportedHandleType() const;
 
     const VkSemaphoreType type;
     const VkSemaphoreCreateFlags flags;
-    const VkExternalSemaphoreHandleTypeFlags exportHandleTypes;
+    const VkExternalSemaphoreHandleTypeFlags export_handle_types;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     static bool GetMetalExport(const VkSemaphoreCreateInfo *info);
@@ -124,7 +123,6 @@ class Semaphore : public RefcountedStateObject {
   private:
     Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
               const VkSemaphoreCreateInfo *pCreateInfo);
-    VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo);
 
     // Signal queue(s) that need to retire because a wait on this payload has finished
     void Notify(uint64_t payload);

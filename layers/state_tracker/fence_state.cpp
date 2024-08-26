@@ -20,6 +20,20 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
 
+static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
+    auto export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(info->pNext);
+    return export_info ? export_info->handleTypes : 0;
+}
+
+vvl::Fence::Fence(ValidationStateTracker &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
+    : RefcountedStateObject(handle, kVulkanObjectTypeFence),
+      flags(pCreateInfo->flags),
+      export_handle_types(GetExportHandleTypes(pCreateInfo)),
+      state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),
+      completed_(),
+      waiter_(completed_.get_future()),
+      dev_data_(dev) {}
+
 bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
     auto guard = WriteLock();
     if (scope_ != kInternal) {
@@ -30,19 +44,6 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
     queue_ = queue_state;
     seq_ = next_seq;
     return false;
-}
-
-void vvl::Fence::SetPresentSync(const PresentSync &present_sync) {
-    auto guard = WriteLock();
-    // Attempt to overwrite not yet comitted present sync data with a new one is a bug
-    assert(present_sync.submissions.empty() || present_sync_.submissions.empty());
-
-    present_sync_ = present_sync;
-}
-
-bool vvl::Fence::IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const {
-    auto guard = ReadLock();
-    return present_sync_.swapchain != current_swapchain;
 }
 
 // Called from a non-queue operation, such as vkWaitForFences()|
@@ -137,3 +138,24 @@ void vvl::Fence::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
     }
 }
 
+std::optional<VkExternalFenceHandleTypeFlagBits> vvl::Fence::ImportedHandleType() const {
+    auto guard = ReadLock();
+
+    // Sanity check: fence imported -> scope is not internal
+    assert(!imported_handle_type_.has_value() || scope_ != kInternal);
+
+    return imported_handle_type_;
+}
+
+void vvl::Fence::SetPresentSync(const PresentSync &present_sync) {
+    auto guard = WriteLock();
+    // Attempt to overwrite not yet comitted present sync data with a new one is a bug
+    assert(present_sync.submissions.empty() || present_sync_.submissions.empty());
+
+    present_sync_ = present_sync;
+}
+
+bool vvl::Fence::IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const {
+    auto guard = ReadLock();
+    return present_sync_.swapchain != current_swapchain;
+}
