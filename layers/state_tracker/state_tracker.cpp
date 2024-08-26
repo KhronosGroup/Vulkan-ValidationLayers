@@ -3758,11 +3758,11 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         }
     }
 
-    vvl::PresentSync present_sync;
+    vvl::AcquireFenceSync acquire_fence_sync;
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         if (auto semaphore_state = Get<vvl::Semaphore>(pPresentInfo->pWaitSemaphores[i])) {
             if (auto submission_ref = semaphore_state->GetPendingBinarySignalSubmission()) {
-                present_sync.submissions.emplace_back(submission_ref.value());
+                acquire_fence_sync.submission_refs.emplace_back(submission_ref.value());
             }
             for (auto &submission : present_submissions) {
                 auto movable_semaphore = semaphore_state;
@@ -3780,8 +3780,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         // Mark the image as having been released to the WSI
         if (auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i])) {
             if (const auto &acquire_fence = swapchain_data->images[pPresentInfo->pImageIndices[i]].acquire_fence) {
-                present_sync.swapchain = swapchain_data;
-                acquire_fence->SetPresentSync(present_sync);
+                acquire_fence_sync.swapchain = swapchain_data;
+                acquire_fence->SetAcquireFenceSync(acquire_fence_sync);
             }
             uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
             swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id);
@@ -3831,8 +3831,8 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     if (swapchain_data) {
         // Invalidate present sync if different swapchain is used
-        if (fence_state && fence_state->IsPresentSyncSwapchainChanged(swapchain_data)) {
-            fence_state->SetPresentSync(vvl::PresentSync{});
+        if (fence_state && fence_state->IsAcquireFenceSyncSwapchainChanged(swapchain_data)) {
+            fence_state->SetAcquireFenceSync(vvl::AcquireFenceSync{});
         }
         swapchain_data->AcquireImage(*pImageIndex, semaphore_state, fence_state);
     }

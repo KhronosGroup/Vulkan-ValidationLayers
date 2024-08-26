@@ -30,14 +30,27 @@ namespace vvl {
 class Queue;
 class Swapchain;
 
-// present-based sync is when a fence from AcquireNextImage is used to synchronize
-// with submissions presented in one of the previous frames.
-// More common scheme is to use QueueSubmit fence for frame synchronization.
-struct PresentSync {
-    // Queue submissions that will be notified when WaitForFences is called.
-    small_vector<SubmissionReference, 2, uint32_t> submissions;
+//
+// AcquireFenceSync synchronization is when a fence from the AcquireNextImage call is used to
+// synchronize with queue submissions that generated one of the previous frames.
+// This is in contrast to a more common approach when the fence from QueueSubmit is used for
+// host synchronization.
+//
+// The sequence that connects image acquire fence to one of the previous submissions
+// (in chronologically backward order):
+//  a) the wait on the image acquire fence is finished ->
+//  b) the corresponding image is acquired ->
+//  c) the previous presentation of this image is finished (except for the first acquire) ->
+//  d) corresponding present request finished waiting on the queue submit semaphore ->
+//  e) corresponding queue batch finished execution and signaled that semaphore
+//
+// Acquire fence synchronization allows the use of the fence from step a) to wait on the submit batch from step e).
+//
+struct AcquireFenceSync {
+    // The queue submissions that will be notified when WaitForFences is called.
+    small_vector<SubmissionReference, 2, uint32_t> submission_refs;
 
-    // Swapchain associated with this PresentSync.
+    // The swapchain associated with this synchronization instance.
     std::shared_ptr<vvl::Swapchain> swapchain;
 };
 
@@ -76,8 +89,8 @@ class Fence : public RefcountedStateObject {
     void Export(VkExternalFenceHandleTypeFlagBits handle_type);
     std::optional<VkExternalFenceHandleTypeFlagBits> ImportedHandleType() const;
 
-    void SetPresentSync(const PresentSync &present_sync);
-    bool IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const;
+    void SetAcquireFenceSync(const AcquireFenceSync &acquire_fence_sync);
+    bool IsAcquireFenceSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const;
 
     const VkFenceCreateFlags flags;
     const VkExternalFenceHandleTypeFlags export_handle_types;
@@ -94,7 +107,7 @@ class Fence : public RefcountedStateObject {
     mutable std::shared_mutex lock_;
     std::promise<void> completed_;
     std::shared_future<void> waiter_;
-    PresentSync present_sync_;
+    AcquireFenceSync acquire_fence_sync_;
     ValidationStateTracker &dev_data_;
 };
 
