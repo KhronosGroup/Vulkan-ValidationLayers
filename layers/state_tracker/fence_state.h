@@ -49,22 +49,18 @@ class Fence : public RefcountedStateObject {
         kExternalTemporary,
         kExternalPermanent,
     };
-    // Default constructor
-    Fence(ValidationStateTracker &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
-        : RefcountedStateObject(handle, kVulkanObjectTypeFence),
-          flags(pCreateInfo->flags),
-          exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
-          state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),
-          completed_(),
-          waiter_(completed_.get_future()),
-          dev_data_(dev) {}
+
+    Fence(ValidationStateTracker &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo);
 
     VkFence VkHandle() const { return handle_.Cast<VkFence>(); }
+    // TODO: apply ReadLock as Semaphore does, or consider reading enums without lock.
+    // Consider if more high-level operation should be exposed, because
+    // (State() == a && Scope() == b) can be racey, but this could be fine if the
+    // goal is not to crash and validity is based on external synchronization.
+    enum State State() const { return state_; }
+    enum Scope Scope() const { return scope_; }
 
     bool EnqueueSignal(Queue *queue_state, uint64_t next_seq);
-
-    void SetPresentSync(const PresentSync &present_sync);
-    bool IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const;
 
     // Notify the queue that the fence has signalled and then wait for the queue
     // to update state.
@@ -73,35 +69,20 @@ class Fence : public RefcountedStateObject {
     // Update state of the completed fence. This should only be called by Queue.
     void Retire();
 
+    // vkResetFences
     void Reset();
 
     void Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags);
-
     void Export(VkExternalFenceHandleTypeFlagBits handle_type);
+    std::optional<VkExternalFenceHandleTypeFlagBits> ImportedHandleType() const;
+
+    void SetPresentSync(const PresentSync &present_sync);
+    bool IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const;
 
     const VkFenceCreateFlags flags;
-    const VkExternalFenceHandleTypeFlags exportHandleTypes;
-
-    enum State State() const { return state_; }
-    enum Scope Scope() const { return scope_; }
-
-    // used to catch if GetFence() is called multiple times
-    bool HasImportedHandleType() const {
-        auto guard = ReadLock();
-        return imported_handle_type_.has_value();
-    }
-
-    VkExternalFenceHandleTypeFlagBits ImportedHandleType() const {
-        auto guard = ReadLock();
-        assert(imported_handle_type_.has_value());
-        return imported_handle_type_.value();
-    }
+    const VkExternalFenceHandleTypeFlags export_handle_types;
 
   private:
-    static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
-        auto export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(info->pNext);
-        return export_info ? export_info->handleTypes : 0;
-    }
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
